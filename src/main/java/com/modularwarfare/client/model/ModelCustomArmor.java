@@ -130,9 +130,18 @@ public class ModelCustomArmor extends MWModelBipedBase {
             GlStateManager.pushMatrix();
             ObjModelRenderer part = this.staticModel.getPart(modelPart);
             if (part != null) {
-                part.render(f5);
-                GlStateManager.popMatrix();
+                if (part != null) {
+                    ObjModelRenderer.customItemRenderer = customItemRenderer;
+                    ObjModelRenderer.glowType = "armor";
+                    ObjModelRenderer.glowPath = type.modelSkins[0].getSkin();
+                    boolean glow = ObjModelRenderer.glowTxtureMode;
+                    ObjModelRenderer.glowTxtureMode = true;
+                    part.render(f5);
+                    ObjModelRenderer.glowTxtureMode = glow;
+                }
             }
+
+            GlStateManager.popMatrix();
         }
     }
 
@@ -211,7 +220,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
 
         @Override
         public void setRotationAngles(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
-                                      float headPitch, float scaleFactor, Entity entityIn) {
+                float headPitch, float scaleFactor, Entity entityIn) {
             // TODO Auto-generated method stub
             super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor,
                     entityIn);
@@ -221,7 +230,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
 
         @Override
         public void render(Entity entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
-                           float headPitch, float scale) {
+                float headPitch, float scale) {
             // TODO Auto-generated method stub
             GlStateManager.pushMatrix();
             if (entityIn.isSneaking()) {
@@ -285,30 +294,30 @@ public class ModelCustomArmor extends MWModelBipedBase {
                 if (!this.isHidden) {
                     if (this.showModel) {
                         switch (type) {
-                            case HEAD:
-                                baseModel.armor.render("headModel", NonePart, scale, 1);
-                                break;
-                            case BODY:
-                                baseModel.armor.render("bodyModel", NonePart, scale, 1);
-                                break;
-                            case LEFTARM:
-                                GlStateManager.translate(-0.35 + 0.04, -0.17, 0);
-                                baseModel.armor.render("leftArmModel", NonePart, scale, 1);
-                                break;
-                            case RIGHTARM:
-                                GlStateManager.translate(0.35 - 0.04, -0.17, 0);
-                                baseModel.armor.render("rightArmModel", NonePart, scale, 1);
-                                break;
-                            case LEFTLEG:
-                                GlStateManager.translate(-0.12, -0.76, 0);
-                                baseModel.armor.render("leftLegModel", NonePart, scale, 1);
-                                baseModel.armor.render("leftFootModel", NonePart, scale, 1);
-                                break;
-                            case RIGHTLEG:
-                                GlStateManager.translate(0.12, -0.76, 0);
-                                baseModel.armor.render("rightLegModel", NonePart, scale, 1);
-                                baseModel.armor.render("rightFootModel", NonePart, scale, 1);
-                                break;
+                        case HEAD:
+                            baseModel.armor.render("headModel", NonePart, scale, 1);
+                            break;
+                        case BODY:
+                            baseModel.armor.render("bodyModel", NonePart, scale, 1);
+                            break;
+                        case LEFTARM:
+                            GlStateManager.translate(-0.35 + 0.04, -0.17, 0);
+                            baseModel.armor.render("leftArmModel", NonePart, scale, 1);
+                            break;
+                        case RIGHTARM:
+                            GlStateManager.translate(0.35 - 0.04, -0.17, 0);
+                            baseModel.armor.render("rightArmModel", NonePart, scale, 1);
+                            break;
+                        case LEFTLEG:
+                            GlStateManager.translate(-0.12, -0.76, 0);
+                            baseModel.armor.render("leftLegModel", NonePart, scale, 1);
+                            baseModel.armor.render("leftFootModel", NonePart, scale, 1);
+                            break;
+                        case RIGHTLEG:
+                            GlStateManager.translate(0.12, -0.76, 0);
+                            baseModel.armor.render("rightLegModel", NonePart, scale, 1);
+                            baseModel.armor.render("rightFootModel", NonePart, scale, 1);
+                            break;
                         }
                     }
                 }
