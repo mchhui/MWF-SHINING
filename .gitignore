@@ -26,3 +26,5 @@ run/*
 forge*changelog.txt
 
 gltf/*
+/.apt_generated/
+/java/

@@ -27,5 +27,6 @@
   },
   "model_optimization": true,
   "dev_mode": true,
+  "debug_hits": true,
   "version": "1.0.14f"
 }
