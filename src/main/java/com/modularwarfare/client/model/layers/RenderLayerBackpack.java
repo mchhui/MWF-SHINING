@@ -1,5 +1,7 @@
 package com.modularwarfare.client.model.layers;
 
+import org.lwjgl.opengl.GL11;
+
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.model.ModelBackpack;
 import com.modularwarfare.common.backpacks.ItemBackpack;
@@ -8,6 +10,8 @@ import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.player.EntityPlayer;
@@ -43,7 +47,8 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                     GlStateManager.rotate(30.0f, 1.0f, 0.0f, 0.0f);
                 }
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-                GlStateManager.scale(scale, scale, -scale);
+                GlStateManager.rotate(180, 0, 1, 0);
+                GlStateManager.scale(scale, scale, scale);
 
                 int skinId = 0;
                 if (itemstackBackpack.hasTagCompound()) {
@@ -57,9 +62,12 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                 Minecraft.getMinecraft().getRenderManager().renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "skins/backpacks/" + path + ".png"));
 
                 ModelBackpack model = (ModelBackpack) backpack.type.model;
+                GlStateManager.disableLighting();
+                GlStateManager.shadeModel(GL11.GL_SMOOTH);
                 model.render("backpackModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
-
+                GlStateManager.shadeModel(GL11.GL_FLAT);
                 GlStateManager.popMatrix();
+                GlStateManager.enableLighting();
             }
         }
     }

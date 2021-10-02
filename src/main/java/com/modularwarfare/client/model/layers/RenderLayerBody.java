@@ -56,7 +56,9 @@ public class RenderLayerBody implements LayerRenderer<EntityPlayer> {
             String path = skinId > 0 ? "skins/" + armorType.modelSkins[skinId].getSkin() : armorType.modelSkins[0].getSkin();
             Minecraft.getMinecraft().getRenderManager().renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "skins/armor/" + path + ".png"));
             GL11.glScalef(1.0f, 1.0f, 1.0f);
+            GlStateManager.shadeModel(GL11.GL_SMOOTH);
             armorModel.render("armorModel", this.renderer.getMainModel().bipedBody, 0.0625f, 1f);
+            GlStateManager.shadeModel(GL11.GL_FLAT);
             GlStateManager.popMatrix();
         }
     }

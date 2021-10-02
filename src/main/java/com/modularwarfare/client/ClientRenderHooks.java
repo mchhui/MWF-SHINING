@@ -62,7 +62,7 @@ public class ClientRenderHooks extends ForgeEvent {
         customRenderers[1] = ClientProxy.gunStaticRenderer = new RenderGunStatic();
         customRenderers[2] = ClientProxy.ammoRenderer = new RenderAmmo();
         customRenderers[3] = ClientProxy.attachmentRenderer = new RenderAttachment();
-        customRenderers[4] = ClientProxy.grenadeRenderer = new RenderGrenade();
+        customRenderers[8] = ClientProxy.grenadeRenderer = new RenderGrenade();
     }
 
     public static AnimStateMachine getAnimMachine(EntityPlayer entityPlayer) {
