@@ -88,6 +88,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
     }
 
     public void doRender(final EntityItemLoot entity, final double x, final double y, final double z, final float entityYaw, final float partialTicks) {
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
         final ItemStack itemstack = entity.getItem();
         if (itemstack.getItem() instanceof ItemGun) {
             GlStateManager.alphaFunc(516, 0.1F);
@@ -267,6 +268,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             }
             super.doRender(entity, x, y, z, entityYaw, partialTicks);
         }
+        GlStateManager.shadeModel(GL11.GL_FLAT);
     }
 
     protected ResourceLocation getEntityTexture(final EntityItemLoot entity) {
