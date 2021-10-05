@@ -41,6 +41,8 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.Project;
 
 import java.util.HashMap;
@@ -55,7 +57,8 @@ public class ClientRenderHooks extends ForgeEvent {
     private Minecraft mc;
     private float equippedProgress = 1f, prevEquippedProgress = 1f;
 
-    public static final ResourceLocation grenade_smoke = new ResourceLocation("modularwarfare", "textures/particles/smoke.png");
+    public static final ResourceLocation grenade_smoke = new ResourceLocation("modularwarfare",
+            "textures/particles/smoke.png");
 
     public ClientRenderHooks() {
         mc = Minecraft.getMinecraft();
@@ -79,18 +82,18 @@ public class ClientRenderHooks extends ForgeEvent {
     @SubscribeEvent
     public void renderTick(TickEvent.RenderTickEvent event) {
         switch (event.phase) {
-            case START: {
-                RenderParameters.smoothing = event.renderTickTime;
-                SetPartialTick(event.renderTickTime);
-                break;
-            }
-            case END: {
-                if (mc.player == null || mc.world == null)
-                    return;
-                if (ClientProxy.gunUI.hitMarkerTime > 0)
-                    ClientProxy.gunUI.hitMarkerTime--;
-                break;
-            }
+        case START: {
+            RenderParameters.smoothing = event.renderTickTime;
+            SetPartialTick(event.renderTickTime);
+            break;
+        }
+        case END: {
+            if (mc.player == null || mc.world == null)
+                return;
+            if (ClientProxy.gunUI.hitMarkerTime > 0)
+                ClientProxy.gunUI.hitMarkerTime--;
+            break;
+        }
         }
     }
 
@@ -103,14 +106,13 @@ public class ClientRenderHooks extends ForgeEvent {
                 event.setCanceled(true);
 
                 int rotation = event.getEntityItemFrame().getRotation();
-                GlStateManager.rotate(-rotation * 45F, 0F, 0F, 1F);
-                RenderHelper.enableStandardItemLighting();
-                GlStateManager.rotate(rotation * 45F, 0F, 0F, 1F);
                 GlStateManager.pushMatrix();
                 float scale = 0.75F;
                 GlStateManager.scale(scale, scale, scale);
                 GlStateManager.translate(0.15F, -0.15F, 0F);
+                GlStateManager.shadeModel(GL11.GL_SMOOTH);
                 customRenderers[type.id].renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
+                GlStateManager.shadeModel(GL11.GL_FLAT);
                 GlStateManager.popMatrix();
             }
         }
@@ -126,13 +128,13 @@ public class ClientRenderHooks extends ForgeEvent {
                 EntitySmokeGrenade smokeGrenade = (EntitySmokeGrenade) givenEntity;
                 if (smokeGrenade.exploded) {
                     if (smokeGrenade.smokeTime <= 220) {
-                        RenderHelperMW.renderSmoke(grenade_smoke, smokeGrenade.posX, smokeGrenade.posY + 1, smokeGrenade.posZ, partialTicks, 600, 600, "0xFFFFFF", 0.8f);
+                        RenderHelperMW.renderSmoke(grenade_smoke, smokeGrenade.posX, smokeGrenade.posY + 1,
+                                smokeGrenade.posZ, partialTicks, 600, 600, "0xFFFFFF", 0.8f);
                     }
                 }
             }
         }
     }
-
 
     @SubscribeEvent
     public void renderHeldItem(RenderSpecificHandEvent event) {
@@ -151,7 +153,8 @@ public class ClientRenderHooks extends ForgeEvent {
             if (type.id > customRenderers.length)
                 return;
 
-            if (item.render3d && customRenderers[type.id] != null && type.hasModel() && !type.getAssetDir().equalsIgnoreCase("attachments")) {
+            if (item.render3d && customRenderers[type.id] != null && type.hasModel()
+                    && !type.getAssetDir().equalsIgnoreCase("attachments")) {
                 //Cancel the hand render event so that we can do our own.
                 event.setCanceled(true);
 
@@ -172,21 +175,26 @@ public class ClientRenderHooks extends ForgeEvent {
                     GlStateManager.loadIdentity();
                 }
 
-                Project.gluPerspective(getFOVModifier(partialTicks), (float) mc.displayWidth / (float) mc.displayHeight, 0.0001F, farPlaneDistance * 2.0F);
+                Project.gluPerspective(getFOVModifier(partialTicks), (float) mc.displayWidth / (float) mc.displayHeight,
+                        0.0001F, farPlaneDistance * 2.0F);
                 GlStateManager.matrixMode(5888);
                 GlStateManager.loadIdentity();
 
                 GlStateManager.pushMatrix();
 
-                boolean flag = mc.getRenderViewEntity() instanceof EntityLivingBase && ((EntityLivingBase) mc.getRenderViewEntity()).isPlayerSleeping();
+                boolean flag = mc.getRenderViewEntity() instanceof EntityLivingBase
+                        && ((EntityLivingBase) mc.getRenderViewEntity()).isPlayerSleeping();
 
-                if (mc.gameSettings.thirdPersonView == 0 && !flag && !mc.gameSettings.hideGUI && !mc.playerController.isSpectator()) {
+                if (mc.gameSettings.thirdPersonView == 0 && !flag && !mc.gameSettings.hideGUI
+                        && !mc.playerController.isSpectator()) {
                     renderer.enableLightmap();
                     float f1 = 1.0F - (prevEquippedProgress + (equippedProgress - prevEquippedProgress) * partialTicks);
                     EntityPlayerSP entityplayersp = this.mc.player;
                     float f2 = entityplayersp.getSwingProgress(partialTicks);
-                    float f3 = entityplayersp.prevRotationPitch + (entityplayersp.rotationPitch - entityplayersp.prevRotationPitch) * partialTicks;
-                    float f4 = entityplayersp.prevRotationYaw + (entityplayersp.rotationYaw - entityplayersp.prevRotationYaw) * partialTicks;
+                    float f3 = entityplayersp.prevRotationPitch
+                            + (entityplayersp.rotationPitch - entityplayersp.prevRotationPitch) * partialTicks;
+                    float f4 = entityplayersp.prevRotationYaw
+                            + (entityplayersp.rotationYaw - entityplayersp.prevRotationYaw) * partialTicks;
 
                     //Setup lighting
                     GlStateManager.disableLighting();
@@ -197,13 +205,18 @@ public class ClientRenderHooks extends ForgeEvent {
                     GlStateManager.popMatrix();
 
                     //Do lighting
-                    int i = this.mc.world.getCombinedLight(new BlockPos(entityplayersp.posX, entityplayersp.posY + (double) entityplayersp.getEyeHeight(), entityplayersp.posZ), 0);
-                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) (i & 65535), (float) (i >> 16));
-
+                    int i = this.mc.world.getCombinedLight(
+                            new BlockPos(entityplayersp.posX,
+                                    entityplayersp.posY + (double) entityplayersp.getEyeHeight(), entityplayersp.posZ),
+                            0);
+                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) (i & 65535),
+                            (float) (i >> 16));
 
                     //Do hand rotations
-                    float f5 = entityplayersp.prevRenderArmPitch + (entityplayersp.renderArmPitch - entityplayersp.prevRenderArmPitch) * partialTicks;
-                    float f6 = entityplayersp.prevRenderArmYaw + (entityplayersp.renderArmYaw - entityplayersp.prevRenderArmYaw) * partialTicks;
+                    float f5 = entityplayersp.prevRenderArmPitch
+                            + (entityplayersp.renderArmPitch - entityplayersp.prevRenderArmPitch) * partialTicks;
+                    float f6 = entityplayersp.prevRenderArmYaw
+                            + (entityplayersp.renderArmYaw - entityplayersp.prevRenderArmYaw) * partialTicks;
                     GlStateManager.rotate((entityplayersp.rotationPitch - f5) * 0.1F, 1.0F, 0.0F, 0.0F);
                     GlStateManager.rotate((entityplayersp.rotationYaw - f6) * 0.1F, 0.0F, 1.0F, 0.0F);
 
@@ -226,7 +239,8 @@ public class ClientRenderHooks extends ForgeEvent {
                     GlStateManager.rotate(f11 * -80.0F, 1.0F, 0.0F, 0.0F);
                     GlStateManager.scale(0.4F, 0.4F, 0.4F);
 
-                    customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, event.getHand(), stack, mc.world, mc.player);
+                    customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, event.getHand(),
+                            stack, mc.world, mc.player);
 
                     GlStateManager.popMatrix();
                     GlStateManager.disableRescaleNormal();
@@ -253,16 +267,17 @@ public class ClientRenderHooks extends ForgeEvent {
             return;
         }
 
-        AbstractClientPlayer clientPlayer = (AbstractClientPlayer)event.getEntity();
-        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().<AbstractClientPlayer>getEntityRenderObject(event.getEntity());
+        AbstractClientPlayer clientPlayer = (AbstractClientPlayer) event.getEntity();
+        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager()
+                .<AbstractClientPlayer>getEntityRenderObject(event.getEntity());
         RenderPlayer renderplayer = (RenderPlayer) render;
 
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()){
+        if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()) {
             renderplayer.getMainModel().bipedHeadwear.isHidden = false;
         } else {
             renderplayer.getMainModel().bipedHeadwear.isHidden = true;
         }
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()){
+        if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()) {
             renderplayer.getMainModel().bipedLeftArmwear.isHidden = false;
             renderplayer.getMainModel().bipedRightArmwear.isHidden = false;
             renderplayer.getMainModel().bipedBodyWear.isHidden = false;
@@ -271,7 +286,7 @@ public class ClientRenderHooks extends ForgeEvent {
             renderplayer.getMainModel().bipedRightArmwear.isHidden = true;
             renderplayer.getMainModel().bipedBodyWear.isHidden = true;
         }
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty()){
+        if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty()) {
             renderplayer.getMainModel().bipedLeftLegwear.isHidden = false;
             renderplayer.getMainModel().bipedRightLegwear.isHidden = false;
         } else {
@@ -309,41 +324,6 @@ public class ClientRenderHooks extends ForgeEvent {
             } else {
                 biped.rightArmPose = ArmPose.BLOCK;
             }
-        }
-    }
-
-    @SubscribeEvent
-    public void renderBackGun(RenderBonesEvent.Post event) {
-        if (event.type != EnumBoneType.BODY) {
-            return;
-        }
-        if (event.modelCustomArmor.renderingEntity instanceof AbstractClientPlayer) {
-            ItemStack gun = BackWeaponsManager.INSTANCE
-                    .getItemToRender((AbstractClientPlayer) event.modelCustomArmor.renderingEntity);
-            if (gun != ItemStack.EMPTY && !gun.isEmpty()) {
-                BaseType type = ((BaseItem) gun.getItem()).baseType;
-                {
-                    GlStateManager.pushMatrix();
-                    if (customRenderers[type.id] != null) {
-                        GlStateManager.translate(0, -0.6, 0.35);
-                        boolean isSneaking = event.modelCustomArmor.renderingEntity.isSneaking();
-                        if (event.modelCustomArmor.renderingEntity instanceof EntityPlayerSP) {
-                            ((EntityPlayerSP) event.modelCustomArmor.renderingEntity).movementInput.sneak = false;
-                        } else {
-                            event.modelCustomArmor.renderingEntity.setSneaking(false);
-                        }
-                        customRenderers[type.id].renderItem(CustomItemRenderType.BACK, null, gun, mc.world,
-                                event.modelCustomArmor.renderingEntity, partialTicks);
-                        if (event.modelCustomArmor.renderingEntity instanceof EntityPlayerSP) {
-                            ((EntityPlayerSP) event.modelCustomArmor.renderingEntity).movementInput.sneak = isSneaking;
-                        } else {
-                            event.modelCustomArmor.renderingEntity.setSneaking(isSneaking);
-                        }
-                    }
-                    GlStateManager.popMatrix();
-                }
-            }
-
         }
     }
 
