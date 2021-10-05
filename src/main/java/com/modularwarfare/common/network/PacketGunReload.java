@@ -65,7 +65,7 @@ public class PacketGunReload extends PacketBase {
         if (ServerTickHandler.playerReloadCooldown.containsKey(entityPlayer.getUniqueID()))
             return;
 
-        if(entityPlayer.getHeldItemMainhand().getCount() >= 0){
+        if(entityPlayer.getHeldItemMainhand().getCount() > 1){
             entityPlayer.sendMessage(new TextComponentString("You can only load bullets on a single magazine."));
             return;
         }
@@ -515,7 +515,7 @@ public class PacketGunReload extends PacketBase {
         NBTTagCompound nbtTagCompound = targetStack.getTagCompound();
         //boolean isAmmo = targetStack.getItem() instanceof ItemAmmo;
 
-        if(targetStack.getCount() >= 0){
+        if(targetStack.getCount() > 1){
             entityPlayer.sendMessage(new TextComponentString("You can only load bullets on a single magazine."));
             return null;
         }
