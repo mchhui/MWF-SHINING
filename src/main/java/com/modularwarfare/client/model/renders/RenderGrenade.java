@@ -9,6 +9,8 @@ import com.modularwarfare.client.model.objects.CustomItemRenderer;
 import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -53,7 +55,14 @@ public class RenderGrenade extends CustomItemRenderer {
         if (model == null)
             return;
         {
+            GlStateManager.shadeModel(GL11.GL_SMOOTH);
+            boolean glow = ObjModelRenderer.glowTxtureMode;
+            ObjModelRenderer.glowTxtureMode = true;
+            
             renderGrenade(type, item, grenadeType, data);
+            
+            GlStateManager.shadeModel(GL11.GL_FLAT);
+            ObjModelRenderer.glowTxtureMode = glow;
         }
     }
 
@@ -198,5 +207,12 @@ public class RenderGrenade extends CustomItemRenderer {
                 GL11.glPopMatrix();
             }
         }
+    }
+    
+    @Override
+    public void bindTexture(String type, String fileName) {
+        ObjModelRenderer.glowType=type;
+        ObjModelRenderer.glowPath=fileName;
+        super.bindTexture(type, fileName);
     }
 }
