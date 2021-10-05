@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ObjModelRenderer {
+    private static CustomItemRenderer customItemRenderer = new CustomItemRenderer();
     public static boolean glowTxtureMode = false;
-    public static CustomItemRenderer customItemRenderer;
     public static String glowType;
     public static String glowPath;
     public float rotationPointX;

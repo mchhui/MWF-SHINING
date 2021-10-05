@@ -21,6 +21,7 @@ import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.textures.TextureType;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.OptifineHelper;
 import net.minecraft.client.Minecraft;
@@ -147,8 +148,11 @@ public class RenderGunStatic extends CustomItemRenderer {
         {
             AnimStateMachine anim = data.length >= 2 ? (EntityLivingBase) data[1] instanceof EntityPlayer ? ClientRenderHooks.getAnimMachine((EntityPlayer) data[1]) : new AnimStateMachine() : new AnimStateMachine();
             GlStateManager.shadeModel(GL11.GL_SMOOTH);
+            boolean glow = ObjModelRenderer.glowTxtureMode;
+            ObjModelRenderer.glowTxtureMode = true;
             renderGun(type, item, anim, gunType, data);
             GlStateManager.shadeModel(GL11.GL_FLAT);
+            ObjModelRenderer.glowTxtureMode = glow;
         }
     }
 
@@ -476,7 +480,6 @@ public class RenderGunStatic extends CustomItemRenderer {
                 if (renderType == CustomItemRenderType.ENTITY) {
                     if (!(Minecraft.getMinecraft().currentScreen instanceof GuiInventory)) {
                         GlStateManager.enableRescaleNormal();
-                        RenderHelper.enableStandardItemLighting();
                         GlStateManager.enableLighting();
                         GlStateManager.enableDepth();
                     }
@@ -982,7 +985,10 @@ public class RenderGunStatic extends CustomItemRenderer {
 
                                     attachmentModel.renderAttachment(worldScale);
                                     if (attachmentType.attachmentType == AttachmentEnum.Sight && mc.gameSettings.thirdPersonView == 0 && renderType == CustomItemRenderType.EQUIPPED_FIRST_PERSON) {
+                                        boolean glowTxtureMode=ObjModelRenderer.glowTxtureMode;
+                                        ObjModelRenderer.glowTxtureMode = false;
                                         renderScopeGlass(attachmentType, attachmentModel, adsSwitch != 0F);
+                                        ObjModelRenderer.glowTxtureMode = glowTxtureMode;
                                     }
                                 }
                                 GL11.glPopMatrix();
@@ -1284,5 +1290,12 @@ public class RenderGunStatic extends CustomItemRenderer {
             }
         }
         GL11.glPopMatrix();
+    }
+    
+    @Override
+    public void bindTexture(String type, String fileName) {
+        ObjModelRenderer.glowType=type;
+        ObjModelRenderer.glowPath=fileName;
+        super.bindTexture(type, fileName);
     }
 }

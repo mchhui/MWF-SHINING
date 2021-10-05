@@ -26,7 +26,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
 public class ModelCustomArmor extends MWModelBipedBase {
-    private static CustomItemRenderer customItemRenderer = new CustomItemRenderer();
+    
     public static Bones bones = new Bones(0, false);
     public static Bones bonesSmall = new Bones(0, true);
     private BaseType type;
@@ -131,7 +131,6 @@ public class ModelCustomArmor extends MWModelBipedBase {
             ObjModelRenderer part = this.staticModel.getPart(modelPart);
             if (part != null) {
                 if (part != null) {
-                    ObjModelRenderer.customItemRenderer = customItemRenderer;
                     ObjModelRenderer.glowType = "armor";
                     ObjModelRenderer.glowPath = type.modelSkins[0].getSkin();
                     boolean glow = ObjModelRenderer.glowTxtureMode;
