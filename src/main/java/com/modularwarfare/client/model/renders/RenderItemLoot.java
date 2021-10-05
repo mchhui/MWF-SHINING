@@ -93,7 +93,6 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
         if (itemstack.getItem() instanceof ItemGun) {
             GlStateManager.alphaFunc(516, 0.1F);
             GlStateManager.enableBlend();
-            RenderHelper.enableStandardItemLighting();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.pushMatrix();
             GlStateManager.translate((float) x, (float) y, (float) z);
@@ -129,6 +128,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                 boolean hasScopeAttachment = false;
                 GlStateManager.pushMatrix();
                 for (AttachmentEnum attachment : AttachmentEnum.values()) {
+                    GlStateManager.pushMatrix();
                     ItemStack itemStack = GunType.getAttachment(itemstack, attachment);
                     if (itemStack != null && itemStack.getItem() != Items.AIR) {
                         AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
@@ -177,6 +177,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                             attachmentModel.renderAttachment(worldScale);
                         }
                     }
+                    GlStateManager.popMatrix();
                 }
                 if (!hasScopeAttachment)
                     model.renderPart("defaultScopeModel", worldScale);
@@ -204,7 +205,6 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             GlStateManager.enableRescaleNormal();
             GlStateManager.alphaFunc(516, 0.1f);
             GlStateManager.enableBlend();
-            RenderHelper.enableStandardItemLighting();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.pushMatrix();
             IBakedModel ibakedmodel = this.itemRenderer.getItemModelWithOverrides(itemstack, entity.world, null);
