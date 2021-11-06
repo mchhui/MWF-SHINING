@@ -28,6 +28,7 @@ import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.protector.ModularProtector;
 import com.modularwarfare.common.textures.TextureType;
+import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
@@ -37,6 +38,8 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.io.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
@@ -436,6 +439,22 @@ public class ModularWarfare {
                     tabOrder.add(itemGrenade);
                 }
             }
+            
+            String pathFormat = "skins/%s/%s.png";
+            tabOrder.forEach((item)->{
+                BaseType type;
+                if(item instanceof ItemMWArmor) {
+                    type=((ItemMWArmor)item).baseType;
+                }else {
+                    type=((BaseItem)item).baseType;
+                }
+                
+                for(SkinType skin:type.modelSkins) {
+                    if(skin.preload.length!=0) {
+                        PROXY.preloadSkinTypes.put(skin,type);
+                    }
+                }
+            });
             MODS_TABS.get(file.getName()).preInitialize(tabOrder);
         }
 

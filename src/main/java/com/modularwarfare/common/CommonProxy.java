@@ -3,6 +3,7 @@ package com.modularwarfare.common;
 import com.google.common.collect.ImmutableList;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.SkinType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
@@ -19,6 +20,7 @@ import com.modularwarfare.ModConfig;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -28,6 +30,8 @@ import static com.modularwarfare.ModularWarfare.MOD_VERSION;
 public class CommonProxy extends ForgeEvent {
 
     public static Pattern zipJar = Pattern.compile("(.+).(zip|jar)$");
+    
+    public static HashMap<SkinType,BaseType> preloadSkinTypes=new HashMap<SkinType,BaseType>();
 
 
     public void construction(FMLConstructionEvent event) {

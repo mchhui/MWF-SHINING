@@ -7,6 +7,7 @@ public class SkinType {
     public String internalName;
     public String displayName;
     public String skinAsset;
+    public int[] preload=new int[0];
 
     public static SkinType getDefaultSkin(BaseType baseType) {
         SkinType skinType = new SkinType();

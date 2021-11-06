@@ -59,6 +59,7 @@ import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.entity.RenderPlayer;
+import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -87,6 +88,7 @@ import paulscode.sound.SoundSystemConfig;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -276,6 +278,7 @@ public class ClientProxy extends CommonProxy {
         } else {
             ClientProxy.galacticraftInterop = new GCDummyInterop();
         }
+       
     }
 
     @Override
@@ -337,6 +340,21 @@ public class ClientProxy extends CommonProxy {
         if(ModUtil.isMac()){
             ModConfig.INSTANCE.model_optimization = false;
         }
+        
+        ModularWarfare.LOGGER.info("Preloading textures");
+        long time=System.currentTimeMillis();
+        preloadSkinTypes.forEach((skin,type)->{
+            String[] pathFormat =new String[]{"skins/%s/%s.png","skins/%s/%s_glow.png","skins/%s/%s_s.png","skins/%s/%s_n.png"};
+            for(int i=0;i<4;i++) {
+                if(skin.preload.length>i&&skin.preload[i]!=0) {
+                    ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
+                            String.format(pathFormat[i], type.getAssetDir(), skin.getSkin()));
+                    Minecraft.getMinecraft().getTextureManager().loadTexture(resource,new SimpleTexture(resource));
+                    ModularWarfare.LOGGER.info(resource);
+                }
+            }
+        });
+        ModularWarfare.LOGGER.info("All textures is ready("+(System.currentTimeMillis()-time)+"ms)");
     }
 
     @SubscribeEvent
