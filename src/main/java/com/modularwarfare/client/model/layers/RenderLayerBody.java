@@ -60,6 +60,10 @@ public class RenderLayerBody implements LayerRenderer<EntityPlayer> {
                     GlStateManager.pushMatrix();
                     if (ClientRenderHooks.customRenderers[type.id] != null) {
                         GlStateManager.translate(0, -0.6, 0.35);
+                        if (player.isSneaking()) {
+                            GlStateManager.translate(0.0f, 0.2f, -0.3f);
+                            GlStateManager.rotate(30.0f, 1.0f, 0.0f, 0.0f);
+                        }
                         ClientRenderHooks.customRenderers[type.id].renderItem(CustomItemRenderType.BACK, null, gun,
                                 player.world, player, partialTicks);
                     }
