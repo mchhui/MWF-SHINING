@@ -327,10 +327,12 @@ public class ItemGun extends BaseItem {
                 if (bulletItem.type.isSlug) {
                     numBullets = 1;
                 }
-                EntityShell shell = new EntityShell(world, entityPlayer, itemGun, bulletItem);
-                shell.setHeadingFromThrower(entityPlayer, entityPlayer.rotationPitch, entityPlayer.rotationYaw + 110, 0.0F, 0.2F, 5);
-                world.spawnEntity(shell);
             }
+
+            EntityShell shell = new EntityShell(world, entityPlayer, itemGun, bulletItem);
+
+            shell.setHeadingFromThrower(entityPlayer, entityPlayer.rotationPitch, entityPlayer.rotationYaw + 110, 0.0F, 0.2F, 5);
+            world.spawnEntity(shell);
         }
     }
 

@@ -75,7 +75,7 @@ public class ModularWarfare {
     // Mod Info
     public static final String MOD_ID = "modularwarfare";
     public static final String MOD_NAME = "ModularWarfare";
-    public static final String MOD_VERSION = "1.0.14f";
+    public static final String MOD_VERSION = "1.0.15f";
     // Main instance
     @Instance(ModularWarfare.MOD_ID)
     public static ModularWarfare INSTANCE;
@@ -169,6 +169,7 @@ public class ModularWarfare {
         }
 
         for(TextureType type : textureTypes.values()){
+            System.out.println("[DEB] type "+type.textureType.typeName);
             type.loadExtraValues();
         }
 
@@ -246,6 +247,10 @@ public class ModularWarfare {
                                         parsedType.contentPack = file.getName();
                                         parsedType.isInDirectory = true;
                                         baseTypes.add(parsedType);
+
+                                        if(parsedType instanceof TextureType){
+                                            textureTypes.put(parsedType.internalName, (TextureType) parsedType);
+                                        }
                                     }
                                 } catch (Exception exception) {
                                     exception.printStackTrace();
@@ -271,6 +276,10 @@ public class ModularWarfare {
                                             parsedType.contentPack = file.getName();
                                             parsedType.isInDirectory = false;
                                             baseTypes.add(parsedType);
+
+                                            if(parsedType instanceof TextureType){
+                                                textureTypes.put(parsedType.internalName, (TextureType) parsedType);
+                                            }
                                         } catch (com.google.gson.JsonSyntaxException ex) {
                                             ModularWarfare.LOGGER.warn("Detected an error in the file " + zipName);
                                             ModularWarfare.LOGGER.warn(ex.getMessage());
