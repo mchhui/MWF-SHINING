@@ -12,7 +12,9 @@ import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.playerdata.PlayerData;
 import com.modularwarfare.common.network.PacketGunTrail;
+import com.modularwarfare.common.network.PacketGunTrailAskServer;
 import com.modularwarfare.common.network.PacketPlaySound;
+import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -26,9 +28,8 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -44,7 +45,6 @@ public class RayUtil {
         return entity instanceof EntityLivingBase && !(entity instanceof EntityArmorStand);
     }
 
-
     public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
         final float randAccPitch = rand.nextFloat() * accuracy;
         final float randAccYaw = rand.nextFloat() * accuracy;
@@ -54,7 +54,7 @@ public class RayUtil {
         final float f2 = MathHelper.sin(-yaw * 0.017453292f - 3.1415927f);
         final float f3 = -MathHelper.cos(-pitch * 0.017453292f);
         final float f4 = MathHelper.sin(-pitch * 0.017453292f);
-        return new Vec3d((double) (f2 * f3), (double) f4, (double) (f * f3));
+        return new Vec3d((f2 * f3), f4, (f * f3));
     }
 
     public static float calculateAccuracyServer(final ItemGun item, final EntityLivingBase player) {
@@ -124,6 +124,13 @@ public class RayUtil {
         Vec3d vec3d = entity.getPositionEyes(partialTicks);
         Vec3d vec3d1 = entity.getLook(partialTicks);
         Vec3d vec3d2 = vec3d.addVector(vec3d1.x * blockReachDistance, vec3d1.y * blockReachDistance, vec3d1.z * blockReachDistance);
+
+        if(Loader.isModLoaded("modularmovements")) {
+            if (entity instanceof EntityPlayer) {
+                vec3d = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, partialTicks);
+            }
+        }
+
         return entity.world.rayTraceBlocks(vec3d, vec3d2, false, true, false);
     }
 
@@ -161,20 +168,24 @@ public class RayUtil {
      * @return
      */
     @Nullable
-    public static BulletHit standardEntityRayTrace(World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item, boolean isPunched) {
+    public static BulletHit standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item, boolean isPunched) {
 
         HashSet<Entity> hashset = new HashSet<Entity>(1);
         hashset.add(player);
 
         final float accuracy = calculateAccuracyServer(item, player);
 
-        final Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, player.world.rand);
+        Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, player.world.rand);
 
         double dx = dir.x * range;
         double dy = dir.y * range;
         double dz = dir.z * range;
 
-        ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
+        if(side.isServer()) {
+            ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
+        } else {
+            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
+        }
 
         int ping = 0;
         if (player instanceof EntityPlayerMP) {
@@ -182,7 +193,14 @@ public class RayUtil {
             ping = entityPlayerMP.ping;
         }
 
-        return RayUtil.tracePath(world, (float) player.posX, (float) (player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612), (float) player.posZ, (float) (player.posX + dx + player.motionX), (float) (player.posY + dy + player.motionY), (float) (player.posZ + dz + player.motionZ), 0.001f, hashset, false, ping);
+        Vec3d offsetVec = player.getPositionEyes(1.0f);
+        if(Loader.isModLoaded("modularmovements")) {
+            if (player instanceof EntityPlayer) {
+                offsetVec = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, 1.0f);
+            }
+        }
+
+        return RayUtil.tracePath(world, (float) offsetVec.x, (float) offsetVec.y, (float) offsetVec.z, (float) (player.posX + dx + player.motionX), (float) (player.posY + dy + player.motionY), (float) (player.posZ + dz + player.motionZ), 0.001f, hashset, false, ping);
     }
 
     /**
@@ -253,11 +271,11 @@ public class RayUtil {
                         if (intercept != null) {
                             intercept.entityHit = hitbox.player;
 
-                            if(ModConfig.INSTANCE.debug_hits) {
+                            if(ModConfig.INSTANCE.debug_hits_message) {
                                 long currentTime = System.nanoTime();
-                                FMLCommonHandler.instance().getMinecraftServerInstance().sendMessage(new TextComponentString("Shooter's ping: " + ping / 20 + "ms | " + ping + "ticks"));
-                                FMLCommonHandler.instance().getMinecraftServerInstance().sendMessage(new TextComponentString("Took the snapshot " + snapshotToTry + " Part: " + hitbox.type.toString()));
-                                FMLCommonHandler.instance().getMinecraftServerInstance().sendMessage(new TextComponentString("Delta (currentTime - snapshotTime) = " + (currentTime - snapshot.time) * 1e-6 + "ms"));
+                                ModularWarfare.LOGGER.info("Shooter's ping: " + ping / 20 + "ms | " + ping + "ticks");
+                                ModularWarfare.LOGGER.info("Took the snapshot " + snapshotToTry + " Part: " + hitbox.type.toString());
+                                ModularWarfare.LOGGER.info("Delta (currentTime - snapshotTime) = " + (currentTime - snapshot.time) * 1e-6 + "ms");
                             }
 
                             return new PlayerHit(hitbox, intercept);
@@ -435,7 +453,7 @@ public class RayUtil {
                     IBlockState iblockstate1 = world.getBlockState(blockpos);
                     Block block1 = iblockstate1.getBlock();
 
-                    if (ModConfig.INSTANCE.canShotBreakGlass) {
+                    if (ModConfig.INSTANCE.shots.shot_break_glass) {
                         if (block1 instanceof BlockGlass || block1 instanceof BlockStainedGlassPane || block1 instanceof BlockStainedGlass) {
                             world.setBlockToAir(blockpos);
                             ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.glass", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));

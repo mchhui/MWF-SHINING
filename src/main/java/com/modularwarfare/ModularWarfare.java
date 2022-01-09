@@ -10,6 +10,7 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.commands.CommandClear;
 import com.modularwarfare.common.commands.CommandDebug;
+import com.modularwarfare.common.commands.kits.CommandKit;
 import com.modularwarfare.common.commands.CommandNBT;
 import com.modularwarfare.common.entity.EntityBullet;
 import com.modularwarfare.common.entity.decals.EntityBulletHole;
@@ -28,7 +29,6 @@ import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.protector.ModularProtector;
 import com.modularwarfare.common.textures.TextureType;
-import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
@@ -38,10 +38,9 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.io.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -75,7 +74,9 @@ public class ModularWarfare {
     // Mod Info
     public static final String MOD_ID = "modularwarfare";
     public static final String MOD_NAME = "ModularWarfare";
-    public static final String MOD_VERSION = "1.0.15f";
+    public static final String MOD_VERSION = "1.0.20f";
+    public static final String MOD_PREFIX = TextFormatting.GRAY+"["+TextFormatting.RED+"ModularWarfare"+TextFormatting.GRAY+"]"+TextFormatting.GRAY;
+
     // Main instance
     @Instance(ModularWarfare.MOD_ID)
     public static ModularWarfare INSTANCE;
@@ -169,7 +170,6 @@ public class ModularWarfare {
         }
 
         for(TextureType type : textureTypes.values()){
-            System.out.println("[DEB] type "+type.textureType.typeName);
             type.loadExtraValues();
         }
 
@@ -370,7 +370,7 @@ public class ModularWarfare {
         event.registerServerCommand(new CommandClear());
         event.registerServerCommand(new CommandNBT());
         event.registerServerCommand(new CommandDebug());
-
+        event.registerServerCommand(new CommandKit());
     }
 
     /**
@@ -448,22 +448,6 @@ public class ModularWarfare {
                     tabOrder.add(itemGrenade);
                 }
             }
-            
-            String pathFormat = "skins/%s/%s.png";
-            tabOrder.forEach((item)->{
-                BaseType type;
-                if(item instanceof ItemMWArmor) {
-                    type=((ItemMWArmor)item).baseType;
-                }else {
-                    type=((BaseItem)item).baseType;
-                }
-                
-                for(SkinType skin:type.modelSkins) {
-                    if(skin.preload.length!=0||skin.sampling.equals("linear")) {
-                        PROXY.preloadSkinTypes.put(skin,type);
-                    }
-                }
-            });
             MODS_TABS.get(file.getName()).preInitialize(tabOrder);
         }
 
