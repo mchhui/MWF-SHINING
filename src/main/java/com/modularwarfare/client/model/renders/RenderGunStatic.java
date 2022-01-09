@@ -212,10 +212,6 @@ public class RenderGunStatic extends CustomItemRenderer {
                     GL11.glScalef(model.config.thirdPerson.thirdPersonScale, model.config.thirdPerson.thirdPersonScale, model.config.thirdPerson.thirdPersonScale);
                     GL11.glTranslatef(-0.32F, 1.3F, -0.23F);
                     GL11.glTranslatef(model.config.thirdPerson.backPersonOffset.x, model.config.thirdPerson.backPersonOffset.y, model.config.thirdPerson.backPersonOffset.z);
-                    if (entityLivingBase.isSneaking()) {
-                        GlStateManager.rotate(20, 1, 0, 0);
-                        GlStateManager.translate(0, -0.3f, -0.2f);
-                    }
                     GL11.glRotatef(90.0f, 0.0f, 20.0f, 0.0f);
                     GL11.glRotatef(270.0f, 0.0f, 0.0f, -90.0f);
                     GL11.glRotatef(90.0f, 20.0f, 0.0f, 0.0f);
