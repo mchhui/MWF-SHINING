@@ -21,6 +21,7 @@ import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.textures.TextureType;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.OptifineHelper;
 import net.minecraft.client.Minecraft;

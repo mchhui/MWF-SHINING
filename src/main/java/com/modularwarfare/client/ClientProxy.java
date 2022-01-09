@@ -58,6 +58,7 @@ import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.entity.RenderPlayer;
+import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -90,6 +91,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+
+import org.lwjgl.opengl.GL11;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
 
