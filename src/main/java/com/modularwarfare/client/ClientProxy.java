@@ -88,6 +88,9 @@ import net.minecraftforge.registries.IForgeRegistry;
 import paulscode.sound.SoundSystemConfig;
 
 import javax.annotation.Nonnull;
+
+import org.lwjgl.opengl.GL11;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -136,7 +139,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void construction(FMLConstructionEvent event) {
         //Production-environment
-        File modularWarfareDir = new File(getGameFolder(),"ModularWarfare");
+        File modularWarfareDir = new File(getGameFolder(), "ModularWarfare");
         File modFile = null;
 
         // Creates directory if doesn't exist
@@ -150,7 +153,7 @@ public class ClientProxy extends CommonProxy {
 
         for (File source : new File(Minecraft.getMinecraft().mcDataDir, "mods").listFiles()) {
             System.out.println(source.getName());
-            if(source.getName().contains("modularwarfare")){
+            if (source.getName().contains("modularwarfare")) {
                 modFile = source;
             }
         }
@@ -159,7 +162,8 @@ public class ClientProxy extends CommonProxy {
         for (File file : modularWarfareDir.listFiles()) {
             if (file.getName().matches("prototype-" + MOD_VERSION + "-contentpack.zip")) {
                 needPrototypeExtract = false;
-            } else if (file.getName().contains("prototype") && !file.getName().contains(MOD_VERSION) && file.getName().contains(".zip") && !file.getName().endsWith(".bak")) {
+            } else if (file.getName().contains("prototype") && !file.getName().contains(MOD_VERSION)
+                    && file.getName().contains(".zip") && !file.getName().endsWith(".bak")) {
                 file.renameTo(new File(file.getAbsolutePath() + ".bak"));
             }
         }
@@ -167,15 +171,16 @@ public class ClientProxy extends CommonProxy {
         if (needPrototypeExtract) {
             try {
                 ZipFile zipFile = new ZipFile(modFile);
-                zipFile.extractFile("prototype-" + MOD_VERSION + "-contentpack.zip", modularWarfareDir.getAbsolutePath());
+                zipFile.extractFile("prototype-" + MOD_VERSION + "-contentpack.zip",
+                        modularWarfareDir.getAbsolutePath());
             } catch (ZipException e) {
                 e.printStackTrace();
             }
         }
 
-
         for (File file : modularWarfareDir.listFiles()) {
-            if (!file.getName().contains("cache") && !file.getName().contains("officialmw") && !file.getName().contains("highres")) {
+            if (!file.getName().contains("cache") && !file.getName().contains("officialmw")
+                    && !file.getName().contains("highres")) {
                 if (zipJar.matcher(file.getName()).matches()) {
                     try {
                         ZipFile zipFile = new ZipFile(file);
@@ -190,7 +195,10 @@ public class ClientProxy extends CommonProxy {
                             map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());
                             map.put("version", "1");
 
-                            FMLModContainer container = new MWResourcePack.Container("com.modularwarfare.ModularWarfare", new ModCandidate(file, file, ContainerType.JAR), map, zipFile, ModularWarfare.MOD_NAME + " : " + file.getName());
+                            FMLModContainer container = new MWResourcePack.Container(
+                                    "com.modularwarfare.ModularWarfare",
+                                    new ModCandidate(file, file, ContainerType.JAR), map, zipFile,
+                                    ModularWarfare.MOD_NAME + " : " + file.getName());
                             container.bindMetadata(MetadataCollection.from(null, ""));
                             FMLClientHandler.instance().addModAsResource(container);
                             contentPacks.add(file);
@@ -200,7 +208,10 @@ public class ClientProxy extends CommonProxy {
                                 map.put("modid", ModularWarfare.MOD_ID);
                                 map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());
                                 map.put("version", "1");
-                                FMLModContainer container = new FMLModContainer("com.modularwarfare.ModularWarfare", new ModCandidate(file, file, file.isDirectory() ? ContainerType.DIR : ContainerType.JAR), map);
+                                FMLModContainer container = new FMLModContainer("com.modularwarfare.ModularWarfare",
+                                        new ModCandidate(file, file,
+                                                file.isDirectory() ? ContainerType.DIR : ContainerType.JAR),
+                                        map);
                                 container.bindMetadata(MetadataCollection.from(null, ""));
                                 FMLClientHandler.instance().addModAsResource(container);
                             } catch (Exception e) {
@@ -217,7 +228,10 @@ public class ClientProxy extends CommonProxy {
                         map.put("modid", ModularWarfare.MOD_ID);
                         map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());
                         map.put("version", "1");
-                        FMLModContainer container = new FMLModContainer("com.modularwarfare.ModularWarfare", new ModCandidate(file, file, file.isDirectory() ? ContainerType.DIR : ContainerType.JAR), map);
+                        FMLModContainer container = new FMLModContainer("com.modularwarfare.ModularWarfare",
+                                new ModCandidate(file, file,
+                                        file.isDirectory() ? ContainerType.DIR : ContainerType.JAR),
+                                map);
                         container.bindMetadata(MetadataCollection.from(null, ""));
                         FMLClientHandler.instance().addModAsResource(container);
                     } catch (Exception e) {
@@ -252,7 +266,9 @@ public class ClientProxy extends CommonProxy {
         }
         if (Loader.isModLoaded("galacticraftcore")) {
             try {
-                ClientProxy.galacticraftInterop = (GCCompatInterop) Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
+                ClientProxy.galacticraftInterop = (GCCompatInterop) Class
+                        .forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl")
+                        .asSubclass(GCCompatInterop.class).newInstance();
                 ModularWarfare.LOGGER.info("Galatic Craft has been detected! Will attempt to patch.");
                 ClientProxy.galacticraftInterop.applyFix();
             } catch (Exception e) {
@@ -262,7 +278,7 @@ public class ClientProxy extends CommonProxy {
         } else {
             ClientProxy.galacticraftInterop = new GCDummyInterop();
         }
-       
+
     }
 
     @Override
@@ -321,66 +337,84 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void init() {
         //Disable VAO on Mac computer (not compatibility)
-        if(ModUtil.isMac()){
+        if (ModUtil.isMac()) {
             ModConfig.INSTANCE.model_optimization = false;
         }
-        
+
         ModularWarfare.LOGGER.info("Preloading textures");
-        long time=System.currentTimeMillis();
-        preloadSkinTypes.forEach((skin,type)->{
-            String[] pathFormat =new String[]{"skins/%s/%s.png","skins/%s/%s_glow.png","skins/%s/%s_s.png","skins/%s/%s_n.png"};
-            for(int i=0;i<4;i++) {
-                if(skin.preload.length>i&&skin.preload[i]!=0) {
+        long time = System.currentTimeMillis();
+        preloadSkinTypes.forEach((skin, type) -> {
+            String[] pathFormat = new String[] { "skins/%s/%s.png", "skins/%s/%s_glow.png", "skins/%s/%s_s.png",
+                    "skins/%s/%s_n.png" };
+            for (int i = 0; i < 4; i++) {
+                if (skin.preload.length > i && skin.preload[i] != 0) {
                     ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
                             String.format(pathFormat[i], type.getAssetDir(), skin.getSkin()));
-                    Minecraft.getMinecraft().getTextureManager().loadTexture(resource,new SimpleTexture(resource));
+                    Minecraft.getMinecraft().getTextureManager().loadTexture(resource, new SimpleTexture(resource));
                     ModularWarfare.LOGGER.info(resource);
                 }
             }
+            if (skin.sampling.equals("linear")) {
+                ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
+                        String.format(pathFormat[0], type.getAssetDir(), skin.getSkin()));
+                Minecraft.getMinecraft().getTextureManager().bindTexture(resource);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            }
         });
-        ModularWarfare.LOGGER.info("All textures is ready("+(System.currentTimeMillis()-time)+"ms)");
+        ModularWarfare.LOGGER.info("All textures is ready(" + (System.currentTimeMillis() - time) + "ms)");
     }
 
     @SubscribeEvent
     public void onModelRegistry(ModelRegistryEvent event) {
 
         for (ItemGun itemGun : ModularWarfare.gunTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemGun, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemGun.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemGun, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemGun.type.internalName));
         }
 
         for (ItemAmmo itemAmmo : ModularWarfare.ammoTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemAmmo, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemAmmo.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemAmmo, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemAmmo.type.internalName));
         }
 
         for (ItemAttachment itemAttachment : ModularWarfare.attachmentTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemAttachment, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemAttachment.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemAttachment, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemAttachment.type.internalName));
         }
 
         for (ItemBullet itemBullet : ModularWarfare.bulletTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemBullet, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemBullet.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemBullet, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemBullet.type.internalName));
         }
 
         for (ItemMWArmor itemArmor : ModularWarfare.armorTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemArmor, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemArmor.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemArmor, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemArmor.internalName));
         }
 
         for (ItemSpecialArmor itemArmor : ModularWarfare.specialArmorTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemArmor, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemArmor.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemArmor, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemArmor.type.internalName));
         }
 
         for (ItemSpray itemSpray : ModularWarfare.sprayTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemSpray, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemSpray.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemSpray, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemSpray.type.internalName));
         }
 
         for (ItemBackpack itemBackpack : ModularWarfare.backpackTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemBackpack, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemBackpack.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemBackpack, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemBackpack.type.internalName));
         }
 
         for (ItemGrenade itemGrenade : ModularWarfare.grenadeTypes.values()) {
-            ModelLoader.setCustomModelResourceLocation(itemGrenade, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemGrenade.type.internalName));
+            ModelLoader.setCustomModelResourceLocation(itemGrenade, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemGrenade.type.internalName));
         }
 
-        ModelLoader.setCustomModelResourceLocation(itemLight, 0, new ModelResourceLocation(itemLight.getRegistryName(), "inventory"));
+        ModelLoader.setCustomModelResourceLocation(itemLight, 0,
+                new ModelResourceLocation(itemLight.getRegistryName(), "inventory"));
 
     }
 
@@ -400,7 +434,7 @@ public class ClientProxy extends CommonProxy {
         //If there is no dot, our staticModel class is in the default staticModel package
         if (split.length == 1)
             return in;
-            //Otherwise, we need to slightly rearrange the wording of the string for it to make sense
+        //Otherwise, we need to slightly rearrange the wording of the string for it to make sense
         else if (split.length > 1) {
             String out = split[split.length - 1];
             for (int i = split.length - 2; i >= 0; i--) {
@@ -458,7 +492,6 @@ public class ClientProxy extends CommonProxy {
                 File backpacksRenderConfig = new File(contentPackDir, "/backpacks/render");
                 File grenadeRenderConfig = new File(contentPackDir, "/grenades/render");
 
-
                 if (!itemModelsDir.exists())
                     itemModelsDir.mkdirs();
 
@@ -489,7 +522,8 @@ public class ClientProxy extends CommonProxy {
                     if (type instanceof ArmorType) {
                         ArmorType armorType = (ArmorType) type;
                         for (ArmorInfo armorInfo : armorType.armorTypes.values()) {
-                            String internalName = armorInfo.internalName != null ? armorInfo.internalName : armorType.internalName;
+                            String internalName = armorInfo.internalName != null ? armorInfo.internalName
+                                    : armorType.internalName;
                             typeModel = new File(itemModelsDir, internalName + ".json");
 
                             try {
@@ -531,7 +565,8 @@ public class ClientProxy extends CommonProxy {
                         }
                     }
                     if (type instanceof AttachmentType) {
-                        File typeAttachmentRender = new File(attachmentRenderConfig, type.internalName + ".render.json");
+                        File typeAttachmentRender = new File(attachmentRenderConfig,
+                                type.internalName + ".render.json");
                         if (!typeAttachmentRender.exists()) {
                             try {
                                 FileWriter fileWriter = new FileWriter(typeAttachmentRender, true);
@@ -570,7 +605,8 @@ public class ClientProxy extends CommonProxy {
                                 try {
                                     FileWriter fileWriter = new FileWriter(typeAmmoRender, true);
                                     AmmoRenderConfig renderConfig = new AmmoRenderConfig();
-                                    renderConfig.modelFileName = type.internalName.replaceAll(type.contentPack + ".", "");
+                                    renderConfig.modelFileName = type.internalName.replaceAll(type.contentPack + ".",
+                                            "");
                                     renderConfig.modelFileName = renderConfig.modelFileName + ".obj";
                                     gson.toJson(renderConfig, fileWriter);
                                     fileWriter.flush();
@@ -589,7 +625,8 @@ public class ClientProxy extends CommonProxy {
                                 try {
                                     FileWriter fileWriter = new FileWriter(typeBulletRender, true);
                                     BulletRenderConfig renderConfig = new BulletRenderConfig();
-                                    renderConfig.modelFileName = type.internalName.replaceAll(type.contentPack + ".", "");
+                                    renderConfig.modelFileName = type.internalName.replaceAll(type.contentPack + ".",
+                                            "");
                                     renderConfig.modelFileName = renderConfig.modelFileName + ".obj";
                                     gson.toJson(renderConfig, fileWriter);
                                     fileWriter.flush();
@@ -659,7 +696,8 @@ public class ClientProxy extends CommonProxy {
                     if (soundEntry.soundName != null && !cpSounds.get(contentPack).contains(soundEntry.soundName))
                         cpSounds.get(contentPack).add(soundEntry.soundName);
 
-                    if (soundEntry.soundNameDistant != null && !cpSounds.get(contentPack).contains(soundEntry.soundNameDistant))
+                    if (soundEntry.soundNameDistant != null
+                            && !cpSounds.get(contentPack).contains(soundEntry.soundNameDistant))
                         cpSounds.get(contentPack).add(soundEntry.soundNameDistant);
                 }
             }
@@ -671,7 +709,8 @@ public class ClientProxy extends CommonProxy {
                 if (contentPackDir.exists() && contentPackDir.isDirectory()) {
                     ArrayList<String> soundEntries = cpSounds.get(contentPack);
                     if (soundEntries != null && !soundEntries.isEmpty()) {
-                        Path assetsDir = Paths.get(ModularWarfare.MOD_DIR.getAbsolutePath() + "/" + contentPack + "/assets/modularwarfare/");
+                        Path assetsDir = Paths.get(ModularWarfare.MOD_DIR.getAbsolutePath() + "/" + contentPack
+                                + "/assets/modularwarfare/");
                         if (!Files.exists(assetsDir))
                             Files.createDirectories(assetsDir);
                         Path soundsFile = Paths.get(assetsDir + "/sounds.json");
@@ -703,7 +742,8 @@ public class ClientProxy extends CommonProxy {
                 if (ModularWarfare.DEV_ENV) {
                     exception.printStackTrace();
                 } else {
-                    ModularWarfare.LOGGER.error(String.format("Failed to create sounds.json for content pack '%s'", contentPack));
+                    ModularWarfare.LOGGER
+                            .error(String.format("Failed to create sounds.json for content pack '%s'", contentPack));
                 }
             }
         }
@@ -736,7 +776,8 @@ public class ClientProxy extends CommonProxy {
                 if (contentPackDir.exists() && contentPackDir.isDirectory()) {
                     ArrayList<BaseType> langEntries = langEntryMap.get(contentPack);
                     if (langEntries != null && !langEntries.isEmpty()) {
-                        Path langDir = Paths.get(ModularWarfare.MOD_DIR.getAbsolutePath() + "/" + contentPack + "/assets/modularwarfare/lang/");
+                        Path langDir = Paths.get(ModularWarfare.MOD_DIR.getAbsolutePath() + "/" + contentPack
+                                + "/assets/modularwarfare/lang/");
                         if (!Files.exists(langDir))
                             Files.createDirectories(langDir);
                         Path langPath = Paths.get(langDir + "/en_US.lang");
@@ -754,7 +795,8 @@ public class ClientProxy extends CommonProxy {
                                 if (type instanceof ArmorType) {
                                     ArmorType armorType = (ArmorType) type;
                                     for (ArmorInfo armorInfo : armorType.armorTypes.values()) {
-                                        String internalName = armorInfo.internalName != null ? armorInfo.internalName : armorType.internalName;
+                                        String internalName = armorInfo.internalName != null ? armorInfo.internalName
+                                                : armorType.internalName;
                                         jsonEntries.add(String.format(format, internalName, armorInfo.displayName));
                                     }
                                 } else {
@@ -769,7 +811,8 @@ public class ClientProxy extends CommonProxy {
                 if (ModularWarfare.DEV_ENV) {
                     exception.printStackTrace();
                 } else {
-                    ModularWarfare.LOGGER.error(String.format("Failed to create sounds.json for content pack '%s'", contentPack));
+                    ModularWarfare.LOGGER
+                            .error(String.format("Failed to create sounds.json for content pack '%s'", contentPack));
                 }
             }
         }
@@ -795,7 +838,8 @@ public class ClientProxy extends CommonProxy {
             exportedModel.display.thirdperson_righthand.scale[1] = 0.0f;
             exportedModel.display.thirdperson_righthand.scale[2] = 0.0f;
         }
-        exportedModel.setBaseLayer(type.getAssetDir() + "/" + (type.iconName != null ? type.iconName : type.internalName));
+        exportedModel
+                .setBaseLayer(type.getAssetDir() + "/" + (type.iconName != null ? type.iconName : type.internalName));
         return exportedModel;
     }
 
@@ -818,11 +862,13 @@ public class ClientProxy extends CommonProxy {
     public void playSound(MWSound sound) {
         SoundEvent soundEvent = modSounds.get(sound.soundName);
         if (soundEvent == null) {
-            ModularWarfare.LOGGER.error(String.format("The sound named '%s' does not exist. Skipping playSound", sound.soundName));
+            ModularWarfare.LOGGER
+                    .error(String.format("The sound named '%s' does not exist. Skipping playSound", sound.soundName));
             return;
         }
 
-        Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player, sound.blockPos, soundEvent, SoundCategory.PLAYERS, sound.volume, sound.pitch);
+        Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player, sound.blockPos, soundEvent,
+                SoundCategory.PLAYERS, sound.volume, sound.pitch);
     }
 
     @Override
@@ -871,7 +917,8 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public void onShootAnimation(EntityPlayer player, String wepType, int fireTickDelay, float recoilPitch, float recoilYaw) {
+    public void onShootAnimation(EntityPlayer player, String wepType, int fireTickDelay, float recoilPitch,
+            float recoilYaw) {
         GunType gunType = ModularWarfare.gunTypes.get(wepType).type;
         if (gunType != null) {
             ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
@@ -882,36 +929,52 @@ public class ClientProxy extends CommonProxy {
             float recoilPitchBarrelFactor = 1.0f;
             float recoilYawBarrelFactor = 1.0f;
 
-            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentEnum.Grip) != null) {
-                ItemAttachment gripAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentEnum.Grip).getItem();
+            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                    AttachmentEnum.Grip) != null) {
+                ItemAttachment gripAttachment = (ItemAttachment) GunType
+                        .getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentEnum.Grip)
+                        .getItem();
                 recoilPitchGripFactor = gripAttachment.type.grip.recoilPitchFactor;
                 recoilYawGripFactor = gripAttachment.type.grip.recoilYawFactor;
             }
 
-            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentEnum.Barrel) != null) {
-                ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentEnum.Barrel).getItem();
+            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                    AttachmentEnum.Barrel) != null) {
+                ItemAttachment barrelAttachment = (ItemAttachment) GunType
+                        .getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentEnum.Barrel)
+                        .getItem();
                 recoilPitchBarrelFactor = barrelAttachment.type.barrel.recoilPitchFactor;
                 recoilYawBarrelFactor = barrelAttachment.type.barrel.recoilYawFactor;
             }
 
             if (!ClientRenderHooks.isAiming) {
-                RenderParameters.playerRecoilPitch += (gunType.recoilPitch + (new Random().nextFloat() * (gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch)) * (recoilPitchGripFactor * recoilPitchBarrelFactor);
+                RenderParameters.playerRecoilPitch += (gunType.recoilPitch
+                        + (new Random().nextFloat() * (gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch))
+                        * (recoilPitchGripFactor * recoilPitchBarrelFactor);
 
-                RenderParameters.playerRecoilYaw += gunType.recoilYaw + (new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw) * (recoilYawGripFactor * recoilYawBarrelFactor);
+                RenderParameters.playerRecoilYaw += gunType.recoilYaw
+                        + (new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw)
+                                * (recoilYawGripFactor * recoilYawBarrelFactor);
             } else {
-                RenderParameters.playerRecoilPitch += ((gunType.recoilPitch + (new Random().nextFloat() * (gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch)) * gunType.recoilAimReducer) * (recoilPitchGripFactor * recoilPitchBarrelFactor);
+                RenderParameters.playerRecoilPitch += ((gunType.recoilPitch
+                        + (new Random().nextFloat() * (gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch))
+                        * gunType.recoilAimReducer) * (recoilPitchGripFactor * recoilPitchBarrelFactor);
 
-                RenderParameters.playerRecoilYaw += ((gunType.recoilYaw + (new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw)) * gunType.recoilAimReducer) * (recoilYawGripFactor * recoilYawBarrelFactor);
+                RenderParameters.playerRecoilYaw += ((gunType.recoilYaw
+                        + (new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw))
+                        * gunType.recoilAimReducer) * (recoilYawGripFactor * recoilYawBarrelFactor);
             }
         }
     }
 
     @Override
-    public void onReloadAnimation(EntityPlayer player, String wepType, int reloadTime, int reloadCount, int reloadType) {
+    public void onReloadAnimation(EntityPlayer player, String wepType, int reloadTime, int reloadCount,
+            int reloadType) {
         ClientTickHandler.playerReloadCooldown.put(player.getUniqueID(), reloadTime);
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
-            ClientRenderHooks.getAnimMachine(player).triggerReload(reloadTime, reloadCount, (ModelGun) gunType.type.model, ReloadType.getTypeFromInt(reloadType), player.isSprinting());
+            ClientRenderHooks.getAnimMachine(player).triggerReload(reloadTime, reloadCount,
+                    (ModelGun) gunType.type.model, ReloadType.getTypeFromInt(reloadType), player.isSprinting());
         }
     }
 
@@ -926,7 +989,6 @@ public class ClientProxy extends CommonProxy {
         MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
     }
 
-
     @Override
     public void addBlood(final EntityLivingBase living, final int amount, final boolean onhit) {
         if (onhit) {
@@ -937,7 +999,8 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void playHitmarker(boolean headshot) {
         if (ModConfig.INSTANCE.enableHitmarker) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getRecord(ClientProxy.modSounds.get("hitmarker"), 1f, 4f));
+            Minecraft.getMinecraft().getSoundHandler()
+                    .playSound(PositionedSoundRecord.getRecord(ClientProxy.modSounds.get("hitmarker"), 1f, 4f));
             ClientProxy.gunUI.addHitMarker(headshot);
         }
     }
@@ -946,8 +1009,10 @@ public class ClientProxy extends CommonProxy {
     public void addBlood(final EntityLivingBase living, final int amount) {
         for (int k = 0; k < amount; ++k) {
             float attenuator = 0.3f;
-            double mX = -MathHelper.sin(living.rotationYaw / 180.0f * 3.1415927f) * MathHelper.cos(living.rotationPitch / 180.0f * 3.1415927f) * attenuator;
-            double mZ = MathHelper.cos(living.rotationYaw / 180.0f * 3.1415927f) * MathHelper.cos(living.rotationPitch / 180.0f * 3.1415927f) * attenuator;
+            double mX = -MathHelper.sin(living.rotationYaw / 180.0f * 3.1415927f)
+                    * MathHelper.cos(living.rotationPitch / 180.0f * 3.1415927f) * attenuator;
+            double mZ = MathHelper.cos(living.rotationYaw / 180.0f * 3.1415927f)
+                    * MathHelper.cos(living.rotationPitch / 180.0f * 3.1415927f) * attenuator;
             double mY = -MathHelper.sin(living.rotationPitch / 180.0f * 3.1415927f) * attenuator + 0.1f;
             attenuator = 0.02f;
             final float var5 = living.getRNG().nextFloat() * 3.1415927f * 2.0f;
@@ -955,7 +1020,9 @@ public class ClientProxy extends CommonProxy {
             mX += Math.cos(var5) * attenuator;
             mY += (living.getRNG().nextFloat() - living.getRNG().nextFloat()) * 0.1f;
             mZ += Math.sin(var5) * attenuator;
-            final Particle blood = new EntityBloodFX(living.getEntityWorld(), living.posX, living.posY + 0.5 + living.getRNG().nextDouble() * 0.7, living.posZ, living.motionX * 2.0 + mX, living.motionY + mY, living.motionZ * 2.0 + mZ, 0.0);
+            final Particle blood = new EntityBloodFX(living.getEntityWorld(), living.posX,
+                    living.posY + 0.5 + living.getRNG().nextDouble() * 0.7, living.posZ, living.motionX * 2.0 + mX,
+                    living.motionY + mY, living.motionZ * 2.0 + mZ, 0.0);
             Minecraft.getMinecraft().effectRenderer.addEffect(blood);
         }
     }
@@ -974,9 +1041,16 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void playFlashSound(EntityPlayer entityPlayer) {
-        Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, (float) FlashSystem.flashValue / 1000, 1, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
-        Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.2f, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
-        Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.1f, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
+        Minecraft.getMinecraft().getSoundHandler()
+                .playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS,
+                        (float) FlashSystem.flashValue / 1000, 1, (float) entityPlayer.posX, (float) entityPlayer.posY,
+                        (float) entityPlayer.posZ));
+        Minecraft.getMinecraft().getSoundHandler()
+                .playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.2f,
+                        (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
+        Minecraft.getMinecraft().getSoundHandler()
+                .playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.1f,
+                        (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
     }
 
 }

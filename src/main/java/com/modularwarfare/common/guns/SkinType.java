@@ -7,6 +7,7 @@ public class SkinType {
     public String internalName;
     public String displayName;
     public String skinAsset;
+    public String sampling="flat";
     public int[] preload=new int[0];
 
     public static SkinType getDefaultSkin(BaseType baseType) {

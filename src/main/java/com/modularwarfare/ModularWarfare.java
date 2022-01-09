@@ -459,7 +459,7 @@ public class ModularWarfare {
                 }
                 
                 for(SkinType skin:type.modelSkins) {
-                    if(skin.preload.length!=0) {
+                    if(skin.preload.length!=0||skin.sampling.equals("linear")) {
                         PROXY.preloadSkinTypes.put(skin,type);
                     }
                 }

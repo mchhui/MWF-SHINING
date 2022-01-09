@@ -16,7 +16,6 @@ import com.modularwarfare.common.textures.TextureType;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 
-import javax.xml.soap.Text;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.function.BiConsumer;
