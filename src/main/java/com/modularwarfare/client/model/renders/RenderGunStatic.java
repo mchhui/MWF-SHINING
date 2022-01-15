@@ -841,6 +841,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                             bindTexture("bullets", itemBullet.type.modelSkins[0].getSkin());
 
                             if (currentReloadState.isPresent() && currentReloadState.get().stateType == StateType.Tilt) {
+                                GL11.glRotatef(-90, 1F, 0F, 0F);
                                 bulletModel.renderAll(worldScale);
                             } else {
                                 if (model.config.revolverBarrel.numberBullets != null) {

@@ -45,10 +45,5 @@
   "model_optimization": true,
   "debug_hits_message": false,
   "dev_mode": true,
-<<<<<<< HEAD
-  "debug_hits": true,
-  "version": "1.0.14f"
-=======
-  "version": "1.0.20f"
->>>>>>> refs/heads/offical
+  "version": "1.1.1f"
 }
