@@ -34,8 +34,6 @@ public class CommonProxy extends ForgeEvent {
 
     public static File modularWarfareDir;
 
-    public static HashMap<SkinType,BaseType> preloadSkinTypes = new HashMap<SkinType,BaseType>();
-
     public void construction(FMLConstructionEvent event) {
         //Production-environment
         this.modularWarfareDir = new File(getGameFolder(),"ModularWarfare");
