@@ -44,8 +44,8 @@ public class ClientTickHandler extends ForgeEvent {
     public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
     private static int oldCurrentItem;
-    private static ItemStack oldItemStack;
-    public static ItemStack lastItemStack;
+    private static ItemStack oldItemStack=ItemStack.EMPTY;
+    public static ItemStack lastItemStack=ItemStack.EMPTY;
     int i = 0;
 
     public ClientTickHandler() {
