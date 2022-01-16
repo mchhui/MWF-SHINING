@@ -110,9 +110,7 @@ public class ClientRenderHooks extends ForgeEvent {
                 float scale = 0.75F;
                 GlStateManager.scale(scale, scale, scale);
                 GlStateManager.translate(0.15F, -0.15F, 0F);
-                GlStateManager.shadeModel(GL11.GL_SMOOTH);
                 customRenderers[type.id].renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
-                GlStateManager.shadeModel(GL11.GL_FLAT);
                 GlStateManager.popMatrix();
             }
         }
