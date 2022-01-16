@@ -22,6 +22,7 @@ import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -42,7 +43,9 @@ public class ClientTickHandler extends ForgeEvent {
 
     public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
-    private static Item oldItem;
+    private static int oldCurrentItem;
+    private static ItemStack oldItemStack;
+    public static ItemStack lastItemStack;
     int i = 0;
 
     public ClientTickHandler() {
@@ -173,8 +176,19 @@ public class ClientTickHandler extends ForgeEvent {
 
 
             //Gun change animation
-            if(player.getHeldItemMainhand().getItem() != oldItem){
-                RenderParameters.GUN_CHANGE_Y = 1.0f;
+            if(player.inventory.currentItem != oldCurrentItem){
+                if(oldItemStack.isEmpty()||!(oldItemStack.getItem() instanceof ItemGun)) {
+                    GUN_CHANGE_Y=0.5f;
+                }
+                if(RenderParameters.GUN_CHANGE_Y<=0.5) {
+                    if(!oldItemStack.isEmpty()&&oldItemStack.getItem() instanceof ItemGun) {
+                        lastItemStack=oldItemStack;
+                    }
+                    RenderParameters.GUN_CHANGE_Y = 1.0f-RenderParameters.GUN_CHANGE_Y;
+                }
+            }
+            if(GUN_CHANGE_Y<0.5) {
+                lastItemStack=ItemStack.EMPTY;
             }
             float change_speed_y = 0.04f * renderTick;
             RenderParameters.GUN_CHANGE_Y = Math.max(0, RenderParameters.GUN_CHANGE_Y - change_speed_y);
@@ -303,7 +317,7 @@ public class ClientTickHandler extends ForgeEvent {
 
     public void processGunChange() {
         final EntityPlayer player = Minecraft.getMinecraft().player;
-        if (player.getHeldItemMainhand().getItem() != this.oldItem) {
+        if (player.inventory.currentItem != this.oldCurrentItem) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 ModularWarfare.PROXY.playSound(new MWSound(player.getPosition(), "human.equip.gun", 1f, 1f));
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemSpray) {
@@ -312,8 +326,9 @@ public class ClientTickHandler extends ForgeEvent {
                 ModularWarfare.PROXY.playSound(new MWSound(player.getPosition(), "human.equip.extra", 1f, 1f));
             }
         }
-        if (this.oldItem != player.getHeldItemMainhand().getItem()) {
-            this.oldItem = player.getHeldItemMainhand().getItem();
+        if (this.oldCurrentItem != player.inventory.currentItem) {
+            this.oldCurrentItem = player.inventory.currentItem;
+            this.oldItemStack=player.getHeldItemMainhand();
         }
     }
 }
