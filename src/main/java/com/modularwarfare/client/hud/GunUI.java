@@ -117,8 +117,7 @@ public class GunUI {
                                                             factor = 2;
                                                         }
                                                         int size = (32 * 2 / (int) (event.getResolution().getScaleFactor() * factor)) + ((int) (crouchSwitch) * 5);
-                                                        size = (int) (((size * (1 + (playerRecoilYaw>0.8? playerRecoilYaw:0) * 0.2))) * ((ModelAttachment) itemAttachment.type.model).config.sight.rectileScale);
-                                                        GL11.glTranslatef((width / 2 - size), (height / 2 - size), 0);
+                                                        size = (int) (((size * (1 + (playerRecoilYaw> 0.8 ? playerRecoilYaw: 0) * 0.2))) * ((ModelAttachment) itemAttachment.type.model).config.sight.rectileScale);                                                        GL11.glTranslatef((width / 2 - size), (height / 2 - size), 0);
                                                         GL11.glTranslatef((VAL2 / 10), (VAL / 10), 0);
                                                         RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
                                                     }

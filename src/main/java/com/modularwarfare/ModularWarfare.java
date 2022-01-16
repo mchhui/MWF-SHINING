@@ -39,7 +39,9 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.io.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
+import net.minecraft.command.EntitySelector;
 import net.minecraft.item.Item;
+import net.minecraft.util.EntitySelectors;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
@@ -449,24 +451,21 @@ public class ModularWarfare {
                     tabOrder.add(itemGrenade);
                 }
             }
-            
 
-            String pathFormat = "skins/%s/%s.png";
             tabOrder.forEach((item)->{
-                BaseType type;
-                if(item instanceof ItemMWArmor) {
-                    type=((ItemMWArmor)item).baseType;
-                }else {
-                    type=((BaseItem)item).baseType;
-                }
-
-                for(SkinType skin:type.modelSkins) {
-                    if(skin.preload.length!=0) {
-                        PROXY.preloadSkinTypes.put(skin,type);
+                if(item instanceof ItemGun){
+                    for(SkinType skin: ((ItemGun) item).type.modelSkins) {
+                        PROXY.preloadSkinTypes.put(skin, ((ItemGun) item).type);
                     }
                 }
+                if(item instanceof ItemMWArmor) {
+                    for(SkinType skin: ((ItemMWArmor) item).type.modelSkins) {
+                        PROXY.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
+                    }
+                }
+
             });
-            
+
             MODS_TABS.get(file.getName()).preInitialize(tabOrder);
         }
 

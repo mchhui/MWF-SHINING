@@ -82,17 +82,17 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.registries.IForgeRegistry;
+import org.lwjgl.opengl.GL11;
 import paulscode.sound.SoundSystemConfig;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-
-import org.lwjgl.opengl.GL11;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
 
@@ -278,28 +278,28 @@ public class ClientProxy extends CommonProxy {
         if(ModUtil.isMac()){
             ModConfig.INSTANCE.model_optimization = false;
         }
-                ModularWarfare.LOGGER.info("Preloading textures");
+
+        ModularWarfare.LOGGER.info("Preloading textures");
         long time = System.currentTimeMillis();
         preloadSkinTypes.forEach((skin, type) -> {
-            String[] pathFormat = new String[] { "skins/%s/%s.png", "skins/%s/%s_glow.png", "skins/%s/%s_s.png",
-                    "skins/%s/%s_n.png" };
-            for (int i = 0; i < 4; i++) {
-                if (skin.preload.length > i && skin.preload[i] != 0) {
-                    ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
-                            String.format(pathFormat[i], type.getAssetDir(), skin.getSkin()));
-                    Minecraft.getMinecraft().getTextureManager().loadTexture(resource, new SimpleTexture(resource));
-                    ModularWarfare.LOGGER.info(resource);
-                }
-            }
-            if (skin.sampling.equals("linear")) {
+            ModularWarfare.LOGGER.info("Loading texture for "+type.internalName);
+
+            for (int i = 0; i < skin.textures.length; i++) {
                 ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
-                        String.format(pathFormat[0], type.getAssetDir(), skin.getSkin()));
+                        String.format(skin.textures[i].format, type.getAssetDir(), skin.getSkin()));
+
+                Minecraft.getMinecraft().getTextureManager().loadTexture(resource, new SimpleTexture(resource));
+                ModularWarfare.LOGGER.info(resource);
+            }
+            if (skin.sampling.equals(SkinType.Sampling.LINEAR)) {
+                ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
+                        String.format(skin.textures[0].format, type.getAssetDir(), skin.getSkin()));
                 Minecraft.getMinecraft().getTextureManager().bindTexture(resource);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
             }
         });
-        ModularWarfare.LOGGER.info("All textures is ready(" + (System.currentTimeMillis() - time) + "ms)");
+        ModularWarfare.LOGGER.info("All textures are ready(" + (System.currentTimeMillis() - time) + "ms)");
     }
 
     @SubscribeEvent

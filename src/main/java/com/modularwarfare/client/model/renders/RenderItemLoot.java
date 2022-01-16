@@ -93,6 +93,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
         if (itemstack.getItem() instanceof ItemGun) {
             GlStateManager.alphaFunc(516, 0.1F);
             GlStateManager.enableBlend();
+            RenderHelper.enableStandardItemLighting();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.pushMatrix();
             GlStateManager.translate((float) x, (float) y, (float) z);
@@ -108,7 +109,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             GunType gunType = gun.type;
             ModelGun model = (ModelGun) gunType.model;
             float modelScale = model.config.extra.modelScale;
-            GlStateManager.scale(modelScale, modelScale, modelScale);
+            GlStateManager.scale(modelScale*0.8, modelScale*0.8, modelScale*0.8);
             float worldScale = 1F / 16F;
             if (model != null) {
                 int skinId = 0;
@@ -117,6 +118,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                         skinId = itemstack.getTagCompound().getInteger("skinId");
                     }
                 }
+
                 String path = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
                 ClientRenderHooks.customRenderers[1].bindTexture("guns", path);
                 model.renderPart("gunModel", worldScale);
@@ -209,6 +211,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             }
             GlStateManager.enableRescaleNormal();
             GlStateManager.alphaFunc(516, 0.1f);
+            RenderHelper.enableStandardItemLighting();
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.pushMatrix();
