@@ -473,6 +473,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                 }
 
                 String path = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
+                String gunPath=path;
                 bindTexture("guns", path);
 
                 GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -972,9 +973,14 @@ public class RenderGunStatic extends CustomItemRenderer {
                                             }
                                         }
                                     }
+                                    
+                                    if(attachmentType.sameTextureAsGun) {
+                                        bindTexture("guns", gunPath);
+                                    }else {
+                                        path = skinId > 0 ? attachmentType.modelSkins[skinId].getSkin() : attachmentType.modelSkins[0].getSkin();
+                                        bindTexture("attachments", path);
+                                    }
 
-                                    path = skinId > 0 ? attachmentType.modelSkins[skinId].getSkin() : attachmentType.modelSkins[0].getSkin();
-                                    bindTexture("attachments", path);
 
                                     if (attachmentType.attachmentType == AttachmentEnum.Sight && model.config.attachments.scopeIsOnSlide) {
                                         float currentCharge = currentReloadState.isPresent() ? (currentReloadState.get().stateType == StateType.Charge || currentReloadState.get().stateType == StateType.Uncharge) ? currentReloadState.get().currentValue : 1f : 1f;

@@ -18,6 +18,8 @@ public class AttachmentType extends BaseType {
     public Barrel barrel = new Barrel();
 
     public Sight sight = new Sight();
+    
+    public boolean sameTextureAsGun=false;
 
     @Override
     public void loadExtraValues() {
