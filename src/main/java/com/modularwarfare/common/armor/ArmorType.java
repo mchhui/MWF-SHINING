@@ -60,6 +60,7 @@ public class ArmorType extends BaseType {
     public static class ArmorInfo {
         public String displayName;
         public ArrayList<MWArmorModel> armorModels;
+        public boolean hidePlayerModel=false;
 
         public transient HashMap<MWArmorModel, Boolean> showArmorModels = new HashMap<>();
         public transient String internalName;

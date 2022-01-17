@@ -1,6 +1,7 @@
 package com.modularwarfare.client;
 
 import com.modularwarfare.api.AnimationUtils;
+import com.modularwarfare.api.MWArmorType;
 import com.modularwarfare.api.RenderBonesEvent;
 import com.modularwarfare.client.anim.AnimStateMachine;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -8,6 +9,9 @@ import com.modularwarfare.client.model.ModelCustomArmor.Bones.BonePart.EnumBoneT
 import com.modularwarfare.client.model.objects.CustomItemRenderType;
 import com.modularwarfare.client.model.objects.CustomItemRenderer;
 import com.modularwarfare.client.model.renders.*;
+import com.modularwarfare.common.armor.ArmorType;
+import com.modularwarfare.common.armor.ItemMWArmor;
+import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
@@ -297,7 +301,25 @@ public class ClientRenderHooks extends ForgeEvent {
             renderplayer.getMainModel().bipedLeftLegwear.isHidden = true;
             renderplayer.getMainModel().bipedRightLegwear.isHidden = true;
         }
+        
+        if(!shouldPlayerModelShow(clientPlayer, EntityEquipmentSlot.HEAD)){
+            renderplayer.getMainModel().bipedHead.showModel=false;
+        }
+        if(!shouldPlayerModelShow(clientPlayer, EntityEquipmentSlot.CHEST)){
+            renderplayer.getMainModel().bipedBody.showModel=false;
+            renderplayer.getMainModel().bipedLeftArm.showModel=false;
+            renderplayer.getMainModel().bipedRightArm.showModel=false;
+        }
+        if(!shouldPlayerModelShow(clientPlayer, EntityEquipmentSlot.LEGS)){
+            renderplayer.getMainModel().bipedLeftLeg.showModel=false;
+            renderplayer.getMainModel().bipedRightLeg.showModel=false;
+        }
+        if(!shouldPlayerModelShow(clientPlayer, EntityEquipmentSlot.FEET)){
+            renderplayer.getMainModel().bipedLeftLeg.showModel=false;
+            renderplayer.getMainModel().bipedRightLeg.showModel=false;
+        }
 
+        
         ItemStack itemstack = event.getEntity().getHeldItemMainhand();
         if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
             if (!(itemstack.getItem() instanceof BaseItem)) {
@@ -358,5 +380,19 @@ public class ClientRenderHooks extends ForgeEvent {
 
         return x + dT * f3;
     }
-
+    
+    public static boolean shouldPlayerModelShow(EntityPlayer player,EntityEquipmentSlot slot) {
+        ItemStack stack=player.getItemStackFromSlot(slot);
+        ArmorType armorType=null;
+        if(stack.getItem() instanceof ItemMWArmor) {
+            armorType=((ItemMWArmor)stack.getItem()).type;
+        }
+        if(stack.getItem() instanceof ItemSpecialArmor) {
+            armorType=((ItemSpecialArmor)stack.getItem()).type;
+        }
+        if(armorType==null) {
+            return true;
+        }
+        return !armorType.armorTypes.get(MWArmorType.fromVanillaSlot(slot)).hidePlayerModel;
+    }
 }
