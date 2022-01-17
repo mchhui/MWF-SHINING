@@ -59,6 +59,9 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.texture.SimpleTexture;
+import net.minecraft.client.resources.IReloadableResourceManager;
+import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.client.resources.IResourceManagerReloadListener;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -70,6 +73,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.resource.IResourceType;
+import net.minecraftforge.client.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
@@ -93,10 +97,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
 
-public class ClientProxy extends CommonProxy {
+public class ClientProxy extends CommonProxy implements ISelectiveResourceReloadListener{
 
     public static String modelDir = "com.modularwarfare.client.model.";
 
@@ -278,7 +283,11 @@ public class ClientProxy extends CommonProxy {
         if(ModUtil.isMac()){
             ModConfig.INSTANCE.model_optimization = false;
         }
-
+        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(this);
+        loadTextures();
+    }
+    
+    public void loadTextures() {
         ModularWarfare.LOGGER.info("Preloading textures");
         long time = System.currentTimeMillis();
         preloadSkinTypes.forEach((skin, type) -> {
@@ -287,16 +296,11 @@ public class ClientProxy extends CommonProxy {
             for (int i = 0; i < skin.textures.length; i++) {
                 ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
                         String.format(skin.textures[i].format, type.getAssetDir(), skin.getSkin()));
-
-                Minecraft.getMinecraft().getTextureManager().loadTexture(resource, new SimpleTexture(resource));
-                ModularWarfare.LOGGER.info(resource);
-            }
-            if (skin.sampling.equals(SkinType.Sampling.LINEAR)) {
-                ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
-                        String.format(skin.textures[0].format, type.getAssetDir(), skin.getSkin()));
                 Minecraft.getMinecraft().getTextureManager().bindTexture(resource);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                if (skin.sampling.equals(SkinType.Sampling.LINEAR)) {
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                }
             }
         });
         ModularWarfare.LOGGER.info("All textures are ready(" + (System.currentTimeMillis() - time) + "ms)");
@@ -947,6 +951,11 @@ public class ClientProxy extends CommonProxy {
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, (float) FlashSystem.flashValue / 1000, 1, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.2f, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.1f, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
+    }
+
+    @Override
+    public void onResourceManagerReload(IResourceManager resourceManager, Predicate<IResourceType> resourcePredicate) {
+        loadTextures();
     }
 
 }
