@@ -285,6 +285,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
                 if (this.rotateAngleX != 0.0F) {
                     GlStateManager.rotate(this.rotateAngleX * (180F / (float) Math.PI), 1.0F, 0.0F, 0.0F);
                 }
+                //GlStateManager.translate(-this.cubeList.get(0).posX1*scale,-this.cubeList.get(0).posY1*scale,-this.cubeList.get(0).posZ1*scale);
 
                 GlStateManager.translate(customOffestX, customOffestY, customOffestZ);
                 int texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
@@ -300,20 +301,20 @@ public class ModelCustomArmor extends MWModelBipedBase {
                             baseModel.armor.render("bodyModel", NonePart, scale, 1);
                             break;
                         case LEFTARM:
-                            GlStateManager.translate(-0.35 + 0.04, -0.17, 0);
+                            GlStateManager.translate(-5.0F*scale, -2.0F*scale, 0);
                             baseModel.armor.render("leftArmModel", NonePart, scale, 1);
                             break;
                         case RIGHTARM:
-                            GlStateManager.translate(0.35 - 0.04, -0.17, 0);
+                            GlStateManager.translate(5.0F*scale, -2.0F*scale, 0.0F);
                             baseModel.armor.render("rightArmModel", NonePart, scale, 1);
                             break;
                         case LEFTLEG:
-                            GlStateManager.translate(-0.12, -0.76, 0);
+                            GlStateManager.translate(-1.9F*scale, -12.0F*scale, 0.0F);
                             baseModel.armor.render("leftLegModel", NonePart, scale, 1);
                             baseModel.armor.render("leftFootModel", NonePart, scale, 1);
                             break;
                         case RIGHTLEG:
-                            GlStateManager.translate(0.12, -0.76, 0);
+                            GlStateManager.translate(1.9F*scale, -12.0F*scale, 0.0F);
                             baseModel.armor.render("rightLegModel", NonePart, scale, 1);
                             baseModel.armor.render("rightFootModel", NonePart, scale, 1);
                             break;
