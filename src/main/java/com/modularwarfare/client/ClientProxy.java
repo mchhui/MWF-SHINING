@@ -101,7 +101,7 @@ import java.util.function.Predicate;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
 
-public class ClientProxy extends CommonProxy implements ISelectiveResourceReloadListener{
+public class ClientProxy extends CommonProxy{
 
     public static String modelDir = "com.modularwarfare.client.model.";
 
@@ -283,7 +283,15 @@ public class ClientProxy extends CommonProxy implements ISelectiveResourceReload
         if(ModUtil.isMac()){
             ModConfig.INSTANCE.model_optimization = false;
         }
-        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(this);
+        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(new ISelectiveResourceReloadListener() {
+
+            @Override
+            public void onResourceManagerReload(IResourceManager resourceManager,
+                    Predicate<IResourceType> resourcePredicate) {
+                loadTextures();
+            }
+
+        });
         loadTextures();
     }
     
@@ -951,11 +959,6 @@ public class ClientProxy extends CommonProxy implements ISelectiveResourceReload
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, (float) FlashSystem.flashValue / 1000, 1, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.2f, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, 5.0f, 0.1f, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
-    }
-
-    @Override
-    public void onResourceManagerReload(IResourceManager resourceManager, Predicate<IResourceType> resourcePredicate) {
-        loadTextures();
     }
 
 }
