@@ -910,9 +910,10 @@ public class RenderGunStatic extends CustomItemRenderer {
                         GlStateManager.depthMask(false);
                         GlStateManager.disableLighting();
                         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
-
+                        boolean glowMode=ObjModelRenderer.glowTxtureMode;
+                        ObjModelRenderer.glowTxtureMode=false;
                         model.renderPart("flashModel", worldScale);
-
+                        ObjModelRenderer.glowTxtureMode=glowMode;
                         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lastBrightnessX, lastBrightnessY);
                         GlStateManager.enableLighting();
                         GlStateManager.depthMask(true);
