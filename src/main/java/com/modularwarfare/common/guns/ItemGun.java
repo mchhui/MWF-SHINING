@@ -14,6 +14,7 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.entity.decals.EntityDecal;
+import com.modularwarfare.common.entity.decals.EntityDecal.EnumDecalSide;
 import com.modularwarfare.common.entity.decals.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.guns.manager.ShotManager;
@@ -52,6 +53,7 @@ import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.BlockPos;
@@ -281,8 +283,8 @@ public class ItemGun extends BaseItem {
         return multimap;
     }
 
-    public static void doHit(double posX, double posY, double posZ, EntityPlayer shooter) {
-        doHit(new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), null, new BlockPos(posX, posY, posZ)), shooter);
+    public static void doHit(double posX, double posY, double posZ,EnumFacing facing, EntityPlayer shooter) {
+        doHit(new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, new BlockPos(posX, posY, posZ)), shooter);
     }
 
     public static void doHit(RayTraceResult raytraceResultIn, EntityPlayer shooter) {
@@ -290,66 +292,33 @@ public class ItemGun extends BaseItem {
             BlockPos pos = raytraceResultIn.getBlockPos();
 
             EntityDecal.EnumDecalSide side = EntityDecal.EnumDecalSide.ALL;
-            boolean shouldRender = false;
+            boolean shouldRender = true;
             double hitX = raytraceResultIn.hitVec.x;
             double hitY = raytraceResultIn.hitVec.y;
             double hitZ = raytraceResultIn.hitVec.z;
-            double milieuX = (double) pos.getX() + 0.5D;
-            double milieuY = (double) pos.getY() + 0.5D;
-            double milieuZ = (double) pos.getZ() + 0.5D;
-            double differenceX = hitX - milieuX;
-            double differenceY = hitY - milieuY;
-            double differenceZ = hitZ - milieuZ;
-            if (differenceX == 0.0D) {
-                if (shooter.posX < hitX) {
-                    hitX -= 0.5D;
-                    differenceX -= 0.5D;
-                } else {
-                    hitX += 0.5D;
-                    differenceX += 0.5D;
-                }
+            switch (raytraceResultIn.sideHit) {
+            case UP:
+                side=EnumDecalSide.FLOOR;
+                break;
+            case DOWN:
+                side=EnumDecalSide.CEILING;
+                break;
+            case EAST:
+                side=EnumDecalSide.WEST;
+                break;
+            case WEST:
+                side=EnumDecalSide.EAST;
+                break;
+            case SOUTH:
+                side=EnumDecalSide.NORTH;
+                break;
+            case NORTH:
+                side=EnumDecalSide.SOUTH;
+                break;
+            default:
+                shouldRender=false;
+                break;
             }
-
-            if (differenceY == 0.0D) {
-                hitY += 0.5D;
-                differenceY += 0.5D;
-            }
-
-            if (differenceZ == 0.0D) {
-                if (shooter.posZ < hitZ) {
-                    hitZ -= 0.5D;
-                    differenceZ -= 0.5D;
-                } else {
-                    hitZ += 0.5D;
-                    differenceZ += 0.5D;
-                }
-            }
-
-            if (differenceX == -0.5D) {
-                side = EntityDecal.EnumDecalSide.EAST;
-                shouldRender = true;
-            }
-
-            if (differenceX == 0.5D) {
-                side = EntityDecal.EnumDecalSide.WEST;
-                shouldRender = true;
-            }
-
-            if (differenceZ == -0.5D) {
-                side = EntityDecal.EnumDecalSide.SOUTH;
-                shouldRender = true;
-            }
-
-            if (differenceZ == 0.5D) {
-                side = EntityDecal.EnumDecalSide.NORTH;
-                shouldRender = true;
-            }
-
-            if (differenceY == 0.5D) {
-                side = EntityDecal.EnumDecalSide.FLOOR;
-                shouldRender = true;
-            }
-
             if (shouldRender) {
                 ModularWarfare.NETWORK.sendToAll(new PacketDecal(0, side, hitX, hitY + 0.095D, hitZ, false));
             }
