@@ -1,5 +1,6 @@
 package com.modularwarfare.client;
 
+import com.google.gson.JsonSyntaxException;
 import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.api.MWArmorType;
 import com.modularwarfare.api.RenderBonesEvent;
@@ -28,11 +29,16 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelBiped.ArmPose;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderPlayer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.shader.Framebuffer;
+import net.minecraft.client.shader.ShaderGroup;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -48,8 +54,12 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.glu.Project;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 public class ClientRenderHooks extends ForgeEvent {
@@ -64,6 +74,10 @@ public class ClientRenderHooks extends ForgeEvent {
 
     public static final ResourceLocation grenade_smoke = new ResourceLocation("modularwarfare",
             "textures/particles/smoke.png");
+    
+    public ShaderGroup blurShader;
+    public Framebuffer blurFramebuffer;
+    public int blurTexture;
 
     public ClientRenderHooks() {
         mc = Minecraft.getMinecraft();
@@ -242,8 +256,29 @@ public class ClientRenderHooks extends ForgeEvent {
                     GlStateManager.rotate(f11 * -80.0F, 1.0F, 0.0F, 0.0F);
                     GlStateManager.scale(0.4F, 0.4F, 0.4F);
                     if(stack.getItem() instanceof ItemGun) {
+                        initBlur();
+                        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, blurFramebuffer.framebufferObject);
+                        GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight,0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_COLOR_BUFFER_BIT, GL11.GL_NEAREST);
+                        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, mc.getFramebuffer().framebufferObject);
+                        GL11.glEnable(GL11.GL_STENCIL_TEST);
+                        GL11.glStencilMask(0xFF);
+                        GL11.glClearStencil(0);
+                        GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
+                        GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
+                        GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0XFF);
                         customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, event.getHand(),
                                 (ClientTickHandler.lastItemStack.isEmpty()? stack:ClientTickHandler.lastItemStack), mc.world, mc.player);
+                        GL11.glStencilMask(0x00);
+                        GL11.glStencilFunc(GL11.GL_EQUAL, 0, 0XFF);
+                        renderBlur();
+                        mc.getFramebuffer().bindFramebuffer(false);
+                        blurFramebuffer.bindFramebufferTexture();
+                        GlStateManager.pushMatrix();
+                        ScaledResolution resolution=new ScaledResolution(mc);
+                        Minecraft.getMinecraft().entityRenderer.setupOverlayRendering();
+                        drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0,1,1,resolution.getScaledWidth(),resolution.getScaledHeight(),1,1);
+                        GlStateManager.popMatrix();
+                        GL11.glDisable(GL11.GL_STENCIL_TEST);
                     }else {
                         customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, event.getHand(),
                                 stack, mc.world, mc.player);
@@ -263,6 +298,46 @@ public class ClientRenderHooks extends ForgeEvent {
                 }
             }
         }
+    }
+    
+    public static void drawScaledCustomSizeModalRectFlipY(int x, int y, float u, float v, int uWidth, int vHeight, int width, int height, float tileWidth, float tileHeight)
+    {
+        float f = 1.0F / tileWidth;
+        float f1 = 1.0F / tileHeight;
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder bufferbuilder = tessellator.getBuffer();
+        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
+        bufferbuilder.pos((double) x, (double) (y + height), 0.0D)
+                .tex((double) (u * f), 1 - (double) ((v + (float) vHeight) * f1)).endVertex();
+        bufferbuilder.pos((double) (x + width), (double) (y + height), 0.0D)
+                .tex((double) ((u + (float) uWidth) * f), 1 - (double) ((v + (float) vHeight) * f1)).endVertex();
+        bufferbuilder.pos((double) (x + width), (double) y, 0.0D)
+                .tex((double) ((u + (float) uWidth) * f), 1 - (double) (v * f1)).endVertex();
+        bufferbuilder.pos((double) x, (double) y, 0.0D).tex((double) (u * f), 1 - (double) (v * f1)).endVertex();
+        tessellator.draw();
+    }
+    
+    public void initBlur() {
+        if(blurShader==null) {
+            try {
+                blurFramebuffer=new Framebuffer(mc.displayWidth, mc.displayHeight, false);
+                blurFramebuffer.enableStencil();
+                blurShader=new ShaderGroup(mc.getTextureManager(), mc.getResourceManager(), blurFramebuffer, new ResourceLocation("modularwarfare:shaders/post/blur.json"));
+                blurShader.createBindFramebuffers(mc.displayWidth, mc.displayHeight);
+                blurTexture=GL11.glGenTextures();
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, blurTexture);
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            } catch (JsonSyntaxException | IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    public void renderBlur() {
+        blurShader.render(partialTicks);
     }
 
     public void SetPartialTick(float dT) {

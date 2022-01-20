@@ -283,6 +283,11 @@ public class ClientProxy extends CommonProxy{
         if(ModUtil.isMac()){
             ModConfig.INSTANCE.model_optimization = false;
         }
+        
+        if(!Minecraft.getMinecraft().getFramebuffer().isStencilEnabled()) {
+            Minecraft.getMinecraft().getFramebuffer().enableStencil();
+        }
+        
         ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(new ISelectiveResourceReloadListener() {
 
             @Override
