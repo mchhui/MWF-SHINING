@@ -19,6 +19,7 @@ import com.modularwarfare.client.model.animations.*;
 import com.modularwarfare.client.model.layers.RenderLayerBackpack;
 import com.modularwarfare.client.model.layers.RenderLayerBody;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
+import com.modularwarfare.client.model.layers.ResetHiddenModelLayer;
 import com.modularwarfare.client.model.renders.*;
 import com.modularwarfare.client.patch.customnpc.CustomNPCListener;
 import com.modularwarfare.client.patch.galacticraft.GCCompatInterop;
@@ -60,6 +61,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.entity.MWFRenderHelper;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.resources.IReloadableResourceManager;
@@ -274,10 +276,12 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void setupLayers(RenderPlayer renderer) {
+        MWFRenderHelper helper=new MWFRenderHelper(renderer);
+        helper.getLayerRenderers().add(0, new ResetHiddenModelLayer(renderer));
         renderer.addLayer(new RenderLayerBackpack(renderer, renderer.getMainModel().bipedBodyWear));
         renderer.addLayer(new RenderLayerBody(renderer, renderer.getMainModel().bipedBodyWear));
         // Disabled for animation third person test
-        // renderer.addLayer(new RenderLayerHeldGun(renderer));
+        renderer.addLayer(new RenderLayerHeldGun(renderer));
     }
 
     @Override

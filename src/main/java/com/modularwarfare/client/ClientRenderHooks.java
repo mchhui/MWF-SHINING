@@ -5,13 +5,18 @@ import com.google.gson.JsonSyntaxException;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.api.RenderBonesEvent;
+import com.modularwarfare.api.RenderHandFisrtPersonEvent;
 import com.modularwarfare.client.anim.AnimStateMachine;
+import com.modularwarfare.client.config.ArmorRenderConfig;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.model.ModelCustomArmor.Bones.BonePart.EnumBoneType;
 import com.modularwarfare.client.model.objects.CustomItemRenderType;
 import com.modularwarfare.client.model.objects.CustomItemRenderer;
 import com.modularwarfare.client.model.renders.*;
 import com.modularwarfare.client.scope.ScopeUtils;
+import com.modularwarfare.common.armor.ArmorType;
+import com.modularwarfare.common.armor.ItemMWArmor;
+import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
@@ -44,6 +49,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
@@ -324,16 +330,17 @@ public class ClientRenderHooks extends ForgeEvent {
             return;
         }
 
-        AbstractClientPlayer clientPlayer = (AbstractClientPlayer)event.getEntity();
-        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().<AbstractClientPlayer>getEntityRenderObject(event.getEntity());
+        AbstractClientPlayer clientPlayer = (AbstractClientPlayer) event.getEntity();
+        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager()
+                .<AbstractClientPlayer>getEntityRenderObject(event.getEntity());
         RenderPlayer renderplayer = (RenderPlayer) render;
 
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()){
+        if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()) {
             renderplayer.getMainModel().bipedHeadwear.isHidden = false;
         } else {
             renderplayer.getMainModel().bipedHeadwear.isHidden = true;
         }
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()){
+        if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()) {
             renderplayer.getMainModel().bipedLeftArmwear.isHidden = false;
             renderplayer.getMainModel().bipedRightArmwear.isHidden = false;
             renderplayer.getMainModel().bipedBodyWear.isHidden = false;
@@ -342,13 +349,80 @@ public class ClientRenderHooks extends ForgeEvent {
             renderplayer.getMainModel().bipedRightArmwear.isHidden = true;
             renderplayer.getMainModel().bipedBodyWear.isHidden = true;
         }
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty()){
+        if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty()) {
             renderplayer.getMainModel().bipedLeftLegwear.isHidden = false;
             renderplayer.getMainModel().bipedRightLegwear.isHidden = false;
         } else {
             renderplayer.getMainModel().bipedLeftLegwear.isHidden = true;
             renderplayer.getMainModel().bipedRightLegwear.isHidden = true;
         }
+
+        //hide begin
+        renderplayer.getMainModel().bipedHead.isHidden = false;
+        renderplayer.getMainModel().bipedBody.isHidden = false;
+        renderplayer.getMainModel().bipedLeftArm.isHidden = false;
+        renderplayer.getMainModel().bipedRightArm.isHidden = false;
+        renderplayer.getMainModel().bipedLeftLeg.isHidden = false;
+        renderplayer.getMainModel().bipedRightLeg.isHidden = false;
+        renderplayer.getMainModel().bipedHead.showModel = true;
+        renderplayer.getMainModel().bipedBody.showModel = true;
+        renderplayer.getMainModel().bipedLeftArm.showModel = true;
+        renderplayer.getMainModel().bipedRightArm.showModel = true;
+        renderplayer.getMainModel().bipedLeftLeg.showModel = true;
+        renderplayer.getMainModel().bipedRightLeg.showModel = true;
+        clientPlayer.getArmorInventoryList().forEach((stack) -> {
+            ArmorType type = null;
+            if (stack.getItem() instanceof ItemMWArmor) {
+                type = ((ItemMWArmor) stack.getItem()).type;
+            }
+            if (stack.getItem() instanceof ItemSpecialArmor) {
+                type = ((ItemSpecialArmor) stack.getItem()).type;
+            }
+            if (type != null) {
+                ArmorRenderConfig config = ModularWarfare.getRenderConfig(type, ArmorRenderConfig.class);
+                if (config.extra.hidePlayerModel) {
+                    boolean hide = true;
+                    if (config.extra.isSuit) {
+                        renderplayer.getMainModel().bipedHead.isHidden = true;
+                        renderplayer.getMainModel().bipedBody.isHidden = true;
+                        renderplayer.getMainModel().bipedLeftArm.isHidden = true;
+                        renderplayer.getMainModel().bipedRightArm.isHidden = true;
+                        renderplayer.getMainModel().bipedLeftLeg.isHidden = true;
+                        renderplayer.getMainModel().bipedRightLeg.isHidden = true;
+                    } else {
+                        switch (((ItemArmor) stack.getItem()).armorType) {
+                        case HEAD:
+                            renderplayer.getMainModel().bipedHead.isHidden = hide;
+                            break;
+                        case CHEST:
+                            renderplayer.getMainModel().bipedBody.isHidden = hide;
+                            renderplayer.getMainModel().bipedLeftArm.isHidden = hide;
+                            renderplayer.getMainModel().bipedRightArm.isHidden = hide;
+                            break;
+                        case LEGS:
+                            renderplayer.getMainModel().bipedLeftLeg.isHidden = hide;
+                            renderplayer.getMainModel().bipedRightLeg.isHidden = hide;
+                            break;
+                        case FEET:
+                            renderplayer.getMainModel().bipedLeftLeg.isHidden = hide;
+                            renderplayer.getMainModel().bipedRightLeg.isHidden = hide;
+                            break;
+                        default:
+                            break;
+                        }
+                    }
+                }
+                if (config.extra.hideAllPlayerWearModel) {
+                    renderplayer.getMainModel().bipedHeadwear.isHidden = true;
+                    renderplayer.getMainModel().bipedLeftArmwear.isHidden = true;
+                    renderplayer.getMainModel().bipedRightArmwear.isHidden = true;
+                    renderplayer.getMainModel().bipedBodyWear.isHidden = true;
+                    renderplayer.getMainModel().bipedLeftLegwear.isHidden = true;
+                    renderplayer.getMainModel().bipedRightLegwear.isHidden = true;
+                }
+            }
+        });
+        //hide end
 
         ItemStack itemstack = event.getEntity().getHeldItemMainhand();
         if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
@@ -379,6 +453,33 @@ public class ClientRenderHooks extends ForgeEvent {
                 biped.rightArmPose = ArmPose.BLOCK;
             }
         }
+    }
+
+    @SubscribeEvent
+    public void onRenderHand(RenderHandFisrtPersonEvent.Pre event) {
+        AbstractClientPlayer clientPlayer = Minecraft.getMinecraft().player;
+        clientPlayer.getArmorInventoryList().forEach((stack) -> {
+            if (event.isCanceled()) {
+                return;
+            }
+            ArmorType type = null;
+            if (stack.getItem() instanceof ItemMWArmor) {
+                type = ((ItemMWArmor) stack.getItem()).type;
+            }
+            if (stack.getItem() instanceof ItemSpecialArmor) {
+                type = ((ItemSpecialArmor) stack.getItem()).type;
+            }
+            if (type != null) {
+                ArmorRenderConfig config = ModularWarfare.getRenderConfig(type, ArmorRenderConfig.class);
+                if (config.extra.hidePlayerModel) {
+                    if (config.extra.isSuit) {
+                        event.setCanceled(true);
+                    } else if (((ItemArmor) stack.getItem()).armorType == EntityEquipmentSlot.CHEST) {
+                        event.setCanceled(true);
+                    }
+                }
+            }
+        });
     }
 
     private float getFOVModifier(float partialTicks) {

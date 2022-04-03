@@ -2,6 +2,7 @@ package com.modularwarfare.client.model.renders;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunBobbingEvent;
+import com.modularwarfare.api.RenderHandSleeveEvent;
 import com.modularwarfare.api.WeaponAnimation;
 import com.modularwarfare.api.WeaponAnimations;
 import com.modularwarfare.client.ClientProxy;
@@ -38,6 +39,7 @@ import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Timer;
 import net.minecraft.util.math.MathHelper;
@@ -1175,64 +1177,79 @@ public class RenderGunStatic extends CustomItemRenderer {
 
 
     public void renderLeftSleeve(EntityPlayer player, ModelBiped modelplayer) {
-        Minecraft mc = Minecraft.getMinecraft();
+        if (!MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEvent.Pre(this, EnumHandSide.LEFT, modelplayer))) {
+            if (player.inventory.armorItemInSlot(2) != null) {
+                ItemStack armorStack = player.inventory.armorItemInSlot(2);
+                if (armorStack.getItem() instanceof ItemMWArmor) {
+                    int skinId = 0;
+                    String path = skinId > 0 ? ((ItemMWArmor) armorStack.getItem()).type.modelSkins[skinId].getSkin()
+                            : ((ItemMWArmor) armorStack.getItem()).type.modelSkins[0].getSkin();
 
-        if (player.inventory.armorItemInSlot(2) != null) {
-            ItemStack armorStack = player.inventory.armorItemInSlot(2);
-            if (armorStack.getItem() instanceof ItemMWArmor) {
-                int skinId = 0;
-                String path = skinId > 0 ? ((ItemMWArmor) armorStack.getItem()).type.modelSkins[skinId].getSkin() : ((ItemMWArmor) armorStack.getItem()).type.modelSkins[0].getSkin();
-                if(!((ItemMWArmor) armorStack.getItem()).type.simpleArmor) {
-                    ModelCustomArmor modelArmor = ((ModelCustomArmor) ((ItemMWArmor) armorStack.getItem()).type.bipedModel);
+                    if (!((ItemMWArmor) armorStack.getItem()).type.simpleArmor) {
+                        ModelCustomArmor modelArmor = ((ModelCustomArmor) ((ItemMWArmor) armorStack
+                                .getItem()).type.bipedModel);
 
-                    GL11.glPushMatrix();
-                    {
-                        float modelScale = modelArmor.config.extra.modelScale;
-                        GL11.glScalef(modelScale, modelScale, modelScale);
-                        modelArmor.showChest(true);
-                        //modelArmor.render("leftArmModel", modelplayer.bipedLeftArm, 0.0625F, modelScale);
-                        modelArmor.renderLeftArm((AbstractClientPlayer) player, modelplayer);
+                        bindTexture("armor", path);
+                        GL11.glPushMatrix();
+                        {
+                            float modelScale = modelArmor.config.extra.modelScale;
+                            GL11.glScalef(modelScale, modelScale, modelScale);
+                            modelArmor.showChest(true);
+                            modelplayer.bipedLeftArm.rotateAngleX=0;
+                            modelplayer.bipedLeftArm.rotateAngleY=0;
+                            modelplayer.bipedLeftArm.rotateAngleZ=-0.1f;
+                            modelArmor.renderLeftArm((AbstractClientPlayer) player, modelplayer);
+                        }
+                        GL11.glPopMatrix();
+                    } else {
+                        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager()
+                                .getEntityRenderObject(Minecraft.getMinecraft().player);
+                        RenderPlayer renderplayer = (RenderPlayer) render;
+                        GlStateManager.scale(1.00000001F, 1.00000001F, 1.00000001F);
+                        bindTexture("armor", path);
+                        renderplayer.renderLeftArm(Minecraft.getMinecraft().player);
                     }
-                    GL11.glPopMatrix();
-                } else {
-                    Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(Minecraft.getMinecraft().player);
-                    RenderPlayer renderplayer = (RenderPlayer) render;
-                    GlStateManager.scale(1.00000001F, 1.00000001F, 1.00000001F);
-                    bindTexture("armor", path);
-                    renderplayer.renderLeftArm(Minecraft.getMinecraft().player);
                 }
             }
+            MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEvent.Post(this, EnumHandSide.LEFT, modelplayer));
         }
     }
 
     public void renderRightSleeve(EntityPlayer player, ModelBiped modelplayer) {
-        if (player.inventory.armorItemInSlot(2) != null) {
-            ItemStack armorStack = player.inventory.armorItemInSlot(2);
-            if (armorStack.getItem() instanceof ItemMWArmor) {
-                int skinId = 0;
-                String path = skinId > 0 ? ((ItemMWArmor) armorStack.getItem()).type.modelSkins[skinId].getSkin() : ((ItemMWArmor) armorStack.getItem()).type.modelSkins[0].getSkin();
+        if (!MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEvent.Pre(this, EnumHandSide.RIGHT, modelplayer))) {
+            if (player.inventory.armorItemInSlot(2) != null) {
+                ItemStack armorStack = player.inventory.armorItemInSlot(2);
+                if (armorStack.getItem() instanceof ItemMWArmor) {
+                    int skinId = 0;
+                    String path = skinId > 0 ? ((ItemMWArmor) armorStack.getItem()).type.modelSkins[skinId].getSkin()
+                            : ((ItemMWArmor) armorStack.getItem()).type.modelSkins[0].getSkin();
+                    if (!((ItemMWArmor) armorStack.getItem()).type.simpleArmor) {
+                        ModelCustomArmor modelArmor = ((ModelCustomArmor) ((ItemMWArmor) armorStack
+                                .getItem()).type.bipedModel);
 
-                if (!((ItemMWArmor) armorStack.getItem()).type.simpleArmor) {
-                    ModelCustomArmor modelArmor = ((ModelCustomArmor) ((ItemMWArmor) armorStack.getItem()).type.bipedModel);
-
-                    bindTexture("armor", path);
-                    GL11.glPushMatrix();
-                    {
-                        float modelScale = modelArmor.config.extra.modelScale;
-                        GL11.glScalef(modelScale, modelScale, modelScale);
-                        modelArmor.showChest(true);
-                        //modelArmor.render("rightArmModel", modelplayer.bipedRightArm, 0.0625F, modelScale);
-                        modelArmor.renderRightArm((AbstractClientPlayer) player, modelplayer);
+                        bindTexture("armor", path);
+                        GL11.glPushMatrix();
+                        {
+                            float modelScale = modelArmor.config.extra.modelScale;
+                            GL11.glScalef(modelScale, modelScale, modelScale);
+                            modelArmor.showChest(true);
+                            modelplayer.bipedRightArm.rotateAngleX=0;
+                            modelplayer.bipedRightArm.rotateAngleY=0;
+                            modelplayer.bipedRightArm.rotateAngleZ=0.1f;
+                            modelArmor.renderRightArm((AbstractClientPlayer) player, modelplayer);
+                        }
+                        GL11.glPopMatrix();
+                    } else {
+                        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager()
+                                .getEntityRenderObject(Minecraft.getMinecraft().player);
+                        RenderPlayer renderplayer = (RenderPlayer) render;
+                        GlStateManager.scale(1.00000001F, 1.00000001F, 1.00000001F);
+                        bindTexture("armor", path);
+                        renderplayer.renderRightArm(Minecraft.getMinecraft().player);
                     }
-                    GL11.glPopMatrix();
-                } else {
-                    Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(Minecraft.getMinecraft().player);
-                    RenderPlayer renderplayer = (RenderPlayer) render;
-                    GlStateManager.scale(1.00000001F, 1.00000001F, 1.00000001F);
-                    bindTexture("armor", path);
-                    renderplayer.renderRightArm(Minecraft.getMinecraft().player);
                 }
             }
+            MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEvent.Post(this, EnumHandSide.RIGHT, modelplayer));
         }
     }
 
