@@ -2,6 +2,7 @@ package com.modularwarfare.client.model.renders;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunBobbingEvent;
+import com.modularwarfare.api.RenderHandFisrtPersonEvent;
 import com.modularwarfare.api.RenderHandSleeveEvent;
 import com.modularwarfare.api.WeaponAnimation;
 import com.modularwarfare.api.WeaponAnimations;
@@ -1086,10 +1087,16 @@ public class RenderGunStatic extends CustomItemRenderer {
             renderplayer.getMainModel().setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, player);
             renderplayer.getMainModel().bipedRightArm.offsetX = 0F;
             if (rightArm) {
-                renderplayer.renderRightArm(Minecraft.getMinecraft().player);
+                if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.RIGHT))) {
+                    renderplayer.renderRightArm(Minecraft.getMinecraft().player);
+                    MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.RIGHT));
+                }
                 renderRightSleeve(player, renderplayer.getMainModel());
             } else {
-                renderplayer.renderLeftArm(Minecraft.getMinecraft().player);
+                if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.LEFT))) {
+                    renderplayer.renderLeftArm(Minecraft.getMinecraft().player);
+                    MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.LEFT));
+                }
                 renderLeftSleeve(player, renderplayer.getMainModel());
             }
         }
@@ -1148,7 +1155,10 @@ public class RenderGunStatic extends CustomItemRenderer {
                     GL11.glScalef(model.config.arms.rightArm.armScale.x, model.config.arms.rightArm.armScale.y, model.config.arms.rightArm.armScale.z);
                     renderplayer.getMainModel().setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, player);
                     renderplayer.getMainModel().bipedRightArm.offsetX = 0F;
-                    renderplayer.renderRightArm(mc.player);
+                    if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.RIGHT))) {
+                        renderplayer.renderRightArm(Minecraft.getMinecraft().player);
+                        MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.RIGHT));
+                    }
                     renderRightSleeve(player, renderplayer.getMainModel());
                 }
                 GL11.glPopMatrix();
@@ -1176,7 +1186,10 @@ public class RenderGunStatic extends CustomItemRenderer {
 
                     GL11.glScalef(model.config.arms.leftArm.armScale.x, model.config.arms.leftArm.armScale.y, model.config.arms.leftArm.armScale.z);
                     renderplayer.getMainModel().bipedLeftArm.offsetY = 0F;
-                    renderplayer.renderLeftArm(mc.player);
+                    if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.LEFT))) {
+                        renderplayer.renderLeftArm(Minecraft.getMinecraft().player);
+                        MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.LEFT));
+                    }
                     renderLeftSleeve(player, renderplayer.getMainModel());
                 }
                 GL11.glPopMatrix();
