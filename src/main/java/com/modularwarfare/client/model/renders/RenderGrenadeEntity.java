@@ -5,6 +5,8 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.grenades.ItemGrenade;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
+
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.entity.Render;
@@ -14,6 +16,8 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.client.registry.IRenderFactory;
 
 import javax.annotation.Nullable;
+
+import org.lwjgl.opengl.GL11;
 
 
 public class RenderGrenadeEntity extends Render<EntityGrenade> {
@@ -33,7 +37,14 @@ public class RenderGrenadeEntity extends Render<EntityGrenade> {
 
     public void doRenderShadowAndFire(Entity entityIn, double x, double y, double z, float yaw, float partialTicks) {
         if (this.renderManager.options != null) {
+            GlStateManager.shadeModel(GL11.GL_SMOOTH);
+            boolean glow = ObjModelRenderer.glowTxtureMode;
+            ObjModelRenderer.glowTxtureMode = true;
+            
             this.doRenderGrenade((EntityGrenade) entityIn, x, y, z, yaw, partialTicks);
+            
+            GlStateManager.shadeModel(GL11.GL_FLAT);
+            ObjModelRenderer.glowTxtureMode = glow;
         }
     }
 
