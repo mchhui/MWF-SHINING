@@ -22,7 +22,8 @@
     "hitmarkers": true,
     "dynamic_crosshair": true,
     "ammo_count": true,
-    "snap_fade_hit": true
+    "snap_fade_hit": true,
+    "ads_blur": true
   },
   "walks_sounds": {
     "walk_sounds": true,
