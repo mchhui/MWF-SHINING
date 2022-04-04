@@ -5,6 +5,8 @@ import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
+
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -88,6 +90,8 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
     }
 
     public void doRender(final EntityItemLoot entity, final double x, final double y, final double z, final float entityYaw, final float partialTicks) {
+        boolean glow = ObjModelRenderer.glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode = true;
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         final ItemStack itemstack = entity.getItem();
         if (itemstack.getItem() instanceof ItemGun) {
@@ -282,6 +286,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             super.doRender(entity, x, y, z, entityYaw, partialTicks);
         }
         GlStateManager.shadeModel(GL11.GL_FLAT);
+        ObjModelRenderer.glowTxtureMode = glow;
     }
 
     protected ResourceLocation getEntityTexture(final EntityItemLoot entity) {
