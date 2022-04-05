@@ -98,6 +98,10 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             GlStateManager.alphaFunc(516, 0.1F);
             GlStateManager.enableBlend();
             RenderHelper.enableStandardItemLighting();
+            /*
+             * we need to use shadeModel(GL11.GL_SMOOTH)  after enableStandardItemLighting
+             * */
+            GlStateManager.shadeModel(GL11.GL_SMOOTH);
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.pushMatrix();
             GlStateManager.translate((float) x, (float) y, (float) z);
@@ -221,6 +225,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             GlStateManager.enableRescaleNormal();
             GlStateManager.alphaFunc(516, 0.1f);
             RenderHelper.enableStandardItemLighting();
+            GlStateManager.shadeModel(GL11.GL_SMOOTH);
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.pushMatrix();

@@ -497,6 +497,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                     if (!(Minecraft.getMinecraft().currentScreen instanceof GuiInventory)) {
                         GlStateManager.enableRescaleNormal();
                         RenderHelper.enableStandardItemLighting();
+                        GlStateManager.shadeModel(GL11.GL_SMOOTH);
                         GlStateManager.enableLighting();
                         GlStateManager.enableDepth();
                     }
