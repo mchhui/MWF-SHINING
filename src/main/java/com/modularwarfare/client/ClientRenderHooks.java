@@ -254,23 +254,12 @@ public class ClientRenderHooks extends ForgeEvent {
                     if (!OptifineHelper.isShadersEnabled()&&ModConfig.INSTANCE.hud.ads_blur) {
                         ClientProxy.scopeUtils.initBlur();
                         GlStateManager.pushMatrix();
-                        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);
-                        GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_COLOR_BUFFER_BIT, GL11.GL_NEAREST);
-                        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, mc.getFramebuffer().framebufferObject);
-                        GL11.glEnable(GL11.GL_STENCIL_TEST);
-                        GL11.glStencilMask(0xFF);
-                        GL11.glClearStencil(0);
-                        GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
-                        GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
-                        GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0XFF);
 
                         if(item instanceof ItemGun) {
                             customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, event.getHand(), (ClientTickHandler.lastItemStack.isEmpty() ? stack : ClientTickHandler.lastItemStack), mc.world, mc.player);
                         } else {
                             customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, event.getHand(), stack, mc.world, mc.player);
                         }
-                        GL11.glStencilMask(0x00);
-                        GL11.glStencilFunc(GL11.GL_EQUAL, 0, 0XFF);
 
                         boolean needBlur = false;
                         if(RenderParameters.adsSwitch != 0F) {
@@ -288,9 +277,8 @@ public class ClientRenderHooks extends ForgeEvent {
                                 }
                             }
                         }
-
+                        GL11.glColor4f(1,1,1,1);
                         mc.getFramebuffer().bindFramebuffer(false);
-                        ClientProxy.scopeUtils.blurFramebuffer.bindFramebufferTexture();
                         GlStateManager.pushMatrix();
                         ScaledResolution resolution = new ScaledResolution(mc);
                         Minecraft.getMinecraft().entityRenderer.setupOverlayRendering();
@@ -298,12 +286,19 @@ public class ClientRenderHooks extends ForgeEvent {
                         GlStateManager.disableRescaleNormal();
                         RenderHelper.disableStandardItemLighting();
                         renderer.disableLightmap();
-
                         if (needBlur) {
+                            GlStateManager.enableBlend();
+                            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+                            GL11.glColor4f(1,1,1,1);
+                            ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+                            ClientProxy.scopeUtils.borderBlurShader.render(event.getPartialTicks());
+                            mc.getFramebuffer().bindFramebuffer(false);
+                            ClientProxy.scopeUtils.blurFramebuffer.bindFramebufferTexture();
                             ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1, resolution.getScaledWidth(), resolution.getScaledHeight(), 1, 1);
+                            GlStateManager.disableBlend();
                         }
                         GlStateManager.popMatrix();
-                        GL11.glDisable(GL11.GL_STENCIL_TEST);
+                        
                         GlStateManager.popMatrix();
                     }else {
                         if(item instanceof ItemGun) {

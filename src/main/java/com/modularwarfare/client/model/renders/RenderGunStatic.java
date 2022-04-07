@@ -50,6 +50,7 @@ import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.Optional;
@@ -1286,6 +1287,12 @@ public class RenderGunStatic extends CustomItemRenderer {
             if (Minecraft.getMinecraft().world != null) {
                 float gunRotX = RenderParameters.GUN_ROT_X_LAST + (RenderParameters.GUN_ROT_X - RenderParameters.GUN_ROT_X_LAST) * this.timer.renderPartialTicks;
                 if (isAiming) {
+                    Minecraft mc=Minecraft.getMinecraft();
+                    ClientProxy.scopeUtils.blurFramebuffer.framebufferClear();
+                    GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, mc.getFramebuffer().framebufferObject);
+                    GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);
+                    GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
+                    ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
                     GL11.glPushMatrix();
                     renderWorldOntoScope(attachmentType, modelAttachment);
 
@@ -1299,6 +1306,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                     }
 
                     GlStateManager.disableLighting();
+                    GlStateManager.colorMask(true, true, true, false);
                     GlStateManager.depthMask(false);
                     GlStateManager.enableBlend();
                     GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
@@ -1307,10 +1315,11 @@ public class RenderGunStatic extends CustomItemRenderer {
                     renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
                     modelAttachment.renderOverlay(0.0625f);
                     GlStateManager.disableBlend();
+                    GlStateManager.colorMask(true, true, true, true);
                     GlStateManager.depthMask(true);
                     GlStateManager.enableLighting();
-
                     GL11.glPopMatrix();
+                    mc.getFramebuffer().bindFramebuffer(false);
                 } else {
                     GL11.glPushMatrix();
                     renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));

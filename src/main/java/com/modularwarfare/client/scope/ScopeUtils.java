@@ -44,8 +44,8 @@ public class ScopeUtils {
     private Field renderEndNanoTime;
 
     public ShaderGroup blurShader;
+    public ShaderGroup borderBlurShader;
     public Framebuffer blurFramebuffer;
-    public int blurTexture;
     private static int lastScale;
     private static int lastScaleWidth;
     private static int lastScaleHeight;
@@ -286,15 +286,16 @@ public class ScopeUtils {
         lastScaleHeight = heightFactor;
 
         try {
-            blurFramebuffer = new Framebuffer(mc.displayWidth, mc.displayHeight, false);
+            blurFramebuffer = new Framebuffer(mc.displayWidth, mc.displayHeight, true);
+            blurFramebuffer.setFramebufferColor(0,0,0,0);
             blurFramebuffer.enableStencil();
-            blurShader = new ShaderGroup(mc.getTextureManager(), mc.getResourceManager(), blurFramebuffer, new ResourceLocation(ModularWarfare.MOD_ID,"shaders/post/blurex.json"));
+            blurShader = new ShaderGroup(mc.getTextureManager(), mc.getResourceManager(), mc.getFramebuffer(), new ResourceLocation(ModularWarfare.MOD_ID,"shaders/post/blurex.json"));
             blurShader.createBindFramebuffers(mc.displayWidth, mc.displayHeight);
-            blurTexture = GL11.glGenTextures();
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blurTexture);
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            borderBlurShader = new ShaderGroup(mc.getTextureManager(), mc.getResourceManager(), blurFramebuffer, new ResourceLocation(ModularWarfare.MOD_ID,"shaders/post/borderblur.json"));
+            borderBlurShader.createBindFramebuffers(mc.displayWidth, mc.displayHeight);
+            ((IShaderGroup)borderBlurShader).getListShaders().forEach((shader)->{
+                shader.addAuxFramebuffer("VanillaTexture", mc.getFramebuffer(),mc.getFramebuffer().framebufferTextureWidth,mc.getFramebuffer().framebufferTextureHeight);
+            });
         } catch (JsonSyntaxException | IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
