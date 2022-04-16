@@ -187,7 +187,6 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                                     skinId = itemStack.getTagCompound().getInteger("skinId");
                                 }
                             }
-                            path = skinId > 0 ? attachmentType.modelSkins[skinId].getSkin() : attachmentType.modelSkins[0].getSkin();
                             if(attachmentType.sameTextureAsGun) {
                                 ClientRenderHooks.customRenderers[3].bindTexture("guns", path);
                             }else {
