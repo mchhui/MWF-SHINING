@@ -503,7 +503,9 @@ public class PacketGunReload extends PacketBase {
             if (returningAmmoItem.type.subAmmo != null || ItemAmmo.hasAmmo(returningAmmo) || returningAmmoItem.type.allowEmptyMagazines) {
                 final int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
                 returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
-                entityPlayer.inventory.addItemStackToInventory(returningAmmo);
+                if(!entityPlayer.inventory.addItemStackToInventory(returningAmmo)) {
+                    entityPlayer.dropItem(returningAmmo, false);
+                }
             }
             nbtTagCompound.removeTag("ammo");
             return true;
