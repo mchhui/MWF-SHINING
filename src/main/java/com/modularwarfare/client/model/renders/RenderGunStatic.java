@@ -1,5 +1,6 @@
 package com.modularwarfare.client.model.renders;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.api.RenderHandFisrtPersonEvent;
@@ -25,6 +26,8 @@ import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.modularwarfare.utility.ModUtil;
+import com.modularwarfare.utility.OptifineHelper;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.gui.inventory.GuiInventory;
@@ -1286,13 +1289,19 @@ public class RenderGunStatic extends CustomItemRenderer {
 
             if (Minecraft.getMinecraft().world != null) {
                 float gunRotX = RenderParameters.GUN_ROT_X_LAST + (RenderParameters.GUN_ROT_X - RenderParameters.GUN_ROT_X_LAST) * this.timer.renderPartialTicks;
-                if (isAiming) {
+                if (isAiming&&(ClientProxy.scopeUtils.blurFramebuffer!=null||!ModConfig.INSTANCE.hud.ads_blur)) {
                     Minecraft mc=Minecraft.getMinecraft();
-                    ClientProxy.scopeUtils.blurFramebuffer.framebufferClear();
-                    GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, mc.getFramebuffer().framebufferObject);
-                    GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);
-                    GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
-                    ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+                    boolean blurFlag=false;
+                    if(!OptifineHelper.isShadersEnabled()&&ModConfig.INSTANCE.hud.ads_blur) {
+                        blurFlag=true;
+                    }
+                    if(blurFlag) {
+                        ClientProxy.scopeUtils.blurFramebuffer.framebufferClear();
+                        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, mc.getFramebuffer().framebufferObject);
+                        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);
+                        GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
+                        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);  
+                    }
                     GL11.glPushMatrix();
                     renderWorldOntoScope(attachmentType, modelAttachment);
 
@@ -1306,7 +1315,9 @@ public class RenderGunStatic extends CustomItemRenderer {
                     }
 
                     GlStateManager.disableLighting();
+                    if(blurFlag) {
                     GlStateManager.colorMask(true, true, true, false);
+                    }
                     GlStateManager.depthMask(false);
                     GlStateManager.enableBlend();
                     GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
@@ -1319,7 +1330,9 @@ public class RenderGunStatic extends CustomItemRenderer {
                     GlStateManager.depthMask(true);
                     GlStateManager.enableLighting();
                     GL11.glPopMatrix();
-                    mc.getFramebuffer().bindFramebuffer(false);
+                    if(blurFlag) {
+                        mc.getFramebuffer().bindFramebuffer(false);  
+                    }
                 } else {
                     GL11.glPushMatrix();
                     renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
