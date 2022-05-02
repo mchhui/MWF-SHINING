@@ -157,6 +157,7 @@ public class ObjModelRenderer {
                 return;
             }
             glowTxtureMode=false;
+            GlStateManager.enableBlend();
             GlStateManager.depthMask(false);
             GlStateManager.depthFunc(514);
             GlStateManager.disableLighting();
@@ -166,6 +167,7 @@ public class ObjModelRenderer {
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x, y);
             GlStateManager.depthFunc(515);
             GlStateManager.depthMask(true);
+            GlStateManager.disableBlend();
             glowTxtureMode=true;
             customItemRenderer.bindTexture(glowType, glowPath);
         }
