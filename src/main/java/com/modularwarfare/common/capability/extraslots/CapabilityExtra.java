@@ -13,6 +13,7 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
@@ -46,29 +47,16 @@ public class CapabilityExtra {
 
     @SubscribeEvent
     public static void onPlayerJoin(final EntityJoinWorldEvent event) {
-        if (event.getWorld().isRemote) {
-            return;
-        }
-        if (!(event.getEntity() instanceof EntityPlayer)) {
+        if (!(event.getEntity() instanceof EntityPlayerMP)) {
             return;
         }
         final EntityPlayer target = (EntityPlayer) event.getEntity();
-
-        if (ModularWarfare.PROXY instanceof ClientProxy) {
-            return;
-        }
         sync(target, Collections.singletonList(target));
     }
 
     @SubscribeEvent
     public static void onStartTracking(final PlayerEvent.StartTracking event) {
-        if (event.getTarget().world.isRemote) {
-            return;
-        }
-        if (!(event.getTarget() instanceof EntityPlayer)) {
-            return;
-        }
-        if (ModularWarfare.PROXY instanceof ClientProxy) {
+        if (!(event.getTarget() instanceof EntityPlayerMP)) {
             return;
         }
         sync((EntityPlayer) event.getTarget(), Collections.singletonList(event.getEntityPlayer()));
