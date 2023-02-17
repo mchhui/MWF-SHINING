@@ -3,6 +3,9 @@ package com.modularwarfare.common;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.SkinType;
+import com.modularwarfare.common.network.PacketParticle;
+import com.modularwarfare.common.network.PacketPlayerHit;
+import com.modularwarfare.common.network.PacketParticle.ParticleType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
@@ -10,8 +13,11 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
+import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
+
 import com.modularwarfare.ModConfig;
 import net.minecraftforge.fml.relauncher.FMLInjectionData;
 
@@ -143,9 +149,15 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public void spawnExplosionParticle(World world, double x, double y, double z) {
+        if(!world.isRemote) {
+            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
+        }
     }
     
     public void spawnRocketParticle(World world, double x, double y, double z) {
+        if(!world.isRemote) {
+            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
+        }
     }
 
 

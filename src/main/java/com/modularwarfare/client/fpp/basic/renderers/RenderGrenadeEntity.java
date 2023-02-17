@@ -52,7 +52,6 @@ public class RenderGrenadeEntity extends Render<EntityGrenade> {
             GlStateManager.rotate(entityIn.ticksExisted * 15F, 0.0F, 0.0F, 1.0F);
         }
 
-        RenderHelper.enableStandardItemLighting();
         GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
         final float worldScale = 1F / 16F;
 

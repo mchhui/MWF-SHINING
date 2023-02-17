@@ -909,11 +909,19 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void spawnExplosionParticle(World world, double x, double y, double z) {
+        if(!world.isRemote) {
+            super.spawnExplosionParticle(world, x, y, z);
+            return;
+        }
         final Particle explosionParticle = new ParticleExplosion(world, x, y, z);
         Minecraft.getMinecraft().effectRenderer.addEffect(explosionParticle);
     }
 
     public void spawnRocketParticle(World world, double x, double y, double z) {
+        if(!world.isRemote) {
+            super.spawnRocketParticle(world, x, y, z);
+            return;
+        }
         final Particle rocketParticle = new ParticleRocket(world, x, y, z);
         Minecraft.getMinecraft().effectRenderer.addEffect(rocketParticle);
     }
