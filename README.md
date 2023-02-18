@@ -1,4 +1,4 @@
-<img src='https://github.com/mchhui/MWF-SHINING/blob/mwf-shining/mwf-shining-logo.png?raw=true'>
+<img src='https://github.com/mchhui/MWF-SHINING/blob/mwf-shining/mwf-shining-logo.png?raw=true' width='400px'>
 
 ModularWarfare-Shining (模块化武装：烨熠) 是一款专为1.12.2Minecraft打造的军事武装MOD。基于本MOD，您无需任何MOD开发能力而只需要创建或使用内容包（Context-Pack）即可将众多军事武装属性加入游戏，诸如枪械、配件、弹药、护甲和背包等属性。
 
