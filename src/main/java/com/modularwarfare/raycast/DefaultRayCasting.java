@@ -14,8 +14,9 @@ import com.modularwarfare.common.network.PacketPlaySound;
 import com.modularwarfare.common.vector.Matrix4f;
 import com.modularwarfare.common.vector.Vector3f;
 import com.modularwarfare.raycast.obb.OBBModelBox;
+import com.modularwarfare.raycast.obb.OBBModelBox.RayCastResult;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
-import com.modularwarfare.raycast.obb.OBBPlayerManager.Line;
+import com.modularwarfare.raycast.obb.OBBPlayerManager.OBBDebugObject;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.PlayerOBBModelObject;
 
 import net.minecraft.block.*;
@@ -90,9 +91,10 @@ public class DefaultRayCasting extends RayCasting {
         ray.axisNormal.y=Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
         ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
         
-
-        OBBPlayerManager.lines.add(new Line(ray));
-        OBBPlayerManager.lines.add(new Line(new Vector3f(startVec), new Vector3f(endVec)));
+        if(OBBPlayerManager.debug) {
+            OBBPlayerManager.lines.add(new OBBDebugObject(ray));
+            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec), new Vector3f(endVec)));  
+        }
         //Iterate over all entities
         for (int i = 0; i < world.loadedEntityList.size(); i++) {
             Entity obj = world.loadedEntityList.get(i);
@@ -134,31 +136,30 @@ public class DefaultRayCasting extends RayCasting {
                     //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+startVec+" "+endVec));
                     PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
                     OBBModelBox finalBox=null;
-                    boolean isHeadShot=false;
-                    boolean isBodyShot=false;
                     List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
                     if (boxes.size() > 0) {
-                        double distanceSq = Double.MAX_VALUE;
+                        double t = Double.MAX_VALUE;
+                        Vector3f hitFaceNormal=null;
+                        RayCastResult temp;
+                        Vector3f startVector=new Vector3f(startVec);
                         for (OBBModelBox obb : boxes) {
-                            if (obb.name.equals("obb_head")) {
+                            temp=OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
+                            if(temp.t<t) {
+                                t=temp.t;
+                                hitFaceNormal=temp.normal;
                                 finalBox=obb;
-                                isHeadShot=true;
-                                break;
-                            } else if (!isHeadShot && obb.name.equals("obb_body")) {
-                                finalBox=obb;
-                                isBodyShot=true;
-                            } else if (!isHeadShot && !isBodyShot) {
-                                double d = startVec
-                                        .squareDistanceTo(new Vec3d(obb.center.x, obb.center.y, obb.center.z));
-                                if (d < distanceSq) {
-                                    distanceSq = d;
-                                    finalBox=obb;
-                                }
                             }
+                            Minecraft.getMinecraft().player.sendMessage(new TextComponentString("[test]"+obb.name+":"+t+" - "+len));
                         }
-                        PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
-                        RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
-                        return new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept);
+                        
+                        if(OBBPlayerManager.debug) {
+                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x+rayVec.x*t,startVec.y+rayVec.y*t,startVec.z+rayVec.z*t)));
+                        }
+                        if (finalBox != null) {
+                            PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
+                            RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
+                            return new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept);  
+                        }
                     }
                 }
             }

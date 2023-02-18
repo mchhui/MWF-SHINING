@@ -95,7 +95,16 @@ public class OBBModelObject {
                 tessellator.getBuffer().pos(box.center.x+axi.x, box.center.y+axi.y, box.center.z+axi.z).color(255, 0, 0,255).endVertex();
                 tessellator.draw();
             });
+            GlStateManager.glLineWidth(4.0F);
+            box.axisNormal.forEach((axi)->{
+                Tessellator tessellator=Tessellator.getInstance();
+                tessellator.getBuffer().begin(3, DefaultVertexFormats.POSITION_COLOR);
+                tessellator.getBuffer().pos(box.center.x, box.center.y, box.center.z).color(0, 255, 0,255).endVertex();
+                tessellator.getBuffer().pos(box.center.x+axi.x, box.center.y+axi.y, box.center.z+axi.z).color(0, 255, 0,255).endVertex();
+                tessellator.draw();
+            });
         });
+        GlStateManager.glLineWidth(2.0F);
         GlStateManager.enableTexture2D();
     }
 }

@@ -11,6 +11,8 @@ import org.lwjgl.opengl.GL11;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.vector.Vector3f;
+import com.modularwarfare.loader.ObjModel;
+import com.modularwarfare.loader.api.ObjModelLoader;
 import com.modularwarfare.raycast.obb.bbloader.BlockBenchOBBInfoLoader;
 
 import mchhui.modularmovements.tactical.PlayerState;
@@ -34,21 +36,32 @@ public class OBBPlayerManager {
     public static HashMap<String, PlayerOBBModelObject> playerOBBObjectMap = new HashMap<String, PlayerOBBModelObject>();
     public static EntityPlayer entityPlayer;
     public static ModelPlayer modelPlayer;
-    public static ArrayList<Line> lines = new ArrayList<OBBPlayerManager.Line>();
+    public static boolean debug=false;
+    public static ArrayList<OBBDebugObject> lines = new ArrayList<OBBPlayerManager.OBBDebugObject>();
+    private static final ObjModel debugBoxModel = ObjModelLoader
+            .load(new ResourceLocation("modularwarfare:obb/model.obj"));
+    private static final ResourceLocation debugBoxTex = new ResourceLocation(
+            "modularwarfare:obb/debugbox_red.png");
 
-    public static class Line {
+    public static class OBBDebugObject {
         public Vector3f start;
         public Vector3f end;
         public OBBModelBox box;
         public long aliveTime;
+        public Vector3f pos;
 
-        public Line(Vector3f start, Vector3f end) {
+        public OBBDebugObject(Vector3f pos) {
+            this.pos=pos;
+            this.aliveTime = System.currentTimeMillis() + 5000;
+        }
+        
+        public OBBDebugObject(Vector3f start, Vector3f end) {
             this.start = start;
             this.end = end;
             this.aliveTime = System.currentTimeMillis() + 5000;
         }
 
-        public Line(OBBModelBox box) {
+        public OBBDebugObject(OBBModelBox box) {
             this.box = box;
             this.aliveTime = System.currentTimeMillis() + 5000;
         }
@@ -71,6 +84,23 @@ public class OBBPlayerManager {
                             .color(0, 255, 0, 255).endVertex();
                     tessellator.draw();
                 });
+                box.axisNormal.forEach((axi) -> {
+                    Tessellator tessellator = Tessellator.getInstance();
+                    tessellator.getBuffer().begin(3, DefaultVertexFormats.POSITION_COLOR);
+                    tessellator.getBuffer().pos(box.center.x, box.center.y, box.center.z).color(0, 255, 0, 255)
+                            .endVertex();
+                    tessellator.getBuffer().pos(box.center.x + axi.x, box.center.y + axi.y, box.center.z + axi.z)
+                            .color(0, 255, 0, 255).endVertex();
+                    tessellator.draw();
+                });
+            }else if(pos!=null) {
+                GlStateManager.pushMatrix();
+                GlStateManager.enableTexture2D();
+                GlStateManager.translate(pos.x, pos.y, pos.z);
+                Minecraft.getMinecraft().renderEngine.bindTexture(debugBoxTex);
+                debugBoxModel.renderAll(1);
+                GlStateManager.disableTexture2D();
+                GlStateManager.popMatrix();
             } else {
                 Tessellator tessellator = Tessellator.getInstance();
                 tessellator.getBuffer().begin(3, DefaultVertexFormats.POSITION_COLOR);
@@ -276,14 +306,16 @@ public class OBBPlayerManager {
                     -(entity.lastTickPosY + (entity.posY - entity.lastTickPosY) * event.getPartialRenderTick()),
                     -(entity.lastTickPosZ + (entity.posZ - entity.lastTickPosZ) * event.getPartialRenderTick()));
             playerOBBObject.renderDebugBoxes();
-            //playerOBBObject.renderDebugAixs();
+            playerOBBObject.renderDebugAixs();
             GlStateManager.popMatrix();
         }
     }
 
     @SubscribeEvent
     public void onrenderWorld(RenderWorldLastEvent event) {
+        debug=false;
         if (Minecraft.getMinecraft().getRenderManager().isDebugBoundingBox()) {
+            debug=true;
             GlStateManager.pushMatrix();
             Entity entity = Minecraft.getMinecraft().getRenderViewEntity();
             GlStateManager.translate(
