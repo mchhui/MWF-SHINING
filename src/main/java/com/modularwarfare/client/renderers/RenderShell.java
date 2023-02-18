@@ -49,7 +49,6 @@ public class RenderShell extends Render<EntityShell> {
                 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(-entityIn.rotationPitch, 1.0F, 0.0F, 0.0F);
 
-        RenderHelper.enableStandardItemLighting();
         GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
         final float worldScale = 1F / 16F;
 
