@@ -1,0 +1,19 @@
+mwf:dictionary.firemode=Fire Mode
+mwf:dictionary.firemode.full=Full
+mwf:dictionary.firemode.semi=Semi
+mwf:dictionary.firemode.brust=Brust
+mwf:dictionary.ammo=Ammo
+mwf:dictionary.bullet=Bullet
+
+mwf:gui.tooltip.ammo=Ammo
+mwf:gui.tooltip.ammo.num1= 1
+mwf:gui.tooltip.ammo.num2= 2
+mwf:gui.tooltip.ammo.num3= 3
+mwf:gui.tooltip.ammo.num4= 4
+mwf:gui.tooltip.ammo.num5= 5
+mwf:gui.tooltip.ammo.num6= 6
+mwf:gui.tooltip.ammo.num7= 7
+mwf:gui.tooltip.ammo.num8= 8
+mwf:gui.tooltip.ammo.num9= 9
+mwf:gui.tooltip.ammo.num.10= 10
+mwf:gui.tooltip.seemore=Press [L-SHIFT] to learn more

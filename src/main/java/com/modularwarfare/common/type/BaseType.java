@@ -72,6 +72,12 @@ public class BaseType {
      */
     public HashMap<WeaponSoundType, ArrayList<SoundEntry>> weaponSoundMap;
     public boolean allowDefaultSounds = true;
+    
+    /**
+     * SCRIPT
+     * */
+    
+    public String toolipScript="mwf/tooltip_main";
 
 
     @SideOnly(value = Side.CLIENT)

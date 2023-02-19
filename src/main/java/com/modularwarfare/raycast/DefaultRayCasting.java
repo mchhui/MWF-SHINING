@@ -149,7 +149,6 @@ public class DefaultRayCasting extends RayCasting {
                                 hitFaceNormal=temp.normal;
                                 finalBox=obb;
                             }
-                            Minecraft.getMinecraft().player.sendMessage(new TextComponentString("[test]"+obb.name+":"+t+" - "+len));
                         }
                         
                         if(OBBPlayerManager.debug) {

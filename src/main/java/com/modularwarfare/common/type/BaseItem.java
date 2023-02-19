@@ -1,13 +1,24 @@
 package com.modularwarfare.common.type;
 
+import java.util.List;
+
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.script.ToolTipScriptHost;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class BaseItem extends Item {
 
     public BaseType baseType;
     public boolean render3d = true;
+    public ResourceLocation tooltipScript;
 
     public BaseItem(BaseType type) {
         setUnlocalizedName(type.internalName);
@@ -21,6 +32,7 @@ public class BaseItem extends Item {
             this.setMaxStackSize(1);
         }
         this.canRepair = false;
+        tooltipScript=new ResourceLocation(ModularWarfare.MOD_ID,"script/"+baseType.toolipScript+".js");
     }
 
     public void setType(BaseType type) {
@@ -53,6 +65,14 @@ public class BaseItem extends Item {
         baseDisplayLine = baseDisplayLine.replaceAll("%g", TextFormatting.GRAY.toString());
         baseDisplayLine = baseDisplayLine.replaceAll("%dg", TextFormatting.DARK_GRAY.toString());
         return String.format(baseDisplayLine, prefix, current, max);
+    }
+    
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(ItemStack stack, World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+        if(tooltipScript!=null) {
+            ToolTipScriptHost.callScript(tooltipScript, stack, tooltip);  
+        }
     }
 
 }

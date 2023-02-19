@@ -249,7 +249,9 @@ public class ItemGun extends BaseItem {
     public Multimap<String, AttributeModifier> getAttributeModifiers(EntityEquipmentSlot slot, ItemStack stack) {
         Multimap<String, AttributeModifier> multimap = super.getAttributeModifiers(slot, stack);
         if (slot == EntityEquipmentSlot.MAINHAND) {
-            multimap.put(SharedMonsterAttributes.MOVEMENT_SPEED.getName(), new AttributeModifier(MOVEMENT_SPEED_MODIFIER, "MovementSpeed", type.moveSpeedModifier - 1.0f, 2));
+            if(type.moveSpeedModifier - 1.0f!=0) {
+                multimap.put(SharedMonsterAttributes.MOVEMENT_SPEED.getName(), new AttributeModifier(MOVEMENT_SPEED_MODIFIER, "MovementSpeed", type.moveSpeedModifier - 1.0f, 2));  
+            }
         }
         return multimap;
     }
@@ -317,8 +319,10 @@ public class ItemGun extends BaseItem {
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         GunType gunType = ((ItemGun) stack.getItem()).type;
 
-        if (gunType == null)
+        if (null == null) {
+            super.addInformation(stack, worldIn, tooltip, flagIn);
             return;
+        }
 
 
         if (hasAmmoLoaded(stack)) {
@@ -336,11 +340,6 @@ public class ItemGun extends BaseItem {
                     tooltip.add(generateLoreLineAlt("Ammo", Integer.toString(currentAmmoCount), Integer.toString(itemAmmo.type.ammoCapacity)));
                 } else {
                     if (stack.getTagCompound() != null) {
-                        if (gunType.acceptedBullets != null) {
-                            int ammoCount = stack.getTagCompound().hasKey("ammocount") ? stack.getTagCompound().getInteger("ammocount") : 0;
-                            tooltip.add(generateLoreLineAlt("Ammo", Integer.toString(ammoCount), Integer.toString(gunType.internalAmmoStorage)));
-                        }
-
                         String baseDisplayLine = "Ammo %s: %g%s%dg/%g%s";
                         baseDisplayLine = baseDisplayLine.replaceAll("%b", TextFormatting.BLUE.toString());
                         baseDisplayLine = baseDisplayLine.replaceAll("%dg", TextFormatting.DARK_GRAY.toString());
