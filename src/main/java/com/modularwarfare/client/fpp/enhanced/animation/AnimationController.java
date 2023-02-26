@@ -261,6 +261,15 @@ public class AnimationController {
             if (!type.allowFiringSprint && FIRE > 0f) {
                 player.setSprinting(false);
             }
+            if (ADS == 1) {
+                if (!ClientRenderHooks.isAiming) {
+                    ClientRenderHooks.isAiming = true;
+                }
+            } else {
+                if (ClientRenderHooks.isAiming) {
+                    ClientRenderHooks.isAiming = false;
+                }
+            }
         }
         if(oldCurrentItem != player.inventory.currentItem){
             reset(true);

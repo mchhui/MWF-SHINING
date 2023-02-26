@@ -111,6 +111,16 @@ public class GunType extends BaseType {
      * Factor of accuracy when sneaking
      */
     public float accuracySneakFactor = 0.75f;
+    
+    /**
+     * Factor of accuracy when crawling
+     */
+    public float accuracyCrawlFactor = 0.75f;
+    
+    /**
+     * Factor of accuracy when aimming
+     */
+    public float accuracyAimFactor = 0.75f;
 
     public float randomRecoilPitch = 0.5F;
 
@@ -125,6 +135,9 @@ public class GunType extends BaseType {
      * the first line is outdated;
      */
     public float recoilAimReducer = 0.8F;
+    
+    public float recoilCrawlYawFactor = 0.5F;
+    public float recoilCrawlPitchFactor = 0.5F;
 
     /**
      * The firing modes of the gun. SEMI, FULL, BURST

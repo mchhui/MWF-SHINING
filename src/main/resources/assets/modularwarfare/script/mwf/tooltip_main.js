@@ -30,7 +30,7 @@ function updateGunTooltip(stack, tiplist) {
      */
     if(ScriptAPI.Gun.hasAmmoLoaded(stack)){
         var ammoStack=ScriptAPI.Gun.getAmmoStack(stack);
-        if(!ammoStack.isEmpty()){
+        if(!ScriptAPI.Stack.isEmpty(ammoStack)){
             var ammoType=ScriptAPI.Ammo.getAmmoType(ammoStack);
             if (ammoType.magazineCount == 1) {
                 var ammocount=NBTSearcher.searchInt(ScriptAPI.Stack.getNbt(ammoStack),"ammocount");
@@ -54,8 +54,14 @@ function updateGunTooltip(stack, tiplist) {
         }
     }
     var bulletItem=ScriptAPI.Gun.getUsedBulletItem(stack);
+    var bulletStack=ScriptAPI.Stack.getStack(bulletItem);
+    if(!ScriptAPI.Stack.isEmpty(bulletStack)){
+        tiplist.add("§3"+ScriptAPI.Lang.format("mwf:dictionary.bullet")+": §7"+ScriptAPI.Stack.getDisplayName(bulletStack));
+    }
     
     if(!ScriptAPI.Input.isKeyHolding(KEY_LSHIFT)){
         tiplist.add("§e"+ScriptAPI.Lang.format("mwf:gui.tooltip.seemore"));
+    }else{
+        
     }
 }

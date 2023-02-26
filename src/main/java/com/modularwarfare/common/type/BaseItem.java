@@ -3,7 +3,7 @@ package com.modularwarfare.common.type;
 import java.util.List;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.script.ToolTipScriptHost;
+import com.modularwarfare.script.ScriptHost;
 
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
@@ -71,7 +71,7 @@ public class BaseItem extends Item {
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         if(tooltipScript!=null) {
-            ToolTipScriptHost.callScript(tooltipScript, stack, tooltip);  
+            ScriptHost.INSTANCE.callScript(tooltipScript, stack, tooltip,"updateTooltip");  
         }
     }
 

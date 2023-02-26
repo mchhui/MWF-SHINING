@@ -4,10 +4,12 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.network.PacketGunTrail;
 import com.modularwarfare.common.network.PacketGunTrailAskServer;
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
+import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.Entity;
@@ -53,10 +55,26 @@ public class RayUtil {
         if (player.isSprinting()) {
             acc += 0.4f;
         }
-        if (player.isSneaking()) {
-            acc *= gun.accuracySneakFactor;
+        
+        if(ServerTickHandler.playerAimInstant.get(player.getName())) {
+            acc *= gun.accuracyAimFactor;
+        }else {
+            if (ModularWarfare.isLoadedModularMovements) {
+                if (ServerListener.isCrawling(player.getEntityId())) {
+                    acc *= gun.accuracyCrawlFactor;
+                } else if (player.isSneaking() || ServerListener.isSitting(player.getEntityId())) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            } else {
+                if (player.isSneaking()) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            }
         }
-
+        
+        if (acc < 0) {
+            acc = 0;
+        }
         /** Bullet Accuracy **/
         if (player.getHeldItemMainhand() != null) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {

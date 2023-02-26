@@ -20,6 +20,7 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.OptifineHelper;
@@ -119,6 +120,7 @@ public class ClientRenderHooks extends ForgeEvent {
                     return;
                 if (ClientProxy.gunUI.hitMarkerTime > 0)
                     ClientProxy.gunUI.hitMarkerTime--;
+                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(mc.player.getName(), isAiming||isAimingScope));
                 break;
             }
         }

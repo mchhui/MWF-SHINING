@@ -1,5 +1,6 @@
 package com.modularwarfare;
 
+import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -40,6 +41,7 @@ import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
 import com.modularwarfare.raycast.DefaultRayCasting;
 import com.modularwarfare.raycast.RayCasting;
+import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.ZipContentPack;
@@ -68,11 +70,17 @@ import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -129,6 +137,9 @@ public class ModularWarfare {
     public static HashMap<String, TextureType> textureTypes = new HashMap<String, TextureType>();
 
     public static ArrayList<BaseType> baseTypes = new ArrayList<BaseType>();
+    
+    public static ArrayList<String> contentPackHashList=new ArrayList<String>();
+    public static boolean usingDirectoryContentPack=false;
 
     public static HashMap<String, MWTab> MODS_TABS = new HashMap<String, MWTab>();
 
@@ -148,13 +159,31 @@ public class ModularWarfare {
 
 
     public static void loadContent() {
-        Method method = null;
-        try {
-            method = (java.net.URLClassLoader.class).getDeclaredMethod("addURL", java.net.URL.class);
-            method.setAccessible(true);
-        } catch (Exception e) {
-            LOGGER.error("Failed to get class loader. All content loading will now fail.");
-            e.printStackTrace();
+        usingDirectoryContentPack=false;
+        for (File file : contentPacks) {
+            if(!file.isDirectory()) {
+                FileInputStream inputStream;
+                try {
+                    inputStream = new FileInputStream(file);
+                    MessageDigest md = MessageDigest.getInstance("MD5");
+                    byte[] buffer = new byte[1024];
+                    int length = -1;
+                    while ((length = inputStream.read(buffer, 0, 1024)) != -1) {
+                        md.update(buffer, 0, length);
+                    }
+                    String md5="";
+                    for(byte b:md.digest()) {
+                        md5+=b;
+                    }
+                    contentPackHashList.add(md5);
+                    inputStream.close();
+                } catch (IOException | NoSuchAlgorithmException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }else {
+                usingDirectoryContentPack=true;
+            }
         }
         for (File file : contentPacks) {
             if (!MODS_TABS.containsKey(file.getName())) {
@@ -266,6 +295,8 @@ public class ModularWarfare {
      * @param contentPacks
      */
     private static void getTypeFiles(List<File> contentPacks) {
+        ScriptHost.INSTANCE.reset();
+        
         for (File file : contentPacks) {
             if (!file.getName().contains("cache")) {
                 if (file.isDirectory()) {
@@ -296,6 +327,32 @@ public class ModularWarfare {
                             }
                         }
                     }
+                    /**
+                     * LOAD SCRIPT STATR
+                     * */
+                    File scriptFolder = new File(file, "/sciprt/");
+                    if (scriptFolder.exists()) {
+                        for (File typeFile : scriptFolder.listFiles()) {
+                            if(typeFile.getName().endsWith(".js")) {
+                                String text="";
+                                try {
+                                    BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(new FileInputStream(file),Charset.forName("UTF-8")));
+                                    String temp;
+                                    while((temp=bufferedReader.readLine())!=null) {
+                                        text+=temp;
+                                    }
+                                    bufferedReader.close();
+                                    ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID,"script/"+typeFile.getName()+".js"), text);
+                                } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                    /**
+                     * LOAD SCRIPT END
+                     * */
                 } else {
                     if (zipContentsPack.containsKey(file.getName())) {
                         for (FileHeader fileHeader : zipContentsPack.get(file.getName()).fileHeaders) {
@@ -326,6 +383,30 @@ public class ModularWarfare {
                                     }
                                 }
                             }
+                            /**
+                             * LOAD SCRIPT STATR
+                             * */
+                            String zipName = fileHeader.getFileName();
+                            if(zipName.startsWith("script/")&&zipName.endsWith(".js")) {
+                                String typeFile=zipName.replaceFirst("script/", "").replace(".js", "");
+                                String text="";
+                                try {
+                                    ZipInputStream inputStream=zipContentsPack.get(file.getName()).getZipFile().getInputStream(fileHeader);
+                                    BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(inputStream,Charset.forName("UTF-8")));
+                                    String temp;
+                                    while((temp=bufferedReader.readLine())!=null) {
+                                        text+=temp;
+                                    }
+                                    bufferedReader.close();
+                                    ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID,"script/"+typeFile+".js"), text);
+                                } catch (IOException | ZipException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }
+                            /**
+                             * LOAD SCRIPT END
+                             * */
                         }
                     }
                 }
@@ -386,9 +467,11 @@ public class ModularWarfare {
     public void onInitialization(FMLInitializationEvent event) {
         new ServerTickHandler();
 
+        /*
         if(Loader.isModLoaded("modularmovements")) {
             isLoadedModularMovements=true;
-        }
+        }*/
+        isLoadedModularMovements=true;
         
         PROXY.load();
 

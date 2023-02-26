@@ -6,13 +6,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.modularwarfare.api.PlayerSnapshotCreateEvent;
+import com.modularwarfare.common.type.BaseItem;
 
+import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3d;
@@ -123,6 +126,56 @@ public class ServerListener {
                         e.printStackTrace();
                     }
                 }
+            }
+        }
+    }
+    
+    public static void setRotationAngles(com.modularwarfare.raycast.obb.ModelPlayer model, float limbSwing, float limbSwingAmount, float ageInTicks,
+            float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
+        if (entityIn instanceof EntityPlayer && entityIn.isEntityAlive()) {
+            PlayerState state = null;
+            float offest = 0;
+            state = playerStateMap.get(entityIn.getEntityId());  
+            if(state == null) {
+                return;
+            }
+            offest = state.probeOffset;
+            
+            if(state.isSitting){
+                model.bipedRightLeg.rotateAngleX = -1.4137167F;
+                model.bipedRightLeg.rotateAngleY = ((float) Math.PI / 10F);
+                model.bipedRightLeg.rotateAngleZ = 0.07853982F;
+                model.bipedLeftLeg.rotateAngleX = -1.4137167F;
+                model.bipedLeftLeg.rotateAngleY = -((float) Math.PI / 10F);
+                model.bipedLeftLeg.rotateAngleZ = -0.07853982F;
+            }
+
+            if (state.isCrawling) {
+                model.bipedHead.rotateAngleX -= 70 * 3.14 / 180;
+                model.bipedRightArm.rotateAngleX *= 0.2;
+                model.bipedLeftArm.rotateAngleX *= 0.2;
+                model.bipedRightArm.rotateAngleX += 180 * 3.14 / 180;
+                model.bipedLeftArm.rotateAngleX += 180 * 3.14 / 180;
+                if (entityIn instanceof EntityPlayer) {
+                    ItemStack itemstack = ((EntityPlayer) entityIn).getHeldItemMainhand();
+                    if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
+                        if (ModularMovements.mwfEnable) {
+                            if (itemstack.getItem() instanceof BaseItem) {
+                                model.bipedLeftArm.rotateAngleY = 0;
+                                model.bipedRightArm.rotateAngleY = 0;
+                                model.bipedLeftArm.rotateAngleX = (float) (180 * 3.14 / 180);
+                                model.bipedRightArm.rotateAngleX = (float) (180 * 3.14 / 180);
+                            }
+                        }
+                    }
+                }
+                model.bipedRightLeg.rotateAngleX *= 0.2;
+                model.bipedLeftLeg.rotateAngleX *= 0.2;
+            }
+            if (offest >= 0) {
+                model.bipedRightLeg.rotateAngleZ += offest * 20 * 3.14 / 180;
+            } else {
+                model.bipedLeftLeg.rotateAngleZ += offest * 20 * 3.14 / 180;
             }
         }
     }

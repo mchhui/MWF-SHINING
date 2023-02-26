@@ -330,7 +330,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float randomNum = new Random().nextFloat();
         float randomShake = min + (randomNum * (max - min));
 
-        final float alpha = anim.lastGunRecoil + (anim.gunRecoil - anim.lastGunRecoil) * partialTicks;
+        float alpha = anim.lastGunRecoil + (anim.gunRecoil - anim.lastGunRecoil) * partialTicks;
         float bounce = Interpolation.BOUNCE_INOUT.interpolate(0F, 1F, alpha);
         float elastic = Interpolation.ELASTIC_OUT.interpolate(0F, 1F, alpha);
 
@@ -338,10 +338,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
         float sin10 = MathHelper.sin((float) (2 * Math.PI * alpha)) * 0.05f;
 
-        mat.translate(new Vector3f(-(bounce) * config.extra.modelRecoilBackwards, 0F, 0F));
+        mat.translate(new Vector3f(-(bounce) * config.extra.modelRecoilBackwards * (float)(1-controller.ADS), 0F, 0F));
         mat.translate(new Vector3f(0F, (-(elastic) * config.extra.modelRecoilBackwards) * 0.05F, 0F));
 
         mat.translate(new Vector3f(0F, 0F, sin10 * anim.recoilSide * config.extra.modelRecoilUpwards));
+        
         mat.rotate(toRadians(sin * anim.recoilSide * config.extra.modelRecoilUpwards), new Vector3f(0F, 0F, 1F));
         mat.rotate(toRadians(5F * sin10 * anim.recoilSide * config.extra.modelRecoilUpwards), new Vector3f(0F, 0F, 1F));
 
@@ -748,42 +749,26 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                 });
                             });
                         }
-                        
+
                         if (attachment == AttachmentPresetEnum.Sight) {
+                            ClientRenderHooks.isAiming = false;
+                            ClientRenderHooks.isAimingScope = false;
                             WeaponScopeModeType modeType = attachmentType.sight.modeType;
                             if (modeType.isMirror) {
                                 if (controller.ADS == 1) {
                                     if (!ClientRenderHooks.isAimingScope) {
                                         ClientRenderHooks.isAimingScope = true;
-                                        ModularWarfare.NETWORK
-                                                .sendToServer(new PacketAimingRequest(player.getDisplayNameString(), true));
                                     }
                                 } else {
                                     if (ClientRenderHooks.isAimingScope) {
                                         ClientRenderHooks.isAimingScope = false;
-                                        ModularWarfare.NETWORK.sendToServer(
-                                                new PacketAimingRequest(player.getDisplayNameString(), false));
-                                    }
-                                }
-                            } else {
-                                if (adsSwitch == 1.0F) {
-                                    if (!ClientRenderHooks.isAiming) {
-                                        ClientRenderHooks.isAiming = true;
-                                        ModularWarfare.NETWORK
-                                                .sendToServer(new PacketAimingRequest(player.getDisplayNameString(), true));
-                                    }
-                                } else {
-                                    if (ClientRenderHooks.isAiming) {
-                                        ClientRenderHooks.isAiming = false;
-                                        ModularWarfare.NETWORK.sendToServer(
-                                                new PacketAimingRequest(player.getDisplayNameString(), false));
                                     }
                                 }
                             }
-
                         }
                     }
                 }
+                
                 /**
                  *  flashmodel 
                  *  */

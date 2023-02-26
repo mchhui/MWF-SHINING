@@ -11,6 +11,7 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponFireMode;
 
 import net.minecraft.client.resources.I18n;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.text.TextComponentTranslation;
@@ -35,6 +36,18 @@ public class ScriptAPI {
 
         public NBTTagCompound getNbt(ItemStack stack) {
             return stack.getTagCompound();
+        }
+        
+        public ItemStack getStack(Item item) {
+            return new ItemStack(item);
+        }
+        
+        public String getDisplayName(ItemStack stack) {
+            return stack.getDisplayName();
+        }
+        
+        public boolean isEmpty(ItemStack stack) {
+            return stack.isEmpty();
         }
     }
 

@@ -7,6 +7,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GenerateJsonModelsEvent;
 import com.modularwarfare.api.WeaponAnimations;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
+import com.modularwarfare.client.commands.CommandMWClient;
 import com.modularwarfare.client.export.ItemModelExport;
 import com.modularwarfare.client.fpp.basic.animations.anims.*;
 import com.modularwarfare.client.fpp.basic.configs.*;
@@ -80,6 +81,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
+import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.resource.IResourceType;
@@ -308,6 +310,8 @@ public class ClientProxy extends CommonProxy {
         });
         loadTextures();
 
+        ClientCommandHandler.instance.registerCommand(new CommandMWClient());
+        
         Programs.init();
     }
 
@@ -809,6 +813,12 @@ public class ClientProxy extends CommonProxy {
                 offsetYaw *= RenderParameters.rate * (isCrawling ? 0.2f : 1.0f);
                 offsetYaw *= gunType.recoilAimReducer;
                 offsetYaw *= RenderParameters.phase ? 1 : -1;
+            }
+            if(ModularWarfare.isLoadedModularMovements) {
+                if(ClientLitener.clientPlayerState.isCrawling) {
+                    offsetPitch*=gunType.recoilCrawlPitchFactor;
+                    offsetYaw*=gunType.recoilCrawlYawFactor;
+                }
             }
             RenderParameters.playerRecoilPitch += offsetPitch;
             if (Math.random() > 0.5f) {

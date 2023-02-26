@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,6 +21,9 @@ public class ModConfig {
         public boolean animated_pack_extraction = true;
 
         public boolean modified_pack_server_kick = true;
+        public boolean directory_pack_server_kick = true;
+        public ArrayList<String> content_pack_hash_list=new ArrayList<String>();
+        
         public boolean drop_extra_slots_on_death = true;
     }
 

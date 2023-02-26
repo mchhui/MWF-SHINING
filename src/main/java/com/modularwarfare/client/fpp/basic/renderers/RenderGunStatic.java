@@ -374,29 +374,27 @@ public class RenderGunStatic extends CustomItemRenderer {
                         }
                     }
 
+                    ClientRenderHooks.isAimingScope=false;
+                    ClientRenderHooks.isAiming=false;
                     if (modeType.isMirror) {
                         if (adsSwitch == 1.0F) {
                             GL11.glTranslatef(model.config.extra.gunOffsetScoping, 0F, 0F);
                             if (!ClientRenderHooks.isAimingScope) {
                                 ClientRenderHooks.isAimingScope = true;
-                                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(entityplayer.getDisplayNameString(), true));
                             }
                         } else {
                             if (ClientRenderHooks.isAimingScope) {
                                 ClientRenderHooks.isAimingScope = false;
-                                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(entityplayer.getDisplayNameString(), false));
                             }
                         }
                     } else {
                         if (adsSwitch == 1.0F) {
                             if (!ClientRenderHooks.isAiming) {
                                 ClientRenderHooks.isAiming = true;
-                                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(entityplayer.getDisplayNameString(), true));
                             }
                         } else {
                             if (ClientRenderHooks.isAiming) {
                                 ClientRenderHooks.isAiming = false;
-                                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(entityplayer.getDisplayNameString(), false));
                             }
                         }
                     }
