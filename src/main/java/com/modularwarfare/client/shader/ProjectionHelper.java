@@ -36,6 +36,16 @@ public class ProjectionHelper {
     }
 
     public Vec3d project(float objX, float objY, float objZ) {
+    	
+    	int[] vp= new int[2];
+    	//vp=viewport.flip();
+    	viewport.rewind();
+    	int x=viewport.get(viewport.position() + 2);
+    	int y=viewport.get(viewport.position() + 3);
+    	viewport.rewind();
+    	
+    	
+    	
         GLU.gluProject(objX, objY, objZ, modelview, projection, viewport, winCoords);
 
         float winX = winCoords.get(0);
