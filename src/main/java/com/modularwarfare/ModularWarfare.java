@@ -550,7 +550,7 @@ public class ModularWarfare {
          * Create & Check Addon System
          */
 
-        this.addonDir = new File(ModUtil.getGameFolder() + "/addons");
+        this.addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
 
         if (!this.addonDir.exists())
             this.addonDir.mkdirs();
