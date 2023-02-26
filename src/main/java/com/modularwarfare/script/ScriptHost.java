@@ -112,7 +112,7 @@ public class ScriptHost {
         if (scriptEngine != null) {
             try {
                 InputStream inputStream = ScriptHost.class.getClassLoader().getResourceAsStream("assets/modularwarfare/script/"+scriptLoc+".js");
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream,Charset.forName("UTF-8")));
                 String temp;
                 while ((temp = bufferedReader.readLine()) != null) {
                     text += temp;
