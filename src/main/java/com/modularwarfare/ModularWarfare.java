@@ -528,14 +528,18 @@ public class ModularWarfare {
         if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
             Class protector_class = null;
             try {
-                protector_class = Class.forName("com.modularwarfare.common.protector.ModularProtectorOfficial");
-                PROTECTOR = (ModularProtector) protector_class.newInstance();
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (InstantiationException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+                try {
+                    protector_class = Class.forName("com.modularwarfare.common.protector.ModularProtectorOfficial");
+                    PROTECTOR = (ModularProtector) protector_class.newInstance();
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                } catch (InstantiationException e) {
+                    throw new RuntimeException(e);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }  
+            }catch(RuntimeException exception) {
+                exception.printStackTrace();
             }
             if(protector_class == null){
                 PROTECTOR = new ModularProtectorTemplate();
