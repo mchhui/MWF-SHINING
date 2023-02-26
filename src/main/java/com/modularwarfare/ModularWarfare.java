@@ -35,6 +35,7 @@ import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.protector.ModularProtector;
+import com.modularwarfare.common.protector.ModularProtectorTemplate;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
@@ -197,7 +198,7 @@ public class ModularWarfare {
                         /** Set password */
                         if (zipFile.isEncrypted()) {
                             if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-                                ModularWarfare.PROTECTOR.applyPassword(zipFile, file.getName());
+                                ModularWarfare.PROTECTOR.dhazkjdhakjdbcjbkajb(zipFile, file.getName());
                             } else {
                                 ModularWarfare.LOGGER.info("Can't use password protected content-pack on server-side.");
                             }
@@ -515,8 +516,31 @@ public class ModularWarfare {
     public void constructionEvent(FMLConstructionEvent event) {
         LOGGER = LogManager.getLogger(ModularWarfare.MOD_ID);
 
+        /**
+         * Loading ModularProtector
+         * Because of security reasons ModularProtectorOfficial class is not shown in the GitHub repository
+         * however ModularProtectorOfficial is in the official releases on Curseforge and obfuscated
+         *
+         * In order to still be able to build the repository from source, we give you a template called ModularProtectorTemplate
+         * that allow you to implement your own content-pack protector.
+         * Note: You will not be able to use existing official encrypted content-pack using the GitHub builds.
+         */
         if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-            PROTECTOR = new ModularProtector();
+            Class protector_class = null;
+            try {
+                protector_class = Class.forName("com.modularwarfare.common.protector.ModularProtectorOfficial");
+                PROTECTOR = (ModularProtector) protector_class.newInstance();
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            if(protector_class == null){
+                PROTECTOR = new ModularProtectorTemplate();
+            }
+            LOGGER.info("Registered ModularProtector :"+PROTECTOR.getClass().toString());
         }
         /**
          * Create & Check Addon System
