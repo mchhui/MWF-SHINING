@@ -1,6 +1,7 @@
 package com.modularwarfare.client.fpp.enhanced.animation;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
@@ -96,12 +97,12 @@ public class AnimationController {
         MODE_CHANGE=1;
     }
 
-    public void onTickRender(float partialTick) {
+    public void onTickRender(float stepTick) {
         long time=System.currentTimeMillis();
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         float moveDistance=player.distanceWalkedModified-player.prevDistanceWalkedModified;
         /** DEFAULT **/
-        double defaultSpeed = config.animations.get(AnimationType.DEFAULT).getSpeed(config.FPS) * partialTick;
+        double defaultSpeed = config.animations.get(AnimationType.DEFAULT).getSpeed(config.FPS) * stepTick;
         if(DEFAULT==0) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 GunType type=((ItemGun)player.getHeldItemMainhand().getItem()).type;
@@ -114,7 +115,7 @@ public class AnimationController {
         }
         
         /** DRAW **/
-        double drawSpeed = config.animations.get(AnimationType.DRAW).getSpeed(config.FPS) * partialTick;
+        double drawSpeed = config.animations.get(AnimationType.DRAW).getSpeed(config.FPS) * stepTick;
         DRAW = Math.max(0, DRAW + drawSpeed);
         if(DRAW>1F) {
             DRAW=1F;
@@ -124,7 +125,7 @@ public class AnimationController {
         if(!config.animations.containsKey (AnimationType.INSPECT)) {
             INSPECT=1;
         }else {
-            double modeChangeVal = config.animations.get(AnimationType.INSPECT).getSpeed(config.FPS) * partialTick;
+            double modeChangeVal = config.animations.get(AnimationType.INSPECT).getSpeed(config.FPS) * stepTick;
             INSPECT+=modeChangeVal;
             if(INSPECT>=1) {
                 INSPECT=1;
@@ -133,13 +134,17 @@ public class AnimationController {
 
         /** ADS **/
         boolean aimChargeMisc = ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
-        double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * partialTick;
+        double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * stepTick;
         double val = 0;
         if(Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && !aimChargeMisc && INSPECT == 1F) {
             val = ADS + adsSpeed * (2 - ADS);
         } else {
             val = ADS - adsSpeed * (1 + ADS);
-        }  
+        }
+        
+        if (RenderParameters.collideFrontDistance > 0) {
+            val = ADS - adsSpeed*5;
+        }
         
         if(!isDrawing()) {
             ADS = Math.max(0, Math.min(1, val));
@@ -159,7 +164,7 @@ public class AnimationController {
          * Sprinting
          */
         if(!config.sprint.basicSprint) {
-            double sprintSpeed = 0.15f * partialTick;
+            double sprintSpeed = 0.15f * stepTick;
             double sprintValue = 0;
 
             if(player.movementInput.jump) {
@@ -189,7 +194,7 @@ public class AnimationController {
                 SPRINT_LOOP = 0;
                 SPRINT_RANDOM = 0;
             } else {
-                double sprintLoopSpeed = config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * partialTick
+                double sprintLoopSpeed = config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * stepTick
                         * (moveDistance / 0.15f);
                 boolean flagSprintRand = false;
                 if (flag) {
@@ -204,7 +209,7 @@ public class AnimationController {
                     sprintLoopCoolTime = time + 100;
                 }
                 if (!flagSprintRand) {
-                    SPRINT_RANDOM -= config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * 3 * partialTick;
+                    SPRINT_RANDOM -= config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * 3 * stepTick;
                 }
                 if (SPRINT_LOOP > 1) {
                     SPRINT_LOOP = 0;
@@ -221,7 +226,7 @@ public class AnimationController {
             }
         } else {
             /** SPRINT **/
-            float sprintSpeed = 0.15f * partialTick;
+            float sprintSpeed = 0.15f * stepTick;
             float sprintValue = (float) ((player.isSprinting()) ? SPRINT_BASIC + sprintSpeed : SPRINT_BASIC - sprintSpeed);
             if(anim.gunRecoil > 0.1F){
                 sprintValue = (float) (SPRINT_BASIC - sprintSpeed*3f);
@@ -233,7 +238,7 @@ public class AnimationController {
         if(!config.animations.containsKey (AnimationType.MODE_CHANGE)) {
             MODE_CHANGE=1;
         }else {
-            double modeChangeVal = config.animations.get(AnimationType.MODE_CHANGE).getSpeed(config.FPS) * partialTick;
+            double modeChangeVal = config.animations.get(AnimationType.MODE_CHANGE).getSpeed(config.FPS) * stepTick;
             MODE_CHANGE+=modeChangeVal;
             if(MODE_CHANGE>=1) {
                 MODE_CHANGE=1;
@@ -241,6 +246,7 @@ public class AnimationController {
         }
         
         updateActionAndTime();
+        RenderParameters.adsSwitch = (float)ADS;
     }
     
     public AnimationType getPlayingAnimation() {

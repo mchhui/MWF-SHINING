@@ -50,6 +50,8 @@ public class ClientTickHandler extends ForgeEvent {
     public static ItemStack oldItemStack = ItemStack.EMPTY;
     public static ItemStack lastItemStack = ItemStack.EMPTY;
     int i = 0;
+    
+    private static long lastSyncTime;
 
     public ClientTickHandler() {
     }
@@ -97,6 +99,28 @@ public class ClientTickHandler extends ForgeEvent {
                 renderTick *= 60d / (double) Minecraft.getDebugFPS();
                 StateEntry.smoothing = renderTick;
                 onRenderTickStart(Minecraft.getMinecraft(), renderTick);
+                /**
+                 * EnhancedGunRendered Updates
+                 */
+                float stepTick = 0;
+                long time = System.currentTimeMillis();
+                if (time > lastSyncTime + 1000 / 100) {
+                    if (lastSyncTime > 0) {
+                        stepTick = (time - lastSyncTime) / (1000 / 60f);
+                        if (ClientProxy.gunEnhancedRenderer.controller != null) {
+                            if (Minecraft.getMinecraft().player != null) {
+                                if (Minecraft.getMinecraft().player.getHeldItemMainhand()
+                                        .getItem() instanceof ItemGun) {
+                                    if (((ItemGun) Minecraft.getMinecraft().player.getHeldItemMainhand()
+                                            .getItem()).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
+                                        ClientProxy.gunEnhancedRenderer.controller.onTickRender(stepTick);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    lastSyncTime = time;
+                }
                 break;
             }
         }
@@ -169,10 +193,6 @@ public class ClientTickHandler extends ForgeEvent {
                 float modeSwitchSpeed = 0.03f * renderTick;
                 float modeSwitchValue = Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(0) ? RenderParameters.triggerPullSwitch + triggerPullSpeed : RenderParameters.triggerPullSwitch - triggerPullSpeed;
                 RenderParameters.triggerPullSwitch = Math.max(0, Math.min(0.02f, triggerPullValue));
-            }else {
-                if (ClientProxy.gunEnhancedRenderer.controller != null) {
-                    RenderParameters.adsSwitch = (float) ClientProxy.gunEnhancedRenderer.controller.ADS;
-                }
             }
 
             float balancing_speed_x = 0.08f * renderTick;
@@ -249,14 +269,6 @@ public class ClientTickHandler extends ForgeEvent {
             }
             for (EnhancedStateMachine stateMachine : ClientRenderHooks.weaponEnhancedAnimations.values()) {
                 stateMachine.onRenderTickUpdate(renderTick);
-            }
-            /**
-             * EnhancedGunRendered Updates
-             */
-            if (ClientProxy.gunEnhancedRenderer.controller != null) {
-                if(((ItemGun) player.getHeldItemMainhand().getItem()).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                    ClientProxy.gunEnhancedRenderer.controller.onTickRender(renderTick);
-                }
             }
         } else {
             RenderParameters.resetRenderMods();

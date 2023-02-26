@@ -363,7 +363,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
-        
+        if(ScopeUtils.isIndsideGunRendering) {
+            GlStateManager.blendFunc(SourceFactor.ONE, DestFactor.ZERO);
+        }
         float worldScale = 1;
         float rotateXRendering=rotateX;
         CROSS_ROTATE=rotateXRendering;
@@ -844,6 +846,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
 
         GlStateManager.shadeModel(GL11.GL_FLAT);
+        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
     }
     
@@ -988,9 +991,16 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     Shaders.pushProgram();  
                     Shaders.useProgram(Shaders.ProgramNone);
                 }
-                GL20.glUseProgram(Programs.normalProgram);
-                Minecraft mc=Minecraft.getMinecraft();
                 
+                Minecraft mc=Minecraft.getMinecraft();
+                float alpha = 1 - adsSwitch;
+                
+                if(alpha>0.2) {
+                    alpha=1;
+                }else {
+                    alpha/=0.2f;
+                }
+                GL20.glUseProgram(Programs.normalProgram);
                 GL11.glPushMatrix();
                 int tex=ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
                 
@@ -1011,25 +1021,23 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 GlStateManager.blendFunc(SourceFactor.ONE, DestFactor.ZERO);
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
                 modelAttachment.renderOverlaySolid(worldScale);
-                
+
                 GL20.glUseProgram(0);
                 if(OptifineHelper.isShadersEnabled()) {
                     Shaders.popProgram();  
                 }
-
-                float alpha = 1 - adsSwitch;
+                
                 GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
                 GlStateManager.color(1.0f, 1.0f, 1.0f, alpha);
                 if(attachmentType.sight.usedDefaultOverlayModelTexture) {
                     renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
                 }
-                //必要的colormask
-                GlStateManager.colorMask(true, true, true, false);
+                //必要的colormask(2023.3.26又注:今天看起来是莫名其妙)
+                GlStateManager.colorMask(true, true, true, true);
                 modelAttachment.renderOverlay(worldScale);
                 GlStateManager.colorMask(true, true, true, true);
                 GlStateManager.disableBlend();
                 //GlStateManager.enableLighting();
-
 
                 
                 ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
@@ -1041,10 +1049,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
                 
                 
+                GlStateManager.colorMask(true, true, true, false);
                 GlStateManager.disableBlend();
+                //忘记这玩意有什么用了 好像和镜面的光照渲染有关系
                 renderWorldOntoScope(attachmentType, modelAttachment,worldScale,false);
                 GlStateManager.enableBlend();
-
+                GlStateManager.colorMask(true, true, true, true);
+                
                 ContextCapabilities contextCapabilities = GLContext.getCapabilities();
                 if (contextCapabilities.OpenGL43) {
                     GL43.glCopyImageSubData(tex, GL_TEXTURE_2D, 0, 0, 0, 0, ScopeUtils.SCOPE_LIGHTMAP_TEX, GL_TEXTURE_2D, 0, 0, 0, 0, mc.displayWidth, mc.displayHeight, 1);
@@ -1058,7 +1069,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
             } else {
                 GL11.glPushMatrix();
-                renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
+                GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+                if(attachmentType.sight.usedDefaultOverlayModelTexture) {
+                    renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
+                }
                 modelAttachment.renderOverlay(worldScale);
                 GL11.glPopMatrix();
             }
@@ -1098,6 +1112,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
             modelAttachment.renderScope(worldScale);
         }
+        /*
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && mc.gameSettings.thirdPersonView == 0) {
             if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
@@ -1127,6 +1142,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 }
             }
         }
+        */
         GL11.glPopMatrix();
     }
     

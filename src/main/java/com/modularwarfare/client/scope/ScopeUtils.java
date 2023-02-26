@@ -443,7 +443,7 @@ public class ScopeUtils {
                     
                     OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
                 }else {
-                    GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1f);
+                    GlStateManager.alphaFunc(GL11.GL_GREATER, 0.01f);
                     
                     GL20.glUseProgram(Programs.overlayProgram);
                     GL20.glUniform2f(GL20.glGetUniformLocation(Programs.overlayProgram, "size"), mc.displayWidth,mc.displayHeight);
