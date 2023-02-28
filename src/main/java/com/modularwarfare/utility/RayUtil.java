@@ -1,6 +1,7 @@
 package com.modularwarfare.utility;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.guns.ItemGun;
@@ -9,6 +10,7 @@ import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.network.PacketGunTrail;
 import com.modularwarfare.common.network.PacketGunTrailAskServer;
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
+import mchhui.modularmovements.tactical.client.ClientLitener;
 import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
@@ -56,9 +58,30 @@ public class RayUtil {
             acc += 0.4f;
         }
         
-        if(ServerTickHandler.playerAimInstant.get(player.getName())) {
-            acc *= gun.accuracyAimFactor;
-        }else {
+        //Client side
+        if(player.world.isRemote) {
+        	if(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
+                acc *= gun.accuracyAimFactor;
+            }else {
+                
+            }
+        	if (ModularWarfare.isLoadedModularMovements) {
+                if (ClientLitener.clientPlayerState.isCrawling) {
+                    acc *= gun.accuracyCrawlFactor;
+                } else if (player.isSneaking()) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            } else {
+                if (player.isSneaking()) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            }
+        }else {//Server side
+        	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
+            if(bb!=null&&bb) {
+                acc *= gun.accuracyAimFactor;
+            }else {
+            }
             if (ModularWarfare.isLoadedModularMovements) {
                 if (ServerListener.isCrawling(player.getEntityId())) {
                     acc *= gun.accuracyCrawlFactor;
@@ -71,6 +94,8 @@ public class RayUtil {
                 }
             }
         }
+
+        
         
         if (acc < 0) {
             acc = 0;
