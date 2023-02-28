@@ -58,6 +58,8 @@ public class TextureButton extends GuiButton {
     }
 	public TextureButton(int id, double x, double y, int width, int height, ResourceLocation iconTexture) {
         this(id, x, y, width, height, "");
+        this.x=x;
+        this.y=y;
         this.iconTexture = iconTexture;
     }
 	public TextureButton setAttachment(AttachmentPresetEnum attachment) {
@@ -74,9 +76,11 @@ public class TextureButton extends GuiButton {
         return this;
     }
 	public enum TypeEnum {
+		Button,
 		Slot,
 		SubSlot,
-		SideButton;
+		SideButton,
+		SideButtonVert;
 	}
 	public boolean mousePressed(Minecraft mc, int mouseX, int mouseY)
     {
@@ -173,12 +177,15 @@ public class TextureButton extends GuiButton {
             	
             	RenderHelperMW.renderItemStack(itemStack, (int)((x+0.5)/scale), (int)(y/scale), partialTicks, false);
             	GlStateManager.popMatrix();
+            	
+            	GlStateManager.disableDepth();
             	GlStateManager.pushMatrix();
             	scale=4.0d/scaledresolution.getScaleFactor()*0.4D;
             	GlStateManager.translate(0, 0, 1);
             	GlStateManager.scale(scale, scale,scale);
             	RenderHelperMW.renderText(itemStack.getDisplayName().subSequence(0, 6).toString(), (int)((x+(4/scaledresolution.getScaleFactor()))/scale), (int)((y+(4/scaledresolution.getScaleFactor()))/scale), 0xFFFFFF);
             	GlStateManager.popMatrix();
+            	GlStateManager.enableDepth();
             }else if(this.attachment!=null) {
             	GlStateManager.pushMatrix();
             	double scale=4.0d/scaledresolution.getScaleFactor()*0.5D;
@@ -197,6 +204,10 @@ public class TextureButton extends GuiButton {
             if(this.type==TypeEnum.SideButton) {
             	Minecraft.getMinecraft().renderEngine.bindTexture(this.state==0?GuiGunModify.arrow_down:GuiGunModify.arrow_up);
             	RenderHelperMW.drawTexturedRect(x , y , width+0.05d, height);
+            }
+            if(this.type==TypeEnum.SideButtonVert) {
+            	Minecraft.getMinecraft().renderEngine.bindTexture(this.state==0?GuiGunModify.arrow_right:GuiGunModify.arrow_left);
+            	RenderHelperMW.drawTexturedRect(x-(width/1.7) , y , height/2, height);
             }
             if (this.type==TypeEnum.Slot&&!this.itemStack.isEmpty() && isOver == 2) {
             	GlStateManager.pushMatrix();

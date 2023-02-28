@@ -9,6 +9,7 @@ import com.modularwarfare.client.fpp.basic.configs.ArmorRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
+import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.model.ModelCustomArmor;
@@ -174,6 +175,9 @@ public class ClientRenderHooks extends ForgeEvent {
     public boolean renderHeldItem(ItemStack stack,EnumHand hand,float partialTicksTime,float fov) {
         EntityPlayer player = mc.player;
         boolean result=false;
+        if(mc.currentScreen instanceof GuiGunModify) {
+        	return true;
+        }
 
         if (stack != null && stack.getItem() instanceof BaseItem) {
             BaseType type = ((BaseItem) stack.getItem()).baseType;

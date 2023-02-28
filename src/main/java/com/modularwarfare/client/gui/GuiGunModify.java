@@ -4,6 +4,7 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.ads
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +21,7 @@ import org.lwjgl.util.vector.Vector3f;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
@@ -53,13 +55,17 @@ import com.modularwarfare.common.guns.WeaponFireMode;
 import com.modularwarfare.common.guns.WeaponScopeModeType;
 import com.modularwarfare.common.handler.data.VarBoolean;
 import com.modularwarfare.common.network.PacketAimingRequest;
+import com.modularwarfare.common.network.PacketGunAddAttachment;
+import com.modularwarfare.common.network.PacketGunUnloadAttachment;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.ColorUtils;
+import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.OptifineHelper;
 import com.modularwarfare.utility.ReloadHelper;
 import com.modularwarfare.utility.RenderHelperMW;
+import com.mojang.authlib.minecraft.MinecraftProfileTexture.Type;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -76,12 +82,15 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.config.ConfigManager;
 
 public class GuiGunModify extends GuiScreen {
@@ -94,6 +103,8 @@ public class GuiGunModify extends GuiScreen {
 	public int lastMouseX;
 	public int lastMouseY;
 	private final int sideButtonIdOffset=20;
+	private final int subSlotIdOffset=100;
+	private final int backpackIdOffset=200;
 	private int slotPreLine=6;
 	private List<Integer> attachmentSlotList=null;
 	private TextureButton selectedSideButton=null;
@@ -111,35 +122,70 @@ public class GuiGunModify extends GuiScreen {
 	public static final ResourceLocation sprays = new ResourceLocation("modularwarfare", "textures/modifygui/sprays.png");
 	public static final ResourceLocation stock = new ResourceLocation("modularwarfare", "textures/modifygui/stock.png");
 	public static final ResourceLocation slot = new ResourceLocation("modularwarfare", "textures/modifygui/slot.png");
+	public static final ResourceLocation quit = new ResourceLocation("modularwarfare", "textures/modifygui/quit.png");
 	public static final ResourceLocation statu = new ResourceLocation("modularwarfare", "textures/modifygui/statu.png");
 	public static final ResourceLocation decal_1 = new ResourceLocation("modularwarfare", "textures/modifygui/decal_1.png");
 	public static final ResourceLocation slot_topbg = new ResourceLocation("modularwarfare", "textures/modifygui/slot_topbg.png");
-	
+	public static TextureButton QUITBUTTON,PAGEBUTTON;
+	private static double subPageX;
+	private static double subPageY;
+	private static double subPageWidth;
+	private static double subPageHeight;
 	// public FloatBuffer modelMatrix = BufferUtils.createFloatBuffer(16);
 	// public FloatBuffer projMatrix = BufferUtils.createFloatBuffer(16);
-	public GuiGunModify(ItemStack itemStack) {
-		this.currentModify = itemStack;
+	public GuiGunModify() {
+		updateItemModifying();
 		initGui();
+	}
+	public void updateItemModifying() {
+		ItemStack itemMainhand=Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+		boolean refresh=false;
+		if(this.currentModify!=null&&!this.currentModify.equals(itemMainhand)) {
+			refresh=true;
+		}
+		this.currentModify = itemMainhand;
+		if(refresh) {
+			initGui();
+		}
 	}
 	@Override
 	public void initGui() {
-		ScaledResolution scaledresolution = new ScaledResolution(Minecraft.getMinecraft());
+		mc=Minecraft.getMinecraft();
+		ScaledResolution scaledresolution = new ScaledResolution(mc);
+		double sFactor = mc.displayWidth / 1920d;
+		double scaleFactor=1.0d* sFactor / scaledresolution.getScaleFactor();
 		this.buttonList.clear();
 		int buttonSize=60/scaledresolution.getScaleFactor();
-		this.buttonList.add(new TextureButton(0,0,0,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Barrel).setType(TypeEnum.Slot));
-		this.buttonList.add(new TextureButton(1,0,0,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Charm).setType(TypeEnum.Slot));
-		this.buttonList.add(new TextureButton(2,0,0,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Flashlight).setType(TypeEnum.Slot));
-		this.buttonList.add(new TextureButton(3,0,0,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Grip).setType(TypeEnum.Slot));
-		this.buttonList.add(new TextureButton(4,0,0,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Sight).setType(TypeEnum.Slot));
-		this.buttonList.add(new TextureButton(5,0,0,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Skin).setType(TypeEnum.Slot));
-		this.buttonList.add(new TextureButton(6,0,0,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Stock).setType(TypeEnum.Slot));
-		this.buttonList.add(new TextureButton(0+sideButtonIdOffset,0,0,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
-		this.buttonList.add(new TextureButton(1+sideButtonIdOffset,0,0,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
-		this.buttonList.add(new TextureButton(2+sideButtonIdOffset,0,0,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
-		this.buttonList.add(new TextureButton(3+sideButtonIdOffset,0,0,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
-		this.buttonList.add(new TextureButton(4+sideButtonIdOffset,0,0,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
-		this.buttonList.add(new TextureButton(5+sideButtonIdOffset,0,0,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
-		this.buttonList.add(new TextureButton(6+sideButtonIdOffset,0,0,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		QUITBUTTON=new TextureButton(1000,scaledresolution.getScaledWidth()-buttonSize*1.5f,scaledresolution.getScaledHeight()-buttonSize*1.5f,buttonSize,buttonSize,quit).setType(TypeEnum.Button);
+		
+		this.buttonList.add(QUITBUTTON);
+		if(PAGEBUTTON==null) {
+			PAGEBUTTON=new TextureButton(1001,0,0,buttonSize/4,buttonSize,decal_1).setType(TypeEnum.SideButtonVert);
+		}
+		PAGEBUTTON.width=buttonSize/4;
+		PAGEBUTTON.height=buttonSize;
+		subPageX=0;
+		subPageY=0;
+		subPageWidth=(PAGEBUTTON.state==-1?256:0)*scaleFactor;
+		subPageHeight=512*scaleFactor;
+		PAGEBUTTON.x=subPageX+subPageWidth;
+		PAGEBUTTON.y=0;
+		
+		this.buttonList.add(PAGEBUTTON);
+		this.buttonList.add(new TextureButton(0,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Barrel).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(1,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Charm).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(2,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Flashlight).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(3,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Grip).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(4,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Sight).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(5,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Skin).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(6,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Stock).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(0+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		this.buttonList.add(new TextureButton(1+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		this.buttonList.add(new TextureButton(2+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		this.buttonList.add(new TextureButton(3+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		this.buttonList.add(new TextureButton(4+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		this.buttonList.add(new TextureButton(5+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		this.buttonList.add(new TextureButton(6+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
 		
 		updateButtonItem();
 	}
@@ -152,7 +198,7 @@ public class GuiGunModify extends GuiScreen {
                 if (itemStack != null && itemStack.getItem() instanceof ItemAttachment) {
                     ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
                     AttachmentType attachType = itemAttachment.type;
-                    if (attachType.attachmentType == attachmentEnum) {
+                    if (attachType.attachmentType.equals(attachmentEnum)) {
                         if (gunType.acceptedAttachments.get(attachType.attachmentType) != null && gunType.acceptedAttachments.get(attachType.attachmentType).size() >= 1) {
                             if (gunType.acceptedAttachments.get(attachType.attachmentType).contains(attachType.internalName)) {
                                 attachments.add(i);
@@ -181,10 +227,18 @@ public class GuiGunModify extends GuiScreen {
 		GunType gunType = (GunType) type;
 		attachmentSlotList=checkAttach(mc.player,gunType,currentButton.getAttachmentType());
 		int buttonSize=60/scaledresolution.getScaleFactor();
-		this.buttonList.add(new TextureButton(0,0,0,buttonSize,buttonSize,slot).setAttachment(currentButton.getAttachmentType()).setType(TypeEnum.SubSlot));
-		for(Integer inventoryId:attachmentSlotList) {
-			this.buttonList.add(new TextureButton(0,0,0,buttonSize,buttonSize,slot).setAttachment(currentButton.getAttachmentType()).setType(TypeEnum.SubSlot).setItemStack(player.inventory.getStackInSlot(inventoryId)));
+		boolean isSkin=currentButton.getAttachmentType().equals(AttachmentPresetEnum.Skin);
+		if(!isSkin) {
+			this.buttonList.add(new TextureButton(-1,9999,9999,buttonSize,buttonSize,slot).setAttachment(currentButton.getAttachmentType()).setType(TypeEnum.SubSlot));
 		}
+		for(Integer inventoryId:attachmentSlotList) {
+			this.buttonList.add(new TextureButton(subSlotIdOffset+inventoryId,9999,9999,buttonSize,buttonSize,slot).setAttachment(currentButton.getAttachmentType()).setType(TypeEnum.SubSlot).setItemStack(player.inventory.getStackInSlot(inventoryId)));
+		}
+	}
+	public boolean gunHasMultiSkins() {
+		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
+		GunType gunType = (GunType) type;
+		return gunType.modelSkins!=null&&gunType.modelSkins.length>1;
 	}
 	public void updateButtonItem() {
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
@@ -193,13 +247,51 @@ public class GuiGunModify extends GuiScreen {
         if (gunType.modelSkins.length > 1) {
             keys.add(AttachmentPresetEnum.Skin);
         }
+        for(GuiButton button:this.buttonList) {
+        	if(button instanceof TextureButton) {
+				TextureButton tb=(TextureButton) button;
+				if(tb.getAttachmentType()==AttachmentPresetEnum.Skin&&gunHasMultiSkins()) {
+					int skinId = 0;
+                    if (this.currentModify.hasTagCompound()) {
+                        if (this.currentModify.getTagCompound().hasKey("skinId")) {
+                            skinId = this.currentModify.getTagCompound().getInteger("skinId");
+                        }
+                    }
+                    ItemSpray itemSpray=null;
+                    for(Item item:Item.REGISTRY) {
+                    	if (item instanceof ItemSpray) {
+                    		ItemSpray itemS = (ItemSpray) item;
+                    		SprayType attachType = itemS.type;
+                    		if(gunType.modelSkins[skinId].internalName.equalsIgnoreCase(attachType.skinName)) {
+                    			itemSpray=itemS;
+                    			break;
+                    		}
+                    	}
+                    }
+                    if(itemSpray!=null) {
+                    	ItemStack skinItem=new ItemStack(itemSpray,1);
+                        tb.setItemStack(skinItem);
+                    }
+                    
+//					if (itemStack != null && itemStack.getItem() instanceof ItemSpray) {
+//	                    ItemSpray itemSpray = (ItemSpray) itemStack.getItem();
+//	                    SprayType attachType = itemSpray.type;
+//	                    for (int j = 0; j < gunType.modelSkins.length; j++) {
+//	                        if (gunType.modelSkins[j].internalName.equalsIgnoreCase(attachType.skinName)) {
+//	                            attachments.add(i);
+//	                        }
+//	                    }
+//	                }
+				}
+        	}
+        }
 		for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
 			ItemStack itemStack = GunType.getAttachment(this.currentModify, attachment);
 			if (keys.contains(attachment)&&itemStack != null && !itemStack.isEmpty()) {
 				for(GuiButton button:this.buttonList) {
 					if(button instanceof TextureButton) {
 						TextureButton tb=(TextureButton) button;
-						if(tb.getType()==TextureButton.TypeEnum.Slot&&tb.getAttachmentType()==attachment) {
+						if(tb.getType().equals(TextureButton.TypeEnum.Slot)&&tb.getAttachmentType()==attachment) {
 							tb.setItemStack(itemStack);
 						}
 					}
@@ -210,6 +302,7 @@ public class GuiGunModify extends GuiScreen {
 
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+		updateItemModifying();
 		EntityRenderer renderer = mc.entityRenderer;
 		double sFactor = mc.displayWidth / 1920d;
 		float farPlaneDistance = mc.gameSettings.renderDistanceChunks * 16F;
@@ -279,7 +372,7 @@ public class GuiGunModify extends GuiScreen {
 		ItemStack itemstack = this.currentModify;
 		GlStateManager.pushMatrix();
 		if (((GunType) type).animationType == WeaponAnimationType.BASIC) {
-			renderBasicModel(entitylivingbaseIn, type, scale, itemstack, f4);
+			renderBasicModel(entitylivingbaseIn, type, scale, itemstack, sFactor, scaledresolution, f4);
 		} else if (((GunType) type).animationType == WeaponAnimationType.ENHANCED) {
 			renderEnhancedModel(entitylivingbaseIn, type, scale, itemstack, sFactor, scaledresolution, f4);
 		}
@@ -291,7 +384,12 @@ public class GuiGunModify extends GuiScreen {
 		projectionHelper.updateMatrices();
 		GlStateManager.popMatrix();
 		renderSlotStuff(mouseX,mouseY,entitylivingbaseIn, type, scale,sFactor, itemstack, scaledresolution, f4);
+		if(PAGEBUTTON.state==-1) {
+			drawSubPage(mouseY, mouseY, partialTicks,sFactor,scaledresolution);
+		}
 		
+		QUITBUTTON.drawButton(mc, mouseX, mouseY, partialTicks);
+		PAGEBUTTON.drawButton(mc, mouseX, mouseY, partialTicks);
 		
 		
 		GlStateManager.matrixMode(GL11.GL_PROJECTION);
@@ -309,7 +407,16 @@ public class GuiGunModify extends GuiScreen {
 		GL11.glPointSize(10);
 		GL11.glColor3f(0, 1, 0);
 		GunType gunType = (GunType) type;
-		GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
+		boolean isBasic=gunType.animationType == WeaponAnimationType.BASIC;
+		
+		GunEnhancedRenderConfig config=null;
+		GunRenderConfig configBasic=null;
+		if(isBasic) {
+			ModelGun model = (ModelGun) gunType.model;
+			configBasic = model.config;
+		}else {
+			config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
+		}
 
 		ArrayList<float[]> placeList = new ArrayList();
 		float num_segments = 200f;
@@ -335,7 +442,7 @@ public class GuiGunModify extends GuiScreen {
 		}
 		
 		for(GuiButton button:this.buttonList) {
-			if(button instanceof TextureButton&&((TextureButton) button).getType()==TextureButton.TypeEnum.SideButton) {
+			if(button instanceof TextureButton&&((TextureButton) button).getType().equals(TextureButton.TypeEnum.SideButton)) {
 				button.visible=false;
 			}
 		}
@@ -350,10 +457,28 @@ public class GuiGunModify extends GuiScreen {
 				//itemStack != null && itemStack.getItem() != Items.AIR
 				//AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
 				Vector3f partTranslate = new Vector3f(0,0,0);
-				if (config.attachmentGroup.containsKey(attachment.typeName)) {
-					AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
-					if (ag != null) {
-						partTranslate = new Vector3f(ag.translate);
+				if(isBasic) {
+//					for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+//						GlStateManager.pushMatrix();
+//						ItemStack itemStack = GunType.getAttachment(itemstack, attachment);
+//					
+//					
+//					if (configBasic.attachmentGroup.containsKey(attachment.typeName)) {
+//						AttachmentGroup ag = configBasic.attachmentGroup.get(attachment.typeName);
+//						if (ag != null) {
+//							partTranslate = new Vector3f(ag.translate);
+//						}
+//					}
+					ArrayList<Vector3f> array=configBasic.attachments.attachmentPointMap.get(attachment);
+					if(array!=null&&array.size()>1) {
+						partTranslate = array.get(0);
+					}
+				}else {
+					if (config.attachmentGroup.containsKey(attachment.typeName)) {
+						AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
+						if (ag != null) {
+							partTranslate = new Vector3f(ag.translate);
+						}
 					}
 				}
 				if (attachment.typeName.equals("stock")) {
@@ -420,7 +545,7 @@ public class GuiGunModify extends GuiScreen {
 				for(GuiButton button:this.buttonList) {
 					if(button instanceof TextureButton) {
 						TextureButton tb=(TextureButton) button;
-						if(tb.getType()==TextureButton.TypeEnum.Slot&&tb.getAttachmentType()==attachment) {
+						if(tb.getType().equals(TextureButton.TypeEnum.Slot)&&tb.getAttachmentType()==attachment) {
 							tb.x=nearestPoint[0]-(tb.width/2);//*sFactor/scaledresolution.getScaleFactor()
 							tb.y=nearestPoint[1]-(tb.height/2);
 							tb.visible=true;
@@ -444,73 +569,179 @@ public class GuiGunModify extends GuiScreen {
 		for(GuiButton button:this.buttonList) {
 			if(button instanceof TextureButton) {
 				TextureButton tb=(TextureButton) button;
-				if(tb.getType()==TextureButton.TypeEnum.SideButton)
+				if(tb.getType().equals(TextureButton.TypeEnum.SideButton))
 					button.drawButton(mc, mouseX, mouseY, partialTicks);
 			}
 		}
 		for(GuiButton button:this.buttonList) {
 			if(button instanceof TextureButton) {
 				TextureButton tb=(TextureButton) button;
-				if(tb.getType()==TextureButton.TypeEnum.Slot)
+				if(tb.getType().equals(TextureButton.TypeEnum.Slot))
 					button.drawButton(mc, mouseX, mouseY, partialTicks);
 			}
 		}
-		////drawSubPage
-		//pos update
-		TextureButton parentButton=null;
-		int maxX=0;
-		int indexX=0;
-		int indexY=2;
-		if(selectedSideButton!=null)
-		{
-			parentButton=this.getButton(selectedSideButton.id-this.sideButtonIdOffset);
-			for(GuiButton button2:this.buttonList) {
-				if(button2 instanceof TextureButton) {
-					TextureButton tb2=(TextureButton) button2;
-					if(tb2.getType()==TextureButton.TypeEnum.SubSlot) {
-						if(tb2.getItemStack().isEmpty()) {
-							tb2.x=parentButton.x;
-							tb2.y=parentButton.y+parentButton.height*1.05D;
-							
-						}else {
-							tb2.x=parentButton.x+(parentButton.width*1.05D*indexX);
-							tb2.y=parentButton.y+(parentButton.height*1.05D*indexY);
-							indexX++;
-							if(maxX<indexX)
-							{
-								maxX=indexX;
-							}
-							if(indexX%6==0)
-							{
-								indexX=0;
-								indexY++;
+		drawButtonSubPage(mouseY, mouseY, partialTicks);
+	}
+	public void drawSubPage(int mouseX, int mouseY,float partialTicks,double sFactor,ScaledResolution scaledresolution) {
+		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
+		GunType gunType = (GunType) type;
+		GlStateManager.color(1, 1, 1, 1);
+		GlStateManager.enableTexture2D();
+		mc.renderEngine.bindTexture(statu);
+		RenderHelperMW.drawTexturedRect(subPageX , subPageY , subPageWidth,subPageHeight);
+		int color=0xFFFFFF;
+		double fontScale=2d*sFactor/scaledresolution.getScaleFactor();
+		GlStateManager.pushMatrix();
+		GlStateManager.scale(fontScale, fontScale, fontScale);
+		RenderHelperMW.renderCenteredText(this.currentModify.getDisplayName(), (int)((subPageX+subPageWidth/2)/fontScale), (int)(subPageY/fontScale), color);
+		ArrayList<String> toolTips=new ArrayList();
+		toolTips.add("Weapon status");
+		String baseDisplayLine = "%bFire Mode: %g%s";
+        baseDisplayLine = baseDisplayLine.replaceAll("%b", TextFormatting.BLUE.toString());
+        baseDisplayLine = baseDisplayLine.replaceAll("%g", TextFormatting.GRAY.toString());
+        toolTips.add(String.format(baseDisplayLine, GunType.getFireMode(currentModify) != null ? GunType.getFireMode(currentModify) : gunType.fireModes[0]));
+        DecimalFormat decimalFormat = new DecimalFormat("#.#");
+        String damageLine = "%bDamage: %g%s";
+        damageLine = damageLine.replaceAll("%b", TextFormatting.BLUE.toString());
+        damageLine = damageLine.replaceAll("%g", TextFormatting.RED.toString());
+        if (gunType.numBullets > 1) {
+        	toolTips.add(String.format(damageLine, gunType.gunDamage + " x " + gunType.numBullets));
+        } else {
+        	toolTips.add(String.format(damageLine, gunType.gunDamage));
+        }
+        String accuracyLine = "%bAccuracy: %g%s";
+        accuracyLine = accuracyLine.replaceAll("%b", TextFormatting.BLUE.toString());
+        accuracyLine = accuracyLine.replaceAll("%g", TextFormatting.RED.toString());
+        toolTips.add(String.format(accuracyLine, decimalFormat.format((1 / gunType.bulletSpread) * 100) + "%"));
+		
+		if (gunType.acceptedAttachments != null) {
+            if (!gunType.acceptedAttachments.isEmpty()) {
+            	toolTips.add("Accepted attachments");
+            	for (AttachmentPresetEnum attachmentType : AttachmentPresetEnum.values()) {
+            		if(attachmentType!=AttachmentPresetEnum.Skin) {
+            			toolTips.add(TextFormatting.BLUE.toString() + attachmentType.typeName+":");
+            			for (ArrayList<String> strings : gunType.acceptedAttachments.values()) {
+                            for (int i = 0; i < strings.size(); i++) {
+                                try {
+                                	ItemAttachment itemAtt=ModularWarfare.attachmentTypes.get(strings.get(i));
+                                	if(itemAtt.type.attachmentType==attachmentType) {
+                                		final String attachment = itemAtt.type.displayName;
+                                        if (attachment != null) {
+                                        	toolTips.add(" " + attachment);
+                                        }
+                                	}
+                                } catch (NullPointerException error) {
+                                }
+                            }
+                        }
+            		}else if(gunType.modelSkins!=null&&gunType.modelSkins.length>1) {
+            			toolTips.add(TextFormatting.BLUE.toString() + attachmentType.typeName+":");
+            			for (int j = 1; j < gunType.modelSkins.length; j++) {
+            				toolTips.add(" " + gunType.modelSkins[j].internalName);
+                        }
+            		}
+            	}
+            }
+        }
+		if (gunType.acceptedAmmo != null) {
+			toolTips.add("" + TextFormatting.BLUE.toString() + "Accepted mags:");
+            if (gunType.acceptedAmmo.length > 0) {
+                for (String internalName : gunType.acceptedAmmo) {
+                    if (ModularWarfare.ammoTypes.containsKey(internalName)) {
+                        final String magName = ModularWarfare.ammoTypes.get(internalName).type.displayName;
+                        if (magName != null) {
+                        	toolTips.add("" + magName);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (gunType.acceptedBullets != null) {
+        	toolTips.add("" + TextFormatting.BLUE.toString() + "Accepted bullets:");
+
+            if (gunType.acceptedBullets.length > 0) {
+                for (String internalName : gunType.acceptedBullets) {
+                    if (ModularWarfare.bulletTypes.containsKey(internalName)) {
+                        final String magName = ModularWarfare.bulletTypes.get(internalName).type.displayName;
+                        if (magName != null) {
+                        	toolTips.add("" + magName);
+                        }
+                    }
+                }
+            }
+        }
+		double indexY=1;
+		int limitLength=23;
+		for(String str:toolTips) {
+			if(str.length()>limitLength) {
+				str=str.subSequence(0, limitLength).toString();
+			}
+			RenderHelperMW.renderText(str, (int)(0), (int)(indexY*10), color);
+			indexY++;
+		}
+		GlStateManager.popMatrix();
+		//
+	}
+	public void drawButtonSubPage(int mouseX, int mouseY,float partialTicks) {
+			//pos update
+			int indexX=0;
+			int indexY=0;
+			int maxX=0;
+			TextureButton parentButton=null;
+			if(selectedSideButton!=null)
+			{
+				parentButton=this.getButton(selectedSideButton.id-this.sideButtonIdOffset);
+				//skin cannot be remove,begin from first line
+				boolean isSkin=parentButton.getAttachmentType()==AttachmentPresetEnum.Skin;
+				indexY=isSkin?1:2;
+				for(GuiButton button2:this.buttonList) {
+					if(button2 instanceof TextureButton) {
+						TextureButton tb2=(TextureButton) button2;
+						if(tb2.getType().equals(TextureButton.TypeEnum.SubSlot)) {
+							if(tb2.getItemStack().isEmpty()) {
+								tb2.x=parentButton.x;
+								tb2.y=parentButton.y+parentButton.height*1.05D;
+								
+							}else {
+								tb2.x=parentButton.x+(parentButton.width*1.05D*indexX);
+								tb2.y=parentButton.y+(parentButton.height*1.05D*indexY);
+								indexX++;
+								if(maxX<indexX)
+								{
+									maxX=indexX;
+								}
+								if(indexX%6==0)
+								{
+									indexX=0;
+									indexY++;
+								}
 							}
 						}
 					}
 				}
 			}
-		}
-		GlStateManager.disableDepth();
-		//background
-		if(parentButton!=null) {
-			GlStateManager.color(0, 0, 0, 1);
-			GlStateManager.disableTexture2D();
-			RenderHelperMW.drawTexturedRect(parentButton.x , parentButton.y+parentButton.height , parentButton.width*1.05D*maxX, parentButton.height*1.07D*indexY);
-			GlStateManager.enableTexture2D();
-		}
-		for(GuiButton button:this.buttonList) {
-			if(button instanceof TextureButton) {
-				TextureButton tb=(TextureButton) button;
-				if(tb.getType()==TextureButton.TypeEnum.SubSlot)
-					tb.drawButton(mc, mouseX, mouseY, partialTicks);
+			if(indexX%6==0)
+			{
+				indexY--;
 			}
-		}
-		GlStateManager.enableDepth();
-		
-		drawSubPage();
-	}
-	public void drawSubPage() {
-		
+			GlStateManager.disableDepth();
+			//background
+			if(parentButton!=null) {
+				GlStateManager.color(0, 0, 0, 1);
+				GlStateManager.disableTexture2D();
+				RenderHelperMW.drawTexturedRect(parentButton.x , parentButton.y+parentButton.height , parentButton.width*1.05D*maxX, parentButton.height*1.07D*indexY);
+				GlStateManager.enableTexture2D();
+			}
+			
+			for(GuiButton button:this.buttonList) {
+				if(button instanceof TextureButton) {
+					TextureButton tb=(TextureButton) button;
+					if(tb.getType().equals(TextureButton.TypeEnum.SubSlot))
+						tb.drawButton(mc, mouseX, mouseY, partialTicks);
+				}
+			}
+			GlStateManager.enableDepth();
 	}
 	public TextureButton getButton(int id) {
 		for(GuiButton button:this.buttonList) {
@@ -549,7 +780,7 @@ public class GuiGunModify extends GuiScreen {
 			break;
 		}
 	}
-	public void renderBasicModel(EntityLivingBase entitylivingbaseIn,BaseType type,double scale,ItemStack itemstack,float partialTicks) {
+	public void renderBasicModel(EntityLivingBase entitylivingbaseIn,BaseType type,double scale,ItemStack itemstack,double sFactor,ScaledResolution scaledresolution,float partialTicks) {
 		// this.translateToHand(EnumHandSide.RIGHT);
 		// GlStateManager.translate(-0.06, 0.38, -0.02);
 
@@ -559,23 +790,25 @@ public class GuiGunModify extends GuiScreen {
 						entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
 			}
 		} else {
-
-			GlStateManager.pushMatrix();
-			GlStateManager.translate(200, 80, 50);
-			GlStateManager.rotate(180, 0, 0, 1);
-			GlStateManager.scale(scale, scale, scale);
-			// GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
-			// GlStateManager.translate(0.15, 0.2, -0.08);
-			// double height = 0.2;
-			// GlStateManager.translate(0, height, 0);
-			// GlStateManager.rotate(entity.rotationPitch, 1, 0, 0.0F);
-			// GlStateManager.rotate(180, 0, 0, 1);
-			// GlStateManager.translate(0, -height, 0);
+			GlStateManager.disableCull();
+			RenderHelper.enableStandardItemLighting();
+			GlStateManager.enableDepth();
+			GlStateManager.translate(0, 0, 600);
+			double centerOffsetY = -8;
+			double centerOffsetX = 12;
+			GlStateManager.translate(
+					(scaledresolution.getScaledWidth() / 2) + (centerOffsetX * scaledresolution.getScaleFactor()),
+					(scaledresolution.getScaledHeight() / 2) + (centerOffsetY * scaledresolution.getScaleFactor()), 0);
+			GlStateManager.scale(scale, scale, -scale);
 			ItemGun gun = (ItemGun) itemstack.getItem();
 			GunType gunType = gun.type;
 			ModelGun model = (ModelGun) gunType.model;
 			float modelScale = (model != null) ? model.config.extra.modelScale : 1f;
 			GlStateManager.scale(modelScale * 0.8, modelScale * 0.8, modelScale * 0.8);
+			GlStateManager.rotate(180, 0, 0, 1);
+			GlStateManager.rotate((float) rotateY, 0, 1, 0);
+			GlStateManager.rotate((float) rotateZ, 1, 0, 0);
+			GlStateManager.color(1, 1, 1);
 			float worldScale = 1F / 16F;
 			if (model != null) {
 				int skinId = 0;
@@ -674,8 +907,9 @@ public class GuiGunModify extends GuiScreen {
 
 				GlStateManager.popMatrix();
 			}
-			GlStateManager.popMatrix();
+			//GlStateManager.popMatrix();
 		}
+		RenderHelper.disableStandardItemLighting();
 	}
 
 	public void renderEnhancedModel(EntityLivingBase entitylivingbaseIn,BaseType type,double scale,ItemStack itemstack,double sFactor,ScaledResolution scaledresolution,float partialTicks) {
@@ -1168,7 +1402,7 @@ public class GuiGunModify extends GuiScreen {
 											boolean drawEdge=false;
 											for(GuiButton button:this.buttonList) {
 												TextureButton tb=(TextureButton) button;
-												if(tb.getType()==TextureButton.TypeEnum.Slot&&tb.isMouseOver()&&tb.getAttachmentType()==attachment) {
+												if(tb.getType().equals(TextureButton.TypeEnum.Slot)&&tb.isMouseOver()&&tb.getAttachmentType()==attachment) {
 													drawEdge=true;
 												}
 											}
@@ -1276,7 +1510,7 @@ public class GuiGunModify extends GuiScreen {
 		ScaledResolution scaledresolution = new ScaledResolution(Minecraft.getMinecraft());
 		if(button instanceof TextureButton) {
 			TextureButton tButton=(TextureButton) button;
-			if(tButton.getType()==TextureButton.TypeEnum.SideButton) {
+			if(tButton.getType().equals(TextureButton.TypeEnum.SideButton)) {
 				if(tButton.state==0) {
 					selectedSideButton=null;
 					tButton.state=-1;
@@ -1289,6 +1523,28 @@ public class GuiGunModify extends GuiScreen {
 					selectedSideButton.state=0;
 					this.joinSubPageButtons(mc.player,scaledresolution);
 				}				
+			}
+			else if(tButton.getType().equals(TextureButton.TypeEnum.SubSlot)) {
+				//unload button
+				if(tButton.id==-1) {
+					ModularWarfare.NETWORK.sendToServer(new PacketGunUnloadAttachment(tButton.getAttachmentType().getName(), false));
+					this.actionPerformed(this.selectedSideButton);
+				}else {
+					int inventoryID=tButton.id-this.subSlotIdOffset;
+					if (GunType.getAttachment(this.currentModify, tButton.getAttachmentType()) != mc.player.inventory.getStackInSlot(inventoryID)) {
+                        ModularWarfare.NETWORK.sendToServer(new PacketGunAddAttachment(inventoryID));
+                        this.actionPerformed(this.selectedSideButton);
+                    }
+					
+				}
+				
+			}else if(button==QUITBUTTON) {
+				ModularWarfare.PROXY.playSound(new MWSound(mc.player.getPosition(), "attachment.open", 1f, 1f));
+				Minecraft.getMinecraft().displayGuiScreen(null);
+			}else if(button==PAGEBUTTON) {
+				PAGEBUTTON.state=PAGEBUTTON.state==-1?0:-1;
+				this.updateItemModifying();
+				this.initGui();
 			}
 			//tButton.
 		}
@@ -1342,9 +1598,19 @@ public class GuiGunModify extends GuiScreen {
 	@Override
 	protected void keyTyped(char eventChar, int eventKey) {
 		// esc
-		if (eventKey == 1) {
-			Minecraft.getMinecraft().displayGuiScreen(null);
+		if (eventKey == 1||eventKey==50) {
+			try {
+				actionPerformed(QUITBUTTON);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
+	@Override
+	public boolean doesGuiPauseGame()
+    {
+        return false;
+    }
 
 }

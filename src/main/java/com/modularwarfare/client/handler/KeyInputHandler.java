@@ -168,7 +168,7 @@ public class KeyInputHandler extends ForgeEvent {
                                 ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                         	}else {
                         		ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
-                        		Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND)));
+                        		Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
                         	}
                         }
                     }
