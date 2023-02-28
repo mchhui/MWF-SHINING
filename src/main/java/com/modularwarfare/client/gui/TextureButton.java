@@ -160,37 +160,47 @@ public class TextureButton extends GuiButton {
                 GL11.glColor3f(1.0F, 1.0F, 1.0F);
                 if(isOver == 2) {
                 	GL11.glColor4f(1.0F, 1.0F, 1.0F,0.4f);
+                	//GlStateManager.color(1, 1, 1);
                 	GlStateManager.disableTexture2D();
                     GlStateManager.enableBlend();
                     RenderHelperMW.drawTexturedRect(x , y , width+0.05d, height);//,0XFFFFFF
                     GlStateManager.enableTexture2D();
-                    GlStateManager.disableBlend();
+                    //GlStateManager.disableBlend();
                 }
             }
             //GlStateManager.translate(0, 0, 5000);
             //Minecraft.getMinecraft().getRenderItem().renderItemOverlayIntoGUI(Minecraft.getMinecraft().fontRenderer, itemStack, (int)x, (int)y, null);
             if(!this.itemStack.isEmpty()) {
             	GlStateManager.pushMatrix();
-            	double scale=4.0d/scaledresolution.getScaleFactor()*0.9D;
+            	double scale=5.9d/scaledresolution.getScaleFactor()*0.9D;
             	GlStateManager.translate(0, 0, -135);
             	GlStateManager.scale(scale, scale,scale);
             	
-            	RenderHelperMW.renderItemStack(itemStack, (int)((x+0.5)/scale), (int)(y/scale), partialTicks, false);
+            	RenderHelperMW.renderItemStack(itemStack, (int)((x+3)/scale), (int)((y+2.5d)/scale), partialTicks, false);
             	GlStateManager.popMatrix();
             	
             	GlStateManager.disableDepth();
             	GlStateManager.pushMatrix();
-            	scale=4.0d/scaledresolution.getScaleFactor()*0.4D;
+            	scale=6.0d/scaledresolution.getScaleFactor()*0.4D;
             	GlStateManager.translate(0, 0, 1);
             	GlStateManager.scale(scale, scale,scale);
-            	RenderHelperMW.renderText(itemStack.getDisplayName().subSequence(0, 6).toString(), (int)((x+(4/scaledresolution.getScaleFactor()))/scale), (int)((y+(4/scaledresolution.getScaleFactor()))/scale), 0xFFFFFF);
+            	String str=itemStack.getDisplayName();//itemStack.getDisplayName()
+            	int strW=mc.fontRenderer.getStringWidth(str);
+            	while(strW>36) {
+            		str=str.substring(0, str.length()-1);
+            		strW=mc.fontRenderer.getStringWidth(str);
+            	}
+            	if(strW>4) {
+            		//str=itemStack.getDisplayName().subSequence(0, 4).toString();
+            	}
+            	RenderHelperMW.renderText(str, (int)((x+(4/scaledresolution.getScaleFactor()))/scale), (int)((y+(4/scaledresolution.getScaleFactor()))/scale), 0xFFFFFF);
             	GlStateManager.popMatrix();
             	GlStateManager.enableDepth();
             }else if(this.attachment!=null) {
             	GlStateManager.pushMatrix();
-            	double scale=4.0d/scaledresolution.getScaleFactor()*0.5D;
+            	double scale=6.0d/scaledresolution.getScaleFactor()*0.5D;
             	GlStateManager.scale(scale, scale,scale);
-            	RenderHelperMW.renderText("无", (int)((x+1)/scale), (int)((y+1)/scale), 0xFFFFFF);
+            	RenderHelperMW.renderText("无", (int)((x+2)/scale), (int)((y+2)/scale), 0xFFFFFF);
             	GlStateManager.popMatrix();
             }
             
@@ -212,7 +222,7 @@ public class TextureButton extends GuiButton {
             if (this.type==TypeEnum.Slot&&!this.itemStack.isEmpty() && isOver == 2) {
             	GlStateManager.pushMatrix();
             	GlStateManager.translate(0, 0, 500);
-            	double scale=0.7d;
+            	double scale=1.5d;
             	GlStateManager.scale(scale, scale, scale);
             	this.toolTip=this.itemStack.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL).toString();
                 int toolTipWidth = mc.fontRenderer.getStringWidth(this.toolTip);

@@ -131,11 +131,14 @@ public class GuiGunModify extends GuiScreen {
 	private static double subPageY;
 	private static double subPageWidth;
 	private static double subPageHeight;
+	public static boolean isEnglishLanguage=true;
+	public static boolean clickOnce=false;
 	// public FloatBuffer modelMatrix = BufferUtils.createFloatBuffer(16);
 	// public FloatBuffer projMatrix = BufferUtils.createFloatBuffer(16);
 	public GuiGunModify() {
 		updateItemModifying();
 		initGui();
+		isEnglishLanguage=Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode().indexOf("en_")!=-1;
 	}
 	public void updateItemModifying() {
 		ItemStack itemMainhand=Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
@@ -155,7 +158,7 @@ public class GuiGunModify extends GuiScreen {
 		double sFactor = mc.displayWidth / 1920d;
 		double scaleFactor=1.0d* sFactor / scaledresolution.getScaleFactor();
 		this.buttonList.clear();
-		int buttonSize=60/scaledresolution.getScaleFactor();
+		int buttonSize=90/scaledresolution.getScaleFactor();
 		QUITBUTTON=new TextureButton(1000,scaledresolution.getScaledWidth()-buttonSize*1.5f,scaledresolution.getScaledHeight()-buttonSize*1.5f,buttonSize,buttonSize,quit).setType(TypeEnum.Button);
 		
 		this.buttonList.add(QUITBUTTON);
@@ -226,7 +229,7 @@ public class GuiGunModify extends GuiScreen {
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
 		GunType gunType = (GunType) type;
 		attachmentSlotList=checkAttach(mc.player,gunType,currentButton.getAttachmentType());
-		int buttonSize=60/scaledresolution.getScaleFactor();
+		int buttonSize=90/scaledresolution.getScaleFactor();
 		boolean isSkin=currentButton.getAttachmentType().equals(AttachmentPresetEnum.Skin);
 		if(!isSkin) {
 			this.buttonList.add(new TextureButton(-1,9999,9999,buttonSize,buttonSize,slot).setAttachment(currentButton.getAttachmentType()).setType(TypeEnum.SubSlot));
@@ -302,6 +305,7 @@ public class GuiGunModify extends GuiScreen {
 
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+		clickOnce=false;
 		updateItemModifying();
 		EntityRenderer renderer = mc.entityRenderer;
 		double sFactor = mc.displayWidth / 1920d;
@@ -497,7 +501,7 @@ public class GuiGunModify extends GuiScreen {
 				for (float[] point : placeList) {
 					double vtpD = scaledPartVec3d.distanceTo(new Vec3d(point[0], point[1], 0));
 
-					double slotSize = 40d/scaledresolution.getScaleFactor();
+					double slotSize = 61d/scaledresolution.getScaleFactor();
 					// Distance Check
 					if (scaledPartVec3d.distanceTo(new Vec3d(nearestPoint[0], nearestPoint[1], 0)) > vtpD) {
 						boolean canJoin = true;
@@ -532,11 +536,11 @@ public class GuiGunModify extends GuiScreen {
 				
 				GlStateManager.enableTexture2D();
 				mc.renderEngine.bindTexture(slot_topbg);
-				double topBGsize=20/scaledresolution.getScaleFactor();
-				RenderHelperMW.drawTexturedRect(nearestPoint[0]-(28/scaledresolution.getScaleFactor()), nearestPoint[1]-(48/scaledresolution.getScaleFactor()), topBGsize*2, topBGsize);
-				double iconSize=19/scaledresolution.getScaleFactor();
+				double topBGsize=30/scaledresolution.getScaleFactor();
+				RenderHelperMW.drawTexturedRect(nearestPoint[0]-(45/scaledresolution.getScaleFactor()), nearestPoint[1]-(75/scaledresolution.getScaleFactor()), topBGsize*2, topBGsize);
+				double iconSize=25/scaledresolution.getScaleFactor();
 				bindAttachmentTexture(attachment);
-				RenderHelperMW.drawTexturedRect(nearestPoint[0]-(27/scaledresolution.getScaleFactor()), nearestPoint[1]-(46.5/scaledresolution.getScaleFactor()), iconSize, iconSize);
+				RenderHelperMW.drawTexturedRect(nearestPoint[0]-(40/scaledresolution.getScaleFactor()), nearestPoint[1]-(71.5/scaledresolution.getScaleFactor()), iconSize, iconSize);
 				
 				GlStateManager.disableTexture2D();
 				GL11.glColor3f(1, 1, 1);
@@ -580,7 +584,7 @@ public class GuiGunModify extends GuiScreen {
 					button.drawButton(mc, mouseX, mouseY, partialTicks);
 			}
 		}
-		drawButtonSubPage(mouseY, mouseY, partialTicks);
+		drawButtonSubPage(mouseX, mouseY, partialTicks);
 	}
 	public void drawSubPage(int mouseX, int mouseY,float partialTicks,double sFactor,ScaledResolution scaledresolution) {
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
@@ -613,7 +617,6 @@ public class GuiGunModify extends GuiScreen {
         accuracyLine = accuracyLine.replaceAll("%b", TextFormatting.BLUE.toString());
         accuracyLine = accuracyLine.replaceAll("%g", TextFormatting.RED.toString());
         toolTips.add(String.format(accuracyLine, decimalFormat.format((1 / gunType.bulletSpread) * 100) + "%"));
-		
 		if (gunType.acceptedAttachments != null) {
             if (!gunType.acceptedAttachments.isEmpty()) {
             	toolTips.add("Accepted attachments");
@@ -671,12 +674,15 @@ public class GuiGunModify extends GuiScreen {
                 }
             }
         }
+        
 		double indexY=1;
-		int limitLength=23;
+		int limitWidth=128;
 		for(String str:toolTips) {
-			if(str.length()>limitLength) {
-				str=str.subSequence(0, limitLength).toString();
-			}
+			int strW=mc.fontRenderer.getStringWidth(str);
+			while(strW>limitWidth) {
+        		str=str.substring(0, str.length()-1);
+        		strW=mc.fontRenderer.getStringWidth(str);
+        	}
 			RenderHelperMW.renderText(str, (int)(0), (int)(indexY*10), color);
 			indexY++;
 		}
@@ -790,25 +796,30 @@ public class GuiGunModify extends GuiScreen {
 						entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
 			}
 		} else {
-			GlStateManager.disableCull();
-			RenderHelper.enableStandardItemLighting();
-			GlStateManager.enableDepth();
-			GlStateManager.translate(0, 0, 600);
-			double centerOffsetY = -8;
-			double centerOffsetX = 12;
-			GlStateManager.translate(
-					(scaledresolution.getScaledWidth() / 2) + (centerOffsetX * scaledresolution.getScaleFactor()),
-					(scaledresolution.getScaledHeight() / 2) + (centerOffsetY * scaledresolution.getScaleFactor()), 0);
-			GlStateManager.scale(scale, scale, -scale);
 			ItemGun gun = (ItemGun) itemstack.getItem();
 			GunType gunType = gun.type;
 			ModelGun model = (ModelGun) gunType.model;
 			float modelScale = (model != null) ? model.config.extra.modelScale : 1f;
+			GlStateManager.disableCull();
+			RenderHelper.enableStandardItemLighting();
+			GlStateManager.enableDepth();
+			GlStateManager.translate(0, 0, 600);
+			double centerOffsetY = 0;
+			double centerOffsetX = 0;
+			centerOffsetX = model.config.extra.modelGuiRotateCenter.x;
+			centerOffsetY=model.config.extra.modelGuiRotateCenter.y;
+			double basicS=300;
+			scale = basicS*model.config.extra.modelGuiScale * sFactor / scaledresolution.getScaleFactor();
+			GlStateManager.translate(
+					(scaledresolution.getScaledWidth() / 2) ,
+					(scaledresolution.getScaledHeight() / 2) , 0);
+			GlStateManager.scale(scale, scale, -scale);
 			GlStateManager.scale(modelScale * 0.8, modelScale * 0.8, modelScale * 0.8);
 			GlStateManager.rotate(180, 0, 0, 1);
 			GlStateManager.rotate((float) rotateY, 0, 1, 0);
 			GlStateManager.rotate((float) rotateZ, 1, 0, 0);
 			GlStateManager.color(1, 1, 1);
+			GlStateManager.translate(centerOffsetX,centerOffsetY,0);
 			float worldScale = 1F / 16F;
 			if (model != null) {
 				int skinId = 0;
@@ -841,63 +852,39 @@ public class GuiGunModify extends GuiScreen {
 						ModelAttachment attachmentModel = (ModelAttachment) attachmentType.model;
 						if (attachmentType.attachmentType == AttachmentPresetEnum.Sight)
 							hasScopeAttachment = true;
+						
+						
+						boolean drawEdge=false;
+						for(GuiButton button:this.buttonList) {
+							TextureButton tb=(TextureButton) button;
+							if(tb.getType().equals(TextureButton.TypeEnum.Slot)&&tb.isMouseOver()&&tb.getAttachmentType()==attachment) {
+								drawEdge=true;
+							}
+						}
+//						
 						if (attachmentModel != null) {
-
-							Vector3f adjustedScale = new Vector3f(attachmentModel.config.extra.modelScale,
-									attachmentModel.config.extra.modelScale, attachmentModel.config.extra.modelScale);
-							GL11.glScalef(adjustedScale.x, adjustedScale.y, adjustedScale.z);
-
-							if (model.config.attachments.attachmentPointMap != null
-									&& model.config.attachments.attachmentPointMap.size() >= 1) {
-								if (model.config.attachments.attachmentPointMap.containsKey(attachment)) {
-									Vector3f attachmentVecTranslate = model.config.attachments.attachmentPointMap
-											.get(attachment).get(0);
-									Vector3f attachmentVecRotate = model.config.attachments.attachmentPointMap
-											.get(attachment).get(1);
-									GL11.glTranslatef(
-											attachmentVecTranslate.x / attachmentModel.config.extra.modelScale,
-											attachmentVecTranslate.y / attachmentModel.config.extra.modelScale,
-											attachmentVecTranslate.z / attachmentModel.config.extra.modelScale);
-
-									GL11.glRotatef(attachmentVecRotate.x, 1F, 0F, 0F); // ROLL LEFT-RIGHT
-									GL11.glRotatef(attachmentVecRotate.y, 0F, 1F, 0F); // ANGLE LEFT-RIGHT
-									GL11.glRotatef(attachmentVecRotate.z, 0F, 0F, 1F); // ANGLE UP-DOWN
-								}
+							//draw attachment edge
+							if(drawEdge) {//
+								//GL11.glPolygonOffset(-1.0f, -1.0f);
+								GL11.glEnable(GL11.GL_POLYGON_OFFSET_LINE);
+								GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+								GlStateManager.glLineWidth(10f);
+								GlStateManager.pushMatrix();
+								//GlStateManager.translate(0, -0.03d, 0);
+								//GlStateManager.scale(1.02d, 1.02d, 1.02d);
+								
+								GlStateManager.color(1, 1, 1);
+								GlStateManager.disableLighting();
+								GlStateManager.disableTexture2D();
+								GlStateManager.disableDepth();
+								renderAttachModel(attachmentModel, attachment, model, attachmentType, worldScale, itemStack, skinId, path);
+								GlStateManager.popMatrix();
+								GlStateManager.enableDepth();
+								GlStateManager.enableLighting();
+								GlStateManager.enableTexture2D();
+								GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 							}
-
-							if (model.config.attachments.positionPointMap != null) {
-								for (String internalName : model.config.attachments.positionPointMap.keySet()) {
-									if (internalName.equals(attachmentType.internalName)) {
-										Vector3f trans = model.config.attachments.positionPointMap.get(internalName)
-												.get(0);
-										Vector3f rot = model.config.attachments.positionPointMap.get(internalName)
-												.get(1);
-										GL11.glTranslatef(
-												trans.x / attachmentModel.config.extra.modelScale * worldScale,
-												trans.y / attachmentModel.config.extra.modelScale * worldScale,
-												trans.z / attachmentModel.config.extra.modelScale * worldScale);
-
-										GL11.glRotatef(rot.x, 1F, 0F, 0F); // ROLL LEFT-RIGHT
-										GL11.glRotatef(rot.y, 0F, 1F, 0F); // ANGLE LEFT-RIGHT
-										GL11.glRotatef(rot.z, 0F, 0F, 1F); // ANGLE UP-DOWN
-									}
-								}
-							}
-
-							skinId = 0;
-							if (itemStack.hasTagCompound()) {
-								if (itemStack.getTagCompound().hasKey("skinId")) {
-									skinId = itemStack.getTagCompound().getInteger("skinId");
-								}
-							}
-							if (attachmentType.sameTextureAsGun) {
-								ClientRenderHooks.customRenderers[3].bindTexture("guns", path);
-							} else {
-								path = skinId > 0 ? attachmentType.modelSkins[skinId].getSkin()
-										: attachmentType.modelSkins[0].getSkin();
-								ClientRenderHooks.customRenderers[3].bindTexture("attachments", path);
-							}
-							attachmentModel.renderAttachment(worldScale);
+							renderAttachModel(attachmentModel, attachment, model, attachmentType, worldScale, itemStack, skinId, path);
 						}
 					}
 					GlStateManager.popMatrix();
@@ -911,7 +898,60 @@ public class GuiGunModify extends GuiScreen {
 		}
 		RenderHelper.disableStandardItemLighting();
 	}
+	public void renderAttachModel(ModelAttachment attachmentModel,AttachmentPresetEnum attachment,ModelGun model,AttachmentType attachmentType,float worldScale,ItemStack itemStack,int skinId,String path) {
+		Vector3f adjustedScale = new Vector3f(attachmentModel.config.extra.modelScale,
+				attachmentModel.config.extra.modelScale, attachmentModel.config.extra.modelScale);
+		GL11.glScalef(adjustedScale.x, adjustedScale.y, adjustedScale.z);
+		if (model.config.attachments.attachmentPointMap != null
+				&& model.config.attachments.attachmentPointMap.size() >= 1) {
+			if (model.config.attachments.attachmentPointMap.containsKey(attachment)) {
+				Vector3f attachmentVecTranslate = model.config.attachments.attachmentPointMap
+						.get(attachment).get(0);
+				Vector3f attachmentVecRotate = model.config.attachments.attachmentPointMap
+						.get(attachment).get(1);
+				GL11.glTranslatef(
+						attachmentVecTranslate.x / attachmentModel.config.extra.modelScale,
+						attachmentVecTranslate.y / attachmentModel.config.extra.modelScale,
+						attachmentVecTranslate.z / attachmentModel.config.extra.modelScale);
 
+				GL11.glRotatef(attachmentVecRotate.x, 1F, 0F, 0F); // ROLL LEFT-RIGHT
+				GL11.glRotatef(attachmentVecRotate.y, 0F, 1F, 0F); // ANGLE LEFT-RIGHT
+				GL11.glRotatef(attachmentVecRotate.z, 0F, 0F, 1F); // ANGLE UP-DOWN
+			}
+		}
+		if (model.config.attachments.positionPointMap != null) {
+			for (String internalName : model.config.attachments.positionPointMap.keySet()) {
+				if (internalName.equals(attachmentType.internalName)) {
+					Vector3f trans = model.config.attachments.positionPointMap.get(internalName)
+							.get(0);
+					Vector3f rot = model.config.attachments.positionPointMap.get(internalName)
+							.get(1);
+					GL11.glTranslatef(
+							trans.x / attachmentModel.config.extra.modelScale * worldScale,
+							trans.y / attachmentModel.config.extra.modelScale * worldScale,
+							trans.z / attachmentModel.config.extra.modelScale * worldScale);
+
+					GL11.glRotatef(rot.x, 1F, 0F, 0F); // ROLL LEFT-RIGHT
+					GL11.glRotatef(rot.y, 0F, 1F, 0F); // ANGLE LEFT-RIGHT
+					GL11.glRotatef(rot.z, 0F, 0F, 1F); // ANGLE UP-DOWN
+				}
+			}
+		}
+		skinId = 0;
+		if (itemStack.hasTagCompound()) {
+			if (itemStack.getTagCompound().hasKey("skinId")) {
+				skinId = itemStack.getTagCompound().getInteger("skinId");
+			}
+		}
+		if (attachmentType.sameTextureAsGun) {
+			ClientRenderHooks.customRenderers[3].bindTexture("guns", path);
+		} else {
+			path = skinId > 0 ? attachmentType.modelSkins[skinId].getSkin()
+					: attachmentType.modelSkins[0].getSkin();
+			ClientRenderHooks.customRenderers[3].bindTexture("attachments", path);
+		}
+		attachmentModel.renderAttachment(worldScale);
+	}
 	public void renderEnhancedModel(EntityLivingBase entitylivingbaseIn,BaseType type,double scale,ItemStack itemstack,double sFactor,ScaledResolution scaledresolution,float partialTicks) {
 
 		// ScaledResolution scaledresolution = new
@@ -1028,13 +1068,14 @@ public class GuiGunModify extends GuiScreen {
 
 			// GlStateManager.rotate(180, 0, 1, 0);
 
-			scale = 70 * sFactor / scaledresolution.getScaleFactor();
-			double centerOffsetY = -8;
-			double centerOffsetX = 12;
+			
+			scale = 70*config.extra.modelGuiScale * sFactor / scaledresolution.getScaleFactor();
+			double centerOffsetY = config.extra.modelGuiRotateCenter.x;//-8
+			double centerOffsetX = config.extra.modelGuiRotateCenter.y;//12
 			// GlStateManager.translate(-25, 15, 0);
 			GlStateManager.translate(
-					(scaledresolution.getScaledWidth() / 2) + (centerOffsetX * scaledresolution.getScaleFactor()),
-					(scaledresolution.getScaledHeight() / 2) + (centerOffsetY * scaledresolution.getScaleFactor()), 0);
+					(scaledresolution.getScaledWidth() / 2) ,//+ (centerOffsetX * scaledresolution.getScaleFactor())
+					(scaledresolution.getScaledHeight() / 2) , 0);//+ (centerOffsetY * scaledresolution.getScaleFactor())
 			GlStateManager.scale(scale, scale, -scale);
 			// GlStateManager.translate(25, 10, 0);
 			GlStateManager.rotate(180, 1, 0, 0);
@@ -1043,7 +1084,7 @@ public class GuiGunModify extends GuiScreen {
 			GlStateManager.rotate((float) rotateY, 0, 1, 0);
 			// GlStateManager.rotate((float) autoRotate, 0, 0, 1);
 			GlStateManager.rotate((float) rotateZ, 1, 0, 0);
-
+			GlStateManager.translate(centerOffsetY,centerOffsetX,0);
 			GlStateManager.disableCull();
 			final ItemAttachment sightRendering = sight;
 			float worldScale = 1F;
@@ -1507,6 +1548,9 @@ public class GuiGunModify extends GuiScreen {
 	@Override
 	protected void actionPerformed(GuiButton button) throws IOException
     {
+		if(clickOnce)
+			return;
+		clickOnce=true;
 		ScaledResolution scaledresolution = new ScaledResolution(Minecraft.getMinecraft());
 		if(button instanceof TextureButton) {
 			TextureButton tButton=(TextureButton) button;

@@ -2,6 +2,8 @@ package com.modularwarfare.client.fpp.enhanced.configs;
 
 import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+
+import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.ArrayList;
@@ -115,5 +117,8 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
          * Adds a left-right staticModel shaking motion when firing, default 0.5
          */
         public float modelRecoilShake = 0.5F;
+        public float modelGuiScale=1f;
+        public Vector2f modelGuiRotateCenter=new Vector2f(0,0);
+        
     }
 }
