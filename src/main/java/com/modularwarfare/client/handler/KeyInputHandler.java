@@ -7,6 +7,7 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
@@ -158,9 +159,17 @@ public class KeyInputHandler extends ForgeEvent {
                                 stateMachine.attachmentMode = !stateMachine.attachmentMode;
                                 ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                             }*/
-                            AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
-                            stateMachine.attachmentMode = !stateMachine.attachmentMode;
-                            ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
+                            
+                        	
+                        	
+                        	if(false) {
+                        		AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
+                                stateMachine.attachmentMode = !stateMachine.attachmentMode;
+                                ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
+                        	}else {
+                        		ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
+                        		Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
+                        	}
                         }
                     }
                     break;
