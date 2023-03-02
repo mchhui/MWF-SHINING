@@ -1425,21 +1425,6 @@ public class GuiGunModify extends GuiScreen {
 											binding = config.attachment.get(attachmentType.internalName).binding;
 										}
 										model.applyGlobalTransformToOther(binding, () -> {
-											if (attachmentType.sameTextureAsGun) {
-												rge.bindTexture("guns", gunPath);
-											} else {
-												int attachmentsSkinId = 0;
-												if (itemStack.hasTagCompound()) {
-													if (itemStack.getTagCompound().hasKey("skinId")) {
-														attachmentsSkinId = itemStack.getTagCompound()
-																.getInteger("skinId");
-													}
-												}
-												String attachmentsPath = attachmentsSkinId > 0
-														? attachmentType.modelSkins[attachmentsSkinId].getSkin()
-														: attachmentType.modelSkins[0].getSkin();
-												rge.bindTexture("attachments", attachmentsPath);
-											}
 											boolean drawEdge=false;
 											for(GuiButton button:this.buttonList) {
 												TextureButton tb=(TextureButton) button;
@@ -1457,25 +1442,48 @@ public class GuiGunModify extends GuiScreen {
 												//GlStateManager.translate(0, -0.03d, 0);
 												//GlStateManager.scale(1.02d, 1.02d, 1.02d);
 												
-												GlStateManager.color(1, 1, 1);
+												//GlStateManager.translate(0, 1, 0);
+												
+												GlStateManager.color(1, 1, 1,1);
 												GlStateManager.disableLighting();
 												GlStateManager.disableTexture2D();
 												GlStateManager.disableDepth();
-												rge.renderAttachment(config, attachment.typeName,
-														attachmentType.internalName, () -> {
-															attachmentModel.renderAttachment(worldScale);
-															if (attachment == AttachmentPresetEnum.Sight) {
-																rge.renderScopeGlass(attachmentType, attachmentModel,
-																		rge.controller.ADS > 0, worldScale);
-															}
-														});
+												if(true) {
+													rge.renderAttachment(config, attachment.typeName,
+															attachmentType.internalName, () -> {
+																attachmentModel.renderAttachment(worldScale);
+																if (attachment == AttachmentPresetEnum.Sight) {
+																	rge.renderScopeGlass(attachmentType, attachmentModel,
+																			rge.controller.ADS > 0, worldScale);
+																}
+															});
+												}
+												GlStateManager.color(1, 1, 1,1);
 												GlStateManager.popMatrix();
 												GlStateManager.enableDepth();
 												GlStateManager.enableLighting();
 												GlStateManager.enableTexture2D();
+												GL11.glDisable(GL11.GL_POLYGON_OFFSET_LINE);
 												GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+												
+												//GL11.glPolygonMode(GL11.GL_FRONT, GL11.GL_FILL);
+								                //GL11.glPolygonMode(GL11.GL_BACK, GL11.GL_FILL);
 											}
-											
+											if (attachmentType.sameTextureAsGun) {
+												rge.bindTexture("guns", gunPath);
+											} else {
+												int attachmentsSkinId = 0;
+												if (itemStack.hasTagCompound()) {
+													if (itemStack.getTagCompound().hasKey("skinId")) {
+														attachmentsSkinId = itemStack.getTagCompound()
+																.getInteger("skinId");
+													}
+												}
+												String attachmentsPath = attachmentsSkinId > 0
+														? attachmentType.modelSkins[attachmentsSkinId].getSkin()
+														: attachmentType.modelSkins[0].getSkin();
+												rge.bindTexture("attachments", attachmentsPath);
+											}
 											rge.renderAttachment(config, attachment.typeName,
 													attachmentType.internalName, () -> {
 														attachmentModel.renderAttachment(worldScale);
