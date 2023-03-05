@@ -36,7 +36,7 @@ public class ModularMovementsConfig {
     }
 
     public static class Crawl {
-        public boolean blockView = true;
+        public boolean blockView = false;
         public float blockAngle = 190;
     }
 

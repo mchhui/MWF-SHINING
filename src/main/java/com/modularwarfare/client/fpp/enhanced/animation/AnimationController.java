@@ -12,6 +12,7 @@ import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.guns.WeaponSoundType;
+import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.maths.Interpolation;
 
 import net.minecraft.client.Minecraft;
@@ -20,6 +21,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
+
 import org.lwjgl.input.Mouse;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.GUN_CHANGE_Y;
@@ -45,6 +49,7 @@ public class AnimationController {
     
     public static long sprintCoolTime=0;
     public static long sprintLoopCoolTime=0;
+    public static float collideFrontDistanceAlpha=0;
 
     public static int oldCurrentItem;
     public static ItemStack oldItemstack;
@@ -89,6 +94,7 @@ public class AnimationController {
         INSPECT=1;
         FIRE=0;
         MODE_CHANGE=1;
+        collideFrontDistanceAlpha=0;
         updateActionAndTime();
     }
     
@@ -140,10 +146,6 @@ public class AnimationController {
             val = ADS + adsSpeed * (2 - ADS);
         } else {
             val = ADS - adsSpeed * (1 + ADS);
-        }
-        
-        if (RenderParameters.collideFrontDistance > 0) {
-            val = ADS - adsSpeed*5;
         }
         
         if(!isDrawing()) {
@@ -246,7 +248,43 @@ public class AnimationController {
         }
         
         updateActionAndTime();
-        RenderParameters.adsSwitch = (float)ADS;
+        
+        Vec3d vecStart = player.getPositionEyes(1.0f);
+        RayTraceResult rayTraceResult = RayUtil.rayTrace(player,1.0, 1.0f);
+        double d=Double.MAX_VALUE;
+        if(rayTraceResult != null) {
+            if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
+                if (rayTraceResult.hitVec != null) {
+                    d = vecStart.distanceTo(rayTraceResult.hitVec);
+                }
+            }
+        }
+        float collideFrontDistanceAlphaStep = 0.08f * stepTick;
+        if (d<0.5) {
+            float target = Math.max(RenderParameters.collideFrontDistance, 0.2f);
+            target = 1;
+            if (this.collideFrontDistanceAlpha > target) {
+                this.collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
+            } else if (this.collideFrontDistanceAlpha < target) {
+                this.collideFrontDistanceAlpha += collideFrontDistanceAlphaStep;
+            }
+            if (Math.abs(this.collideFrontDistanceAlpha - target) <= collideFrontDistanceAlphaStep) {
+                this.collideFrontDistanceAlpha = target;
+            }
+        } else {
+            this.collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
+            if (this.collideFrontDistanceAlpha < 0) {
+                this.collideFrontDistanceAlpha = 0;
+            }
+        }
+        RenderParameters.collideFrontDistance = this.collideFrontDistanceAlpha;
+        if (this.collideFrontDistanceAlpha > 0) {
+            RenderParameters.adsSwitch = (float) (ADS - this.collideFrontDistanceAlpha > 0
+                    ? ADS - this.collideFrontDistanceAlpha
+                    : 0);
+        } else {
+            RenderParameters.adsSwitch = (float) ADS;
+        }
     }
     
     public AnimationType getPlayingAnimation() {

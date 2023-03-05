@@ -12,12 +12,13 @@ import javax.annotation.Nullable;
 import java.util.Map;
 
 @IFMLLoadingPlugin.MCVersion("1.12.2")
+@IFMLLoadingPlugin.SortingIndex(1001)
 @IFMLLoadingPlugin.Name("modularwarfare")
 public class MixinCore implements IFMLLoadingPlugin {
 
     @Override
     public String[] getASMTransformerClass() {
-        return new String[] {ShadersRender.class.getName()};
+        return new String[] {ShadersRender.class.getName(), "mchhui.modularmovements.coremod.minecraft.EntityPlayerSP","mchhui.modularmovements.coremod.minecraft.Entity"};
     }
 
     @Override

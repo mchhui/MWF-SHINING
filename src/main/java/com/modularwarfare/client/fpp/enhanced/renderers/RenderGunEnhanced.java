@@ -227,10 +227,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         /**
          * ACTION GUN COLLIDE
          */
-        float rotateZ = -(35F * collideFrontDistance);
-        float translateY = -(0.7F * collideFrontDistance);
+        float collideFrontDistanceAlpha = controller.collideFrontDistanceAlpha;
+        float rotateZ = (58F * collideFrontDistanceAlpha);
+        float translateX = -(6F * collideFrontDistanceAlpha);
+        float translateY = -(4F * collideFrontDistanceAlpha);
+        mat.translate(new Vector3f(0, translateY, 0));
         mat.rotate(toRadians(rotateZ), new Vector3f(0, 0, 1));
-        mat.translate(new Vector3f(translateY,0,0));
+        mat.translate(new Vector3f(translateX, 0, 0));
 
         /**
          * ACTION GUN SWAY
