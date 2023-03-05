@@ -39,6 +39,8 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
 public class ClientTickHandler extends ForgeEvent {
 
+    private static final int SPS=60;
+    
     public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ItemStack reloadEnhancedPrognosisAmmo = ItemStack.EMPTY;
@@ -104,9 +106,9 @@ public class ClientTickHandler extends ForgeEvent {
                  */
                 float stepTick = 0;
                 long time = System.currentTimeMillis();
-                if (time > lastSyncTime + 1000 / 100) {
+                if (time > lastSyncTime + 1000 / (int)Math.max(1,Minecraft.getDebugFPS())+1) {
                     if (lastSyncTime > 0) {
-                        stepTick = (time - lastSyncTime) / (1000 / 60f);
+                        stepTick = (time - lastSyncTime) / (1000/(float)SPS);
                         if (ClientProxy.gunEnhancedRenderer.controller != null) {
                             if (Minecraft.getMinecraft().player != null) {
                                 if (Minecraft.getMinecraft().player.getHeldItemMainhand()
@@ -266,9 +268,6 @@ public class ClientTickHandler extends ForgeEvent {
              */
             for (AnimStateMachine stateMachine : ClientRenderHooks.weaponBasicAnimations.values()) {
                 stateMachine.onRenderTickUpdate();
-            }
-            for (EnhancedStateMachine stateMachine : ClientRenderHooks.weaponEnhancedAnimations.values()) {
-                stateMachine.onRenderTickUpdate(renderTick);
             }
         } else {
             RenderParameters.resetRenderMods();

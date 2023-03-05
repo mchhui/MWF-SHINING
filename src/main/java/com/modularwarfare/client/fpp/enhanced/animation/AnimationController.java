@@ -247,6 +247,11 @@ public class AnimationController {
             }
         }
         
+        
+        for (EnhancedStateMachine stateMachine : ClientRenderHooks.weaponEnhancedAnimations.values()) {
+            stateMachine.onRenderTickUpdate(stepTick);
+        }
+        
         updateActionAndTime();
         
         Vec3d vecStart = player.getPositionEyes(1.0f);
