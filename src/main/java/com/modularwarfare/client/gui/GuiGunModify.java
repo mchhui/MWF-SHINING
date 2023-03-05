@@ -592,7 +592,7 @@ public class GuiGunModify extends GuiScreen {
 		GlStateManager.color(1, 1, 1, 1);
 		GlStateManager.enableTexture2D();
 		mc.renderEngine.bindTexture(statu);
-		RenderHelperMW.drawTexturedRect(subPageX , subPageY , subPageWidth,subPageHeight);
+		RenderHelperMW.drawTexturedRect(subPageX , subPageY , subPageWidth,subPageHeight+512);//临时增加测试
 		int color=0xFFFFFF;
 		double fontScale=2d*sFactor/scaledresolution.getScaleFactor();
 		GlStateManager.pushMatrix();
