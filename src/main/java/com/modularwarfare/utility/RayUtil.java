@@ -2,7 +2,9 @@ package com.modularwarfare.utility;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.common.guns.AttachmentPresetEnum;
 import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemAttachment;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.handler.ServerTickHandler;
@@ -18,6 +20,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
@@ -47,7 +50,14 @@ public class RayUtil {
 
     public static float calculateAccuracyServer(final ItemGun item, final EntityLivingBase player) {
         final GunType gun = item.type;
-        float acc = gun.bulletSpread;
+        //新增枪管散射影响
+        float accuracyBarrelFactor = 1.0f;
+        if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel) != null) {
+            ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel).getItem();
+            accuracyBarrelFactor = barrelAttachment.type.barrel.accuracyFactor;
+        };
+        float acc = gun.bulletSpread * accuracyBarrelFactor;
+            
         if (player.posX != player.lastTickPosX || player.posZ != player.lastTickPosZ) {
             acc += 0.15f;
         }
@@ -116,7 +126,13 @@ public class RayUtil {
 
     public static float calculateAccuracyClient(final ItemGun item, final EntityPlayer player) {
         final GunType gun = item.type;
-        float acc = gun.bulletSpread;
+        //新增枪管散射影响
+        float accuracyBarrelFactor = 1.0f;
+        if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel) != null) {
+            ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel).getItem();
+            accuracyBarrelFactor = barrelAttachment.type.barrel.accuracyFactor;
+        };
+        float acc = gun.bulletSpread * accuracyBarrelFactor;
         final GameSettings settings = Minecraft.getMinecraft().gameSettings;
         if (settings.keyBindForward.isKeyDown() || settings.keyBindLeft.isKeyDown() || settings.keyBindBack.isKeyDown() || settings.keyBindRight.isKeyDown()) {
             acc += 0.75f;

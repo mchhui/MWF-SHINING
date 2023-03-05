@@ -213,8 +213,8 @@ public class GunType extends BaseType {
     /**
      * Shell casing
      */
-    public Vec3d shellEjectOffsetNormal = new Vec3d(-1.0f, 0.0f, 1.0f);
-    public Vec3d shellEjectOffsetAiming = new Vec3d(0.0f, 0.12f, 1.0f);
+    public Vec3d shellEjectOffsetNormal = new Vec3d(-1.0f, 0.0f, 1.0f);//X正左负右,Y正下负上,Z正前负后
+    public Vec3d shellEjectOffsetAiming = new Vec3d(0.0f, 0.12f, 1.0f);//X正左负右,Y正下负上,Z正前负后
 
 
     /**

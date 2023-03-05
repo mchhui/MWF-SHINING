@@ -13,6 +13,7 @@ public class AttachmentRenderConfig {
 
     public AttachmentRenderConfig.Sight sight = new AttachmentRenderConfig.Sight();
     public AttachmentRenderConfig.Grip grip = new AttachmentRenderConfig.Grip();
+    public AttachmentRenderConfig.Stock stock = new AttachmentRenderConfig.Stock();
 
     public static class Extra {
 
@@ -37,6 +38,12 @@ public class AttachmentRenderConfig {
 
     public static class Grip {
         public Vector3f leftArmOffset = new Vector3f(0F, 0F, 0F);
+    }
+    
+    public static class Stock {
+        public float modelRecoilBackwardsFactor = 1.0f;
+        public float modelRecoilUpwardsFactor = 1.0f;
+        public float modelRecoilShakeFactor = 1.0f;
     }
 
     

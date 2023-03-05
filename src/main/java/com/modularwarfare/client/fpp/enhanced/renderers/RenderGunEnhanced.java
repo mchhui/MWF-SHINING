@@ -340,19 +340,36 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float sin = MathHelper.sin((float) (2 * Math.PI * alpha));
 
         float sin10 = MathHelper.sin((float) (2 * Math.PI * alpha)) * 0.05f;
-
-        mat.translate(new Vector3f(-(bounce) * config.extra.modelRecoilBackwards * (float)(1-controller.ADS), 0F, 0F));
-        mat.translate(new Vector3f(0F, (-(elastic) * config.extra.modelRecoilBackwards) * 0.05F, 0F));
-
-        mat.translate(new Vector3f(0F, 0F, sin10 * anim.recoilSide * config.extra.modelRecoilUpwards));
         
-        mat.rotate(toRadians(sin * anim.recoilSide * config.extra.modelRecoilUpwards), new Vector3f(0F, 0F, 1F));
-        mat.rotate(toRadians(5F * sin10 * anim.recoilSide * config.extra.modelRecoilUpwards), new Vector3f(0F, 0F, 1F));
+        //枪托抖动影响参数
+        float modelBackwardsFactor = 1.0f;
+        float modelUpwardsFactor = 1.0f;
+        float modelShakeFactor = 1.0f;
+        
+        if (player.getHeldItemMainhand() != null) {
+            if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                ItemStack itemStack = GunType.getAttachment(player.getHeldItemMainhand(), AttachmentPresetEnum.Stock);
+                if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                    ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
+                    modelBackwardsFactor = ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilBackwardsFactor;
+                    modelUpwardsFactor = ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilUpwardsFactor;
+                    modelShakeFactor = ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilShakeFactor;
+                }
+            }
+        }
+
+        mat.translate(new Vector3f(-(bounce) * config.extra.modelRecoilBackwards * (float)(1-controller.ADS) * modelBackwardsFactor, 0F, 0F));
+        mat.translate(new Vector3f(0F, (-(elastic) * config.extra.modelRecoilBackwards * modelBackwardsFactor) * 0.05F, 0F));
+
+        mat.translate(new Vector3f(0F, 0F, sin10 * anim.recoilSide * config.extra.modelRecoilUpwards * modelUpwardsFactor));
+        
+        mat.rotate(toRadians(sin * anim.recoilSide * config.extra.modelRecoilUpwards * modelUpwardsFactor), new Vector3f(0F, 0F, 1F));
+        mat.rotate(toRadians(5F * sin10 * anim.recoilSide * config.extra.modelRecoilUpwards * modelUpwardsFactor), new Vector3f(0F, 0F, 1F));
 
         mat.rotate(toRadians((bounce) * config.extra.modelRecoilUpwards), new Vector3f(0F, 0F, 1F));
 
-        mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake)), new Vector3f(0.0f, 1.0f, 0.0f));
-        mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake)), new Vector3f(1.0f, 0.0f, 0.0f));
+        mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake * modelShakeFactor)), new Vector3f(0.0f, 1.0f, 0.0f));
+        mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake * modelShakeFactor)), new Vector3f(1.0f, 0.0f, 0.0f));
         
         if(ScopeUtils.isIndsideGunRendering) {
             mat.translate(new Vector3f(-renderInsideGunOffset, 0, 0));

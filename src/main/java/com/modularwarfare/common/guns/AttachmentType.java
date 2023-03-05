@@ -74,6 +74,8 @@ public class AttachmentType extends BaseType {
 
         public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f;
+        
+    	public float accuracyFactor = 1.0f;
     }
 
     public static class Grip {
@@ -82,7 +84,8 @@ public class AttachmentType extends BaseType {
     }
     
     public static class Stock{
-        
+    	public float recoilPitchFactor = 1.0f;
+        public float recoilYawFactor = 1.0f; 
     }
 
 }
