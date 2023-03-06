@@ -167,7 +167,7 @@ public class OBBModelBox {
             double len = Vector3f.dotDouble(rayDir, n);
             double t1 = (d1 - projp) / len;
             double t2 = (d2 - projp) / len;
-            Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test3:" + t1 + " - " + t2));
+//            Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test3:" + t1 + " - " + t2));
             if (t1 > 0 && t1 < result) {
                 Vector3f crossDis = new Vector3f(pos.x + ray.x * t1 - obb1.center.x, pos.y + ray.y * t1 - obb1.center.y,
                         pos.z + ray.z * t1 - obb1.center.z);
