@@ -64,7 +64,6 @@ public class DefaultRayCasting extends RayCasting {
         float maxDistance = (float) endVec.distanceTo(startVec);
         if (blockHit != null) {
             maxDistance = (float) blockHit.hitVec.distanceTo(startVec);
-        } else {
         	endVec = blockHit.hitVec;
         }
         
