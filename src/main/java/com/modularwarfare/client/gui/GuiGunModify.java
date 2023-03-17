@@ -68,6 +68,7 @@ import com.modularwarfare.utility.RenderHelperMW;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture.Type;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
@@ -90,6 +91,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.config.ConfigManager;
 
@@ -485,12 +487,31 @@ public class GuiGunModify extends GuiScreen {
 						}
 					}
 				}
-				if (attachment.typeName.equals("stock")) {
-					///////// warning magic number!!!!!!!!!114514
-					partTranslate.x = (float) -4.59d;
-					partTranslate.y = (float) -0.87d;
-					partTranslate.z = (float) 0;
+				if (itemStack != null && itemStack.getItem() != Items.AIR) {
+					AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
+					if (config.attachment.containsKey(attachmentType.internalName)) {
+                        if (config.attachment.get(attachmentType.internalName).binding.equals("gunModel")) {
+                        	if (config.attachmentGroup.containsKey(attachment.typeName)) {
+        						AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
+        						if (ag != null) {
+        							partTranslate = new Vector3f(ag.translate);
+        						}
+        					}
+                        }else {
+//                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test4:有配件的绑定模型不是gunModel"));
+//                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString(config.attachment.get(attachmentType.internalName).binding));
+                        	partTranslate.x =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.x;
+                        	partTranslate.y =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.y;
+                        	partTranslate.z =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.z;
+                        }
+                    }
 				}
+//				if (attachment.typeName.equals("stock")) {
+//					///////// warning magic number!!!!!!!!!114514
+//					partTranslate.x = (float) -4.59d;
+//					partTranslate.y = (float) -0.87d;
+//					partTranslate.z = (float) 0;
+//				}
 				
 				Vec3d partVec3d = projectionHelper.project(partTranslate.x, partTranslate.y, partTranslate.z);
 				float[] nearestPoint = new float[] { 9999, 9999 };
