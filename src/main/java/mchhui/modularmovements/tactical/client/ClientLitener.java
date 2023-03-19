@@ -474,20 +474,23 @@ public class ClientLitener {
         if (cameraProbeOffset != 0) {
             float f = 0.22f;
             float f1 = 0.2f;
-            float f2 = 0.01f;
+            float f2 = 0.1f;
             Vec3d vec3d = null;
             vec3d = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(yaw - 180) * Math.PI / 180f));
-            AxisAlignedBB axisalignedbb = Minecraft.getMinecraft().player.getEntityBoundingBox();
-            axisalignedbb = new AxisAlignedBB(playerPosX + vec3d.x * (cameraProbeOffset) - f,
-                    playerPosY + Minecraft.getMinecraft().player.getEyeHeight() - f1,
-                    playerPosZ + vec3d.z * (cameraProbeOffset) - f,
-                    playerPosX + vec3d.x * (cameraProbeOffset) + f,
-                    playerPosY + Minecraft.getMinecraft().player.getEyeHeight() + f1,
-                    playerPosZ + vec3d.z * (cameraProbeOffset) + f);
-            axisalignedbb = axisalignedbb.grow(f2 - f, 0, f2 - f);
-            if (Minecraft.getMinecraft().player.world.collidesWithAnyBlock(axisalignedbb)) {
-                clientPlayerState.resetProbe();
-                cameraProbeOffset = 0;
+            int testCount = 10;
+            for (int i = 0; i <= testCount; i++) {
+                AxisAlignedBB axisalignedbb = Minecraft.getMinecraft().player.getEntityBoundingBox();
+                axisalignedbb = new AxisAlignedBB(playerPosX + vec3d.x * (cameraProbeOffset)*(i/(float)testCount) - f,
+                        playerPosY + Minecraft.getMinecraft().player.getEyeHeight() - f1,
+                        playerPosZ + vec3d.z * (cameraProbeOffset)*(i/(float)testCount) - f,
+                        playerPosX + vec3d.x * (cameraProbeOffset)*(i/(float)testCount) + f,
+                        playerPosY + Minecraft.getMinecraft().player.getEyeHeight() + f1,
+                        playerPosZ + vec3d.z * (cameraProbeOffset)*(i/(float)testCount) + f);
+                axisalignedbb = axisalignedbb.grow(f2 - f, 0, f2 - f);
+                if (Minecraft.getMinecraft().player.world.collidesWithAnyBlock(axisalignedbb)) {
+                    clientPlayerState.resetProbe();
+                    cameraProbeOffset = 0;
+                }  
             }
         }
         
@@ -512,10 +515,10 @@ public class ClientLitener {
         event.setPitch(0);
         event.setYaw(0);
         event.setRoll(0);
-        GlStateManager.translate(0, -cameraOffsetY, 0);
         GlStateManager.translate(-0.6 * cameraProbeOffset, 0, 0);
         GlStateManager.rotate(10 * cameraProbeOffset, 0.0F, 0.0F, 1.0F);
         GlStateManager.rotate(pitch, 1.0F, 0.0F, 0.0F);
+        GlStateManager.translate(0, -cameraOffsetY, 0);
         GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
 
         EntityPlayer player = Minecraft.getMinecraft().player;
