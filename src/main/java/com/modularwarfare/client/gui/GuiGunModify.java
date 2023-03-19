@@ -360,7 +360,9 @@ public class GuiGunModify extends GuiScreen {
 		GlStateManager.rotate(f3, 1.0F, 0.0F, 0.0F);
 		GlStateManager.rotate(f4, 0.0F, 1.0F, 0.0F);
 		// GlStateManager.rotate((float) -autoRotate, 0, 1, 0);
-		RenderHelper.enableStandardItemLighting();
+		/**
+		 *  RenderHelper.enableStandardItemLighting();
+		 * */
 		GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_AMBIENT_AND_DIFFUSE);
 		// GlStateManager.glLight(16384, 4611, setColorBuffer(LIGHT0_POS.x,
 		// LIGHT0_POS.y, LIGHT0_POS.z, 0.0D));
@@ -372,7 +374,8 @@ public class GuiGunModify extends GuiScreen {
 		// BlockPos(entitylivingbaseIn.posX, entitylivingbaseIn.posY + (double)
 		// entitylivingbaseIn.getEyeHeight(), entitylivingbaseIn.posZ), 0)
 		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
-
+		
+		
 		// GlStateManager.disableCull();
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
 		ItemStack itemstack = this.currentModify;
@@ -547,16 +550,24 @@ public class GuiGunModify extends GuiScreen {
 				//GL11.glPointSize(10);
 				//drawPoint(scaledPartVec3d.x, scaledPartVec3d.y);
 				mc.renderEngine.bindTexture(point);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 				GlStateManager.enableTexture2D();
 				double pointSize=3;
 				RenderHelperMW.drawTexturedRect(scaledPartVec3d.x-pointSize/2, scaledPartVec3d.y-pointSize/2, pointSize, pointSize);
 				GlStateManager.disableTexture2D();
 				GL11.glColor3f(0.8f, 0.8f, 0.8f);
-				GL11.glLineWidth(1);
+				GL11.glLineWidth(2);
+				GL11.glEnable(GL11.GL_LINE_SMOOTH);
+				GlStateManager.enableBlend();
 				drawLine(scaledPartVec3d.x, scaledPartVec3d.y, nearestPoint[0]+8/scaledresolution.getScaleFactor(), nearestPoint[1]+8/scaledresolution.getScaleFactor());
-				
+                GL11.glDisable(GL11.GL_LINE_SMOOTH);
+                GlStateManager.disableBlend();
+				GL11.glLineWidth(1);
 				GlStateManager.enableTexture2D();
 				mc.renderEngine.bindTexture(slot_topbg);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 				double topBGsize=30/scaledresolution.getScaleFactor();
 				RenderHelperMW.drawTexturedRect(nearestPoint[0]-(45/scaledresolution.getScaleFactor()), nearestPoint[1]-(75/scaledresolution.getScaleFactor()), topBGsize*2, topBGsize);
 				double iconSize=25/scaledresolution.getScaleFactor();
@@ -613,6 +624,8 @@ public class GuiGunModify extends GuiScreen {
 		GlStateManager.color(1, 1, 1, 1);
 		GlStateManager.enableTexture2D();
 		mc.renderEngine.bindTexture(statu);
+        GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 		RenderHelperMW.drawTexturedRect(subPageX , subPageY , subPageWidth,subPageHeight+512);//临时增加测试
 		int color=0xFFFFFF;
 		double fontScale=2d*sFactor/scaledresolution.getScaleFactor();
@@ -978,10 +991,9 @@ public class GuiGunModify extends GuiScreen {
 		// ScaledResolution scaledresolution = new
 		// ScaledResolution(Minecraft.getMinecraft());
 		// System.out.println(scaledresolution.getScaledWidth()+","+mc.displayWidth);
-
+	    
 		GunType gunType = (GunType) type;
 		EnhancedModel model = type.enhancedModel;
-
 		GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
 
 		if (config.animations.containsKey(AnimationType.DEFAULT)) {

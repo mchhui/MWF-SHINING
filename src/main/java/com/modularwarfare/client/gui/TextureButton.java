@@ -156,6 +156,8 @@ public class TextureButton extends GuiButton {
                 }
                 //GuiUtils.renderImage(x + width / 2 - 8, y + (height - 8) - 10, iconTexture, 16.0D, 16.0D);
                 Minecraft.getMinecraft().renderEngine.bindTexture(iconTexture);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
                 RenderHelperMW.drawTexturedRect(x , y , width+0.05d, height);
                 GL11.glColor3f(1.0F, 1.0F, 1.0F);
                 if(isOver == 2) {
@@ -213,10 +215,14 @@ public class TextureButton extends GuiButton {
 //            }
             if(this.type==TypeEnum.SideButton) {
             	Minecraft.getMinecraft().renderEngine.bindTexture(this.state==0?GuiGunModify.arrow_down:GuiGunModify.arrow_up);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
             	RenderHelperMW.drawTexturedRect(x , y , width+0.05d, height);
             }
             if(this.type==TypeEnum.SideButtonVert) {
             	Minecraft.getMinecraft().renderEngine.bindTexture(this.state==0?GuiGunModify.arrow_right:GuiGunModify.arrow_left);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
             	RenderHelperMW.drawTexturedRect(x-(width/1.7) , y , height/2, height);
             }
             if (this.type==TypeEnum.Slot&&!this.itemStack.isEmpty() && isOver == 2) {
