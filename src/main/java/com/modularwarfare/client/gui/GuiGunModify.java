@@ -489,25 +489,25 @@ public class GuiGunModify extends GuiScreen {
 							partTranslate = new Vector3f(ag.translate);
 						}
 					}
-				}
-				if (itemStack != null && itemStack.getItem() != Items.AIR) {
-					AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-					if (config.attachment.containsKey(attachmentType.internalName)) {
-                        if (config.attachment.get(attachmentType.internalName).binding.equals("gunModel")) {
-                        	if (config.attachmentGroup.containsKey(attachment.typeName)) {
-        						AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
-        						if (ag != null) {
-        							partTranslate = new Vector3f(ag.translate);
-        						}
-        					}
-                        }else {
-//                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test4:有配件的绑定模型不是gunModel"));
-//                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString(config.attachment.get(attachmentType.internalName).binding));
-                        	partTranslate.x =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.x;
-                        	partTranslate.y =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.y;
-                        	partTranslate.z =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.z;
-                        }
-                    }
+					if (itemStack != null && itemStack.getItem() != Items.AIR) {
+						AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
+						if (config.attachment.containsKey(attachmentType.internalName)) {
+	                        if (config.attachment.get(attachmentType.internalName).binding.equals("gunModel")) {
+	                        	if (config.attachmentGroup.containsKey(attachment.typeName)) {
+	        						AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
+	        						if (ag != null) {
+	        							partTranslate = new Vector3f(ag.translate);
+	        						}
+	        					}
+	                        }else {
+//	                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test4:有配件的绑定模型不是gunModel"));
+//	                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString(config.attachment.get(attachmentType.internalName).binding));
+	                        	partTranslate.x =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.x;
+	                        	partTranslate.y =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.y;
+	                        	partTranslate.z =config.attachment.get(attachmentType.internalName).attachmentGuiOffset.z;
+	                        }
+	                    }
+					}
 				}
 //				if (attachment.typeName.equals("stock")) {
 //					///////// warning magic number!!!!!!!!!114514
