@@ -20,6 +20,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.entity.EntityPlayerSPHelper;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.GlStateManager;
@@ -41,6 +42,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
 import net.minecraftforge.event.entity.PlaySoundAtEntityEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
+import net.minecraftforge.client.event.PlayerSPPushOutOfBlocksEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
@@ -91,6 +93,8 @@ public class ClientLitener {
     public static float cameraProbeOffset = 0;
 
     private static Field speedInAir;
+    private static AxisAlignedBB lastAABB;
+    private static AxisAlignedBB lastModAABB;
 
     @SubscribeEvent
     public void onTickClient(ClientTickEvent event) {
@@ -442,9 +446,6 @@ public class ClientLitener {
         double playerPosZ=Minecraft.getMinecraft().player.posZ+(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ)*event.getRenderPartialTicks();
         if (clientPlayerState.probe != 0) {
             float f = 0.22f;
-            if(Minecraft.getMinecraft().player.posX!=Minecraft.getMinecraft().player.lastTickPosX||Minecraft.getMinecraft().player.posZ!=Minecraft.getMinecraft().player.lastTickPosZ) {
-                f = 0.25f;
-            }
             float f1 = 0.2f;
             float f2 = 0.15f;
             Vec3d vec3d = null;
@@ -457,15 +458,16 @@ public class ClientLitener {
                         .rotateYaw((float) (-(yaw-180) * Math.PI / 180f));
             }
             AxisAlignedBB axisalignedbb = Minecraft.getMinecraft().player.getEntityBoundingBox();
-            int testCount = 10;
+            int a=(int)(Math.sqrt((Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)*(Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)+(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ)*(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ))/0.1f);
+            int testCount = 10+a;
             for (int i = 0; i <= testCount; i++) {
                 axisalignedbb = new AxisAlignedBB(
-                        Minecraft.getMinecraft().player.posX + vec3d.x * (i / (float) testCount) - f,
-                        Minecraft.getMinecraft().player.posY + Minecraft.getMinecraft().player.getEyeHeight() - f1,
-                        Minecraft.getMinecraft().player.posZ + vec3d.z * (i / (float) testCount) - f,
-                        Minecraft.getMinecraft().player.posX + vec3d.x * (i / (float) testCount) + f,
-                        Minecraft.getMinecraft().player.posY + Minecraft.getMinecraft().player.getEyeHeight() + f1,
-                        Minecraft.getMinecraft().player.posZ + vec3d.z * (i / (float) testCount) + f);
+                        playerPosX + vec3d.x * (i / (float) testCount) - f,
+                        playerPosY + 0.6f,
+                        playerPosZ + vec3d.z * (i / (float) testCount) - f,
+                        playerPosX + vec3d.x * (i / (float) testCount) + f,
+                        playerPosY + Minecraft.getMinecraft().player.getEyeHeight() + f1,
+                        playerPosZ + vec3d.z * (i / (float) testCount) + f);
                 if (Minecraft.getMinecraft().player.world.collidesWithAnyBlock(axisalignedbb)) {
                     clientPlayerState.resetProbe();
                 }
@@ -727,6 +729,32 @@ public class ClientLitener {
         return flag;
     }
 
+    //@SubscribeEvent
+    public void onBlockPush(PlayerSPPushOutOfBlocksEvent event) {
+        if (cameraProbeOffset != 0) {
+            //event.setCanceled(true);
+            Vec3d vec3d = new Vec3d(-0.6, 0, 0)
+                    .rotateYaw((float) (-(event.getEntityPlayer().rotationYaw - 180) * Math.PI / 180f))
+                    .scale(-cameraProbeOffset);
+            EntityPlayerSPHelper.pushOutOfBlocks((EntityPlayerSP) event.getEntityPlayer(),
+                    event.getEntityPlayer().posX + vec3d.x - (double) event.getEntityPlayer().width * 0.35D,
+                    lastModAABB.minY + 0.5D,
+                    event.getEntityPlayer().posZ + vec3d.z + (double) event.getEntityPlayer().width * 0.35D);
+            EntityPlayerSPHelper.pushOutOfBlocks((EntityPlayerSP) event.getEntityPlayer(),
+                    event.getEntityPlayer().posX + vec3d.x - (double) event.getEntityPlayer().width * 0.35D,
+                    lastModAABB.minY + 0.5D,
+                    event.getEntityPlayer().posZ + vec3d.z - (double) event.getEntityPlayer().width * 0.35D);
+            EntityPlayerSPHelper.pushOutOfBlocks((EntityPlayerSP) event.getEntityPlayer(),
+                    event.getEntityPlayer().posX + vec3d.x + (double) event.getEntityPlayer().width * 0.35D,
+                    lastModAABB.minY + 0.5D,
+                    event.getEntityPlayer().posZ + vec3d.z - (double) event.getEntityPlayer().width * 0.35D);
+            EntityPlayerSPHelper.pushOutOfBlocks((EntityPlayerSP) event.getEntityPlayer(),
+                    event.getEntityPlayer().posX + vec3d.x + (double) event.getEntityPlayer().width * 0.35D,
+                    lastModAABB.minY + 0.5D,
+                    event.getEntityPlayer().posZ + vec3d.z + (double) event.getEntityPlayer().width * 0.35D);
+        }
+    }
+    
     @SubscribeEvent
     public void onTickPlayer(PlayerTickEvent event) {
         if (Minecraft.getMinecraft().player == null) {
@@ -745,6 +773,10 @@ public class ClientLitener {
             }
         }
         if (event.phase != Phase.END) {
+            if(lastAABB!=null&&event.player.getEntityBoundingBox()==lastModAABB) {
+                event.player.setEntityBoundingBox(lastAABB);  
+            }
+            
             if (event.player.isRiding()||event.player.isElytraFlying()) {
                 clientPlayerSitMoveAmplifier = 0;
                 if (clientPlayerState.isSitting) {
@@ -815,7 +847,11 @@ public class ClientLitener {
                 }
             }
         }
-
+        Vec3d vec3d  = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
+        lastAABB=event.player.getEntityBoundingBox();
+        lastModAABB=event.player.getEntityBoundingBox().offset(vec3d.scale(-cameraProbeOffset));
+        event.player.setEntityBoundingBox(lastModAABB);
+        
         if (clientPlayerSitMoveAmplifier > 0) {
             TacticalHandler.sendNoStep(100);
         }
@@ -843,28 +879,47 @@ public class ClientLitener {
 
     @SubscribeEvent
     public void onTickOtherPlayer(PlayerTickEvent event) {
-        if (event.side == Side.CLIENT && event.phase == Phase.END) {
-            float f = event.player.width;
-            float f1 = event.player.height;
-            if (isSitting(event.player.getEntityId())) {
-                f1 = 1.2f;
-            } else if (isCrawling(event.player.getEntityId())) {
-                f1 = 0.5f;
-            }
-            if (f != event.player.width || f1 != event.player.height) {
-                AxisAlignedBB axisalignedbb = event.player.getEntityBoundingBox();
-                axisalignedbb = new AxisAlignedBB(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ,
-                        axisalignedbb.minX + (double) f, axisalignedbb.minY + (double) f1,
-                        axisalignedbb.minZ + (double) f);
-
-                if (!event.player.world.collidesWithAnyBlock(axisalignedbb)) {
-                    try {
-                        ServerListener.setSize.invoke(event.player, f, f1);
-                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                        e.printStackTrace();
+        if (event.side == Side.CLIENT) {
+            if(event.phase != Phase.END) {
+                PlayerState state = ohterPlayerStateMap.get(event.player.getEntityId());
+                if(state!=null) {
+                    if(state.lastAABB!=null&&event.player.getEntityBoundingBox()==state.lastModAABB) {
+                        event.player.setEntityBoundingBox(state.lastAABB);  
                     }
                 }
+            }else {
+                float f = event.player.width;
+                float f1 = event.player.height;
+                if (isSitting(event.player.getEntityId())) {
+                    f1 = 1.2f;
+                } else if (isCrawling(event.player.getEntityId())) {
+                    f1 = 0.5f;
+                }
+                PlayerState state = ohterPlayerStateMap.get(event.player.getEntityId());
+                float cameraProbeOffset=0;
+                if(state!=null) {
+                    cameraProbeOffset=state.probeOffset;
+                }
+                if (f != event.player.width || f1 != event.player.height) {
+                    AxisAlignedBB axisalignedbb = event.player.getEntityBoundingBox();
+                    axisalignedbb = new AxisAlignedBB(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ,
+                            axisalignedbb.minX + (double) f, axisalignedbb.minY + (double) f1,
+                            axisalignedbb.minZ + (double) f);
 
+                    if (!event.player.world.collidesWithAnyBlock(axisalignedbb)) {
+                        try {
+                            ServerListener.setSize.invoke(event.player, f, f1);
+                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                if(state!=null) {
+                    Vec3d vec3d  = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
+                    state.lastAABB=event.player.getEntityBoundingBox();
+                    state.lastModAABB=state.lastAABB.offset(vec3d.scale(-cameraProbeOffset));
+                    event.player.setEntityBoundingBox(state.lastModAABB);  
+                }
             }
         }
     }
@@ -902,20 +957,5 @@ public class ClientLitener {
                 }
             }
         }
-    }
-
-    public static AxisAlignedBB getEntityBoundingBox(Entity entity, AxisAlignedBB bb) {
-        if (entity instanceof EntityOtherPlayerMP && !entity.isDead) {
-            if (ohterPlayerStateMap.containsKey(entity.getEntityId())) {
-                PlayerState state = ohterPlayerStateMap.get(entity.getEntityId());
-                if (state.probeOffset != 0) {
-                    Vec3d vec3d = Vec3d.ZERO.addVector(state.probeOffset * -0.5, 0, 0)
-                            .rotateYaw(entity.rotationYaw * 3.14f / 180);
-                    return new AxisAlignedBB(bb.minX + vec3d.x, bb.minY, bb.minZ + vec3d.z, bb.maxX + vec3d.x, bb.maxY,
-                            bb.maxZ + vec3d.z);
-                }
-            }
-        }
-        return bb;
     }
 }

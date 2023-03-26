@@ -8,6 +8,7 @@ import mchhui.modularmovements.tactical.client.ClientLitener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.util.EnumHandSide;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -24,6 +25,9 @@ public class PlayerState {
     private long lastSit;
     private long lastCrawl;
     private long lastProbe;
+    
+    public AxisAlignedBB lastAABB;
+    public AxisAlignedBB lastModAABB;
 
     public void updateOffset() {
         double amplifer = (System.currentTimeMillis() - lastSyncTime) * (60 / 1000d);

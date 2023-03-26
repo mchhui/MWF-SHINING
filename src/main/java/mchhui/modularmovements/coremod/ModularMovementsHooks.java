@@ -33,10 +33,12 @@ public class ModularMovementsHooks {
 
     public static AxisAlignedBB getEntityBoundingBox(Entity entity,AxisAlignedBB bb)
     {
+        /*
         AxisAlignedBB client= ClientLitener.getEntityBoundingBox(entity, bb);
         if(client!=bb) {
             return client;
         }
+        */
         return bb;
     }
 }

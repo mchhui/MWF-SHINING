@@ -222,7 +222,7 @@ public class OBBPlayerManager {
     }
     
     @SubscribeEvent
-    public void onPlayerRender(RenderPlayerEvent.Pre event) {
+    public void onPlayerRender(RenderPlayerEvent.Post event) {
         float partialTick=event.getPartialRenderTick();
         entityPlayer = event.getEntityPlayer();
         PlayerOBBModelObject playerOBBObject = playerOBBObjectMap.get(event.getEntityPlayer().getName());
