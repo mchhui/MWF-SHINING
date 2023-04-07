@@ -69,6 +69,8 @@ public class PacketExpShot extends PacketBase {
                                 }
 
                                 itemGun.consumeShot(entityPlayer.getHeldItemMainhand());
+                                entityPlayer.sendSlotContents(entityPlayer.inventoryContainer,
+                                        entityPlayer.inventoryContainer.inventorySlots.size() - 1 - 9 + entityPlayer.inventory.currentItem, entityPlayer.getHeldItemMainhand());
 
                                 // Sound
                                 if (GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel) != null) {

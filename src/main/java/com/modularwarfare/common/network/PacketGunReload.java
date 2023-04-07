@@ -520,9 +520,11 @@ public class PacketGunReload extends PacketBase {
                 if (gunStack.getTagCompound() != null) {
                     if (gunType.internalAmmoStorage != null) {
                         if (gunStack.getTagCompound().getCompoundTag("bullet") != null) {
-                            
+                            /**
+                             * 2023.4.4 因不符合“结束动画后结算”的原则 撤销下文unloadBullets
+                             * */
                             if(gunStack.getTagCompound().getInteger("ammocount")<=0) {
-                                ReloadHelper.unloadBullets(entityPlayer, gunStack);
+                                //ReloadHelper.unloadBullets(entityPlayer, gunStack);
                             }
                             
                             bulletStackToLoad=new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));

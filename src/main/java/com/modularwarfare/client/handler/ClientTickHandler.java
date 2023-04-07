@@ -97,6 +97,7 @@ public class ClientTickHandler extends ForgeEvent {
     public void renderTick(TickEvent.RenderTickEvent event) {
         switch (event.phase) {
             case START: {
+                //System.out.println(ClientTickHandler.reloadEnhancedPrognosisAmmoRendering);
                 float renderTick = event.renderTickTime;
                 renderTick *= 60d / (double) Minecraft.getDebugFPS();
                 StateEntry.smoothing = renderTick;

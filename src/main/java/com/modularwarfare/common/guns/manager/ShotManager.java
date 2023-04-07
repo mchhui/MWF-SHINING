@@ -47,10 +47,12 @@ public class ShotManager {
     public static void fireClient(EntityPlayer entityPlayer, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode) {
         GunType gunType = itemGun.type;
         
-        if (gunType.allowReloadFiring && ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reloading) {
-            ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).stopReload();
-            ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reset();
-            ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).updateCurrentItem();
+        if (ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reloading) {
+            if(gunType.allowReloadFiring) {
+                ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).stopReload();
+                ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reset();
+                ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).updateCurrentItem();  
+            }
         }
         
         // Can fire checks

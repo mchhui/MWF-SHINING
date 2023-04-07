@@ -372,6 +372,7 @@ public class GunUI {
         }
 
         int currentAmmoCount = stack.getTagCompound().getInteger("ammocount") + countOffset;
+        //System.out.println(currentAmmoCount+":"+countOffset);
         int maxAmmo = (((ItemGun) (stack.getItem())).type.internalAmmoStorage == null) ? 0 : (((ItemGun) (stack.getItem())).type.internalAmmoStorage);
 
         GlStateManager.pushMatrix();

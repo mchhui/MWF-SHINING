@@ -298,9 +298,12 @@ public class OBBPlayerManager {
                 modelPlayer.setRotationAngles(entityPlayer.limbSwing, entityPlayer.prevLimbSwingAmount,
                         entityPlayer.ticksExisted, entityPlayer.rotationYaw - entityPlayer.renderYawOffset,
                         entityPlayer.rotationPitch, 1, entityPlayer);
-                ServerListener.setRotationAngles(modelPlayer,entityPlayer.limbSwing, entityPlayer.prevLimbSwingAmount,
-                        entityPlayer.ticksExisted, entityPlayer.rotationYaw - entityPlayer.renderYawOffset,
-                        entityPlayer.rotationPitch, 1, entityPlayer);
+                if (ModularWarfare.isLoadedModularMovements) {
+                    ServerListener.setRotationAngles(modelPlayer, entityPlayer.limbSwing,
+                            entityPlayer.prevLimbSwingAmount, entityPlayer.ticksExisted,
+                            entityPlayer.rotationYaw - entityPlayer.renderYawOffset, entityPlayer.rotationPitch, 1,
+                            entityPlayer);
+                }
             }
             playerOBBObject.updatePose();
             PlayerOBBModelObject syncOBBObejct = playerOBBObject;

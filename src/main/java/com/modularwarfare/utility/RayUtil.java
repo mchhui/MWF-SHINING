@@ -235,7 +235,7 @@ public class RayUtil {
         }
 
         Vec3d offsetVec = player.getPositionEyes(1.0f);
-        if(Loader.isModLoaded("modularmovements")) {
+        if(ModularWarfare.isLoadedModularMovements) {
             if (player instanceof EntityPlayer) {
                 offsetVec = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, 1.0f);
             }

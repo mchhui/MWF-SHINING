@@ -467,12 +467,6 @@ public class ModularWarfare {
     @EventHandler
     public void onInitialization(FMLInitializationEvent event) {
         new ServerTickHandler();
-
-        /*
-        if(Loader.isModLoaded("modularmovements")) {
-            isLoadedModularMovements=true;
-        }*/
-        isLoadedModularMovements=true;
         
         PROXY.load();
 
@@ -490,7 +484,6 @@ public class ModularWarfare {
     public void onPostInitialization(FMLPostInitializationEvent event) {
         NETWORK.postInitialise();
         PROXY.init();
-
         this.loaderManager.initAddons(event);
     }
 

@@ -791,7 +791,7 @@ public class ClientProxy extends CommonProxy {
             }
 
             boolean isCrawling = false;
-            if(Loader.isModLoaded("modularmovements")){
+            if(ModularWarfare.isLoadedModularMovements){
                 if(ClientLitener.clientPlayerState.isCrawling){
                     isCrawling = true;
                 }

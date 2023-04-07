@@ -88,7 +88,10 @@ public class ServerListener {
 
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent event) {
-        if (event.side == Side.SERVER && event.phase == Phase.END) {
+        if(event.side != Side.SERVER) {
+            return;
+        }
+        if (event.phase == Phase.END) {
             updateOffset(event.player.getEntityId());
 
             if (isSitting(event.player.getEntityId())) {
@@ -125,6 +128,20 @@ public class ServerListener {
                     } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                         e.printStackTrace();
                     }
+                }
+            }
+            PlayerState state = playerStateMap.get(event.player.getEntityId());
+            if(state!=null) {
+                Vec3d vec3d  = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
+                state.lastAABB=event.player.getEntityBoundingBox();
+                state.lastModAABB=state.lastAABB.offset(vec3d.scale(-getCameraProbeOffset(event.player.getEntityId())));
+                event.player.setEntityBoundingBox(state.lastModAABB);  
+            }
+        }else {
+            PlayerState state = playerStateMap.get(event.player.getEntityId());
+            if(state!=null) {
+                if(state.lastAABB!=null&&event.player.getEntityBoundingBox()==state.lastModAABB) {
+                    event.player.setEntityBoundingBox(state.lastAABB);  
                 }
             }
         }

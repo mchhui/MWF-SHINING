@@ -19,6 +19,8 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Logger;
 
+import com.modularwarfare.ModularWarfare;
+
 import java.io.File;
 
 @Mod(modid = ModularMovements.MOD_ID)
@@ -64,6 +66,8 @@ public class ModularMovements {
         if(Loader.isModLoaded("modularwarfare")) {
             mwfEnable=true;
         }
+        mwfEnable=true;
+        ModularWarfare.isLoadedModularMovements=true;
         channel = NetworkRegistry.INSTANCE.newEventDrivenChannel("modularmovements");
         channel.register(new Handler());
         if (enableTactical) {

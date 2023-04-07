@@ -56,7 +56,7 @@ public class EnhancedStateMachine {
     public Phase lastReloadPhase = null;
     public Phase shootingPhase = Phase.PRE;
 
-    public ItemStack heldItemstStack;
+    public ItemStack heldItemstStack=ItemStack.EMPTY;
 
     public static enum Phase {
         PRE, FIRST, SECOND, POST
@@ -81,7 +81,6 @@ public class EnhancedStateMachine {
         reloadPhase = Phase.PRE;
         lastReloadPhase = null;
         shootingPhase = Phase.PRE;
-        heldItemstStack=null;
     }
 
     public void triggerShoot(ModelEnhancedGun model, GunType gunType, int fireTickDelay) {
@@ -238,7 +237,7 @@ public class EnhancedStateMachine {
     }
 
     public void updateCurrentItem() {
-        if (heldItemstStack != Minecraft.getMinecraft().player.getHeldItemMainhand()) {
+        if (!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemstStack,Minecraft.getMinecraft().player.getHeldItemMainhand())) {
             if (reloading) {
                 stopReload();
             }
@@ -353,7 +352,7 @@ public class EnhancedStateMachine {
                 AnimationType aniType = getShootingAnimationType();
                 Passer<Phase> phase = new Passer(shootingPhase);
                 Passer<Double> progess = new Passer(AnimationController.FIRE);
-                shooting = phaseUpdate(aniType, StateEntry.smoothing,1, phase, progess,()->{
+                shooting = phaseUpdate(aniType, partialTick, 1, phase, progess,()->{
                     phase.set(Phase.FIRST);
                 }, () -> {
                     flashCount++;
