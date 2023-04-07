@@ -145,6 +145,9 @@ public class ShotManager {
     }
     
     public static boolean checkCanFireClient(EntityPlayer entityPlayer, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode) {
+        if(entityPlayer.isSpectator()) {
+            return false;
+        }
         if(itemGun.type.animationType==WeaponAnimationType.BASIC) {
             if(ItemGun.isClientReloading(entityPlayer)) {
                 return false;

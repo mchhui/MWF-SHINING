@@ -44,6 +44,9 @@ public class PacketGunReload extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
+        if(entityPlayer.isSpectator()) {
+            return;
+        }
         if (entityPlayer.getHeldItemMainhand() != null) {
             if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 ItemStack gunStack = entityPlayer.getHeldItemMainhand();
