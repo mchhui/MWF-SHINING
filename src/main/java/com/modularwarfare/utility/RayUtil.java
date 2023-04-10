@@ -59,13 +59,16 @@ public class RayUtil {
         float acc = gun.bulletSpread * accuracyBarrelFactor;
             
         if (player.posX != player.lastTickPosX || player.posZ != player.lastTickPosZ) {
-            acc += 0.15f;
+            acc += 0.75f;
         }
         if (!player.onGround) {
-            acc += 0.3f;
+            acc += 1.5f;
         }
         if (player.isSprinting()) {
-            acc += 0.4f;
+            acc += 0.25f;
+        }
+        if (player.isSneaking()) {
+            acc *= gun.accuracySneakFactor;
         }
         
         //Client side
@@ -78,7 +81,7 @@ public class RayUtil {
         	if (ModularWarfare.isLoadedModularMovements) {
                 if (ClientLitener.clientPlayerState.isCrawling) {
                     acc *= gun.accuracyCrawlFactor;
-                } else if (player.isSneaking()) {
+                } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
                     acc *= gun.accuracySneakFactor;
                 }
             } else {
@@ -146,6 +149,50 @@ public class RayUtil {
         if (player.isSneaking()) {
             acc *= gun.accuracySneakFactor;
         }
+        
+      //Client side
+        if(player.world.isRemote) {
+        	if(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
+                acc *= gun.accuracyAimFactor;
+            }else {
+                
+            }
+        	if (ModularWarfare.isLoadedModularMovements) {
+                if (ClientLitener.clientPlayerState.isCrawling) {
+                    acc *= gun.accuracyCrawlFactor;
+                } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            } else {
+                if (player.isSneaking()) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            }
+        }else {//Server side
+        	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
+            if(bb!=null&&bb) {
+                acc *= gun.accuracyAimFactor;
+            }else {
+            }
+            if (ModularWarfare.isLoadedModularMovements) {
+                if (ServerListener.isCrawling(player.getEntityId())) {
+                    acc *= gun.accuracyCrawlFactor;
+                } else if (player.isSneaking() || ServerListener.isSitting(player.getEntityId())) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            } else {
+                if (player.isSneaking()) {
+                    acc *= gun.accuracySneakFactor;
+                }
+            }
+        }
+
+        
+        
+        if (acc < 0) {
+            acc = 0;
+        }
+        
         /** Bullet Accuracy **/
         if (player.getHeldItemMainhand() != null) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
