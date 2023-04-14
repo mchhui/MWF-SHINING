@@ -9,11 +9,13 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.handler.data.VarInt;
 import com.modularwarfare.common.type.BaseItem;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.text.TextComponentString;
 
 public class ReloadHelper {
 
@@ -116,13 +118,28 @@ public class ReloadHelper {
         if (ItemGun.hasAmmoLoaded(gunStack)) {
             ItemStack returningAmmo = new ItemStack(nbtTagCompound.getCompoundTag("ammo"));
             ItemAmmo returningAmmoItem = (ItemAmmo) returningAmmo.getItem();
-            if (returningAmmoItem.type.subAmmo != null || ItemAmmo.hasAmmo(returningAmmo) || returningAmmoItem.type.allowEmptyMagazines) {
+            boolean returnEmptyAmmo = true;
+            returnEmptyAmmo = returningAmmoItem.type.allowEmptyMagazines;
+            //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test5:" + returnEmptyAmmo + returningAmmoItem.type.subAmmo + ItemAmmo.hasAmmo(returningAmmo)));
+            if (returningAmmoItem.type.subAmmo != null && ItemAmmo.hasAmmo(returningAmmo)) {
                 int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
                 returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
                 if(!entityPlayer.inventory.addItemStackToInventory(returningAmmo)) {
                     entityPlayer.dropItem(returningAmmo, false);
                 }
 
+            } else {
+            	if (!returnEmptyAmmo) {
+            		int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
+                	returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
+                	entityPlayer.dropItem(returningAmmo, false);
+            	} else {
+            		int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
+                    returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
+                    if(!entityPlayer.inventory.addItemStackToInventory(returningAmmo)) {
+                        entityPlayer.dropItem(returningAmmo, false);
+                    }
+            	}
             }
             nbtTagCompound.removeTag("ammo");
             return true;
