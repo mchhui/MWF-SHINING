@@ -14,7 +14,6 @@ import net.minecraft.util.IThreadListener;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
-@Deprecated
 public class PacketGunFire extends PacketBase {
 
     public String internalname;
@@ -73,24 +72,22 @@ public class PacketGunFire extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        /*
+        
         IThreadListener mainThread = (WorldServer) entityPlayer.world;
         mainThread.addScheduledTask(new Runnable() {
             public void run() {
-                if(!ModConfig.INSTANCE.shots.client_sided_hit_registration) {
-                    if (entityPlayer != null) {
-                        if (ModularWarfare.gunTypes.get(internalname) != null) {
-                            ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
-                            WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
-                            if (fireMode == null)
-                                return;
-                            ShotManager.fireServer(entityPlayer, rotationPitch, rotationYaw, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun, fireMode, fireTickDelay, recoilPitch, recoilYaw, recoilAimReducer, bulletSpread);
-                        }
+                if (entityPlayer != null) {
+                    if (ModularWarfare.gunTypes.get(internalname) != null) {
+                        ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
+                        WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
+                        if (fireMode == null)
+                            return;
+                        ShotManager.fireServer(entityPlayer, rotationPitch, rotationYaw, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun, fireMode, fireTickDelay, recoilPitch, recoilYaw, recoilAimReducer, bulletSpread);
                     }
-                }
+                } 
             }
         });
-        */
+        
     }
 
     @Override

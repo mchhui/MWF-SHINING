@@ -134,14 +134,11 @@ public class ShotManager {
         /**
          * Hit Register
          */
-        /*
-        if (!ModConfig.INSTANCE.shots.client_sided_hit_registration || gunType.weaponType == WeaponType.Launcher) {
+        if (gunType.weaponType == WeaponType.Launcher) {
             ModularWarfare.NETWORK.sendToServer(new PacketGunFire(gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread, entityPlayer.rotationPitch, entityPlayer.rotationYaw));
         } else {
             fireClientSide(entityPlayer, itemGun);
         }
-        */
-        fireClientSide(entityPlayer, itemGun);
     }
     
     public static boolean checkCanFireClient(EntityPlayer entityPlayer, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode) {
