@@ -155,6 +155,10 @@ public class GuiGunModify extends GuiScreen {
 	}
 	@Override
 	public void initGui() {
+        RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
+        // model.updateAnimation(rge.controller.getTime(),"");
+        rge.controller.reset(true);
+	    
 		mc=Minecraft.getMinecraft();
 		ScaledResolution scaledresolution = new ScaledResolution(mc);
 		double sFactor = mc.displayWidth / 1920d;
@@ -1000,7 +1004,7 @@ public class GuiGunModify extends GuiScreen {
 
 			RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
 			// model.updateAnimation(rge.controller.getTime(),"");
-			rge.controller.reset(true);
+			//rge.controller.reset(true);
 			rge.controller.updateCurrentItem();
 			AnimationController.DRAW = 1.0d;
 			// AnimationController.ADS = 1.0d;

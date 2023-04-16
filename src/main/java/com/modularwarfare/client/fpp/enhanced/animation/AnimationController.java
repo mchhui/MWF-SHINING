@@ -59,7 +59,7 @@ public class AnimationController {
 
     public static double SPRINT_BASIC;
 
-    public boolean hasPlayedDrawSound = false;
+    public boolean hasPlayedDrawSound = true;
 
     private static AnimationType[] RELOAD_TYPE=new AnimationType[] {
             AnimationType.PRE_LOAD,AnimationType.LOAD,AnimationType.POST_LOAD,
@@ -84,7 +84,7 @@ public class AnimationController {
     public void reset(boolean resetSprint) {
         DEFAULT=0;
         DRAW=0;
-        hasPlayedDrawSound = false;
+        hasPlayedDrawSound = true;
         ADS=0;
         RELOAD=0;
         if(resetSprint) {
@@ -320,15 +320,19 @@ public class AnimationController {
                 }
             }
         }
+        boolean resetFlag=false;
         if(oldCurrentItem != player.inventory.currentItem){
-            reset(true);
+            resetFlag=true;
             oldCurrentItem = player.inventory.currentItem;
         }
         if(oldItemstack != player.getHeldItemMainhand()) {
             if(oldItemstack==null||oldItemstack.isEmpty()) {
-                reset(true);
+                resetFlag=true;
             }
             oldItemstack=player.getHeldItemMainhand();
+        }
+        if(resetFlag) {
+            reset(true);
         }
     }
     
