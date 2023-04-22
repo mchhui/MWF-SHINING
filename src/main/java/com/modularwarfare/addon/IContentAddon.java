@@ -22,7 +22,8 @@ public interface IContentAddon {
 
     public void preInit(FMLPreInitializationEvent event, AddonLoaderManager contentManager);
 
-    public void init(FMLPostInitializationEvent event, AddonLoaderManager contentManager);
+    public void init(FMLInitializationEvent event, AddonLoaderManager contentManager);
+    public void postInit(FMLPostInitializationEvent event, AddonLoaderManager contentManager);
 
     /**
      * Gets called before the addon is being unloaded.

@@ -95,7 +95,7 @@ public class ModularWarfare {
     // Mod Info
     public static final String MOD_ID = "modularwarfare";
     public static final String MOD_NAME = "ModularWarfare";
-    public static final String MOD_VERSION = "2023.2.4.0f";
+    public static final String MOD_VERSION = "2023.2.4.1f";
     public static final String MOD_PREFIX = TextFormatting.GRAY+"["+TextFormatting.RED+"ModularWarfare"+TextFormatting.GRAY+"]"+TextFormatting.GRAY;
 
     // Main instance
@@ -473,6 +473,7 @@ public class ModularWarfare {
         NETWORK = new NetworkHandler();
         NETWORK.initialise();
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularWarfare.INSTANCE, new GuiHandler());
+        this.loaderManager.initAddons(event);
     }
 
     /**
@@ -484,7 +485,7 @@ public class ModularWarfare {
     public void onPostInitialization(FMLPostInitializationEvent event) {
         NETWORK.postInitialise();
         PROXY.init();
-        this.loaderManager.initAddons(event);
+        this.loaderManager.postInitAddons(event);
     }
 
     /**
