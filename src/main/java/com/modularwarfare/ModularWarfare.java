@@ -473,6 +473,7 @@ public class ModularWarfare {
         NETWORK = new NetworkHandler();
         NETWORK.initialise();
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularWarfare.INSTANCE, new GuiHandler());
+        this.loaderManager.initAddons(event);
     }
 
     /**
@@ -484,7 +485,7 @@ public class ModularWarfare {
     public void onPostInitialization(FMLPostInitializationEvent event) {
         NETWORK.postInitialise();
         PROXY.init();
-        this.loaderManager.initAddons(event);
+        this.loaderManager.postInitAddons(event);
     }
 
     /**

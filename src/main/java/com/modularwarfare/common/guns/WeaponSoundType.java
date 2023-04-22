@@ -178,10 +178,20 @@ public enum WeaponSoundType {
      * The sound played when inspecting a melee weapon
      */
     @SerializedName("meleeInspect") MeleeInspect("meleeInspect", 5, "melee.inspect"),
-    /**
-     * The sound played when attacking a melee weapon
-     */
-    @SerializedName("meleeAttack") MeleeAttack("meleeAttack", 5, "melee.attack");
+    
+    @SerializedName("meleePreAttack") MeleePreAttack("meleePreAttack", 5, "melee.attack"),
+    @SerializedName("meleeAttack") MeleeAttack("meleeAttack", 5, "melee.attack"),
+    @SerializedName("meleeAttackSecond") MeleeAttackSecond("meleeAttackSecond", 5, "melee.attack"),
+    @SerializedName("meleePostAttack") MeleePostAttack("meleePostAttack", 5, "melee.attack"),
+    @SerializedName("meleeBounced") MeleeBounced("meleeBounced", 5, "melee.attack"),
+    
+    
+    @SerializedName("meleePreAttackHeavy") MeleePreAttackHeavy("meleePreAttackHeavy", 5, "melee.attack"),
+    @SerializedName("meleeAttackHeavy") MeleeAttackHeavy("meleeAttackHeavy", 5, "melee.attack"),
+    @SerializedName("meleeAttackHeavySecond") MeleeAttackHeavySecond("meleeAttackHeavySecond", 5, "melee.attack"),
+    @SerializedName("meleePostAttackHeavy") MeleePostAttackHeavy("meleePostAttackHeavy", 5, "melee.attack"),
+    @SerializedName("meleeBouncedHeavy") MeleeBouncedHeavy("meleeBouncedHeavy", 5, "melee.attack"),
+    @SerializedName("meleeHit") MeleeHit("meleeHit", 5, "melee.attack");
 
 
     public String eventName;
