@@ -157,7 +157,10 @@ public class GuiGunModify extends GuiScreen {
 	public void initGui() {
         RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
         // model.updateAnimation(rge.controller.getTime(),"");
-        rge.controller.reset(true);
+		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
+		if (((GunType) type).animationType == WeaponAnimationType.BASIC) {
+			rge.controller.reset(true);
+		}
 	    
 		mc=Minecraft.getMinecraft();
 		ScaledResolution scaledresolution = new ScaledResolution(mc);
