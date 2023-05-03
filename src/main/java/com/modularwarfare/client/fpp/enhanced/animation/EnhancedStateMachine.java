@@ -1,5 +1,7 @@
 package com.modularwarfare.client.fpp.enhanced.animation;
 
+import java.util.Random;
+
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.Passer;
 import com.modularwarfare.client.ClientProxy;
@@ -352,10 +354,14 @@ public class EnhancedStateMachine {
                 AnimationType aniType = getShootingAnimationType();
                 Passer<Phase> phase = new Passer(shootingPhase);
                 Passer<Double> progess = new Passer(AnimationController.FIRE);
+                Random r = new Random();
+                int Low = 0;
+                int High = type.flashType.resourceLocations.size()-1;
+                int result = r.nextInt(High - Low) + Low;
                 shooting = phaseUpdate(aniType, partialTick, 1, phase, progess,()->{
                     phase.set(Phase.FIRST);
                 }, () -> {
-                    flashCount++;
+                    flashCount = result;
                     phase.set(Phase.POST);
                 }, null);
                 shootingPhase = phase.get();
