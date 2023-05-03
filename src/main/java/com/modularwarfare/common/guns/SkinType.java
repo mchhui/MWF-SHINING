@@ -4,8 +4,6 @@ import com.google.gson.annotations.SerializedName;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.common.type.BaseType;
 
-import javax.xml.soap.Text;
-
 public class SkinType {
 
 

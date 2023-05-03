@@ -84,7 +84,7 @@ public class AnimationController {
     public void reset(boolean resetSprint) {
         DEFAULT=0;
         DRAW=0;
-        hasPlayedDrawSound = true;
+        hasPlayedDrawSound = false;
         ADS=0;
         RELOAD=0;
         if(resetSprint) {
