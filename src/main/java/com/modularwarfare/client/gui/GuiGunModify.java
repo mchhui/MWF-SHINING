@@ -158,7 +158,7 @@ public class GuiGunModify extends GuiScreen {
         RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
         // model.updateAnimation(rge.controller.getTime(),"");
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
-		if (((GunType) type).animationType != WeaponAnimationType.BASIC) {
+		if (((GunType) type).animationType == WeaponAnimationType.ENHANCED) {
 			rge.controller.reset(true);
 		}
 	    
