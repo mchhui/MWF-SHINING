@@ -38,27 +38,26 @@ public abstract class MixinMinecraft {
 
     @Shadow
     public EntityRenderer entityRenderer;
+    @Shadow
+    public EntityPlayerSP player;
+    @Shadow
+    public GuiIngame ingameGUI;
+    @Shadow
+    @Nullable
+    public GuiScreen currentScreen;
+    @Shadow
+    public PlayerControllerMP playerController;
+    @Shadow
+    public boolean inGameHasFocus;
+    @Shadow
+    @Final
+    private Tutorial tutorial;
+    @Shadow
+    private int rightClickDelayTimer;
 
     @Shadow
     @Nullable
     public abstract Entity getRenderViewEntity();
-
-    @Shadow
-    public EntityPlayerSP player;
-
-    @Shadow
-    public GuiIngame ingameGUI;
-
-    @Shadow
-    @Nullable
-    public GuiScreen currentScreen;
-
-    @Shadow
-    public PlayerControllerMP playerController;
-
-    @Shadow
-    @Final
-    private Tutorial tutorial;
 
     @Shadow
     public abstract void displayGuiScreen(@Nullable GuiScreen guiScreenIn);
@@ -77,13 +76,7 @@ public abstract class MixinMinecraft {
     protected abstract void middleClickMouse();
 
     @Shadow
-    private int rightClickDelayTimer;
-
-    @Shadow
     protected abstract void sendClickBlockToController(boolean leftClick);
-
-    @Shadow
-    public boolean inGameHasFocus;
 
     /**
      * @author
@@ -108,24 +101,17 @@ public abstract class MixinMinecraft {
             this.gameSettings.smoothCamera = !this.gameSettings.smoothCamera;
         }
 
-        for (int i = 0; i < 9; ++i)
-        {
+        for (int i = 0; i < 9; ++i) {
             boolean flag = this.gameSettings.keyBindSaveToolbar.isKeyDown();
             boolean flag1 = this.gameSettings.keyBindLoadToolbar.isKeyDown();
             boolean reloading = ClientRenderHooks.getAnimMachine(player).reloading;
 
-            if (this.gameSettings.keyBindsHotbar[i].isPressed())
-            {
-                if (this.player.isSpectator())
-                {
+            if (this.gameSettings.keyBindsHotbar[i].isPressed()) {
+                if (this.player.isSpectator()) {
                     this.ingameGUI.getSpectatorGui().onHotbarSelected(i);
-                }
-                else if ((!this.player.isCreative() || this.currentScreen != null || !flag1 && !flag) && !reloading)
-                {
+                } else if ((!this.player.isCreative() || this.currentScreen != null || !flag1 && !flag) && !reloading) {
                     this.player.inventory.currentItem = i;
-                }
-                else
-                {
+                } else {
                     GuiContainerCreative.handleHotbarSnapshots((Minecraft) (Object) this, i, flag1, flag);
                 }
             }

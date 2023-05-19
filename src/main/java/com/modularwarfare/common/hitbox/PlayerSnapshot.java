@@ -43,9 +43,9 @@ public class PlayerSnapshot {
         player = p;
         pos = new Vector3f(p.posX, p.posY, p.posZ);
 
-        PlayerSnapshotCreateEvent.Pre event=new PlayerSnapshotCreateEvent.Pre(p, pos);
+        PlayerSnapshotCreateEvent.Pre event = new PlayerSnapshotCreateEvent.Pre(p, pos);
         MinecraftForge.EVENT_BUS.post(event);
-        pos=event.pos;
+        pos = event.pos;
         hitboxes = new ArrayList<>();
 
         RotatedAxes bodyAxes = new RotatedAxes(p.renderYawOffset, 0F, 0F);

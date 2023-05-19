@@ -28,10 +28,12 @@ public class PacketClientAnimation extends PacketBase {
 
     public PacketClientAnimation() {
     }
+
     public PacketClientAnimation(AnimationType animType, String wepType) {
         this.animType = animType;
         this.wepType = wepType;
     }
+
     public PacketClientAnimation(String wepType, int fireDelay, float recoilPitch, float recoilYaw) {
         this(AnimationType.Shoot, wepType);
         this.fireDelay = fireDelay;
@@ -52,20 +54,20 @@ public class PacketClientAnimation extends PacketBase {
         writeUTF(data, wepType);
 
         switch (animType) {
-        case Reload: {
-            data.writeInt(reloadTime);
-            data.writeInt(reloadCount);
-            data.writeInt(reloadType);
-            break;
-        }
-        case Shoot: {
-            data.writeInt(fireDelay);
-            data.writeFloat(recoilPitch);
-            data.writeFloat(recoilYaw);
-            break;
-        }
-        default:
-            break;
+            case Reload: {
+                data.writeInt(reloadTime);
+                data.writeInt(reloadCount);
+                data.writeInt(reloadType);
+                break;
+            }
+            case Shoot: {
+                data.writeInt(fireDelay);
+                data.writeFloat(recoilPitch);
+                data.writeFloat(recoilYaw);
+                break;
+            }
+            default:
+                break;
         }
     }
 
@@ -75,20 +77,20 @@ public class PacketClientAnimation extends PacketBase {
         wepType = readUTF(data);
 
         switch (animType) {
-        case Reload: {
-            reloadTime = data.readInt();
-            reloadCount = data.readInt();
-            reloadType = data.readInt();
-            break;
-        }
-        case Shoot: {
-            fireDelay = data.readInt();
-            recoilPitch = data.readFloat();
-            recoilYaw = data.readFloat();
-            break;
-        }
-        default:
-            break;
+            case Reload: {
+                reloadTime = data.readInt();
+                reloadCount = data.readInt();
+                reloadType = data.readInt();
+                break;
+            }
+            case Shoot: {
+                fireDelay = data.readInt();
+                recoilPitch = data.readFloat();
+                recoilYaw = data.readFloat();
+                break;
+            }
+            default:
+                break;
         }
     }
 
@@ -100,28 +102,28 @@ public class PacketClientAnimation extends PacketBase {
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
         switch (animType) {
-        case Reload: {
-            ModularWarfare.PROXY.onReloadAnimation(clientPlayer, wepType, reloadTime, reloadCount, reloadType);
-            break;
-        }
-        case Shoot: {
-            ModularWarfare.PROXY.onShootAnimation(clientPlayer, wepType, fireDelay, recoilPitch, recoilYaw);
-            break;
-        }
-        case ShootFailed:{
-            ModularWarfare.PROXY.onShootFailedAnimation(clientPlayer, wepType);
-            break;
-        }
-        case ModeChange:{
-            ModularWarfare.PROXY.onModeChangeAnimation(clientPlayer, wepType);
-        }
-        default:
-            break;
+            case Reload: {
+                ModularWarfare.PROXY.onReloadAnimation(clientPlayer, wepType, reloadTime, reloadCount, reloadType);
+                break;
+            }
+            case Shoot: {
+                ModularWarfare.PROXY.onShootAnimation(clientPlayer, wepType, fireDelay, recoilPitch, recoilYaw);
+                break;
+            }
+            case ShootFailed: {
+                ModularWarfare.PROXY.onShootFailedAnimation(clientPlayer, wepType);
+                break;
+            }
+            case ModeChange: {
+                ModularWarfare.PROXY.onModeChangeAnimation(clientPlayer, wepType);
+            }
+            default:
+                break;
         }
     }
 
-    public static enum AnimationType {
-        Shoot(0), Reload(1),ShootFailed(2),ModeChange(3);
+    public enum AnimationType {
+        Shoot(0), Reload(1), ShootFailed(2), ModeChange(3);
 
         public int i;
 
@@ -131,16 +133,16 @@ public class PacketClientAnimation extends PacketBase {
 
         public static AnimationType getTypeFromInt(int i) {
             switch (i) {
-            case 0:
-                return Shoot;
-            case 1:
-                return Reload;
-            case 2:
-                return ShootFailed;
-            case 3:
-                return ModeChange;
-            default:
-                return null;
+                case 0:
+                    return Shoot;
+                case 1:
+                    return Reload;
+                case 2:
+                    return ShootFailed;
+                case 3:
+                    return ModeChange;
+                default:
+                    return null;
             }
         }
     }

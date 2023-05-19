@@ -17,12 +17,11 @@ import java.nio.ByteBuffer;
 
 public class FlashSystem {
 
-    private static Minecraft mc = Minecraft.getMinecraft();
-
     public static final int quality = 1024;
     public static int FLASHED_TEX;
     public static boolean hasTookScreenshot = false;
     public static int flashValue;
+    private static Minecraft mc = Minecraft.getMinecraft();
     private Field renderEndNanoTime;
 
     public FlashSystem() {
@@ -51,14 +50,14 @@ public class FlashSystem {
     @SubscribeEvent
     public void onRenderPost(RenderGameOverlayEvent.Post event) {
         Minecraft mc = Minecraft.getMinecraft();
-        if(event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
+        if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
             if (flashValue != 0) {
                 int width = Display.getWidth();
                 int height = Display.getHeight();
                 int x = 0;
                 int y = 0;
                 GL11.glPushMatrix();
-                GL11.glScalef(0.5f, 0.5f,0);
+                GL11.glScalef(0.5f, 0.5f, 0);
 
                 Tessellator tessellator = Tessellator.getInstance();
                 BufferBuilder bufferbuilder = tessellator.getBuffer();
@@ -83,7 +82,7 @@ public class FlashSystem {
     @SubscribeEvent
     public void renderTick(TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            if(!hasTookScreenshot && flashValue > 0) {
+            if (!hasTookScreenshot && flashValue > 0) {
                 GL11.glPushMatrix();
                 if (mc.player != null && mc.currentScreen == null) {
                     if (!OptifineHelper.isShadersEnabled()) {

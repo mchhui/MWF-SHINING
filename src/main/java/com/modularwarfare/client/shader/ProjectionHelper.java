@@ -1,11 +1,12 @@
 package com.modularwarfare.client.shader;
 
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
+
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 public class ProjectionHelper {
 
@@ -36,16 +37,15 @@ public class ProjectionHelper {
     }
 
     public Vec3d project(float objX, float objY, float objZ) {
-    	
-    	int[] vp= new int[2];
-    	//vp=viewport.flip();
-    	viewport.rewind();
-    	int x=viewport.get(viewport.position() + 2);
-    	int y=viewport.get(viewport.position() + 3);
-    	viewport.rewind();
-    	
-    	
-    	
+
+        int[] vp = new int[2];
+        //vp=viewport.flip();
+        viewport.rewind();
+        int x = viewport.get(viewport.position() + 2);
+        int y = viewport.get(viewport.position() + 3);
+        viewport.rewind();
+
+
         GLU.gluProject(objX, objY, objZ, modelview, projection, viewport, winCoords);
 
         float winX = winCoords.get(0);

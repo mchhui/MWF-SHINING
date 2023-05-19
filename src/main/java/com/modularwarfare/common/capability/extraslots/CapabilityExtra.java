@@ -2,7 +2,6 @@ package com.modularwarfare.common.capability.extraslots;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.common.network.PacketSyncExtraSlot;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
@@ -13,7 +12,6 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
@@ -64,7 +62,7 @@ public class CapabilityExtra {
 
     @SubscribeEvent
     public static void playerDeath(final LivingDeathEvent event) {
-        if(event.getEntity() instanceof EntityPlayer) {
+        if (event.getEntity() instanceof EntityPlayer) {
             final EntityPlayer player = (EntityPlayer) event.getEntity();
             final World world = player.world;
             if (world.isRemote || world.getGameRules().getBoolean("keepInventory") || !ModConfig.INSTANCE.general.drop_extra_slots_on_death) {
@@ -88,14 +86,14 @@ public class CapabilityExtra {
             }
         }
     }
-    
+
     @SubscribeEvent
     public static void playerClone(PlayerEvent.Clone event) {
-        IExtraItemHandler oldHandler= (IExtraItemHandler) event.getOriginal().getCapability((Capability) CapabilityExtra.CAPABILITY, (EnumFacing) null);
-        IExtraItemHandler newHandler= (IExtraItemHandler) event.getEntityPlayer().getCapability((Capability) CapabilityExtra.CAPABILITY, (EnumFacing) null);
-        for(int i=0;i<newHandler.getSlots();i++) {
-            newHandler.setStackInSlot(i, oldHandler.getStackInSlot(i).copy()); 
-        } 
+        IExtraItemHandler oldHandler = (IExtraItemHandler) event.getOriginal().getCapability((Capability) CapabilityExtra.CAPABILITY, (EnumFacing) null);
+        IExtraItemHandler newHandler = (IExtraItemHandler) event.getEntityPlayer().getCapability((Capability) CapabilityExtra.CAPABILITY, (EnumFacing) null);
+        for (int i = 0; i < newHandler.getSlots(); i++) {
+            newHandler.setStackInSlot(i, oldHandler.getStackInSlot(i).copy());
+        }
     }
 
     public static void sync(final EntityPlayer entity, final Collection<? extends EntityPlayer> receivers) {

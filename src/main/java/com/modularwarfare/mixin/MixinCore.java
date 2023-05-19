@@ -2,15 +2,11 @@ package com.modularwarfare.mixin;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.core.net.optifine.shaders.ShadersRender;
-
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
-
 import org.spongepowered.asm.launch.MixinBootstrap;
-import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Mixins;
 
 import javax.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -21,11 +17,11 @@ public class MixinCore implements IFMLLoadingPlugin {
 
     @Override
     public String[] getASMTransformerClass() {
-        ArrayList<String> arrayList=new ArrayList<String>();
+        ArrayList<String> arrayList = new ArrayList<String>();
         arrayList.add(ShadersRender.class.getName());
         try {
-            if(Class.forName("mchhui.modularmovements.coremod.ModularMovementsPlugin") != null) {
-                arrayList.add("mchhui.modularmovements.coremod.minecraft.EntityPlayerSP" );
+            if (Class.forName("mchhui.modularmovements.coremod.ModularMovementsPlugin") != null) {
+                arrayList.add("mchhui.modularmovements.coremod.minecraft.EntityPlayerSP");
                 arrayList.add("mchhui.modularmovements.coremod.minecraft.Entity");
             }
         } catch (ClassNotFoundException e) {

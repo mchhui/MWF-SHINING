@@ -16,9 +16,9 @@ public class TextureType extends BaseType {
 
     @Override
     public void loadExtraValues() {
-        if(imageLocation != null && imageLocation.length > 0){
-            for(int i = 0; i < imageLocation.length; i++){
-                resourceLocations.add(new ResourceLocation(ModularWarfare.MOD_ID, "textures/"+textureType.typeName+"/"+imageLocation[i]));
+        if (imageLocation != null && imageLocation.length > 0) {
+            for (int i = 0; i < imageLocation.length; i++) {
+                resourceLocations.add(new ResourceLocation(ModularWarfare.MOD_ID, "textures/" + textureType.typeName + "/" + imageLocation[i]));
             }
         } else {
             initDefaultTextures(textureType);
@@ -26,12 +26,12 @@ public class TextureType extends BaseType {
     }
 
 
-    public void initDefaultTextures(TextureEnumType type){
+    public void initDefaultTextures(TextureEnumType type) {
         this.textureType = type;
-        switch (type){
+        switch (type) {
             case Flash:
-                for(int i = 0; i < 5; i++){
-                    resourceLocations.add(new ResourceLocation(ModularWarfare.MOD_ID, "textures/default/flash/mw.flash"+(i+1)+".png"));
+                for (int i = 0; i < 5; i++) {
+                    resourceLocations.add(new ResourceLocation(ModularWarfare.MOD_ID, "textures/default/flash/mw.flash" + (i + 1) + ".png"));
                 }
                 break;
             case Overlay:

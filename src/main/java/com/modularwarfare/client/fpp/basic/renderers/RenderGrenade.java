@@ -2,10 +2,10 @@ package com.modularwarfare.client.fpp.basic.renderers;
 
 import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.model.ModelCustomArmor;
-import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
+import com.modularwarfare.client.model.ModelCustomArmor;
+import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;

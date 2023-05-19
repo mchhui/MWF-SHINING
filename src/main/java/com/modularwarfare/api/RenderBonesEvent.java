@@ -7,9 +7,7 @@ import net.minecraft.entity.Entity;
 import net.minecraftforge.fml.common.eventhandler.Event;
 
 /**
- * 
  * @see RenderMWArmorEvent
- *
  */
 @Deprecated
 public class RenderBonesEvent extends Event {

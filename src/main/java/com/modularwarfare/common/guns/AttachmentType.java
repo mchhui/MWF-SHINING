@@ -6,7 +6,6 @@ import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
-
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 
@@ -19,11 +18,10 @@ public class AttachmentType extends BaseType {
     public Barrel barrel = new Barrel();
 
     public Sight sight = new Sight();
-    
+
     public Stock stock = new Stock();
 
     public boolean sameTextureAsGun = false;
-    
 
 
     @Override
@@ -48,7 +46,7 @@ public class AttachmentType extends BaseType {
     @Override
     public void reloadModel() {
         model = new ModelAttachment(ModularWarfare.getRenderConfig(this, AttachmentRenderConfig.class), this);
-        ((ModelAttachment)model).config.init();
+        ((ModelAttachment) model).config.init();
     }
 
     @Override
@@ -64,8 +62,8 @@ public class AttachmentType extends BaseType {
         public String customOverlayTexture;
         public transient TextureType overlayType;
         public boolean plumbCrossHair = false;
-        
-        public boolean usedDefaultOverlayModelTexture=true;
+
+        public boolean usedDefaultOverlayModelTexture = true;
     }
 
     public static class Barrel {
@@ -74,18 +72,18 @@ public class AttachmentType extends BaseType {
 
         public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f;
-        
-    	public float accuracyFactor = 1.0f;
+
+        public float accuracyFactor = 1.0f;
     }
 
     public static class Grip {
         public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f;
     }
-    
-    public static class Stock{
-    	public float recoilPitchFactor = 1.0f;
-        public float recoilYawFactor = 1.0f; 
+
+    public static class Stock {
+        public float recoilPitchFactor = 1.0f;
+        public float recoilYawFactor = 1.0f;
     }
 
 }

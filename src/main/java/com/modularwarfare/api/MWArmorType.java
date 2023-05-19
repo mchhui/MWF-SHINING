@@ -1,7 +1,6 @@
 package com.modularwarfare.api;
 
 import com.google.gson.annotations.SerializedName;
-
 import net.minecraft.inventory.EntityEquipmentSlot;
 
 public enum MWArmorType {
@@ -14,24 +13,24 @@ public enum MWArmorType {
 
     int[] validSlots;
 
+    private MWArmorType(int... validSlots) {
+        this.validSlots = validSlots;
+    }
+
     public static MWArmorType fromVanillaSlot(EntityEquipmentSlot entityEquipmentSlot) {
-        if(entityEquipmentSlot==EntityEquipmentSlot.HEAD) {
+        if (entityEquipmentSlot == EntityEquipmentSlot.HEAD) {
             return Head;
         }
-        if(entityEquipmentSlot==EntityEquipmentSlot.CHEST) {
+        if (entityEquipmentSlot == EntityEquipmentSlot.CHEST) {
             return Chest;
         }
-        if(entityEquipmentSlot==EntityEquipmentSlot.LEGS) {
+        if (entityEquipmentSlot == EntityEquipmentSlot.LEGS) {
             return Legs;
         }
-        if(entityEquipmentSlot==EntityEquipmentSlot.FEET) {
+        if (entityEquipmentSlot == EntityEquipmentSlot.FEET) {
             return Feet;
         }
         return null;
-    }
-    
-    private MWArmorType(int... validSlots) {
-        this.validSlots = validSlots;
     }
 
     public static boolean isVanilla(MWArmorType type) {

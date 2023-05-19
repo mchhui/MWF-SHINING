@@ -279,7 +279,7 @@ public class Matrix4f extends Matrix implements Serializable {
 
         return dest;
     }
-    
+
     public static Vector3f transform(Matrix4f left, Vector3f right, Vector3f dest) {
         if (dest == null)
             dest = new Vector3f();

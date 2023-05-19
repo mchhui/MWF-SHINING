@@ -6,7 +6,6 @@ import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;

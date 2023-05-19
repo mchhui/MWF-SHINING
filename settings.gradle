@@ -1,3 +1,13 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            name = "forge"
+            url = "https://maven.minecraftforge.net/"
+        }
+    }
+}
+
 rootProject.name = 'ModularWarfare'
 
 // Uncomment this line if you want to build the melee-addon

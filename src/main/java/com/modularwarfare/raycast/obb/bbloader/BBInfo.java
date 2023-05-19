@@ -1,8 +1,8 @@
 package com.modularwarfare.raycast.obb.bbloader;
 
-import java.util.ArrayList;
-
 import com.google.gson.annotations.SerializedName;
+
+import java.util.ArrayList;
 
 public class BBInfo {
     @SerializedName("groups")

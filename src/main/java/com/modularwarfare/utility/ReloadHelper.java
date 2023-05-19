@@ -1,29 +1,25 @@
 package com.modularwarfare.utility;
 
-import java.util.function.Consumer;
-
-import com.modularwarfare.ModConfig;
 import com.modularwarfare.common.guns.AmmoType;
 import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.handler.data.VarInt;
 import com.modularwarfare.common.type.BaseItem;
-
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.TextComponentString;
+
+import java.util.function.Consumer;
 
 public class ReloadHelper {
 
-    public static int getBulletOnMag(ItemStack ammoStack,Integer currentMagcount) {
-        if(!(ammoStack.getItem() instanceof ItemAmmo)) {
+    public static int getBulletOnMag(ItemStack ammoStack, Integer currentMagcount) {
+        if (!(ammoStack.getItem() instanceof ItemAmmo)) {
             return 0;
         }
-        if(!ammoStack.hasTagCompound()) {
+        if (!ammoStack.hasTagCompound()) {
             return 0;
         }
         ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
@@ -33,9 +29,9 @@ public class ReloadHelper {
         if (!nbtTagCompound.hasKey("magcount")) {
             ammoCount = ammoStack.getTagCompound().getInteger("ammocount");
         } else {
-            if(currentMagcount!=null) {
-                ammoCount = ammoStack.getTagCompound().getInteger("ammocount"+currentMagcount);
-            }else {
+            if (currentMagcount != null) {
+                ammoCount = ammoStack.getTagCompound().getInteger("ammocount" + currentMagcount);
+            } else {
                 for (int i = 1; i <= ammoType.magazineCount + 1; i++) {
                     ammoCount += ammoStack.getTagCompound().getInteger("ammocount" + i);
                 }
@@ -43,12 +39,12 @@ public class ReloadHelper {
         }
         return ammoCount;
     }
-    
-    public static boolean setBulletOnMag(ItemStack ammoStack,Integer currentMagcount,int ammout) {
-        if(!(ammoStack.getItem() instanceof ItemAmmo)) {
+
+    public static boolean setBulletOnMag(ItemStack ammoStack, Integer currentMagcount, int ammout) {
+        if (!(ammoStack.getItem() instanceof ItemAmmo)) {
             return false;
         }
-        if(!ammoStack.hasTagCompound()) {
+        if (!ammoStack.hasTagCompound()) {
             return false;
         }
         ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
@@ -56,7 +52,7 @@ public class ReloadHelper {
         NBTTagCompound nbtTagCompound = ammoStack.getTagCompound();
         int ammoCount = 0;
         if (!nbtTagCompound.hasKey("magcount")) {
-            ammoStack.getTagCompound().setInteger("ammocount",ammout);
+            ammoStack.getTagCompound().setInteger("ammocount", ammout);
         } else {
             if (currentMagcount != null) {
                 ammoStack.getTagCompound().setInteger("ammocount" + currentMagcount.intValue(), ammout);
@@ -67,39 +63,39 @@ public class ReloadHelper {
         }
         return true;
     }
-    
-    public static boolean isSameTypeAmmo(ItemStack stackA,ItemStack stackB) {
-        Item itemA=stackA.getItem();
-        Item itemB=stackB.getItem();
-        if(!(itemA instanceof BaseItem)) {
+
+    public static boolean isSameTypeAmmo(ItemStack stackA, ItemStack stackB) {
+        Item itemA = stackA.getItem();
+        Item itemB = stackB.getItem();
+        if (!(itemA instanceof BaseItem)) {
             return false;
         }
-        if(!itemA.equals(itemB)) {
+        if (!itemA.equals(itemB)) {
             return false;
         }
         String ammoTypeA = ((BaseItem) itemA).baseType.internalName;
         String ammoTypeB = ((BaseItem) itemB).baseType.internalName;
-        if(stackA.getItemDamage()!=stackB.getItemDamage()) {
+        if (stackA.getItemDamage() != stackB.getItemDamage()) {
             return false;
         }
         return ammoTypeA.equals(ammoTypeB);
     }
-    
+
     public static boolean checkUnloadAmmo(EntityPlayerMP entityPlayer, ItemStack gunStack) {
         if (ItemGun.hasAmmoLoaded(gunStack)) {
             return true;
         }
         return false;
     }
-    
+
     public static Integer checkUnloadBullets(EntityPlayerMP entityPlayer, ItemStack targetStack) {
         NBTTagCompound nbtTagCompound = targetStack.getTagCompound();
         //boolean isAmmo = targetStack.getItem() instanceof ItemAmmo;
-    
+
         if (nbtTagCompound.hasKey("bullet")) {
             ItemStack returningBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
             int bulletsToUnload = 0;
-    
+
             if (!nbtTagCompound.hasKey("magcount")) {
                 bulletsToUnload = targetStack.getTagCompound().getInteger("ammocount");
             } else {
@@ -112,7 +108,7 @@ public class ReloadHelper {
         }
         return null;
     }
-    
+
     public static boolean unloadAmmo(EntityPlayerMP entityPlayer, ItemStack gunStack) {
         NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
         if (ItemGun.hasAmmoLoaded(gunStack)) {
@@ -124,22 +120,22 @@ public class ReloadHelper {
             if (returningAmmoItem.type.subAmmo != null && ItemAmmo.hasAmmo(returningAmmo)) {
                 int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
                 returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
-                if(!entityPlayer.inventory.addItemStackToInventory(returningAmmo)) {
+                if (!entityPlayer.inventory.addItemStackToInventory(returningAmmo)) {
                     entityPlayer.dropItem(returningAmmo, false);
                 }
 
             } else {
-            	if (!returnEmptyAmmo) {
-            		int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
-                	returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
-                	entityPlayer.dropItem(returningAmmo, false);
-            	} else {
-            		int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
+                if (!returnEmptyAmmo) {
+                    int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
                     returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
-                    if(!entityPlayer.inventory.addItemStackToInventory(returningAmmo)) {
+                    entityPlayer.dropItem(returningAmmo, false);
+                } else {
+                    int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
+                    returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
+                    if (!entityPlayer.inventory.addItemStackToInventory(returningAmmo)) {
                         entityPlayer.dropItem(returningAmmo, false);
                     }
-            	}
+                }
             }
             nbtTagCompound.removeTag("ammo");
             return true;
@@ -150,30 +146,30 @@ public class ReloadHelper {
     public static Integer unloadBullets(EntityPlayerMP entityPlayer, ItemStack targetStack) {
         return unloadBullets(entityPlayer, targetStack, null);
     }
-    
-    public static Integer unloadBullets(EntityPlayerMP entityPlayer, ItemStack targetStack,Integer expectBulletsToUnload) {
+
+    public static Integer unloadBullets(EntityPlayerMP entityPlayer, ItemStack targetStack, Integer expectBulletsToUnload) {
         NBTTagCompound nbtTagCompound = targetStack.getTagCompound();
         //boolean isAmmo = targetStack.getItem() instanceof ItemAmmo;
-    
+
         if (nbtTagCompound.hasKey("bullet")) {
             ItemStack returningBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
             int bulletsToUnload = 0;
-            int bulletsReturnCount=0;
-            boolean removeFlag=true;
-    
-            
+            int bulletsReturnCount = 0;
+            boolean removeFlag = true;
+
+
             if (expectBulletsToUnload != null) {
                 bulletsToUnload = expectBulletsToUnload;
                 bulletsReturnCount = bulletsToUnload;
                 if (!nbtTagCompound.hasKey("magcount")) {
                     int count = nbtTagCompound.getInteger("ammocount") - expectBulletsToUnload;
                     if (count < 0) {
-                        bulletsReturnCount+=count;
+                        bulletsReturnCount += count;
                         count = 0;
                     }
                     nbtTagCompound.setInteger("ammocount", count);
-                    if(count>0) {
-                        removeFlag=false;
+                    if (count > 0) {
+                        removeFlag = false;
                     }
                 } else {
                     int maxCount = expectBulletsToUnload;
@@ -186,7 +182,7 @@ public class ReloadHelper {
                         } else {
                             nbtTagCompound.setInteger("ammocount" + i, count - maxCount);
                             maxCount = 0;
-                            removeFlag=false;
+                            removeFlag = false;
                         }
                     }
                     bulletsReturnCount -= maxCount;
@@ -203,7 +199,7 @@ public class ReloadHelper {
                     }
                 }
             }
-    
+
             int animBulletsToReload = bulletsReturnCount;
             while (bulletsReturnCount > 0) {
                 if (bulletsReturnCount <= 64) {
@@ -218,19 +214,19 @@ public class ReloadHelper {
                     bulletsReturnCount -= 64;
                 }
             }
-            if(removeFlag) {
-                nbtTagCompound.removeTag("bullet");  
-                nbtTagCompound.removeTag("ammo");  
+            if (removeFlag) {
+                nbtTagCompound.removeTag("bullet");
+                nbtTagCompound.removeTag("ammo");
             }
             return animBulletsToReload;
         }
         return null;
     }
 
-    public static int inventoryItemCount(EntityPlayer player,ItemStack stack) {
-        VarInt count=new VarInt();
+    public static int inventoryItemCount(EntityPlayer player, ItemStack stack) {
+        VarInt count = new VarInt();
         Consumer<ItemStack> consumer = (s) -> {
-            if (ItemStack.areItemsEqual(s,stack)&&ItemStack.areItemStackTagsEqual(s, stack)) {
+            if (ItemStack.areItemsEqual(s, stack) && ItemStack.areItemStackTagsEqual(s, stack)) {
                 count.i += s.getCount();
             }
         };
@@ -249,7 +245,7 @@ public class ReloadHelper {
         }
         Consumer<ItemStack> consumer = (s) -> {
             if (varCount.i > 0) {
-                if (ItemStack.areItemsEqual(s, stack)&&ItemStack.areItemStackTagsEqual(s, stack)) {
+                if (ItemStack.areItemsEqual(s, stack) && ItemStack.areItemStackTagsEqual(s, stack)) {
                     if (varCount.i >= s.getCount()) {
                         varCount.i -= s.getCount();
                         s.setCount(0);

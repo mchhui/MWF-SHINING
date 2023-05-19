@@ -1,13 +1,12 @@
 package com.modularwarfare.client.fpp.enhanced;
 
-import java.io.IOException;
-
 import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
-import com.google.gson.annotations.SerializedName;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+
+import java.io.IOException;
 
 @JsonAdapter(AnimationType.AnimationTypeJsonAdapter.class)
 public enum AnimationType {
@@ -35,11 +34,21 @@ public enum AnimationType {
     SPRINT("sprint");
 
     public String serializedName;
+
     private AnimationType(String name) {
-        serializedName=name;
+        serializedName = name;
     }
-    
-    public static class AnimationTypeJsonAdapter extends TypeAdapter<AnimationType>{
+
+    public static class AnimationTypeJsonAdapter extends TypeAdapter<AnimationType> {
+
+        public static AnimationType fromString(String modeName) {
+            for (AnimationType animationType : values()) {
+                if (animationType.serializedName.equalsIgnoreCase(modeName)) {
+                    return animationType;
+                }
+            }
+            throw new AnimationTypeException("wrong animation type:" + modeName);
+        }
 
         @Override
         public AnimationType read(JsonReader in) throws IOException {
@@ -54,21 +63,12 @@ public enum AnimationType {
         public void write(JsonWriter out, AnimationType t) throws IOException {
             out.value(t.serializedName);
         }
-        
-        public static class AnimationTypeException extends RuntimeException{
+
+        public static class AnimationTypeException extends RuntimeException {
             public AnimationTypeException(String str) {
                 super(str);
             }
         }
 
-        public static AnimationType fromString(String modeName) {
-            for (AnimationType animationType : values()) {
-                if (animationType.serializedName.equalsIgnoreCase(modeName)) {
-                    return animationType;
-                }
-            }
-            throw new AnimationTypeException("wrong animation type:"+modeName);
-        }
-        
     }
 }

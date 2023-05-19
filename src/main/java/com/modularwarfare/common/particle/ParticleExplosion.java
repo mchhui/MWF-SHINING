@@ -49,11 +49,12 @@ public class ParticleExplosion extends Particle {
     }
 
     @Override
-    public void renderParticle(BufferBuilder buffer, Entity entityIn, float par2, float par3, float par4, float par5, float par6, float par7){
+    public void renderParticle(BufferBuilder buffer, Entity entityIn, float par2, float par3, float par4, float par5, float par6, float par7) {
         GL11.glPushMatrix();
         GL11.glPushAttrib(8192);
 
-        RenderHelper.disableStandardItemLighting();;
+        RenderHelper.disableStandardItemLighting();
+        ;
 
         if (this.lastSwing != RenderParameters.SMOOTH_SWING) {
 
@@ -67,8 +68,8 @@ public class ParticleExplosion extends Particle {
             double dist = player.getDistance(this.posX, this.posY, this.posZ);
 
 
-            if(dist <= 16) {
-                float distFactor = (float) (1/dist);
+            if (dist <= 16) {
+                float distFactor = (float) (1 / dist);
                 player.rotationPitch += distFactor * (d < .5 ? this.alpha_rubble : -this.alpha_rubble) * 5;
                 player.rotationYaw += distFactor * (d2 < .5 ? this.alpha_rubble : -this.alpha_rubble) * 5;
             }
@@ -89,7 +90,7 @@ public class ParticleExplosion extends Particle {
                 this.posY + (this.particleAge / 100),
                 this.posZ,
                 1,
-                80 + this.particleAge * 80, 80 +  (this.particleAge * 50),
+                80 + this.particleAge * 80, 80 + (this.particleAge * 50),
                 "0xFFFFFF",
                 this.alpha_rubble);
         GL11.glPopAttrib();

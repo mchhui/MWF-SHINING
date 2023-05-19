@@ -1,6 +1,5 @@
 package com.modularwarfare.client.gui.customization.containers;
 
-import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.gui.api.GuiMWButton;
 import com.modularwarfare.client.gui.api.GuiMWContainer;
 import com.modularwarfare.client.gui.api.GuiUtils;
@@ -27,19 +26,19 @@ public class ContainerGunParts extends GuiMWContainer {
     }
 
 
-    public void initGui(){
+    public void initGui() {
 
         //this.gunParts = Arrays.asList("body", "stock", "slide", "sight", "pipe", "muzzle", "magazine", "grip", "front_receiver", "forearm", "back_receiver");
         this.gunParts = Arrays.asList("gunModel", "slideModel", "ammoModel");
 
-        for(int i = 0; i < gunParts.size(); i++){
+        for (int i = 0; i < gunParts.size(); i++) {
             this.partsSets.put(gunParts.get(i), true);
         }
         this.partsSets.put("gunModel", true);
 
         for (int i = 0; i < this.gunParts.size(); i++) {
-            String displayName = this.gunParts.get(i).substring(0,1).toUpperCase() + this.gunParts.get(i).substring(1).toLowerCase();
-            GuiMWButton button = new GuiMWButton(i, this.posX + this.width/2 - 8, this.posY + 15 * i + 4, buttonWidth, buttonHeight, displayName);
+            String displayName = this.gunParts.get(i).substring(0, 1).toUpperCase() + this.gunParts.get(i).substring(1).toLowerCase();
+            GuiMWButton button = new GuiMWButton(i, this.posX + this.width / 2 - 8, this.posY + 15 * i + 4, buttonWidth, buttonHeight, displayName);
 
             this.addButton(button);
         }
@@ -47,8 +46,8 @@ public class ContainerGunParts extends GuiMWContainer {
 
     public void actionPerformed(GuiButton givenButton) {
         partsSets.put(gunParts.get(givenButton.id), !partsSets.get(gunParts.get(givenButton.id)));
-        if(givenButton instanceof GuiMWButton){
-            ((GuiMWButton)givenButton).colorText = partsSets.get(gunParts.get(givenButton.id)) ? 0xFFFFFFFF : 0xFFFF5555;
+        if (givenButton instanceof GuiMWButton) {
+            ((GuiMWButton) givenButton).colorText = partsSets.get(gunParts.get(givenButton.id)) ? 0xFFFFFFFF : 0xFFFF5555;
         }
     }
 

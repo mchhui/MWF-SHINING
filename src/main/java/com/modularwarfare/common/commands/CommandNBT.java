@@ -29,7 +29,7 @@ public class CommandNBT extends CommandBase {
             if (args.length != 1) {
                 if (sender instanceof EntityPlayerMP) {
                     EntityPlayerMP localPlayer = (EntityPlayerMP) sender;
-                    localPlayer.sendMessage(new TextComponentString(TextFormatting.GRAY+"["+TextFormatting.RED+"ModularWarfare"+TextFormatting.GRAY+"] Item NBT copied to clipboard !"));
+                    localPlayer.sendMessage(new TextComponentString(TextFormatting.GRAY + "[" + TextFormatting.RED + "ModularWarfare" + TextFormatting.GRAY + "] Item NBT copied to clipboard !"));
                     Toolkit.getDefaultToolkit()
                             .getSystemClipboard()
                             .setContents(

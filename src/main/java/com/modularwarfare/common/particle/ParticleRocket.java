@@ -1,19 +1,13 @@
 package com.modularwarfare.common.particle;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.client.gui.api.GuiUtils;
 import com.modularwarfare.utility.RenderHelperMW;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.IParticleFactory;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.SoundEvents;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -54,11 +48,12 @@ public class ParticleRocket extends Particle {
     }
 
     @Override
-    public void renderParticle(BufferBuilder buffer, Entity entityIn, float par2, float par3, float par4, float par5, float par6, float par7){
+    public void renderParticle(BufferBuilder buffer, Entity entityIn, float par2, float par3, float par4, float par5, float par6, float par7) {
         GL11.glPushMatrix();
         GL11.glPushAttrib(8192);
 
-        RenderHelper.disableStandardItemLighting();;
+        RenderHelper.disableStandardItemLighting();
+        ;
 
         GL11.glDepthMask(false);
         RenderHelperMW.renderPositionedImageInViewWithDepth(new ResourceLocation(ModularWarfare.MOD_ID, "textures/particles/rocket" + this.index + ".png"),
@@ -102,7 +97,7 @@ public class ParticleRocket extends Particle {
 
             this.motionZ *= 0.9900000190734863D;
 
-            this.move(this.motionX/20, this.motionY/20, this.motionZ/20);
+            this.move(this.motionX / 20, this.motionY / 20, this.motionZ / 20);
 
             if (this.onGround) {
                 this.motionX *= 0.699999988079071D;

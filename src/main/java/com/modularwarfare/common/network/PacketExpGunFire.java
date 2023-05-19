@@ -8,7 +8,6 @@ import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.guns.manager.ShotValidation;
-import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -55,7 +54,7 @@ public class PacketExpGunFire extends PacketBase {
         this(entityId, internalname, hitboxType, fireTickDelay, recoilPitch, recoilYaw, recoilAimReducer, bulletSpread, x, y, z, null);
     }
 
-    public PacketExpGunFire(int entityId, String internalname, String hitboxType, int fireTickDelay, float recoilPitch, float recoilYaw, float recoilAimReducer, float bulletSpread, double x, double y, double z,EnumFacing facing) {
+    public PacketExpGunFire(int entityId, String internalname, String hitboxType, int fireTickDelay, float recoilPitch, float recoilYaw, float recoilAimReducer, float bulletSpread, double x, double y, double z, EnumFacing facing) {
         this.entityId = entityId;
         this.internalname = internalname;
         this.hitboxType = hitboxType;
@@ -69,7 +68,7 @@ public class PacketExpGunFire extends PacketBase {
         this.posX = x;
         this.posY = y;
         this.posZ = z;
-        this.facing=facing;
+        this.facing = facing;
     }
 
     @Override
@@ -87,9 +86,9 @@ public class PacketExpGunFire extends PacketBase {
         data.writeDouble(this.posX);
         data.writeDouble(this.posY);
         data.writeDouble(this.posZ);
-        if(this.facing==null) {
+        if (this.facing == null) {
             data.writeInt(-1);
-        }else {
+        } else {
             data.writeInt(this.facing.ordinal());
         }
     }
@@ -109,9 +108,9 @@ public class PacketExpGunFire extends PacketBase {
         this.posX = data.readDouble();
         this.posY = data.readDouble();
         this.posZ = data.readDouble();
-        int enumFacing=data.readInt();
-        if(enumFacing!=-1) {
-            this.facing=EnumFacing.values()[enumFacing];
+        int enumFacing = data.readInt();
+        if (enumFacing != -1) {
+            this.facing = EnumFacing.values()[enumFacing];
         }
     }
 
@@ -133,8 +132,8 @@ public class PacketExpGunFire extends PacketBase {
 
                             if (ModularWarfare.gunTypes.get(internalname) != null) {
                                 ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
-                                
-                                if(entityPlayer.getHeldItemMainhand().getItem()!=itemGun) {
+
+                                if (entityPlayer.getHeldItemMainhand().getItem() != itemGun) {
                                     return;
                                 }
 
@@ -163,11 +162,11 @@ public class PacketExpGunFire extends PacketBase {
                                                     }
                                                 }
                                             }
-                                            
+
                                             //BULLET START
-                                            
+
                                             ItemBullet bulletItem = ItemGun.getUsedBullet(entityPlayer.getHeldItemMainhand(), itemGun.type);
-                                            
+
                                             if (target instanceof EntityLivingBase) {
                                                 EntityLivingBase targetELB = (EntityLivingBase) target;
                                                 if (bulletItem != null) {
@@ -185,47 +184,47 @@ public class PacketExpGunFire extends PacketBase {
                                                     }
                                                 }
                                             }
-                                            
-                                            damage*= bulletItem.type.bulletDamageFactor;
+
+                                            damage *= bulletItem.type.bulletDamageFactor;
 
                                             //BULLET END
-                                            boolean flag=false;
-                                            DamageSource damageSource=DamageSource.causePlayerDamage(entityPlayer).setProjectile();
-                                           
-                                            
-                                            if(bulletItem.type.isFireDamage) {
+                                            boolean flag = false;
+                                            DamageSource damageSource = DamageSource.causePlayerDamage(entityPlayer).setProjectile();
+
+
+                                            if (bulletItem.type.isFireDamage) {
                                                 damageSource.setFireDamage();
                                             }
-                                            if(bulletItem.type.isAbsoluteDamage) {
+                                            if (bulletItem.type.isAbsoluteDamage) {
                                                 damageSource.setDamageIsAbsolute();
                                             }
-                                            if(bulletItem.type.isBypassesArmorDamage) {
+                                            if (bulletItem.type.isBypassesArmorDamage) {
                                                 damageSource.setDamageBypassesArmor();
                                             }
-                                            if(bulletItem.type.isExplosionDamage) {
+                                            if (bulletItem.type.isExplosionDamage) {
                                                 damageSource.setExplosion();
                                             }
-                                            if(bulletItem.type.isMagicDamage) {
+                                            if (bulletItem.type.isMagicDamage) {
                                                 damageSource.setMagicDamage();
                                             }
                                             if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                                                flag=RayUtil.attackEntityWithoutKnockback(target, damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
+                                                flag = RayUtil.attackEntityWithoutKnockback(target, damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
                                             } else {
-                                                flag=target.attackEntityFrom(damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
+                                                flag = target.attackEntityFrom(damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
                                             }
                                             target.hurtResistantTime = 0;
-                                            if(flag) {
-                                                if(plate!=null) {
-                                                    plate.attemptDamageItem(1,entityPlayer.getRNG(), entityPlayer);
+                                            if (flag) {
+                                                if (plate != null) {
+                                                    plate.attemptDamageItem(1, entityPlayer.getRNG(), entityPlayer);
                                                     //entityPlayer.sendMessage(new TextComponentString(plate.getItemDamage()+"/"+plate.getMaxDamage()));
-                                                    if(plate.getItemDamage()>=plate.getMaxDamage()) {
+                                                    if (plate.getItemDamage() >= plate.getMaxDamage()) {
                                                         extraSlots.setStackInSlot(1, ItemStack.EMPTY);
-                                                    }else {
-                                                        extraSlots.setStackInSlot(1,plate);
+                                                    } else {
+                                                        extraSlots.setStackInSlot(1, plate);
                                                     }
                                                 }
                                             }
-                                            
+
                                             if (entityPlayer instanceof EntityPlayerMP) {
                                                 ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(hitboxType.contains("head")), entityPlayer);
                                                 ModularWarfare.NETWORK.sendTo(new PacketPlaySound(target.getPosition(), "flyby", 1f, 1f), (EntityPlayerMP) target);
@@ -240,7 +239,7 @@ public class PacketExpGunFire extends PacketBase {
                                     BlockPos blockPos = new BlockPos(posX, posY, posZ);
                                     ItemGun.playImpactSound(entityPlayer.world, blockPos, itemGun.type);
                                     itemGun.type.playSoundPos(blockPos, entityPlayer.world, WeaponSoundType.Crack, entityPlayer, 1.0f);
-                                    ItemGun.doHit(posX, posY, posZ,facing, entityPlayer);
+                                    ItemGun.doHit(posX, posY, posZ, facing, entityPlayer);
                                 }
                             }
                         }

@@ -1,10 +1,7 @@
 package com.modularwarfare.common.type;
 
-import java.util.List;
-
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.script.ScriptHost;
-
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -13,6 +10,8 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+
+import java.util.List;
 
 public class BaseItem extends Item {
 
@@ -26,13 +25,13 @@ public class BaseItem extends Item {
         setCreativeTab(ModularWarfare.MODS_TABS.get(type.contentPack));
 
         this.baseType = type;
-        if(type.maxStackSize != null) {
+        if (type.maxStackSize != null) {
             this.setMaxStackSize(type.maxStackSize);
         } else {
             this.setMaxStackSize(1);
         }
         this.canRepair = false;
-        tooltipScript=new ResourceLocation(ModularWarfare.MOD_ID,"script/"+baseType.toolipScript+".js");
+        tooltipScript = new ResourceLocation(ModularWarfare.MOD_ID, "script/" + baseType.toolipScript + ".js");
     }
 
     public void setType(BaseType type) {
@@ -66,12 +65,12 @@ public class BaseItem extends Item {
         baseDisplayLine = baseDisplayLine.replaceAll("%dg", TextFormatting.DARK_GRAY.toString());
         return String.format(baseDisplayLine, prefix, current, max);
     }
-    
+
     @Override
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-        if(tooltipScript!=null) {
-            ScriptHost.INSTANCE.callScript(tooltipScript, stack, tooltip,"updateTooltip");  
+        if (tooltipScript != null) {
+            ScriptHost.INSTANCE.callScript(tooltipScript, stack, tooltip, "updateTooltip");
         }
     }
 

@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 /**
  * WTF???
  * R.I.P
- * */
+ */
 @Deprecated
 public enum WeaponScopeType {
 

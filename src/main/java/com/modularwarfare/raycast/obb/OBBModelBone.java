@@ -1,11 +1,14 @@
 package com.modularwarfare.raycast.obb;
 
-import java.util.ArrayList;
-
 import com.modularwarfare.common.vector.Matrix4f;
 import com.modularwarfare.common.vector.Vector3f;
 
+import java.util.ArrayList;
+
 public class OBBModelBone {
+    public static final Vector3f YAW = new Vector3f(0, -1, 0);
+    public static final Vector3f PITCH = new Vector3f(1, 0, 0);
+    public static final Vector3f ROOL = new Vector3f(0, 0, -1);
     public String name;
     public OBBModelBone parent;
     public Vector3f oirign = new Vector3f();
@@ -13,14 +16,11 @@ public class OBBModelBone {
     public Vector3f rotation = new Vector3f();
     public ArrayList<OBBModelBone> children = new ArrayList<OBBModelBone>();
     public Matrix4f currentPose = new Matrix4f();
-    public static final Vector3f YAW = new Vector3f(0, -1, 0);
-    public static final Vector3f PITCH = new Vector3f(1, 0, 0);
-    public static final Vector3f ROOL = new Vector3f(0, 0, -1);
 
     public void updatePose(OBBModelObject obbModelObject) {
         obbModelObject.onBoneUpdatePose(this);
     }
-    
+
     public void computePose(OBBModelObject obbModelObject, Matrix4f matrix) {
         matrix = matrix.translate(translation).translate(oirign).rotate(rotation.y, YAW).rotate(rotation.x, PITCH)
                 .rotate(rotation.z, ROOL).translate(oirign.negate(null));

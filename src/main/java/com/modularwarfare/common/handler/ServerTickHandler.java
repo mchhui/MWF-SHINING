@@ -2,7 +2,6 @@ package com.modularwarfare.common.handler;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.handler.data.DataGunReloadEnhancedTask;
-import com.modularwarfare.common.network.BackWeaponsManager;
 import com.modularwarfare.common.network.PacketAimingReponse;
 import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.item.ItemStack;
@@ -14,12 +13,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerTickHandler extends ForgeEvent {
 
-    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
-    public static ConcurrentHashMap<UUID, ItemStack> playerReloadItemStack = new ConcurrentHashMap<UUID, ItemStack>();
+    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<UUID, ItemStack> playerReloadItemStack = new ConcurrentHashMap<>();
 
-    public static ConcurrentHashMap<String, Integer> playerAimShootCooldown = new ConcurrentHashMap<String, Integer>();
-    public static ConcurrentHashMap<String, Boolean> playerAimInstant = new ConcurrentHashMap<String, Boolean>();
-    public static ConcurrentHashMap<UUID, DataGunReloadEnhancedTask> reloadEnhancedTask = new ConcurrentHashMap<UUID, DataGunReloadEnhancedTask>();
+    public static ConcurrentHashMap<String, Integer> playerAimShootCooldown = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, Boolean> playerAimInstant = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<UUID, DataGunReloadEnhancedTask> reloadEnhancedTask = new ConcurrentHashMap<>();
 
     int i = 0;
 

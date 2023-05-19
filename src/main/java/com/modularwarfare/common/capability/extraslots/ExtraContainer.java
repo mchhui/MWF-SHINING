@@ -24,10 +24,10 @@ public class ExtraContainer extends ItemStackHandler implements IExtraItemHandle
     }
 
     protected void onContentsChanged(final int slot) {
-        if(FMLCommonHandler.instance().getEffectiveSide()==Side.SERVER) {
+        if (FMLCommonHandler.instance().getEffectiveSide() == Side.SERVER) {
             for (int i = 0; i < this.getSlots(); i++) {
                 ModularWarfare.NETWORK.sendToAllTracking(new PacketSyncExtraSlot(this.player, i, this.getStackInSlot(i)), this.player);
-            }  
+            }
         }
     }
 }

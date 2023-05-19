@@ -2,8 +2,8 @@ package com.modularwarfare.client.model.layers;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
+import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
@@ -11,7 +11,6 @@ import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.network.BackWeaponsManager;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.model.ModelRenderer;

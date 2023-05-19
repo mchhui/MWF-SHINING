@@ -4,7 +4,6 @@ import com.modularwarfare.api.WeaponAnimations;
 import com.modularwarfare.client.fpp.basic.models.objects.BreakActionData;
 import com.modularwarfare.client.fpp.basic.models.objects.RenderVariables;
 import com.modularwarfare.common.guns.AttachmentPresetEnum;
-
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -198,10 +197,10 @@ public class GunRenderConfig {
          * Adds a left-right staticModel shaking motion when firing, default 0.5
          */
         public float modelRecoilShake = 0.5F;
-        
-        public float modelGuiScale=1f;
-        public Vector2f modelGuiRotateCenter=new Vector2f(0,0);
-        
+
+        public float modelGuiScale = 1f;
+        public Vector2f modelGuiRotateCenter = new Vector2f(0, 0);
+
 
     }
 }

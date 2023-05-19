@@ -23,6 +23,7 @@ public interface IContentAddon {
     public void preInit(FMLPreInitializationEvent event, AddonLoaderManager contentManager);
 
     public void init(FMLInitializationEvent event, AddonLoaderManager contentManager);
+
     public void postInit(FMLPostInitializationEvent event, AddonLoaderManager contentManager);
 
     /**

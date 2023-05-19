@@ -18,7 +18,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
@@ -26,8 +25,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.ExplosionEvent;
 import net.minecraftforge.event.world.WorldEvent;
@@ -44,8 +41,9 @@ import java.util.Random;
 
 public class CommonEventHandler {
 
-    public static HashMap<String, Long> playerTimeoutMap=new HashMap<>();
-    
+    private static final ModularWarfareWorldListener WORLD_LISTENER = new ModularWarfareWorldListener();
+    public static HashMap<String, Long> playerTimeoutMap = new HashMap<>();
+
     private static int getRandomNumberInRange(int min, int max) {
         if (min >= max) {
             throw new IllegalArgumentException("max must be greater than min");
@@ -53,37 +51,37 @@ public class CommonEventHandler {
         Random r = new Random();
         return r.nextInt((max - min) + 1) + min;
     }
-    
+
     @SubscribeEvent
     public void onPlayerJoin(PlayerLoggedInEvent event) {
-        if(ModConfig.INSTANCE.general.modified_pack_server_kick||ModConfig.INSTANCE.general.directory_pack_server_kick) {
-            playerTimeoutMap.put(event.player.getName(), System.currentTimeMillis());  
+        if (ModConfig.INSTANCE.general.modified_pack_server_kick || ModConfig.INSTANCE.general.directory_pack_server_kick) {
+            playerTimeoutMap.put(event.player.getName(), System.currentTimeMillis());
         }
     }
-    
+
     @SubscribeEvent
     public void onServerTick(ServerTickEvent event) {
         if (event.phase != Phase.END) {
             return;
         }
-        long time=System.currentTimeMillis();
+        long time = System.currentTimeMillis();
         ArrayList<String> list = new ArrayList<String>();
         playerTimeoutMap.forEach((name, t) -> {
             EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList()
                     .getPlayerByUsername(name);
-            if(player==null) {
+            if (player == null) {
                 list.add(name);
-            }else {
-                if(time>t+5000) {
-                    ModularWarfare.NETWORK.sendTo(new PacketVerification(), player);  
+            } else {
+                if (time > t + 5000) {
+                    ModularWarfare.NETWORK.sendTo(new PacketVerification(), player);
                 }
-                if(time>t+10000) {
+                if (time > t + 10000) {
                     player.connection.disconnect(new TextComponentString("[ModularWarfare] Verification timeout."));
                     list.add(name);
                 }
             }
         });
-        list.forEach((name)->{
+        list.forEach((name) -> {
             playerTimeoutMap.remove(name);
         });
     }
@@ -130,16 +128,6 @@ public class CommonEventHandler {
             ModularWarfare.PROXY.addBlood(event.getEntityLiving(), 10, true);
         }
     }
-
-    @SubscribeEvent
-    public void onLivingHurt(final LivingHurtEvent event) {
-        final Entity entity = event.getEntity();
-        if (entity instanceof EntityItemLoot) {
-            return;
-        }
-    }
-
-    private static final ModularWarfareWorldListener WORLD_LISTENER = new ModularWarfareWorldListener();
 
     @SubscribeEvent
     public void onInitWorld(WorldEvent.Load event) {
@@ -208,7 +196,6 @@ public class CommonEventHandler {
                         event.setResult(Event.Result.DENY);
                         event.setCanceled(true);
                         event.getWorld().spawnEntity(loot);
-                        return;
                     }
                 }
             }

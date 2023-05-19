@@ -1,17 +1,9 @@
 package com.modularwarfare.common.network;
 
-import com.modularwarfare.ModConfig;
-import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemGun;
-import com.modularwarfare.common.guns.WeaponFireMode;
-import com.modularwarfare.common.guns.manager.ShotManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.IThreadListener;
-import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class PacketGunFire extends PacketBase {
@@ -72,7 +64,7 @@ public class PacketGunFire extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        
+
         IThreadListener mainThread = (WorldServer) entityPlayer.world;
         mainThread.addScheduledTask(new Runnable() {
             public void run() {
@@ -84,10 +76,10 @@ public class PacketGunFire extends PacketBase {
                             return;
                         ShotManager.fireServer(entityPlayer, rotationPitch, rotationYaw, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun, fireMode, fireTickDelay, recoilPitch, recoilYaw, recoilAimReducer, bulletSpread);
                     }
-                } 
+                }
             }
         });
-        
+
     }
 
     @Override

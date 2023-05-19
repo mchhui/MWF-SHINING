@@ -14,9 +14,9 @@ public class GrenadeType extends BaseType {
     public int explosionPower = 8;
     /**
      * damage=explosionParamA*(explosionParamK*distance+1)
-     * */
-    public float explosionParamA=30f;
-    public float explosionParamK=-1/8f;
+     */
+    public float explosionParamA = 30f;
+    public float explosionParamK = -1 / 8f;
     public float throwStrength = 1f;
     public boolean throwerVulnerable = false;
 

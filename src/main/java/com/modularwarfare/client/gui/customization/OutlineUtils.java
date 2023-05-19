@@ -1,4 +1,5 @@
 package com.modularwarfare.client.gui.customization;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.shader.Framebuffer;

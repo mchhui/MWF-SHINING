@@ -1,10 +1,9 @@
 package com.modularwarfare.common;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.SkinType;
 import com.modularwarfare.common.network.PacketParticle;
-import com.modularwarfare.common.network.PacketPlayerHit;
 import com.modularwarfare.common.network.PacketParticle.ParticleType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
@@ -13,12 +12,9 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
-
-import com.modularwarfare.ModConfig;
 import net.minecraftforge.fml.relauncher.FMLInjectionData;
 
 import javax.annotation.Nonnull;
@@ -38,11 +34,16 @@ public class CommonProxy extends ForgeEvent {
 
     public static File modularWarfareDir;
 
-    public static HashMap<SkinType,BaseType> preloadSkinTypes = new HashMap<SkinType,BaseType>();
+    public static HashMap<SkinType, BaseType> preloadSkinTypes = new HashMap<SkinType, BaseType>();
+
+    @Nonnull
+    public static String getGameFolder() {
+        return ((File) (FMLInjectionData.data()[6])).getAbsolutePath();
+    }
 
     public void construction(FMLConstructionEvent event) {
         //Production-environment
-        this.modularWarfareDir = new File(getGameFolder(),"ModularWarfare");
+        this.modularWarfareDir = new File(getGameFolder(), "ModularWarfare");
         File modFile = null;
 
         // Creates directory if doesn't exist
@@ -55,7 +56,7 @@ public class CommonProxy extends ForgeEvent {
         ModularWarfare.DEV_ENV = ModConfig.INSTANCE.dev_mode;
 
         for (File source : new File(modularWarfareDir.getParentFile(), "mods").listFiles()) {
-            if(source.getName().contains("modularwarfare")){
+            if (source.getName().contains("modularwarfare")) {
                 modFile = source;
             }
         }
@@ -115,11 +116,6 @@ public class CommonProxy extends ForgeEvent {
     public void forceReload() {
     }
 
-    @Nonnull
-    public static String getGameFolder() {
-        return ((File) (FMLInjectionData.data()[6])).getAbsolutePath();
-    }
-
     public List<File> getContentList() {
         List<File> contentPacks = new ArrayList<File>();
         for (File file : ModularWarfare.MOD_DIR.listFiles()) {
@@ -149,14 +145,14 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public void spawnExplosionParticle(World world, double x, double y, double z) {
-        if(!world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
+        if (!world.isRemote) {
+            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION, x, y, z), new TargetPoint(world.provider.getDimension(), x, y, z, 64));
         }
     }
-    
+
     public void spawnRocketParticle(World world, double x, double y, double z) {
-        if(!world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
+        if (!world.isRemote) {
+            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET, x, y, z), new TargetPoint(world.provider.getDimension(), x, y, z, 64));
         }
     }
 
@@ -190,7 +186,7 @@ public class CommonProxy extends ForgeEvent {
 
     public void onShootFailedAnimation(EntityPlayer player, String wepType) {
     }
-    
+
     public void onModeChangeAnimation(EntityPlayer player, String wepType) {
     }
 

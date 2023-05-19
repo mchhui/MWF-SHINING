@@ -1,12 +1,9 @@
 package com.modularwarfare.client.fpp.enhanced.animation;
 
-import java.util.Random;
-
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.Passer;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
-import com.modularwarfare.client.fpp.basic.animations.StateEntry;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Animation;
@@ -18,11 +15,12 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.common.network.PacketGunReloadEnhancedStop;
 import com.modularwarfare.common.network.PacketGunReloadSound;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+
+import java.util.Random;
 
 public class EnhancedStateMachine {
 
@@ -30,11 +28,9 @@ public class EnhancedStateMachine {
      * RELOAD
      */
     public float reloadTime;
-    private ReloadType reloadType;
     public boolean reloading = false;
     public int reloadCount = 0;
     public int reloadMaxCount = 0;
-
     /**
      * Recoil
      */
@@ -44,25 +40,19 @@ public class EnhancedStateMachine {
      * Slide
      */
     public float gunSlide = 0F, lastGunSlide = 0F;
-
     /**
      * Shoot State Machine
      */
     public boolean shooting = false;
-    private float shootTime;
     public int flashCount = 0;
     public boolean isFailedShoot = false;
-
     public ModelEnhancedGun currentModel;
     public Phase reloadPhase = Phase.PRE;
     public Phase lastReloadPhase = null;
     public Phase shootingPhase = Phase.PRE;
-
-    public ItemStack heldItemstStack=ItemStack.EMPTY;
-
-    public static enum Phase {
-        PRE, FIRST, SECOND, POST
-    }
+    public ItemStack heldItemStack = ItemStack.EMPTY;
+    private ReloadType reloadType;
+    private float shootTime;
 
     public void reset() {
         reloadTime = 0;
@@ -111,11 +101,11 @@ public class EnhancedStateMachine {
         updateCurrentItem();
         this.reloadTime = reloadType != ReloadType.Full ? reloadTime * 0.65f : reloadTime;
         this.reloadCount = reloadCount;
-        Item item = heldItemstStack.getItem();
+        Item item = heldItemStack.getItem();
         if (item instanceof ItemGun) {
             GunType type = ((ItemGun) item).type;
-            if(reloadType==ReloadType.Unload) {
-                this.reloadCount-=type.modifyUnloadBullets;  
+            if (reloadType == ReloadType.Unload) {
+                this.reloadCount -= type.modifyUnloadBullets;
             }
         }
         this.reloadMaxCount = reloadCount;
@@ -140,7 +130,7 @@ public class EnhancedStateMachine {
     public AnimationType getReloadAnimationType() {
         AnimationType aniType = null;
         if (reloadType == ReloadType.Load) {
-            ItemStack stack = heldItemstStack;
+            ItemStack stack = heldItemStack;
             Item item = stack.getItem();
             if (item instanceof ItemGun) {
                 GunType type = ((ItemGun) item).type;
@@ -159,7 +149,7 @@ public class EnhancedStateMachine {
                     } else if (reloadPhase == Phase.SECOND) {
                         aniType = AnimationType.RELOAD_SECOND;
                     } else if (reloadPhase == Phase.POST) {
-                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
+                        if (!ItemGun.hasNextShot(heldItemStack) && ((GunEnhancedRenderConfig) currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
                             aniType = AnimationType.POST_RELOAD_EMPTY;
                         } else {
                             aniType = AnimationType.POST_RELOAD;
@@ -180,21 +170,21 @@ public class EnhancedStateMachine {
         } else if (reloadType == ReloadType.Full) {
             if (reloadPhase == Phase.FIRST) {
                 if (ClientTickHandler.reloadEnhancedIsQuicklyRendering
-                        && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_QUICKLY)) {
+                        && ((GunEnhancedRenderConfig) currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_QUICKLY)) {
                     aniType = AnimationType.RELOAD_FIRST_QUICKLY;
                 } else {
                     aniType = AnimationType.RELOAD_FIRST;
                 }
             } else if (reloadPhase == Phase.SECOND) {
                 if (ClientTickHandler.reloadEnhancedIsQuicklyRendering
-                        && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_QUICKLY)) {
+                        && ((GunEnhancedRenderConfig) currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_QUICKLY)) {
                     aniType = AnimationType.RELOAD_SECOND_QUICKLY;
                 } else {
                     aniType = AnimationType.RELOAD_SECOND;
                 }
             } else if (reloadPhase == Phase.POST) {
-                if (!ItemGun.hasNextShot(heldItemstStack)
-                        && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
+                if (!ItemGun.hasNextShot(heldItemStack)
+                        && ((GunEnhancedRenderConfig) currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
                     aniType = AnimationType.POST_RELOAD_EMPTY;
                 } else {
                     aniType = AnimationType.POST_RELOAD;
@@ -218,9 +208,9 @@ public class EnhancedStateMachine {
         }
         return aniType;
     }
-    
+
     public float getReloadSppedFactor() {
-        ItemStack stack = heldItemstStack;
+        ItemStack stack = heldItemStack;
         Item item = stack.getItem();
         if (ClientProxy.gunEnhancedRenderer.controller != null) {
             if (item instanceof ItemGun) {
@@ -239,7 +229,7 @@ public class EnhancedStateMachine {
     }
 
     public void updateCurrentItem() {
-        if (!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemstStack,Minecraft.getMinecraft().player.getHeldItemMainhand())) {
+        if (!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemStack, Minecraft.getMinecraft().player.getHeldItemMainhand())) {
             if (reloading) {
                 stopReload();
             }
@@ -248,14 +238,14 @@ public class EnhancedStateMachine {
             }
             //ClientTickHandler.reloadEnhancedPrognosisAmmo=ItemStack.EMPTY;
         }
-        heldItemstStack = Minecraft.getMinecraft().player.getHeldItemMainhand();
+        heldItemStack = Minecraft.getMinecraft().player.getHeldItemMainhand();
     }
 
     public void onRenderTickUpdate(float partialTick) {
-        if(ClientProxy.gunEnhancedRenderer.controller==null) {
+        if (ClientProxy.gunEnhancedRenderer.controller == null) {
             return;
         }
-        ItemStack stack = heldItemstStack;
+        ItemStack stack = heldItemStack;
         Item item = stack.getItem();
         if (item instanceof ItemGun) {
             GunType type = ((ItemGun) item).type;
@@ -264,10 +254,10 @@ public class EnhancedStateMachine {
                 AnimationType aniType = getReloadAnimationType();
                 Passer<Phase> phase = new Passer(reloadPhase);
                 Passer<Double> progess = new Passer(AnimationController.RELOAD);
-                reloading = phaseUpdate(aniType, partialTick, getReloadSppedFactor(), phase, progess,()->{
-                    if(reloadCount>0) {
-                        phase.set(Phase.FIRST);  
-                    }else {
+                reloading = phaseUpdate(aniType, partialTick, getReloadSppedFactor(), phase, progess, () -> {
+                    if (reloadCount > 0) {
+                        phase.set(Phase.FIRST);
+                    } else {
                         phase.set(Phase.POST);
                     }
                 }, () -> {
@@ -288,52 +278,52 @@ public class EnhancedStateMachine {
                         phase.set(Phase.FIRST);
                     }
                 });
-                if (reloadPhase != lastReloadPhase && aniType!=null) {
+                if (reloadPhase != lastReloadPhase && aniType != null) {
                     switch (aniType) {
-                    case PRE_LOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreLoad));
-                        break;
-                    case LOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Load));
-                        break;
-                    case POST_LOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostLoad));
-                        break;
-                    case PRE_UNLOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreUnload));
-                        break;
-                    case UNLOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Unload));
-                        break;
-                    case POST_UNLOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostUnload));
-                        break;
-                    case PRE_RELOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreReload));
-                        break;
-                    case RELOAD_FIRST:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
-                        break;
-                    case RELOAD_SECOND:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
-                        break;
-                    case RELOAD_FIRST_QUICKLY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
-                        break;
-                    case RELOAD_SECOND_QUICKLY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
-                        break;
-                    case POST_RELOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReload));
-                        break;
-                    case POST_RELOAD_EMPTY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReloadEmpty));
-                        break;
-                    default:
-                        break;
+                        case PRE_LOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreLoad));
+                            break;
+                        case LOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Load));
+                            break;
+                        case POST_LOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostLoad));
+                            break;
+                        case PRE_UNLOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreUnload));
+                            break;
+                        case UNLOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Unload));
+                            break;
+                        case POST_UNLOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostUnload));
+                            break;
+                        case PRE_RELOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreReload));
+                            break;
+                        case RELOAD_FIRST:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
+                            break;
+                        case RELOAD_SECOND:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
+                            break;
+                        case RELOAD_FIRST_QUICKLY:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
+                            break;
+                        case RELOAD_SECOND_QUICKLY:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
+                            break;
+                        case POST_RELOAD:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReload));
+                            break;
+                        case POST_RELOAD_EMPTY:
+                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReloadEmpty));
+                            break;
+                        default:
+                            break;
                     }
                 }
-                lastReloadPhase=reloadPhase;
+                lastReloadPhase = reloadPhase;
                 reloadPhase = phase.get();
                 //System.out.println(reloadPhase+":"+getReloadAnimationType());
                 AnimationController.RELOAD = progess.get();
@@ -345,7 +335,7 @@ public class EnhancedStateMachine {
             if (shooting) {
                 /*
                 shootProgress += 1F / shootTime;
-                
+
                 if (shootProgress >= 1F) {
                     shooting = false;
                     shootProgress = 0f;
@@ -356,9 +346,9 @@ public class EnhancedStateMachine {
                 Passer<Double> progess = new Passer(AnimationController.FIRE);
                 Random r = new Random();
                 int Low = 0;
-                int High = type.flashType.resourceLocations.size()-1;
+                int High = type.flashType.resourceLocations.size() - 1;
                 int result = r.nextInt(High - Low) + Low;
-                shooting = phaseUpdate(aniType, partialTick, 1, phase, progess,()->{
+                shooting = phaseUpdate(aniType, partialTick, 1, phase, progess, () -> {
                     phase.set(Phase.FIRST);
                 }, () -> {
                     flashCount = result;
@@ -373,12 +363,12 @@ public class EnhancedStateMachine {
         }
     }
 
-    public boolean phaseUpdate(AnimationType aniType, float partialTick,float speedFactor, Passer<Phase> phase, Passer<Double> progress,
-            Runnable preCall,Runnable firstCall, Runnable secondCall) {
+    public boolean phaseUpdate(AnimationType aniType, float partialTick, float speedFactor, Passer<Phase> phase, Passer<Double> progress,
+                               Runnable preCall, Runnable firstCall, Runnable secondCall) {
         boolean flag = true;
         Animation ani = null;
         if (aniType != null) {
-            ani = ((GunEnhancedRenderConfig)currentModel.config).animations.get(aniType);
+            ani = ((GunEnhancedRenderConfig) currentModel.config).animations.get(aniType);
         }
         if (ani != null) {
             double speed = ani.getSpeed(currentModel.config.FPS) * speedFactor * partialTick;
@@ -418,13 +408,13 @@ public class EnhancedStateMachine {
 
     public void stopReload() {
         PacketGunReloadEnhancedStop packet = null;
-        ItemStack stack = heldItemstStack;
+        ItemStack stack = heldItemStack;
         Item item = stack.getItem();
         if (item instanceof ItemGun) {
             GunType type = ((ItemGun) item).type;
-            
-            AnimationType reloadAni=getReloadAnimationType();
-            
+
+            AnimationType reloadAni = getReloadAnimationType();
+
             if (reloadType == ReloadType.Load) {
                 if (type.acceptedAmmo != null) {
                     if (reloadPhase == Phase.PRE) {
@@ -466,40 +456,40 @@ public class EnhancedStateMachine {
                     }
                 }
             }
-            if(packet!=null) {
-                if(type.acceptedAmmo!=null) {
-                    if(packet.loaded) {
-                        ItemStack ammoStack=ClientTickHandler.reloadEnhancedPrognosisAmmoRendering;
-                        if(ammoStack!=null&&!ammoStack.isEmpty()) {
+            if (packet != null) {
+                if (type.acceptedAmmo != null) {
+                    if (packet.loaded) {
+                        ItemStack ammoStack = ClientTickHandler.reloadEnhancedPrognosisAmmoRendering;
+                        if (ammoStack != null && !ammoStack.isEmpty()) {
                             ammoStack.setItemDamage(0);
-                            if(reloadAni==AnimationType.RELOAD_FIRST||reloadAni==AnimationType.RELOAD_FIRST_QUICKLY||reloadAni==AnimationType.UNLOAD) {
-                                ammoStack=ItemStack.EMPTY;
+                            if (reloadAni == AnimationType.RELOAD_FIRST || reloadAni == AnimationType.RELOAD_FIRST_QUICKLY || reloadAni == AnimationType.UNLOAD) {
+                                ammoStack = ItemStack.EMPTY;
                             }
-                            if(ammoStack.getItem() instanceof ItemAmmo) {
-                                heldItemstStack.getTagCompound().setTag("ammo", ammoStack.writeToNBT(new NBTTagCompound()));
-                            }  
+                            if (ammoStack.getItem() instanceof ItemAmmo) {
+                                heldItemStack.getTagCompound().setTag("ammo", ammoStack.writeToNBT(new NBTTagCompound()));
+                            }
                         }
-                    }else if(packet.unloaded) {
-                        heldItemstStack.getTagCompound().removeTag("ammo");
+                    } else if (packet.unloaded) {
+                        heldItemStack.getTagCompound().removeTag("ammo");
                     }
-                }else{
-                    if(packet.loaded) {
+                } else {
+                    if (packet.loaded) {
                         ItemStack bulletStack = ClientTickHandler.reloadEnhancedPrognosisAmmoRendering;
-                        if(bulletStack!=null&&!bulletStack.isEmpty()) {
+                        if (bulletStack != null && !bulletStack.isEmpty()) {
                             bulletStack.setItemDamage(0);
                             int offset = getAmmoCountOffset(true);
-                            int ammoCount = heldItemstStack.getTagCompound().getInteger("ammocount");
-                            heldItemstStack.getTagCompound().setInteger("ammocount", ammoCount + offset);
-                            heldItemstStack.getTagCompound().setTag("bullet", bulletStack.writeToNBT(new NBTTagCompound()));  
+                            int ammoCount = heldItemStack.getTagCompound().getInteger("ammocount");
+                            heldItemStack.getTagCompound().setInteger("ammocount", ammoCount + offset);
+                            heldItemStack.getTagCompound().setTag("bullet", bulletStack.writeToNBT(new NBTTagCompound()));
                         }
-                    }else if(packet.unloaded) {
-                        heldItemstStack.getTagCompound().setInteger("ammocount", 0);
-                        heldItemstStack.getTagCompound().removeTag("bullet");  
+                    } else if (packet.unloaded) {
+                        heldItemStack.getTagCompound().setInteger("ammocount", 0);
+                        heldItemStack.getTagCompound().removeTag("bullet");
                     }
-                }  
-                ModularWarfare.NETWORK.sendToServer(packet);  
-                ClientTickHandler.reloadEnhancedPrognosisAmmo=null;
-                ClientTickHandler.reloadEnhancedPrognosisAmmoRendering=null;
+                }
+                ModularWarfare.NETWORK.sendToServer(packet);
+                ClientTickHandler.reloadEnhancedPrognosisAmmo = null;
+                ClientTickHandler.reloadEnhancedPrognosisAmmoRendering = null;
             }
             //System.out.println(reloadType+"-"+reloadPhase+"-"+packet);
         }
@@ -510,29 +500,33 @@ public class EnhancedStateMachine {
     }
 
     public int getAmmoCountOffset(boolean really) {
-        ItemStack stack = heldItemstStack;
-        if(heldItemstStack!=null) {
+        ItemStack stack = heldItemStack;
+        if (heldItemStack != null) {
             Item item = stack.getItem();
             if (item instanceof ItemGun) {
                 GunType type = ((ItemGun) item).type;
                 if (reloading) {
                     if (reloadType == ReloadType.Unload) {
-                        if(really) {
+                        if (really) {
                             return -(reloadMaxCount - reloadCount);
-                        }else {
-                            return -(reloadMaxCount - reloadCount-type.modifyUnloadBullets);
+                        } else {
+                            return -(reloadMaxCount - reloadCount - type.modifyUnloadBullets);
                         }
                     } else {
                         return reloadMaxCount - reloadCount;
                     }
                 }
-            }  
+            }
         }
         if (reloadType == ReloadType.Unload) {
             return -reloadMaxCount;
         } else {
             return reloadMaxCount;
         }
+    }
+
+    public static enum Phase {
+        PRE, FIRST, SECOND, POST
     }
 
 }

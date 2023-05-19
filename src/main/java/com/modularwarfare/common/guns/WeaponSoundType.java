@@ -9,7 +9,7 @@ public enum WeaponSoundType {
      * idle loop sound
      */
     @SerializedName("weaponIdle") Idle("weaponIdle", 8, null),
-    
+
     /**
      * The sound played upon dry firing
      */
@@ -31,16 +31,16 @@ public enum WeaponSoundType {
     @SerializedName("weaponFireLast") FireLast("weaponFireLast", 16, null),
 
     @SerializedName("weaponPreReload") PreReload("weaponPreReload", 16, null),
-    
+
     /**
      * The sound to play upon reloading
      */
     @SerializedName("weaponReload") Reload("weaponReload", 16, "reload"),
-    
+
     @SerializedName("weaponReloadSecond") ReloadSecond("weaponReloadSecond", 16, null),
-    
+
     @SerializedName("weaponPostReload") PostReload("weaponPostReload", 16, null),
-    
+
     @SerializedName("weaponPostReloadEmpty") PostReloadEmpty("weaponPostReloadEmpty", 16, null),
 
     /**
@@ -74,16 +74,16 @@ public enum WeaponSoundType {
     @SerializedName("penetration") Penetration("penetration", 20, "penetration"),
 
     @SerializedName("weaponPreLoad") PreLoad("weaponPreLoad", 12, null),
-    
+
     /**
      * The sound to play upon reloading
      */
     @SerializedName("weaponLoad") Load("weaponLoad", 12, "load"),
-    
+
     @SerializedName("weaponPostLoad") PostLoad("weaponPostLoad", 12, null),
 
     @SerializedName("weaponPreUnload") PreUnload("weaponPreUnload", 12, null),
-    
+
     /**
      * The sound to play upon reloading
      */
@@ -178,14 +178,14 @@ public enum WeaponSoundType {
      * The sound played when inspecting a melee weapon
      */
     @SerializedName("meleeInspect") MeleeInspect("meleeInspect", 5, "melee.inspect"),
-    
+
     @SerializedName("meleePreAttack") MeleePreAttack("meleePreAttack", 5, "melee.attack"),
     @SerializedName("meleeAttack") MeleeAttack("meleeAttack", 5, "melee.attack"),
     @SerializedName("meleeAttackSecond") MeleeAttackSecond("meleeAttackSecond", 5, "melee.attack"),
     @SerializedName("meleePostAttack") MeleePostAttack("meleePostAttack", 5, "melee.attack"),
     @SerializedName("meleeBounced") MeleeBounced("meleeBounced", 5, "melee.attack"),
-    
-    
+
+
     @SerializedName("meleePreAttackHeavy") MeleePreAttackHeavy("meleePreAttackHeavy", 5, "melee.attack"),
     @SerializedName("meleeAttackHeavy") MeleeAttackHeavy("meleeAttackHeavy", 5, "melee.attack"),
     @SerializedName("meleeAttackHeavySecond") MeleeAttackHeavySecond("meleeAttackHeavySecond", 5, "melee.attack"),

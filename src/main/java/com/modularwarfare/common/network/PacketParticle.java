@@ -1,7 +1,6 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
@@ -12,10 +11,6 @@ public class PacketParticle extends PacketBase {
     public double posX;
     public double posY;
     public double posZ;
-
-    public static enum ParticleType {
-        UNKOWN, EXPLOSION, ROCKET
-    }
 
     public PacketParticle() {
         // TODO Auto-generated constructor stub
@@ -57,9 +52,13 @@ public class PacketParticle extends PacketBase {
     public void handleClientSide(EntityPlayer clientPlayer) {
         if (this.particleType == ParticleType.EXPLOSION) {
             ModularWarfare.PROXY.spawnExplosionParticle(clientPlayer.world, this.posX, this.posY, this.posZ);
-        }else if (this.particleType == ParticleType.ROCKET) {
+        } else if (this.particleType == ParticleType.ROCKET) {
             ModularWarfare.PROXY.spawnRocketParticle(clientPlayer.world, this.posX, this.posY, this.posZ);
         }
+    }
+
+    public static enum ParticleType {
+        UNKOWN, EXPLOSION, ROCKET
     }
 
 }

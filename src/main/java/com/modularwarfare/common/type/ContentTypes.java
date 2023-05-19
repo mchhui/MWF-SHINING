@@ -1,7 +1,6 @@
 package com.modularwarfare.common.type;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.api.MWArmorType;
 import com.modularwarfare.api.TypeRegisterEvent;
 import com.modularwarfare.client.fpp.basic.configs.*;
@@ -39,7 +38,7 @@ public class ContentTypes {
             ContentTypes.<GunType, ItemGun>assignType(ModularWarfare.gunTypes, ItemGun.factory, (GunType) type, reload);
 
             if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-                if(((GunType)type).animationType.equals(WeaponAnimationType.ENHANCED)){
+                if (((GunType) type).animationType.equals(WeaponAnimationType.ENHANCED)) {
                     ((type.enhancedModel)).config = ModularWarfare.getRenderConfig(type, GunEnhancedRenderConfig.class);
                 } else {
                     ((ModelGun) (type.model)).config = ModularWarfare.getRenderConfig(type, GunRenderConfig.class);
@@ -63,7 +62,7 @@ public class ContentTypes {
                 ((ModelAttachment) (type.model)).config = ModularWarfare.getRenderConfig(type, AttachmentRenderConfig.class);
                 ((ModelAttachment) (type.model)).config.init();
             }
-                
+
         });
 
         registerType("armor", ArmorType.class, (type, reload) -> {

@@ -1,9 +1,7 @@
 package com.modularwarfare.client.gui.api;
 
-import com.modularwarfare.common.init.ModSounds;
 import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
@@ -23,6 +21,7 @@ public class GuiMWButton extends GuiButton {
     public boolean centeredText = true;
     public boolean soundPlayed = true;
     public int colorText = 0xFFFF5555;
+    public int colorTheme = 0x55000000;
     private ResourceLocation iconTexture = null;
     private float fade = 0;
     private int xMovement;
@@ -30,8 +29,6 @@ public class GuiMWButton extends GuiButton {
     private int toolTipY;
     private String toolTip;
     private boolean showToolTip = false;
-
-    public int colorTheme = 0x55000000;
 
     public GuiMWButton(int buttonId, int x, int y, int givenWidth, int givenHeight, String givenText) {
         this(buttonId, x, y, givenText);

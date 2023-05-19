@@ -87,7 +87,7 @@ public class EntityStunGrenade extends EntityGrenade {
     }
 
     @Override
-    public void explode(){
+    public void explode() {
         if (!exploded) {
             world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_STUN, SoundCategory.BLOCKS, 2.0f, 1.0f);
             exploded = true;

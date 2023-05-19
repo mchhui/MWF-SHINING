@@ -70,7 +70,7 @@ public class ItemMWArmor extends ItemArmor implements ISpecialArmor {
     @SideOnly(Side.CLIENT)
     @Nullable
     public ModelBiped getArmorModel(EntityLivingBase living, ItemStack stack, EntityEquipmentSlot slot, ModelBiped defaultModel) {
-        if(!type.simpleArmor) {
+        if (!type.simpleArmor) {
             if (!stack.isEmpty()) {
                 if (stack.getItem() instanceof ItemMWArmor) {
                     ArmorType armorType = ((ItemMWArmor) stack.getItem()).type;

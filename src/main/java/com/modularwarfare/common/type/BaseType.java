@@ -1,7 +1,5 @@
 package com.modularwarfare.common.type;
 
-import javax.annotation.Nullable;
-
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.IMWModel;
 import com.modularwarfare.client.ClientProxy;
@@ -26,6 +24,7 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
@@ -72,19 +71,18 @@ public class BaseType {
      */
     public HashMap<WeaponSoundType, ArrayList<SoundEntry>> weaponSoundMap;
     public boolean allowDefaultSounds = true;
-    
+
     /**
      * SCRIPT
-     * */
-    
-    public String toolipScript="mwf/tooltip_main";
+     */
+
+    public String toolipScript = "mwf/tooltip_main";
 
 
     @SideOnly(value = Side.CLIENT)
     public static BaseType fromModel(ObjModel model) {
         return null;
     }
-
 
 
     /**
@@ -105,7 +103,7 @@ public class BaseType {
             iconName = internalName;
     }
 
-    public void postLoad(){
+    public void postLoad() {
 
     }
 
@@ -122,13 +120,13 @@ public class BaseType {
     public boolean hasModel() {
         return (model != null || bipedModel != null || enhancedModel != null);
     }
-    
+
     @Nullable
     public IMWModel getModel() {
-        if(enhancedModel!=null) {
+        if (enhancedModel != null) {
             return enhancedModel;
         }
-        if(model!=null) {
+        if (model != null) {
             return model;
         }
         return null;
@@ -154,12 +152,12 @@ public class BaseType {
 
     public void playClientSound(EntityPlayer player, WeaponSoundType weaponSoundType) {
         if (weaponSoundType != null) {
-            if(weaponSoundMap != null) {
+            if (weaponSoundMap != null) {
                 if (weaponSoundMap.containsKey(weaponSoundType)) {
                     for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
                         Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), SoundCategory.PLAYERS, 1f, 1f);
                     }
-                }else {
+                } else {
                     if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
                         Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(weaponSoundType.defaultSound), SoundCategory.PLAYERS, 1f, 1f);
                     }

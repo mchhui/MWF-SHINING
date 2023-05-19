@@ -9,14 +9,15 @@ import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.nbt.NBTException;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import java.io.*;
 
@@ -55,7 +56,7 @@ public class CommandKit extends CommandBase {
             if (args[0].equalsIgnoreCase("give") && args.length >= 2) {
                 String name = args[1];
                 EntityPlayerMP player = null;
-                if(args.length == 2 && sender instanceof EntityPlayerMP){
+                if (args.length == 2 && sender instanceof EntityPlayerMP) {
                     player = (EntityPlayerMP) sender;
                 } else {
                     player = getPlayer(server, sender, args[2]);
@@ -73,7 +74,7 @@ public class CommandKit extends CommandBase {
                         }
 
                         if (kit != null) {
-                            if(player != null) {
+                            if (player != null) {
                                 if (kit.force) {
                                     player.inventory.readFromNBT(JsonToNBT.getTagFromJson(kit.data).getTagList("items", 10));
 
@@ -98,7 +99,7 @@ public class CommandKit extends CommandBase {
                                         }
                                     }
                                 }
-                                sender.sendMessage(new TextComponentString(ModularWarfare.MOD_PREFIX + " " +TextFormatting.YELLOW + args[2] + TextFormatting.GRAY + " has received the kit "+ TextFormatting.YELLOW + name + TextFormatting.GRAY+"."));
+                                sender.sendMessage(new TextComponentString(ModularWarfare.MOD_PREFIX + " " + TextFormatting.YELLOW + args[2] + TextFormatting.GRAY + " has received the kit " + TextFormatting.YELLOW + name + TextFormatting.GRAY + "."));
                             } else {
                                 sender.sendMessage(new TextComponentString(ModularWarfare.MOD_PREFIX + " " + TextFormatting.YELLOW + args[2] + TextFormatting.GRAY + " is not online."));
                             }
@@ -132,14 +133,14 @@ public class CommandKit extends CommandBase {
                         /**
                          * Backpack saving
                          */
-                        if(extra.getStackInSlot(0) != null){
+                        if (extra.getStackInSlot(0) != null) {
                             kit.backpack = extra.getStackInSlot(0).serializeNBT().toString();
                         }
 
                         /**
                          * Vest saving
                          */
-                        if(extra.getStackInSlot(1) != null){
+                        if (extra.getStackInSlot(1) != null) {
                             kit.vest = extra.getStackInSlot(1).serializeNBT().toString();
                         }
 
@@ -150,7 +151,7 @@ public class CommandKit extends CommandBase {
                                 found = true;
                             }
                         }
-                        if(!found) kits.kits.add(kit);
+                        if (!found) kits.kits.add(kit);
 
                         try (Writer writer = new OutputStreamWriter(new FileOutputStream(KIT_FILE), "UTF-8")) {
                             gson.toJson(kits, writer);
@@ -176,7 +177,7 @@ public class CommandKit extends CommandBase {
                         }
                     }
 
-                    if(found) {
+                    if (found) {
                         try (Writer writer = new OutputStreamWriter(new FileOutputStream(KIT_FILE), "UTF-8")) {
                             gson.toJson(kits, writer);
                             sender.sendMessage(new TextComponentString(ModularWarfare.MOD_PREFIX + " The kit " + TextFormatting.YELLOW + args[1] + TextFormatting.GRAY + " has been deleted."));

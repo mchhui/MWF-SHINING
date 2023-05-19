@@ -49,28 +49,28 @@ public class RenderLayerHeldGun extends LayerHeldItem {
                 GlStateManager.translate(0.0F, 0.2F, 0.0F);
             }
 
-            if(((GunType)type).animationType == WeaponAnimationType.BASIC) {
+            if (((GunType) type).animationType == WeaponAnimationType.BASIC) {
                 this.translateToHand(EnumHandSide.RIGHT);
                 GlStateManager.translate(-0.06, 0.38, -0.02);
                 if (ClientRenderHooks.customRenderers[type.id] != null) {
                     ClientRenderHooks.customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED, null, itemstack,
                             entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
                 }
-            } else if(((GunType)type).animationType == WeaponAnimationType.ENHANCED) {
+            } else if (((GunType) type).animationType == WeaponAnimationType.ENHANCED) {
 
                 GunType gunType = (GunType) type;
                 EnhancedModel model = type.enhancedModel;
 
                 GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
 
-                if(config.animations.containsKey(AnimationType.DEFAULT)) {
+                if (config.animations.containsKey(AnimationType.DEFAULT)) {
                     this.translateToHand(EnumHandSide.RIGHT);
                     GlStateManager.translate(-0.06, 0.38, -0.02);
 
                     GL11.glRotatef(-90F, 0F, 1F, 0F);
                     GL11.glRotatef(90F, 0F, 0F, 1F);
                     GL11.glTranslatef(0.25F, 0.2F, -0.05F);
-                    GL11.glScalef(1/16F, 1/16F, 1/16F);
+                    GL11.glScalef(1 / 16F, 1 / 16F, 1 / 16F);
 
                     GL11.glTranslatef(config.thirdPerson.thirdPersonOffset.x, config.thirdPerson.thirdPersonOffset.y, config.thirdPerson.thirdPersonOffset.z);
                     GL11.glScalef(config.thirdPerson.thirdPersonScale, config.thirdPerson.thirdPersonScale, config.thirdPerson.thirdPersonScale);
@@ -87,7 +87,7 @@ public class RenderLayerHeldGun extends LayerHeldItem {
                     String gunPath = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
                     ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
 
-                    if(ItemGun.hasAmmoLoaded(itemstack)){
+                    if (ItemGun.hasAmmoLoaded(itemstack)) {
                         model.renderPartExcept(RenderParameters.partsWithAmmo);
                     } else {
                         model.renderPartExcept(RenderParameters.partsWithoutAmmo);

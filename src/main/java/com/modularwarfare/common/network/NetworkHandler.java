@@ -147,7 +147,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         for (String playerName : receivedPacketsServer.keySet()) {
             ConcurrentLinkedQueue<PacketBase> receivedPacketsFromPlayer = receivedPacketsServer.get(playerName);
             EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(playerName);
-            if(player == null) {
+            if (player == null) {
                 receivedPacketsFromPlayer.clear();
                 continue;
             }

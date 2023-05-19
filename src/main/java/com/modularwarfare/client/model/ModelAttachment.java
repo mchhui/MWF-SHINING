@@ -39,7 +39,7 @@ public class ModelAttachment extends MWModelBase {
     public void renderOverlay(float f) {
         renderPart("overlayModel", f);
     }
-    
+
     public void renderOverlaySolid(float f) {
         renderPart("overlaySolidModel", f);
     }

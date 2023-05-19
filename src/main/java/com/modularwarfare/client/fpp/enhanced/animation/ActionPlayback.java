@@ -14,12 +14,12 @@ public class ActionPlayback {
 
     private GunEnhancedRenderConfig config;
 
-    public ActionPlayback(GunEnhancedRenderConfig config){
+    public ActionPlayback(GunEnhancedRenderConfig config) {
         this.config = config;
     }
 
-    public void updateTime(double alpha){
-        if(config.animations.get(action)==null) {
+    public void updateTime(double alpha) {
+        if (config.animations.get(action) == null) {
             return;
         }
         double startTime = config.animations.get(action).getStartTime(config.FPS);
@@ -28,10 +28,10 @@ public class ActionPlayback {
         checkPlayed();
         //System.out.println(this.time-endTime);
     }
-    
+
     public boolean checkPlayed() {
         double endTime = config.animations.get(action).getEndTime(config.FPS);
-        if(this.time >= endTime){
+        if (this.time >= endTime) {
             this.hasPlayed = true;
         } else {
             this.hasPlayed = false;

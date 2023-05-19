@@ -1,8 +1,8 @@
 package com.modularwarfare.client.fpp.basic.renderers;
 
-import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
+import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.common.guns.AttachmentType;
 import com.modularwarfare.common.guns.ItemAttachment;
 import net.minecraft.client.Minecraft;

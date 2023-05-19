@@ -1,17 +1,16 @@
 package com.modularwarfare.common.network;
 
-import java.util.ArrayList;
-
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.handler.CommonEventHandler;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.text.TextComponentString;
+
+import java.util.ArrayList;
 
 public class PacketVerification extends PacketBase {
 
@@ -53,12 +52,12 @@ public class PacketVerification extends PacketBase {
             playerEntity.connection.disconnect(new TextComponentString(
                     "[ModularWarfare] Kicked for client-side is using directory content-pack."));
         }
-        if(!ModConfig.INSTANCE.general.modified_pack_server_kick) {
+        if (!ModConfig.INSTANCE.general.modified_pack_server_kick) {
             return;
         }
         ArrayList<String> serverList = ModularWarfare.contentPackHashList;
-        if(!ModConfig.INSTANCE.general.content_pack_hash_list.isEmpty()) {
-            serverList=ModConfig.INSTANCE.general.content_pack_hash_list;
+        if (!ModConfig.INSTANCE.general.content_pack_hash_list.isEmpty()) {
+            serverList = ModConfig.INSTANCE.general.content_pack_hash_list;
         }
         if (serverList.size() == md5List.size()) {
             boolean flag = false;

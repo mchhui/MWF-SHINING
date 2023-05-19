@@ -2,33 +2,23 @@ package com.modularwarfare.common.guns;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
-import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
-import com.modularwarfare.common.network.PacketPlaySound;
+import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.objects.SoundEntry;
-import com.modularwarfare.utility.MWSound;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBiped;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Random;
 
 public class GunType extends BaseType {
 
@@ -111,12 +101,12 @@ public class GunType extends BaseType {
      * Factor of accuracy when sneaking
      */
     public float accuracySneakFactor = 0.75f;
-    
+
     /**
      * Factor of accuracy when crawling
      */
     public float accuracyCrawlFactor = 0.75f;
-    
+
     /**
      * Factor of accuracy when aimming
      */
@@ -135,7 +125,7 @@ public class GunType extends BaseType {
      * the first line is outdated;
      */
     public float recoilAimReducer = 0.8F;
-    
+
     public float recoilCrawlYawFactor = 0.5F;
     public float recoilCrawlPitchFactor = 0.5F;
 
@@ -191,10 +181,10 @@ public class GunType extends BaseType {
     public boolean allowReloadFiring = false;
 
     //Only Enhanced ASM
-    public boolean allowReloadingSprint=true;
+    public boolean allowReloadingSprint = true;
 
     //Only Enhanced ASM
-    public boolean allowFiringSprint=true;
+    public boolean allowFiringSprint = true;
 
     //Only Enhanced ASM
     public boolean allowAimingSprint = true;

@@ -7,17 +7,17 @@ public class DefaultTransform {
     public float[] scale = new float[3];
     public float[] weight = new float[3];
 
-    public DefaultTransform(float[] translation, float[] rotation, float[] scale, float[] weight){
-        if(translation != null){
+    public DefaultTransform(float[] translation, float[] rotation, float[] scale, float[] weight) {
+        if (translation != null) {
             this.translation = translation;
         }
-        if(rotation != null){
+        if (rotation != null) {
             this.rotation = rotation;
         }
-        if(scale != null){
+        if (scale != null) {
             this.scale = scale;
         }
-        if(weight != null){
+        if (weight != null) {
             this.weight = weight;
         }
     }

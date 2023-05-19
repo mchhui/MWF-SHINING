@@ -1,11 +1,6 @@
 package com.modularwarfare.script;
 
-import net.minecraft.nbt.JsonToNBT;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTException;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagInt;
-import net.minecraft.nbt.NBTUtil;
+import net.minecraft.nbt.*;
 
 public class NBTSearcher {
     public NBTBase search(NBTTagCompound tag, String key, int type) {
@@ -26,7 +21,7 @@ public class NBTSearcher {
             nbt = nbt.getCompoundTag(keys[i]);
         }
         NBTBase base = nbt.getTag(keys[keys.length - 1]);
-        if(base==null) {
+        if (base == null) {
             return null;
         }
         if (base.getId() == type) {
@@ -34,10 +29,10 @@ public class NBTSearcher {
         }
         return null;
     }
-    
+
     public int searchInt(NBTTagCompound tag, String key) {
-        NBTBase base=search(tag, key, 3);
-        if(base instanceof NBTTagInt) {
+        NBTBase base = search(tag, key, 3);
+        if (base instanceof NBTTagInt) {
             return ((NBTTagInt) base).getInt();
         }
         return 0;

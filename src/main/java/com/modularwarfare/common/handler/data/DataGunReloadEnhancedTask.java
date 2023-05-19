@@ -17,21 +17,21 @@ public class DataGunReloadEnhancedTask {
     }
 
     public DataGunReloadEnhancedTask(int gunSlot, ItemStack reloadGun, boolean isUnload) {
-        this.gunSlot=gunSlot;
-        this.reloadGun=reloadGun;
-        this.isUnload=isUnload;
+        this.gunSlot = gunSlot;
+        this.reloadGun = reloadGun;
+        this.isUnload = isUnload;
     }
-    
-    public DataGunReloadEnhancedTask(int gunSlot, ItemStack reloadGun, boolean isUnload,int reloadCount) {
-        this.gunSlot=gunSlot;
-        this.reloadGun=reloadGun;
-        this.isUnload=isUnload;
-        this.reloadCount=reloadCount;
+
+    public DataGunReloadEnhancedTask(int gunSlot, ItemStack reloadGun, boolean isUnload, int reloadCount) {
+        this.gunSlot = gunSlot;
+        this.reloadGun = reloadGun;
+        this.isUnload = isUnload;
+        this.reloadCount = reloadCount;
     }
 
     public DataGunReloadEnhancedTask(int gunSlot, ItemStack reloadGun, ItemStack prognosisAmmo, int reloadCount,
-            boolean currentAmmo, boolean multi, Integer multiMagToLoad) {
-        this.gunSlot=gunSlot;
+                                     boolean currentAmmo, boolean multi, Integer multiMagToLoad) {
+        this.gunSlot = gunSlot;
         this.reloadGun = reloadGun;
         this.prognosisAmmo = prognosisAmmo;
         this.reloadCount = reloadCount;

@@ -38,7 +38,7 @@ public class RenderProjectile extends Render<EntityBullet> {
 
     private void doRenderProjectile(EntityBullet entityIn, double x, double y, double z, float yaw, float partialTicks) {
         GlStateManager.pushMatrix();
-        GlStateManager.translate((float)x, (float)y, (float)z);
+        GlStateManager.translate((float) x, (float) y, (float) z);
         GlStateManager.rotate(entityIn.prevRotationYaw + (entityIn.rotationYaw - entityIn.prevRotationYaw) * partialTicks - 90.0F, 0.0F, 1.0F, 0.0F);
         GlStateManager.rotate(entityIn.prevRotationPitch + (entityIn.rotationPitch - entityIn.prevRotationPitch) * partialTicks, 0.0F, 0.0F, 1.0F);
 

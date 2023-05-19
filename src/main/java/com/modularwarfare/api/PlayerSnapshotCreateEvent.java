@@ -1,12 +1,11 @@
 package com.modularwarfare.api;
 
-import java.util.ArrayList;
-
 import com.modularwarfare.common.hitbox.PlayerHitbox;
 import com.modularwarfare.common.vector.Vector3f;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.eventhandler.Event;
+
+import java.util.ArrayList;
 
 public class PlayerSnapshotCreateEvent extends Event {
     public static class Pre extends PlayerSnapshotCreateEvent {

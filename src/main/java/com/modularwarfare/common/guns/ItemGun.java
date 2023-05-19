@@ -2,12 +2,12 @@ package com.modularwarfare.common.guns;
 
 import com.google.common.collect.Multimap;
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.entity.decals.EntityDecal;
 import com.modularwarfare.common.guns.manager.ShotManager;
 import com.modularwarfare.common.handler.ServerTickHandler;
-import com.modularwarfare.common.network.*;
+import com.modularwarfare.common.network.PacketDecal;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import net.minecraft.block.material.Material;
@@ -26,7 +26,6 @@ import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.ItemAir;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
@@ -169,6 +168,70 @@ public class ItemGun extends BaseItem {
         return false;
     }
 
+    public static void playImpactSound(World world, BlockPos pos, GunType gunType) {
+        if (world.getBlockState(pos).getMaterial() == Material.ROCK) {
+            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactStone, null, 1f);
+        } else if (world.getBlockState(pos).getMaterial() == Material.GRASS || world.getBlockState(pos).getMaterial() == Material.GROUND || world.getBlockState(pos).getMaterial() == Material.SAND) {
+            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactDirt, null, 1f);
+        } else if (world.getBlockState(pos).getMaterial() == Material.WOOD) {
+            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactWood, null, 1f);
+        } else if (world.getBlockState(pos).getMaterial() == Material.GLASS) {
+            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactGlass, null, 1f);
+        } else if (world.getBlockState(pos).getMaterial() == Material.WATER) {
+            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactWater, null, 1f);
+        } else if (world.getBlockState(pos).getMaterial() == Material.IRON) {
+            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactMetal, null, 1f);
+        } else {
+            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactDirt, null, 1f);
+        }
+    }
+
+    public static void doHit(double posX, double posY, double posZ, EnumFacing facing, EntityPlayer shooter) {
+        doHit(new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, new BlockPos(posX, posY, posZ)), shooter);
+    }
+
+    public static void doHit(RayTraceResult raytraceResultIn, EntityPlayer shooter) {
+        if (raytraceResultIn.getBlockPos() != null) {
+            BlockPos pos = raytraceResultIn.getBlockPos();
+
+            EntityDecal.EnumDecalSide side = EntityDecal.EnumDecalSide.ALL;
+            boolean shouldRender = true;
+            double hitX = raytraceResultIn.hitVec.x;
+            double hitY = raytraceResultIn.hitVec.y;
+            double hitZ = raytraceResultIn.hitVec.z;
+            switch (raytraceResultIn.sideHit) {
+                case UP:
+                    side = EntityDecal.EnumDecalSide.FLOOR;
+                    break;
+                case DOWN:
+                    side = EntityDecal.EnumDecalSide.CEILING;
+                    break;
+                case EAST:
+                    side = EntityDecal.EnumDecalSide.WEST;
+                    break;
+                case WEST:
+                    side = EntityDecal.EnumDecalSide.EAST;
+                    break;
+                case SOUTH:
+                    side = EntityDecal.EnumDecalSide.NORTH;
+                    break;
+                case NORTH:
+                    side = EntityDecal.EnumDecalSide.SOUTH;
+                    break;
+                default:
+                    shouldRender = false;
+                    break;
+            }
+            if (shouldRender) {
+                ModularWarfare.NETWORK.sendToAll(new PacketDecal(0, side, hitX, hitY + 0.095D, hitZ, false));
+            }
+        }
+    }
+
+    public static boolean canEntityGetHeadshot(Entity e) {
+        return e instanceof EntityZombie || e instanceof EntitySkeleton || e instanceof EntityCreeper || e instanceof EntityWitch || e instanceof EntityPigZombie || e instanceof EntityEnderman || e instanceof EntityWitherSkeleton || e instanceof EntityPlayer || e instanceof EntityVillager || e instanceof EntityEvoker || e instanceof EntityStray || e instanceof EntityVindicator || e instanceof EntityIronGolem || e instanceof EntitySnowman || e.getName().contains("common");
+    }
+
     @Override
     public void setType(BaseType type) {
         this.type = (GunType) type;
@@ -217,8 +280,8 @@ public class ItemGun extends BaseItem {
                 }
             }
             lastFireButtonHeld = fireButtonHeld;
-            if(!fireButtonHeld) {
-                ShotManager.defemptyclickLock=true;
+            if (!fireButtonHeld) {
+                ShotManager.defemptyclickLock = true;
             }
         }
     }
@@ -227,80 +290,15 @@ public class ItemGun extends BaseItem {
 
     }
 
-    public static void playImpactSound(World world, BlockPos pos, GunType gunType) {
-        if (world.getBlockState(pos).getMaterial() == Material.ROCK) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactStone, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.GRASS || world.getBlockState(pos).getMaterial() == Material.GROUND || world.getBlockState(pos).getMaterial() == Material.SAND) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactDirt, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.WOOD) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactWood, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.GLASS) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactGlass, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.WATER) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactWater, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.IRON) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactMetal, null, 1f);
-        } else {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactDirt, null, 1f);
-        }
-    }
-
     @Override
     public Multimap<String, AttributeModifier> getAttributeModifiers(EntityEquipmentSlot slot, ItemStack stack) {
         Multimap<String, AttributeModifier> multimap = super.getAttributeModifiers(slot, stack);
         if (slot == EntityEquipmentSlot.MAINHAND) {
-            if(type.moveSpeedModifier - 1.0f!=0) {
-                multimap.put(SharedMonsterAttributes.MOVEMENT_SPEED.getName(), new AttributeModifier(MOVEMENT_SPEED_MODIFIER, "MovementSpeed", type.moveSpeedModifier - 1.0f, 2));  
+            if (type.moveSpeedModifier - 1.0f != 0) {
+                multimap.put(SharedMonsterAttributes.MOVEMENT_SPEED.getName(), new AttributeModifier(MOVEMENT_SPEED_MODIFIER, "MovementSpeed", type.moveSpeedModifier - 1.0f, 2));
             }
         }
         return multimap;
-    }
-
-    public static void doHit(double posX, double posY, double posZ,EnumFacing facing, EntityPlayer shooter) {
-        doHit(new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, new BlockPos(posX, posY, posZ)), shooter);
-    }
-
-    public static void doHit(RayTraceResult raytraceResultIn, EntityPlayer shooter) {
-        if (raytraceResultIn.getBlockPos() != null) {
-            BlockPos pos = raytraceResultIn.getBlockPos();
-
-            EntityDecal.EnumDecalSide side = EntityDecal.EnumDecalSide.ALL;
-            boolean shouldRender = true;
-            double hitX = raytraceResultIn.hitVec.x;
-            double hitY = raytraceResultIn.hitVec.y;
-            double hitZ = raytraceResultIn.hitVec.z;
-            switch (raytraceResultIn.sideHit) {
-                case UP:
-                    side= EntityDecal.EnumDecalSide.FLOOR;
-                    break;
-                case DOWN:
-                    side= EntityDecal.EnumDecalSide.CEILING;
-                    break;
-                case EAST:
-                    side= EntityDecal.EnumDecalSide.WEST;
-                    break;
-                case WEST:
-                    side= EntityDecal.EnumDecalSide.EAST;
-                    break;
-                case SOUTH:
-                    side= EntityDecal.EnumDecalSide.NORTH;
-                    break;
-                case NORTH:
-                    side= EntityDecal.EnumDecalSide.SOUTH;
-                    break;
-                default:
-                    shouldRender=false;
-                    break;
-            }
-            if (shouldRender) {
-                ModularWarfare.NETWORK.sendToAll(new PacketDecal(0, side, hitX, hitY + 0.095D, hitZ, false));
-            }
-        }
-    }
-
-
-    public static boolean canEntityGetHeadshot(Entity e) {
-        return e instanceof EntityZombie || e instanceof EntitySkeleton || e instanceof EntityCreeper || e instanceof EntityWitch || e instanceof EntityPigZombie || e instanceof EntityEnderman || e instanceof EntityWitherSkeleton || e instanceof EntityPlayer || e instanceof EntityVillager || e instanceof EntityEvoker || e instanceof EntityStray || e instanceof EntityVindicator || e instanceof EntityIronGolem || e instanceof EntitySnowman || e.getName().contains("common");
     }
 
     public void onGunSwitchMode(EntityPlayer entityPlayer, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode) {
@@ -437,7 +435,7 @@ public class ItemGun extends BaseItem {
                 }
             }
 
-            if(gunType.extraLore != null) {
+            if (gunType.extraLore != null) {
                 tooltip.add("" + TextFormatting.BLUE.toString() + "Lore:");
                 tooltip.add(gunType.extraLore);
             }

@@ -3,12 +3,8 @@ package com.modularwarfare.raycast;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
-import com.modularwarfare.common.hitbox.PlayerHitbox;
-import com.modularwarfare.common.hitbox.PlayerSnapshot;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.hitbox.hits.OBBHit;
-import com.modularwarfare.common.hitbox.hits.PlayerHit;
-import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.hitbox.playerdata.PlayerData;
 import com.modularwarfare.common.network.PacketPlaySound;
 import com.modularwarfare.common.vector.Matrix4f;
@@ -18,17 +14,14 @@ import com.modularwarfare.raycast.obb.OBBModelBox.RayCastResult;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.OBBDebugObject;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.PlayerOBBModelObject;
-
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
@@ -64,34 +57,34 @@ public class DefaultRayCasting extends RayCasting {
         float maxDistance = (float) endVec.distanceTo(startVec);
         if (blockHit != null) {
             maxDistance = (float) blockHit.hitVec.distanceTo(startVec);
-        	endVec = blockHit.hitVec;
+            endVec = blockHit.hitVec;
         }
-        
-        Vector3f rayVec=new Vector3f(endVec.x-startVec.x, endVec.y-startVec.y, endVec.z-startVec.z);
-        float len=rayVec.length();
-        Vector3f normlVec=rayVec.normalise(null);
-        OBBModelBox ray=new OBBModelBox();
-        float pitch=(float) Math.asin(normlVec.y);
-        normlVec.y=0;
-        normlVec=normlVec.normalise(null);
-        float yaw=(float)Math.asin(normlVec.x);
-        if(normlVec.z<0) {
-            yaw=(float) (Math.PI-yaw);
+
+        Vector3f rayVec = new Vector3f(endVec.x - startVec.x, endVec.y - startVec.y, endVec.z - startVec.z);
+        float len = rayVec.length();
+        Vector3f normlVec = rayVec.normalise(null);
+        OBBModelBox ray = new OBBModelBox();
+        float pitch = (float) Math.asin(normlVec.y);
+        normlVec.y = 0;
+        normlVec = normlVec.normalise(null);
+        float yaw = (float) Math.asin(normlVec.x);
+        if (normlVec.z < 0) {
+            yaw = (float) (Math.PI - yaw);
         }
-        Matrix4f matrix=new Matrix4f();
+        Matrix4f matrix = new Matrix4f();
         matrix.rotate(yaw, new Vector3f(0, 1, 0));
         matrix.rotate(pitch, new Vector3f(-1, 0, 0));
-        ray.center=new Vector3f((startVec.x+endVec.x)/2, (startVec.y+endVec.y)/2, (startVec.z+endVec.z)/2);
-        ray.axis.x=new Vector3f(0, 0, 0);
-        ray.axis.y=new Vector3f(0, 0, 0);
-        ray.axis.z=Matrix4f.transform(matrix, new Vector3f(0, 0, len/2), null);
-        ray.axisNormal.x=Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
-        ray.axisNormal.y=Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
-        ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
-        
-        if(OBBPlayerManager.debug) {
+        ray.center = new Vector3f((startVec.x + endVec.x) / 2, (startVec.y + endVec.y) / 2, (startVec.z + endVec.z) / 2);
+        ray.axis.x = new Vector3f(0, 0, 0);
+        ray.axis.y = new Vector3f(0, 0, 0);
+        ray.axis.z = Matrix4f.transform(matrix, new Vector3f(0, 0, len / 2), null);
+        ray.axisNormal.x = Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
+        ray.axisNormal.y = Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
+        ray.axisNormal.z = Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
+
+        if (OBBPlayerManager.debug) {
             OBBPlayerManager.lines.add(new OBBDebugObject(ray));
-            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec), new Vector3f(endVec)));  
+            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec), new Vector3f(endVec)));
         }
         //Iterate over all entities
         for (int i = 0; i < world.loadedEntityList.size(); i++) {
@@ -133,29 +126,29 @@ public class DefaultRayCasting extends RayCasting {
                     */
                     //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+startVec+" "+endVec));
                     PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
-                    OBBModelBox finalBox=null;
+                    OBBModelBox finalBox = null;
                     List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
                     if (boxes.size() > 0) {
                         double t = Double.MAX_VALUE;
-                        Vector3f hitFaceNormal=null;
+                        Vector3f hitFaceNormal = null;
                         RayCastResult temp;
-                        Vector3f startVector=new Vector3f(startVec);
+                        Vector3f startVector = new Vector3f(startVec);
                         for (OBBModelBox obb : boxes) {
-                            temp=OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
-                            if(temp.t<t) {
-                                t=temp.t;
-                                hitFaceNormal=temp.normal;
-                                finalBox=obb;
+                            temp = OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
+                            if (temp.t < t) {
+                                t = temp.t;
+                                hitFaceNormal = temp.normal;
+                                finalBox = obb;
                             }
                         }
-                        
-                        if(OBBPlayerManager.debug) {
-                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x+rayVec.x*t,startVec.y+rayVec.y*t,startVec.z+rayVec.z*t)));
+
+                        if (OBBPlayerManager.debug) {
+                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x + rayVec.x * t, startVec.y + rayVec.y * t, startVec.z + rayVec.z * t)));
                         }
                         if (finalBox != null) {
                             PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
                             RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
-                            return new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept);  
+                            return new OBBHit((EntityPlayer) obj, finalBox.copy(), intercept);
                         }
                     }
                 }

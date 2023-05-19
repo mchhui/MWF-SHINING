@@ -36,7 +36,7 @@ public class RenderHelperMW {
         RenderHelper.enableGUIStandardItemLighting();
         if (stack != null) {
             float f1 = (float) stack.getAnimationsToGo() - partialTicks;
-            f1=0;
+            f1 = 0;
             if (f1 > 0.0F) {
                 GL11.glPushMatrix();
                 float f2 = 1.0F + f1 / 5.0F;
@@ -915,27 +915,26 @@ public class RenderHelperMW {
         GL11.glDisable(3042);
         GL11.glDisable(2832);
     }
-    
-    public static void drawTexturedRect(double x, double y,double width,double height)
-    {
-    	drawTexturedRect((float)x,(float)y,(float)width,(float)height);
+
+    public static void drawTexturedRect(double x, double y, double width, double height) {
+        drawTexturedRect((float) x, (float) y, (float) width, (float) height);
     }
-    public static void drawTexturedRect(float x, float y,float width,float height)
-    {
-		drawTexturedRect(x,y,width,height,0,0,1f,1f);
+
+    public static void drawTexturedRect(float x, float y, float width, float height) {
+        drawTexturedRect(x, y, width, height, 0, 0, 1f, 1f);
     }
-	public static void drawTexturedRect(float x, float y,float width,float height, float minU, float minV, float maxU, float maxV)
-    {
-		//GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
+
+    public static void drawTexturedRect(float x, float y, float width, float height, float minU, float minV, float maxU, float maxV) {
+        //GL11.glHint(GL11.GL_POLYGON_SMOOTH_HINT, GL11.GL_NICEST);
         float f = 0.00390625F;
         float f1 = 0.00390625F;
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
-        bufferbuilder.pos(x,y+height,0).tex(minU,maxV).endVertex();
-        bufferbuilder.pos(x+width,y+height,0).tex(maxU,maxV).endVertex();
-        bufferbuilder.pos(x+width,y,0).tex(maxU,minV).endVertex();
-        bufferbuilder.pos(x,y,0).tex(minU,minV).endVertex();
+        bufferbuilder.pos(x, y + height, 0).tex(minU, maxV).endVertex();
+        bufferbuilder.pos(x + width, y + height, 0).tex(maxU, maxV).endVertex();
+        bufferbuilder.pos(x + width, y, 0).tex(maxU, minV).endVertex();
+        bufferbuilder.pos(x, y, 0).tex(minU, minV).endVertex();
         tessellator.draw();
     }
 }

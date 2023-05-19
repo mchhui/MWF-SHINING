@@ -15,6 +15,7 @@ import net.minecraft.world.World;
 
 public class EntityBullet extends EntityArrow implements IProjectile {
 
+    private static final DataParameter BULLET_NAME = EntityDataManager.createKey(EntityShell.class, DataSerializers.STRING);
     public EntityPlayer player;
     public int ticksInAir = 0;
     public int ticks = 0;
@@ -26,10 +27,7 @@ public class EntityBullet extends EntityArrow implements IProjectile {
     private boolean inGround = false;
     private float damage;
     private int liveTime = 600;
-
     private float velocity;
-
-    private static final DataParameter BULLET_NAME = EntityDataManager.createKey(EntityShell.class, DataSerializers.STRING);
 
     public EntityBullet(World world) {
         super(world);

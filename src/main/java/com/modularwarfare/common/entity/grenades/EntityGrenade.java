@@ -1,16 +1,10 @@
 package com.modularwarfare.common.entity.grenades;
 
-import java.util.List;
-import java.util.Set;
-
-import com.google.common.collect.Sets;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.init.ModSounds;
-
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.MoverType;
@@ -26,6 +20,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 public class EntityGrenade extends Entity {
 
@@ -145,7 +141,7 @@ public class EntityGrenade extends Entity {
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
                 */
-                if(grenadeType.damageWorld) {
+                if (grenadeType.damageWorld) {
                     float f = grenadeType.explosionPower * (0.7F + this.world.rand.nextFloat() * 0.6F);
                     for (int x = -grenadeType.explosionPower; x <= grenadeType.explosionPower; x++) {
                         for (int y = -grenadeType.explosionPower; y <= grenadeType.explosionPower; y++) {
@@ -167,7 +163,7 @@ public class EntityGrenade extends Entity {
                                 }
                             }
                         }
-                    }  
+                    }
                 }
 
                 List<Entity> entities = world.getEntitiesInAABBexcluding(this,
@@ -177,8 +173,8 @@ public class EntityGrenade extends Entity {
                                 posZ + 1 / grenadeType.explosionParamK),
                         null);
                 for (Entity entity : entities) {
-                    if(!grenadeType.throwerVulnerable) {
-                        if(entity==thrower) {
+                    if (!grenadeType.throwerVulnerable) {
+                        if (entity == thrower) {
                             continue;
                         }
                     }

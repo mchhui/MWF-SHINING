@@ -148,7 +148,7 @@ public class AnimStateMachine {
         }
 
 
-        if(gun != null) {
+        if (gun != null) {
             if (!gun.type.allowAimingSprint && adsSwitch > 0.2f) {
                 Minecraft.getMinecraft().player.setSprinting(false);
             }
@@ -241,7 +241,7 @@ public class AnimStateMachine {
         muzzleFlashTime = 2;
 
         int Low = 0;
-        int High = gunType.flashType.resourceLocations.size()-1;
+        int High = gunType.flashType.resourceLocations.size() - 1;
         int result = r.nextInt(High - Low) + Low;
         flashInt = result;
 
@@ -308,9 +308,9 @@ public class AnimStateMachine {
         }
         return true;
     }
-    
+
     public boolean canSprint() {
-        return !shooting&&!reloading;
+        return !shooting && !reloading;
     }
 
     public boolean isReloadType(ReloadType type) {

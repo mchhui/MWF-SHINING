@@ -9,7 +9,6 @@ import org.lwjgl.opengl.ARBShaderObjects;
 import org.lwjgl.opengl.ARBVertexShader;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
 
 import java.io.InputStream;
 import java.nio.FloatBuffer;
@@ -64,12 +63,16 @@ public class Program {
         }
     }
 
+    private static String getLogInfo(int obj) {
+        return glGetInfoLogARB(obj, glGetObjectParameteriARB(obj, GL_OBJECT_INFO_LOG_LENGTH_ARB));
+    }
+
     private int createShader(ResourceLocation resourceLocation, int shaderType) throws Exception {
         int shader = 0;
         try {
             shader = glCreateShaderObjectARB(shaderType);
 
-            if(shader == 0)
+            if (shader == 0)
                 throw new Exception("glCreateShaderObjectARB failed");
 
             IResource resource = Minecraft.getMinecraft().getResourceManager().getResource(resourceLocation);
@@ -82,15 +85,10 @@ public class Program {
                 throw new RuntimeException("Error creating shader: " + getLogInfo(shader));
 
             return shader;
-        }
-        catch(Exception exc) {
+        } catch (Exception exc) {
             glDeleteObjectARB(shader);
             throw exc;
         }
-    }
-
-    private static String getLogInfo(int obj) {
-        return glGetInfoLogARB(obj, glGetObjectParameteriARB(obj, GL_OBJECT_INFO_LOG_LENGTH_ARB));
     }
 
     public void use() {

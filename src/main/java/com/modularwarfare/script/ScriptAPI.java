@@ -1,34 +1,25 @@
 package com.modularwarfare.script;
 
-import org.lwjgl.input.Keyboard;
-
-import com.modularwarfare.common.guns.AmmoType;
-import com.modularwarfare.common.guns.BulletType;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemAmmo;
-import com.modularwarfare.common.guns.ItemBullet;
-import com.modularwarfare.common.guns.ItemGun;
-import com.modularwarfare.common.guns.WeaponFireMode;
-
+import com.modularwarfare.common.guns.*;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.TextComponentTranslation;
+import org.lwjgl.input.Keyboard;
 
 public class ScriptAPI {
     public Lang Lang = new Lang();
     public Stack Stack = new Stack();
     public Gun Gun = new Gun();
     public Ammo Ammo = new Ammo();
-    public Input Input =new Input();
+    public Input Input = new Input();
 
     public static class Lang {
         public String format(String key, Object... parms) {
             return I18n.format(key, parms);
         }
     }
-    
+
     public static class Stack {
         public boolean hasNbt(ItemStack stack) {
             return stack.hasTagCompound();
@@ -37,15 +28,15 @@ public class ScriptAPI {
         public NBTTagCompound getNbt(ItemStack stack) {
             return stack.getTagCompound();
         }
-        
+
         public ItemStack getStack(Item item) {
             return new ItemStack(item);
         }
-        
+
         public String getDisplayName(ItemStack stack) {
             return stack.getDisplayName();
         }
-        
+
         public boolean isEmpty(ItemStack stack) {
             return stack.isEmpty();
         }
@@ -67,9 +58,9 @@ public class ScriptAPI {
             }
             return ItemStack.EMPTY;
         }
-        
+
         public ItemBullet getUsedBulletItem(ItemStack stack) {
-            if(ItemAmmo.getUsedBullet(stack)!=null) {
+            if (ItemAmmo.getUsedBullet(stack) != null) {
                 return ItemAmmo.getUsedBullet(stack);
             }
             return null;
@@ -94,10 +85,10 @@ public class ScriptAPI {
         }
     }
 
-    public static class Input{
+    public static class Input {
         public boolean isKeyHolding(int key) {
             return Keyboard.isKeyDown(key);
         }
     }
-    
+
 }

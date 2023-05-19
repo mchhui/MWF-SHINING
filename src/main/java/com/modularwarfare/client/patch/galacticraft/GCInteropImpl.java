@@ -26,16 +26,19 @@ public class GCInteropImpl implements GCCompatInterop {
     public boolean isFixApplied() {
         return this.fixApplied;
     }
+
     @Override
     public void setFixed() {
         this.fixApplied = true;
     }
+
     @Override
     public void addLayers(final RenderPlayer rp) {
         rp.addLayer(new RenderLayerBackpack(rp, rp.getMainModel().bipedBodyWear));
         rp.addLayer(new RenderLayerBody(rp, rp.getMainModel().bipedBodyWear));
         rp.addLayer(new RenderLayerHeldGun(rp));
     }
+
     @Override
     public boolean isGCLayer(final LayerRenderer<EntityPlayer> layer) {
         try {
@@ -45,6 +48,7 @@ public class GCInteropImpl implements GCCompatInterop {
         }
         return false;
     }
+
     @Override
     public void applyFix() {
         try {

@@ -5,9 +5,6 @@ import com.modularwarfare.common.hitbox.maths.RotatedAxes;
 import com.modularwarfare.common.vector.Vector3f;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class PlayerHitbox {
     /**

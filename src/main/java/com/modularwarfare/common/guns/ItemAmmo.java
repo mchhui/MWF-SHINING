@@ -106,7 +106,7 @@ public class ItemAmmo extends BaseItem {
         if (heldStack.getTagCompound() != null) {
             ItemAmmo itemAmmo = (ItemAmmo) heldStack.getItem();
             NBTTagCompound tag = heldStack.getTagCompound();
-            this.setDamage(heldStack,itemAmmo.type.ammoCapacity - tag.getInteger("ammocount"));
+            this.setDamage(heldStack, itemAmmo.type.ammoCapacity - tag.getInteger("ammocount"));
         }
     }
 

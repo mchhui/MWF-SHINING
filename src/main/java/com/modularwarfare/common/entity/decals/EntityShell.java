@@ -40,14 +40,14 @@ public class EntityShell extends Entity implements IProjectile {
         playedSound = false;
     }
 
-    public EntityShell(World worldIn, EntityPlayer throwerIn,ItemStack gunStack, ItemGun gun, ItemBullet bullet) {
+    public EntityShell(World worldIn, EntityPlayer throwerIn, ItemStack gunStack, ItemGun gun, ItemBullet bullet) {
         super(worldIn);
-        
-        if(bullet==null) {
+
+        if (bullet == null) {
             setDead();
             return;
         }
-        
+
         int skinId = 0;
         if (gunStack.hasTagCompound()) {
             if (gunStack.getTagCompound().hasKey("skinId")) {
@@ -56,7 +56,7 @@ public class EntityShell extends Entity implements IProjectile {
         }
         setGunSkinID(skinId);
         setGunType(gun.type.internalName);
-        
+
         this.setBulletType(bullet.type.internalName);
 
         Vec3d rotateYaw = new Vec3d(0, 0, 0);
@@ -99,7 +99,7 @@ public class EntityShell extends Entity implements IProjectile {
     public void setBulletType(String bulletType) {
         this.dataManager.set(BULLET_NAME, bulletType);
     }
-    
+
     public String getGunName() {
         return (String) this.dataManager.get(GUN_NAME);
     }

@@ -3,7 +3,6 @@ package com.modularwarfare.client.model;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.vector.Vector3f;
-import com.modularwarfare.utility.RayUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;

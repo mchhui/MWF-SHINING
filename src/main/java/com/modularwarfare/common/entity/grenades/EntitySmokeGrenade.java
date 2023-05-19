@@ -1,14 +1,9 @@
 package com.modularwarfare.common.entity.grenades;
 
-import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.init.ModSounds;
-import com.modularwarfare.common.network.PacketFlashClient;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.MoverType;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
@@ -16,9 +11,6 @@ import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 
 
@@ -89,16 +81,16 @@ public class EntitySmokeGrenade extends EntityGrenade {
             }
         }
 
-        if(this.exploded){
+        if (this.exploded) {
             --this.smokeTime;
-            if(this.smokeTime <= 0){
+            if (this.smokeTime <= 0) {
                 setDead();
             }
         }
     }
 
     @Override
-    public void explode(){
+    public void explode() {
         if (!this.exploded) {
             this.world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_SMOKE, SoundCategory.BLOCKS, 2.0f, 1.0f);
             this.exploded = true;

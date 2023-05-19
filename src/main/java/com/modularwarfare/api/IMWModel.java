@@ -5,5 +5,5 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public interface IMWModel {
     @SideOnly(Side.CLIENT)
-    public void renderPart(String part,float scale);
+    public void renderPart(String part, float scale);
 }

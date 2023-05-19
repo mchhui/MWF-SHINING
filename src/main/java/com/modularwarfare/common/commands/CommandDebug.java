@@ -24,7 +24,7 @@ public class CommandDebug extends CommandBase {
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (sender instanceof EntityPlayerMP) {
             ModConfig.INSTANCE.debug_hits_message = !ModConfig.INSTANCE.debug_hits_message;
-            sender.sendMessage(new TextComponentString("[ModularWarfare] Debugs hits set to :"+ModConfig.INSTANCE.debug_hits_message));
+            sender.sendMessage(new TextComponentString("[ModularWarfare] Debugs hits set to :" + ModConfig.INSTANCE.debug_hits_message));
         }
     }
 

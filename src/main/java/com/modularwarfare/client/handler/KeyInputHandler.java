@@ -6,11 +6,11 @@ import com.modularwarfare.api.HandleKeyEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
+import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
-import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
@@ -86,7 +86,7 @@ public class KeyInputHandler extends ForgeEvent {
 
                     if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                         final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-                        final GunType gunType = ((ItemGun)gunStack.getItem()).type;
+                        final GunType gunType = ((ItemGun) gunStack.getItem()).type;
                         for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
                             ItemStack itemStack = GunType.getAttachment(gunStack, attachment);
                             if (itemStack != null && itemStack.getItem() != Items.AIR) {
@@ -98,7 +98,7 @@ public class KeyInputHandler extends ForgeEvent {
                         }
                         if (gunType.hasModel() && gunType.animationType.equals(WeaponAnimationType.ENHANCED)) {
                             gunType.enhancedModel.config = ModularWarfare.getRenderConfig(gunType, GunEnhancedRenderConfig.class);
-                        } else if(gunType.hasModel()){
+                        } else if (gunType.hasModel()) {
                             gunType.reloadModel();
                         }
                     }
@@ -108,23 +108,23 @@ public class KeyInputHandler extends ForgeEvent {
                     }
                     break;
                 case FireMode:
-                    if(!entityPlayer.isSpectator()) {
+                    if (!entityPlayer.isSpectator()) {
                         if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
                             ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
                             GunType gunType = itemGun.type;
                             PacketGunSwitchMode.switchClient(entityPlayer);
                             ModularWarfare.NETWORK.sendToServer(new PacketGunSwitchMode());
                             ModularWarfare.PROXY.onModeChangeAnimation(entityPlayer, gunType.internalName);
-                        }  
+                        }
                     }
                     break;
                 case Inspect:
-                    if(!entityPlayer.isSpectator()) {
+                    if (!entityPlayer.isSpectator()) {
                         if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                            if(ClientProxy.gunEnhancedRenderer.controller!=null) {
-                                ClientProxy.gunEnhancedRenderer.controller.INSPECT=0;
+                            if (ClientProxy.gunEnhancedRenderer.controller != null) {
+                                ClientProxy.gunEnhancedRenderer.controller.INSPECT = 0;
                             }
-                        }  
+                        }
                     }
                     break;
                 case GunReload:
@@ -156,7 +156,7 @@ public class KeyInputHandler extends ForgeEvent {
                     break;
 
                 case AddAttachment:
-                    if(!entityPlayer.isSpectator()) {
+                    if (!entityPlayer.isSpectator()) {
                         if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
                             if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                                 /*if(((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.BASIC) {
@@ -164,23 +164,22 @@ public class KeyInputHandler extends ForgeEvent {
                                     stateMachine.attachmentMode = !stateMachine.attachmentMode;
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                                 }*/
-                                
-                                
-                                
-                                if(false) {
+
+
+                                if (false) {
                                     AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
                                     stateMachine.attachmentMode = !stateMachine.attachmentMode;
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
-                                }else {
+                                } else {
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                                     Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
                                 }
                             }
-                        }  
+                        }
                     }
                     break;
                 case Flashlight:
-                    if(!entityPlayer.isSpectator()) {
+                    if (!entityPlayer.isSpectator()) {
                         if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
                             if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                                 final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
@@ -192,7 +191,7 @@ public class KeyInputHandler extends ForgeEvent {
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
                                 }
                             }
-                        }  
+                        }
                     }
                     break;
                 case Backpack:

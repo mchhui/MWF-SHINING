@@ -4,15 +4,16 @@ import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.player.EntityPlayer;
 
-public class ResetHiddenModelLayer implements LayerRenderer<EntityPlayer>{
+public class ResetHiddenModelLayer implements LayerRenderer<EntityPlayer> {
     RenderPlayer renderPlayer;
+
     public ResetHiddenModelLayer(RenderPlayer renderPlayer) {
-        this.renderPlayer=renderPlayer;
+        this.renderPlayer = renderPlayer;
     }
 
     @Override
     public void doRenderLayer(EntityPlayer entitylivingbaseIn, float limbSwing, float limbSwingAmount,
-            float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
+                              float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
         renderPlayer.getMainModel().bipedHead.isHidden = false;
         renderPlayer.getMainModel().bipedBody.isHidden = false;
         renderPlayer.getMainModel().bipedLeftArm.isHidden = false;

@@ -30,10 +30,10 @@ public class AmmoType extends BaseType {
      * The reload time factor of the ammo (example Fast Mags)
      */
     public float reloadTimeFactor = 1f;
-    
+
     /**
      * for enhanced ASM
-     *  the factor bigger the animation plays fasterly
+     * the factor bigger the animation plays fasterly
      */
     public float reloadSpeedFactor = 1f;
 

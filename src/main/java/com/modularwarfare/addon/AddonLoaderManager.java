@@ -98,12 +98,14 @@ public class AddonLoaderManager {
             addon.preInit(event, ModularWarfare.loaderManager);
         }
     }
+
     public void initAddons(FMLInitializationEvent event) {
         for (IContentAddon addon : addons) {
             ModularWarfare.LOGGER.info("Trying to init " + addon.getName());
             addon.init(event, ModularWarfare.loaderManager);
         }
     }
+
     public void postInitAddons(FMLPostInitializationEvent event) {
         for (IContentAddon addon : addons) {
             ModularWarfare.LOGGER.info("Trying to postInit " + addon.getName());

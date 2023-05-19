@@ -334,12 +334,12 @@ public class GuiUtils {
         renderRect(givenX, givenY, givenWidth, givenHeight, givenColor);
     }
 
-    public static void renderOutline(int givenX, int givenY, int givenWidth, int givenHeight, int givenOutlineColor, int outlineThickness){
-        renderRect(givenX - outlineThickness, givenY - outlineThickness, givenWidth + (outlineThickness * 2) , outlineThickness, givenOutlineColor);
-        renderRect(givenX - outlineThickness + 1, (givenY+givenHeight) - outlineThickness +1, givenWidth + (outlineThickness * 2)-2, outlineThickness, givenOutlineColor);
+    public static void renderOutline(int givenX, int givenY, int givenWidth, int givenHeight, int givenOutlineColor, int outlineThickness) {
+        renderRect(givenX - outlineThickness, givenY - outlineThickness, givenWidth + (outlineThickness * 2), outlineThickness, givenOutlineColor);
+        renderRect(givenX - outlineThickness + 1, (givenY + givenHeight) - outlineThickness + 1, givenWidth + (outlineThickness * 2) - 2, outlineThickness, givenOutlineColor);
 
         renderRect(givenX - outlineThickness, givenY - outlineThickness + 1, outlineThickness, givenHeight + (outlineThickness * 2) - 1, givenOutlineColor);
-        renderRect((givenX+givenWidth) + outlineThickness -1, givenY - outlineThickness + 1, outlineThickness, givenHeight + (outlineThickness * 2) - 1, givenOutlineColor);
+        renderRect((givenX + givenWidth) + outlineThickness - 1, givenY - outlineThickness + 1, outlineThickness, givenHeight + (outlineThickness * 2) - 1, givenOutlineColor);
 
     }
 

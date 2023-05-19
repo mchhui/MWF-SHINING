@@ -17,12 +17,12 @@ public class BulletType extends BaseType {
     public float bulletDamageFactor = 1.0f;
     public float bulletAccuracyFactor = 1.0f;
     public boolean isSlug = false;
-    
-    public boolean isFireDamage=false;
-    public boolean isAbsoluteDamage=false;
-    public boolean isBypassesArmorDamage=false;
-    public boolean isExplosionDamage=false;
-    public boolean isMagicDamage=false;
+
+    public boolean isFireDamage = false;
+    public boolean isAbsoluteDamage = false;
+    public boolean isBypassesArmorDamage = false;
+    public boolean isExplosionDamage = false;
+    public boolean isMagicDamage = false;
 
     /**
      * If the ammo model need to be rendered on guns
@@ -34,16 +34,16 @@ public class BulletType extends BaseType {
     public transient MWModelBase shell;
 
     public String shellSound = "casing";
-    
+
     /**
      * Explosives type only for launcher
      */
     public float projectileVelocity;
     public float explosionStrength = 4f;
     public boolean damageWorld = true;
-    
-    public boolean isDynamicBullet=false;
-    public boolean sameTextureAsGun=false;
+
+    public boolean isDynamicBullet = false;
+    public boolean sameTextureAsGun = false;
 
     @Override
     public void loadExtraValues() {

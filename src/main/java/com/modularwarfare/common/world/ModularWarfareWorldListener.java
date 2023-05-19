@@ -56,9 +56,9 @@ public class ModularWarfareWorldListener implements IWorldEventListener {
 
     @Override
     public void onEntityRemoved(Entity entityIn) {
-        if(entityIn instanceof EntityPlayer) {
+        if (entityIn instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) entityIn;
-            if(player.world == null) return;
+            if (player.world == null) return;
             PlayerDataHandler.onPlayerLeave(player.getName(), player.world.isRemote ? Side.CLIENT : Side.SERVER);
         }
     }

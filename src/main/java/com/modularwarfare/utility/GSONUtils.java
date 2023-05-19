@@ -2,7 +2,6 @@ package com.modularwarfare.utility;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.modularwarfare.ModularWarfare;
@@ -18,7 +17,7 @@ public class GSONUtils {
         try {
             return (T) p_193838_0_.getAdapter(TypeToken.get(p_193838_2_)).read(jsonreader);
         } catch (IOException ioexception) {
-            ModularWarfare.LOGGER.warn("[ModularWarfare] JSON Error reading file: "+name);
+            ModularWarfare.LOGGER.warn("[ModularWarfare] JSON Error reading file: " + name);
             throw new JsonParseException(ioexception);
         }
     }

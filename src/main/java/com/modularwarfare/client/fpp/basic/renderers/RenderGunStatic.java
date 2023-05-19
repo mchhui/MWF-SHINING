@@ -2,46 +2,36 @@ package com.modularwarfare.client.fpp.basic.renderers;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.api.GunBobbingEvent;
-import com.modularwarfare.api.RenderHandFisrtPersonEvent;
-import com.modularwarfare.api.RenderHandSleeveEvent;
-import com.modularwarfare.api.WeaponAnimation;
-import com.modularwarfare.api.WeaponAnimations;
+import com.modularwarfare.api.*;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.StateEntry;
 import com.modularwarfare.client.fpp.basic.animations.StateType;
-import com.modularwarfare.client.model.ModelAmmo;
-import com.modularwarfare.client.model.ModelAttachment;
-import com.modularwarfare.client.model.ModelBullet;
-import com.modularwarfare.client.model.ModelCustomArmor;
-import com.modularwarfare.client.model.ModelGun;
+import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.basic.models.objects.BreakActionData;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.models.objects.RenderVariables;
+import com.modularwarfare.client.model.*;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.shader.Programs;
 import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.guns.*;
-import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.OptifineHelper;
-import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderPlayer;
@@ -60,7 +50,6 @@ import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.optifine.shaders.Shaders;
-
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -358,9 +347,9 @@ public class RenderGunStatic extends CustomItemRenderer {
                     GL11.glRotatef((GUN_BALANCING_Y * 2F) * (1F - adsSwitch), 0, 0, -1);
                     //GL11.glRotatef((GUN_BALANCING_Y) * adsSwitch * 0.4F, 0, 0, -1);
 
-                    GL11.glTranslatef(0F, (float) Math.sin(Math.PI* -GUN_CHANGE_Y) * 1.5F, 0F);
-                    GL11.glRotatef(80 * (float) Math.sin(Math.PI* -GUN_CHANGE_Y), 0, 0, -1);
-                    GL11.glRotatef(-120 * (float) Math.sin(Math.PI* -GUN_CHANGE_Y), -1, 0, 0);
+                    GL11.glTranslatef(0F, (float) Math.sin(Math.PI * -GUN_CHANGE_Y) * 1.5F, 0F);
+                    GL11.glRotatef(80 * (float) Math.sin(Math.PI * -GUN_CHANGE_Y), 0, 0, -1);
+                    GL11.glRotatef(-120 * (float) Math.sin(Math.PI * -GUN_CHANGE_Y), -1, 0, 0);
 
                     //Render Scope
                     WeaponScopeModeType modeType = gunType.scopeModeType;
@@ -374,8 +363,8 @@ public class RenderGunStatic extends CustomItemRenderer {
                         }
                     }
 
-                    ClientRenderHooks.isAimingScope=false;
-                    ClientRenderHooks.isAiming=false;
+                    ClientRenderHooks.isAimingScope = false;
+                    ClientRenderHooks.isAiming = false;
                     if (modeType.isMirror) {
                         if (adsSwitch == 1.0F) {
                             GL11.glTranslatef(model.config.extra.gunOffsetScoping, 0F, 0F);
@@ -432,7 +421,7 @@ public class RenderGunStatic extends CustomItemRenderer {
 
                     if (isLightOn && GunType.getAttachment(item, AttachmentPresetEnum.Flashlight) != null) {
                         final float alpha = 0.25f + this.slowDiff * 0.05f;
-                        GlStateManager.rotate(-90, 0,1,0);
+                        GlStateManager.rotate(-90, 0, 1, 0);
 
                         GL11.glDisable(2896);
                         Minecraft.getMinecraft().entityRenderer.disableLightmap();
@@ -910,7 +899,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                                 }
                                 int ammoCount = item.getTagCompound().getInteger("ammocount");
                                 boolean isLoading = currentReloadState.isPresent() && (currentReloadState.get().stateType == StateType.Load);
-                                if(isLoading || (ammoCount > 0 && !currentReloadState.isPresent())) {
+                                if (isLoading || (ammoCount > 0 && !currentReloadState.isPresent())) {
                                     bindTexture("bullets", itemBullet.type.modelSkins[0].getSkin());
                                     bulletModel.renderBullet(worldScale);
                                 }
@@ -948,12 +937,12 @@ public class RenderGunStatic extends CustomItemRenderer {
                         GlStateManager.depthMask(false);
                         GlStateManager.disableLighting();
                         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
-                        
-                        boolean glowMode=ObjModelRenderer.glowTxtureMode;
-                        ObjModelRenderer.glowTxtureMode=false;
+
+                        boolean glowMode = ObjModelRenderer.glowTxtureMode;
+                        ObjModelRenderer.glowTxtureMode = false;
                         model.renderPart("flashModel", worldScale);
-                        ObjModelRenderer.glowTxtureMode=glowMode;
-                        
+                        ObjModelRenderer.glowTxtureMode = glowMode;
+
                         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lastBrightnessX, lastBrightnessY);
                         GlStateManager.enableLighting();
                         GlStateManager.depthMask(true);
@@ -1016,7 +1005,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                                         }
                                     }
 
-                                    if(attachmentType.sameTextureAsGun) {
+                                    if (attachmentType.sameTextureAsGun) {
                                         bindTexture("guns", gunPath);
                                     } else {
                                         path = skinId > 0 ? attachmentType.modelSkins[skinId].getSkin() : attachmentType.modelSkins[0].getSkin();
@@ -1036,7 +1025,7 @@ public class RenderGunStatic extends CustomItemRenderer {
 
                                     attachmentModel.renderAttachment(worldScale);
                                     if (attachmentType.attachmentType == AttachmentPresetEnum.Sight && mc.gameSettings.thirdPersonView == 0 && renderType == CustomItemRenderType.EQUIPPED_FIRST_PERSON) {
-                                        boolean glowTxtureMode=ObjModelRenderer.glowTxtureMode;
+                                        boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
                                         ObjModelRenderer.glowTxtureMode = false;
                                         renderScopeGlass(attachmentType, attachmentModel, adsSwitch != 0F);
                                         ObjModelRenderer.glowTxtureMode = glowTxtureMode;
@@ -1100,15 +1089,15 @@ public class RenderGunStatic extends CustomItemRenderer {
             renderplayer.getMainModel().setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, player);
             renderplayer.getMainModel().bipedRightArm.offsetX = 0F;
             if (rightArm) {
-                if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.RIGHT))) {
+                if (!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this, EnumHandSide.RIGHT))) {
                     renderplayer.renderRightArm(Minecraft.getMinecraft().player);
-                    MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.RIGHT));
+                    MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this, EnumHandSide.RIGHT));
                 }
                 renderRightSleeve(player, renderplayer.getMainModel());
             } else {
-                if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.LEFT))) {
+                if (!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this, EnumHandSide.LEFT))) {
                     renderplayer.renderLeftArm(Minecraft.getMinecraft().player);
-                    MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.LEFT));
+                    MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this, EnumHandSide.LEFT));
                 }
                 renderLeftSleeve(player, renderplayer.getMainModel());
             }
@@ -1168,9 +1157,9 @@ public class RenderGunStatic extends CustomItemRenderer {
                     GL11.glScalef(model.config.arms.rightArm.armScale.x, model.config.arms.rightArm.armScale.y, model.config.arms.rightArm.armScale.z);
                     renderplayer.getMainModel().setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, player);
                     renderplayer.getMainModel().bipedRightArm.offsetX = 0F;
-                    if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.RIGHT))) {
+                    if (!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this, EnumHandSide.RIGHT))) {
                         renderplayer.renderRightArm(Minecraft.getMinecraft().player);
-                        MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.RIGHT));
+                        MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this, EnumHandSide.RIGHT));
                     }
                     renderRightSleeve(player, renderplayer.getMainModel());
                 }
@@ -1199,9 +1188,9 @@ public class RenderGunStatic extends CustomItemRenderer {
 
                     GL11.glScalef(model.config.arms.leftArm.armScale.x, model.config.arms.leftArm.armScale.y, model.config.arms.leftArm.armScale.z);
                     renderplayer.getMainModel().bipedLeftArm.offsetY = 0F;
-                    if(!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this,EnumHandSide.LEFT))) {
+                    if (!MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Pre(this, EnumHandSide.LEFT))) {
                         renderplayer.renderLeftArm(Minecraft.getMinecraft().player);
-                        MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this,EnumHandSide.LEFT));
+                        MinecraftForge.EVENT_BUS.post(new RenderHandFisrtPersonEvent.Post(this, EnumHandSide.LEFT));
                     }
                     renderLeftSleeve(player, renderplayer.getMainModel());
                 }
@@ -1231,9 +1220,9 @@ public class RenderGunStatic extends CustomItemRenderer {
                             float modelScale = modelArmor.config.extra.modelScale;
                             GL11.glScalef(modelScale, modelScale, modelScale);
                             modelArmor.showChest(true);
-                            modelplayer.bipedLeftArm.rotateAngleX=0;
-                            modelplayer.bipedLeftArm.rotateAngleY=0;
-                            modelplayer.bipedLeftArm.rotateAngleZ=-0.1f;
+                            modelplayer.bipedLeftArm.rotateAngleX = 0;
+                            modelplayer.bipedLeftArm.rotateAngleY = 0;
+                            modelplayer.bipedLeftArm.rotateAngleZ = -0.1f;
                             modelArmor.renderLeftArm((AbstractClientPlayer) player, modelplayer);
                         }
                         GL11.glPopMatrix();
@@ -1269,9 +1258,9 @@ public class RenderGunStatic extends CustomItemRenderer {
                             float modelScale = modelArmor.config.extra.modelScale;
                             GL11.glScalef(modelScale, modelScale, modelScale);
                             modelArmor.showChest(true);
-                            modelplayer.bipedRightArm.rotateAngleX=0;
-                            modelplayer.bipedRightArm.rotateAngleY=0;
-                            modelplayer.bipedRightArm.rotateAngleZ=0.1f;
+                            modelplayer.bipedRightArm.rotateAngleX = 0;
+                            modelplayer.bipedRightArm.rotateAngleY = 0;
+                            modelplayer.bipedRightArm.rotateAngleZ = 0.1f;
                             modelArmor.renderRightArm((AbstractClientPlayer) player, modelplayer);
                         }
                         GL11.glPopMatrix();
@@ -1292,73 +1281,73 @@ public class RenderGunStatic extends CustomItemRenderer {
 
     @SideOnly(Side.CLIENT)
     public void renderScopeGlass(AttachmentType attachmentType, ModelAttachment modelAttachment, boolean isAiming) {
-        if(ScopeUtils.isIndsideGunRendering) {
+        if (ScopeUtils.isIndsideGunRendering) {
             return;
         }
 
         if (Minecraft.getMinecraft().world != null) {
             float gunRotX = RenderParameters.GUN_ROT_X_LAST + (RenderParameters.GUN_ROT_X - RenderParameters.GUN_ROT_X_LAST) * this.timer.renderPartialTicks;
-            if (isAiming&&(ClientProxy.scopeUtils.blurFramebuffer!=null||!ModConfig.INSTANCE.hud.ads_blur)) {
-                if(OptifineHelper.isShadersEnabled()) {
-                    Shaders.pushProgram();  
+            if (isAiming && (ClientProxy.scopeUtils.blurFramebuffer != null || !ModConfig.INSTANCE.hud.ads_blur)) {
+                if (OptifineHelper.isShadersEnabled()) {
+                    Shaders.pushProgram();
                 }
-                Minecraft mc=Minecraft.getMinecraft();
-                
+                Minecraft mc = Minecraft.getMinecraft();
+
                 GL20.glUseProgram(Programs.overlayProgram);
-                GL20.glUniform2f(GL20.glGetUniformLocation(Programs.overlayProgram, "size"), mc.displayWidth,mc.displayHeight);
-                
+                GL20.glUniform2f(GL20.glGetUniformLocation(Programs.overlayProgram, "size"), mc.displayWidth, mc.displayHeight);
+
                 GL11.glPushMatrix();
-                
-                int tex=ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
+
+                int tex = ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
                 ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
                 GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, ScopeUtils.OVERLAY_TEX, 0);
                 GlStateManager.clearColor(0, 0, 0, 0);
                 GL11.glClearColor(0, 0, 0, 0);
                 GlStateManager.colorMask(true, true, true, true);
                 GlStateManager.depthMask(true);
-                GlStateManager.clear (GL11.GL_DEPTH_BUFFER_BIT);
+                GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
                 copyDepthBuffer();
                 ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
                 GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
-                
+
                 /** Render Overlay when moving too fast **/
                 float alpha = 1 - adsSwitch;
-                
+
                 GlStateManager.disableLighting();
                 GlStateManager.enableBlend();
                 GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ZERO);
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
                 modelAttachment.renderOverlaySolid(0.0625f);
-                
+
                 GL20.glUseProgram(0);
-                if(OptifineHelper.isShadersEnabled()) {
-                    Shaders.popProgram();  
+                if (OptifineHelper.isShadersEnabled()) {
+                    Shaders.popProgram();
                 }
-                
+
                 GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
                 GlStateManager.color(1.0f, 1.0f, 1.0f, alpha);
-                if(attachmentType.sight.usedDefaultOverlayModelTexture) {
-                    renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));  
+                if (attachmentType.sight.usedDefaultOverlayModelTexture) {
+                    renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
                 }
                 modelAttachment.renderOverlay(0.0625f);
                 GlStateManager.disableBlend();
                 GlStateManager.enableLighting();
-                
+
                 GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, tex, 0);
-                GlStateManager.clear (GL11.GL_DEPTH_BUFFER_BIT);
+                GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
                 copyDepthBuffer();
                 ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
                 GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-                
+
                 GlStateManager.disableBlend();
                 renderWorldOntoScope(attachmentType, modelAttachment);
                 GlStateManager.enableBlend();
-                
-                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());  
-                
+
+                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+
                 GL11.glPopMatrix();
-                
+
             } else {
                 GL11.glPushMatrix();
                 renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
@@ -1366,16 +1355,16 @@ public class RenderGunStatic extends CustomItemRenderer {
                 GL11.glPopMatrix();
             }
         }
-        
+
     }
-    
+
     public void copyDepthBuffer() {
-        Minecraft mc=Minecraft.getMinecraft();
+        Minecraft mc = Minecraft.getMinecraft();
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);
-        GlStateManager.colorMask(false,false,false,false);
+        GlStateManager.colorMask(false, false, false, false);
         GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
-        GlStateManager.colorMask(true,true,true,true);
+        GlStateManager.colorMask(true, true, true, true);
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, GL11.GL_NONE);
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, GL11.GL_NONE);
     }

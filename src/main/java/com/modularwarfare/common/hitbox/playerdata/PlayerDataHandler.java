@@ -26,7 +26,7 @@ public class PlayerDataHandler {
     }
 
     public static void onPlayerLeave(String username, Side side) {
-        if(side.isClient()) {
+        if (side.isClient()) {
             clientSideData.remove(username);
         } else {
             serverSideData.remove(username);
@@ -51,11 +51,9 @@ public class PlayerDataHandler {
     }
 
     public void clientTick() {
-        if(Minecraft.getMinecraft().world != null)
-        {
-            for(Object player : Minecraft.getMinecraft().world.playerEntities)
-            {
-                getPlayerData((EntityPlayer)player).tick((EntityPlayer)player);
+        if (Minecraft.getMinecraft().world != null) {
+            for (Object player : Minecraft.getMinecraft().world.playerEntities) {
+                getPlayerData((EntityPlayer) player).tick((EntityPlayer) player);
             }
         }
     }

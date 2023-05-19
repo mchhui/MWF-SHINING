@@ -2,11 +2,7 @@ package com.modularwarfare.utility;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.common.guns.AttachmentPresetEnum;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemAttachment;
-import com.modularwarfare.common.guns.ItemBullet;
-import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.network.PacketGunTrail;
@@ -26,7 +22,6 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -55,9 +50,10 @@ public class RayUtil {
         if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel) != null) {
             ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel).getItem();
             accuracyBarrelFactor = barrelAttachment.type.barrel.accuracyFactor;
-        };
+        }
+        ;
         float acc = gun.bulletSpread * accuracyBarrelFactor;
-            
+
         if (player.posX != player.lastTickPosX || player.posZ != player.lastTickPosZ) {
             acc += 0.75f;
         }
@@ -70,15 +66,15 @@ public class RayUtil {
         if (player.isSneaking()) {
             acc *= gun.accuracySneakFactor;
         }
-        
+
         //Client side
-        if(player.world.isRemote) {
-        	if(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
+        if (player.world.isRemote) {
+            if (ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
                 acc *= gun.accuracyAimFactor;
-            }else {
-                
+            } else {
+
             }
-        	if (ModularWarfare.isLoadedModularMovements) {
+            if (ModularWarfare.isLoadedModularMovements) {
                 if (ClientLitener.clientPlayerState.isCrawling) {
                     acc *= gun.accuracyCrawlFactor;
                 } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
@@ -89,11 +85,11 @@ public class RayUtil {
                     acc *= gun.accuracySneakFactor;
                 }
             }
-        }else {//Server side
-        	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
-            if(bb!=null&&bb) {
+        } else {//Server side
+            Boolean bb = ServerTickHandler.playerAimInstant.get(player);
+            if (bb != null && bb) {
                 acc *= gun.accuracyAimFactor;
-            }else {
+            } else {
             }
             if (ModularWarfare.isLoadedModularMovements) {
                 if (ServerListener.isCrawling(player.getEntityId())) {
@@ -108,8 +104,7 @@ public class RayUtil {
             }
         }
 
-        
-        
+
         if (acc < 0) {
             acc = 0;
         }
@@ -134,7 +129,8 @@ public class RayUtil {
         if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel) != null) {
             ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel).getItem();
             accuracyBarrelFactor = barrelAttachment.type.barrel.accuracyFactor;
-        };
+        }
+        ;
         float acc = gun.bulletSpread * accuracyBarrelFactor;
         final GameSettings settings = Minecraft.getMinecraft().gameSettings;
         if (settings.keyBindForward.isKeyDown() || settings.keyBindLeft.isKeyDown() || settings.keyBindBack.isKeyDown() || settings.keyBindRight.isKeyDown()) {
@@ -149,15 +145,15 @@ public class RayUtil {
         if (player.isSneaking()) {
             acc *= gun.accuracySneakFactor;
         }
-        
-      //Client side
-        if(player.world.isRemote) {
-        	if(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
+
+        //Client side
+        if (player.world.isRemote) {
+            if (ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
                 acc *= gun.accuracyAimFactor;
-            }else {
-                
+            } else {
+
             }
-        	if (ModularWarfare.isLoadedModularMovements) {
+            if (ModularWarfare.isLoadedModularMovements) {
                 if (ClientLitener.clientPlayerState.isCrawling) {
                     acc *= gun.accuracyCrawlFactor;
                 } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
@@ -168,11 +164,11 @@ public class RayUtil {
                     acc *= gun.accuracySneakFactor;
                 }
             }
-        }else {//Server side
-        	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
-            if(bb!=null&&bb) {
+        } else {//Server side
+            Boolean bb = ServerTickHandler.playerAimInstant.get(player);
+            if (bb != null && bb) {
                 acc *= gun.accuracyAimFactor;
-            }else {
+            } else {
             }
             if (ModularWarfare.isLoadedModularMovements) {
                 if (ServerListener.isCrawling(player.getEntityId())) {
@@ -187,12 +183,11 @@ public class RayUtil {
             }
         }
 
-        
-        
+
         if (acc < 0) {
             acc = 0;
         }
-        
+
         /** Bullet Accuracy **/
         if (player.getHeldItemMainhand() != null) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
@@ -209,13 +204,12 @@ public class RayUtil {
 
     @Nullable
     @SideOnly(Side.CLIENT)
-    public static RayTraceResult rayTrace(Entity entity, double blockReachDistance, float partialTicks)
-    {
+    public static RayTraceResult rayTrace(Entity entity, double blockReachDistance, float partialTicks) {
         Vec3d vec3d = entity.getPositionEyes(partialTicks);
         Vec3d vec3d1 = entity.getLook(partialTicks);
         Vec3d vec3d2 = vec3d.addVector(vec3d1.x * blockReachDistance, vec3d1.y * blockReachDistance, vec3d1.z * blockReachDistance);
 
-        if(ModularWarfare.isLoadedModularMovements) {
+        if (ModularWarfare.isLoadedModularMovements) {
             if (entity instanceof EntityPlayer) {
                 vec3d = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, partialTicks);
             }
@@ -269,7 +263,7 @@ public class RayUtil {
         double dy = dir.y * range;
         double dz = dir.z * range;
 
-        if(side.isServer()) {
+        if (side.isServer()) {
             ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
         } else {
             ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
@@ -282,7 +276,7 @@ public class RayUtil {
         }
 
         Vec3d offsetVec = player.getPositionEyes(1.0f);
-        if(ModularWarfare.isLoadedModularMovements) {
+        if (ModularWarfare.isLoadedModularMovements) {
             if (player instanceof EntityPlayer) {
                 offsetVec = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, 1.0f);
             }

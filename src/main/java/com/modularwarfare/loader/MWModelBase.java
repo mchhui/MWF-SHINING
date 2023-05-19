@@ -9,7 +9,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
-public class MWModelBase extends ModelBase implements IMWModel{
+public class MWModelBase extends ModelBase implements IMWModel {
 
     /**
      * Main obj staticModel used for rendering.

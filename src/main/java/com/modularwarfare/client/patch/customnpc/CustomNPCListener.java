@@ -41,7 +41,7 @@ public class CustomNPCListener {
         try {
             Class classz = Class.forName("noppes.npcs.entity.EntityCustomNpc");
             Class classzz = Class.forName("noppes.npcs.entity.EntityNPC64x32");
-            if(event.getEntity().getClass().equals(classz)) {
+            if (event.getEntity().getClass().equals(classz)) {
                 if (!CNPCLayersInitialised) {
                     addCNPCLayers(classz);
                     addCNPCLayers(classzz);

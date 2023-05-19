@@ -1,37 +1,31 @@
 package com.modularwarfare.raycast.obb.bbloader;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
 import com.modularwarfare.common.vector.Vector3f;
 import com.modularwarfare.raycast.obb.OBBModelBone;
 import com.modularwarfare.raycast.obb.OBBModelBox;
 import com.modularwarfare.raycast.obb.OBBModelObject;
 import com.modularwarfare.raycast.obb.OBBModelScene;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ResourceLocation;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+
 public class BlockBenchOBBInfoLoader {
-    public static HashMap<ResourceLocation, BBInfo> infoCache=new HashMap<ResourceLocation, BBInfo>();
-    
-    public static <T extends OBBModelObject> T loadOBBInfo(Class<T> clazz, ResourceLocation loc){
+    public static HashMap<ResourceLocation, BBInfo> infoCache = new HashMap<ResourceLocation, BBInfo>();
+
+    public static <T extends OBBModelObject> T loadOBBInfo(Class<T> clazz, ResourceLocation loc) {
         Gson gson = new Gson();
         try {
-            BBInfo info =null;
-            if(infoCache.containsKey(loc)) {
-                info=infoCache.get(loc);
-            }else {
+            BBInfo info = null;
+            if (infoCache.containsKey(loc)) {
+                info = infoCache.get(loc);
+            } else {
                 InputStream stream = Minecraft.getMinecraft().getResourceManager().getResource(loc).getInputStream();
-                info= gson.fromJson(new InputStreamReader(stream), BBInfo.class);
+                info = gson.fromJson(new InputStreamReader(stream), BBInfo.class);
                 stream.close();
                 infoCache.put(loc, info);
             }
