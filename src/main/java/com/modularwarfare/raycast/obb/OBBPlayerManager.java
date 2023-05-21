@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.lwjgl.opengl.GL11;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.vector.Vector3f;
 import com.modularwarfare.loader.ObjModel;
@@ -232,7 +233,7 @@ public class OBBPlayerManager {
             playerOBBObjectMap.put(event.getEntityPlayer().getName(), playerOBBObject);
         }
         computePose(event,playerOBBObject, partialTick);
-        if (Minecraft.getMinecraft().getRenderManager().isDebugBoundingBox()) {
+        if (Minecraft.getMinecraft().getRenderManager().isDebugBoundingBox()&&ModConfig.INSTANCE.dev_mode) {
             GlStateManager.pushMatrix();
             Entity entity = Minecraft.getMinecraft().getRenderViewEntity();
             GlStateManager.translate(
@@ -404,7 +405,7 @@ public class OBBPlayerManager {
     @SubscribeEvent
     public void onrenderWorld(RenderWorldLastEvent event) {
         debug = false;
-        if (Minecraft.getMinecraft().getRenderManager().isDebugBoundingBox()) {
+        if (Minecraft.getMinecraft().getRenderManager().isDebugBoundingBox()&&ModConfig.INSTANCE.dev_mode) {
             debug = true;
             GlStateManager.pushMatrix();
             Entity entity = Minecraft.getMinecraft().getRenderViewEntity();
