@@ -838,29 +838,26 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
         if(sightRendering!=null) {
             if (!ScopeUtils.isIndsideGunRendering) {
-                if (!OptifineHelper.isShadersEnabled()) {
-                    copyMirrorTexture();
-                    ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
-                    eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
-                } else if (sightRendering.type.sight.modeType.isPIP) {
-                    if (isRenderHand0) {
-                        //nothing to do
-                        //ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, false, 1);
-                    }
-                } else {
-                    if (isRenderHand0) {
-                        GL11.glPushAttrib(GL11.GL_VIEWPORT_BIT);
-                        
-                        GL11.glDepthRange(0,1);
+                if(!sightRendering.type.sight.modeType.isPIP) {
+                    if (!OptifineHelper.isShadersEnabled()) {
                         copyMirrorTexture();
-                        ClientProxy.scopeUtils.renderPostScope(partialTicks, true, false, true, 1);
-                        eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
-                        writeScopeSoildDepth(controller.ADS > 0);
-                        
-                        GL11.glPopAttrib();
-                    } else {
                         ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
-                    }
+                        eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
+                    }else {
+                        if (isRenderHand0) {
+                            GL11.glPushAttrib(GL11.GL_VIEWPORT_BIT);
+                            
+                            GL11.glDepthRange(0,1);
+                            copyMirrorTexture();
+                            ClientProxy.scopeUtils.renderPostScope(partialTicks, true, false, true, 1);
+                            eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
+                            writeScopeSoildDepth(controller.ADS > 0);
+                            
+                            GL11.glPopAttrib();
+                        } else {
+                            ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
+                        }
+                    }  
                 }
             }
         }

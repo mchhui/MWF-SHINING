@@ -13,7 +13,7 @@ public enum WeaponScopeModeType {
     @SerializedName("normal")
     NORMAL("normal", false, true, true),
     @SerializedName("pip")
-    PIP("pip", true, true, true);
+    PIP("pip", true, true, false);
     
     public String name;
     public boolean isPIP;
