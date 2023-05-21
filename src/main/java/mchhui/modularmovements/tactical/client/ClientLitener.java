@@ -444,6 +444,7 @@ public class ClientLitener {
         double playerPosX=Minecraft.getMinecraft().player.posX+(Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)*event.getRenderPartialTicks();
         double playerPosY=Minecraft.getMinecraft().player.posY+(Minecraft.getMinecraft().player.posY-Minecraft.getMinecraft().player.lastTickPosY)*event.getRenderPartialTicks();
         double playerPosZ=Minecraft.getMinecraft().player.posZ+(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ)*event.getRenderPartialTicks();
+        
         if (clientPlayerState.probe != 0) {
             float f = 0.22f;
             float f1 = 0.2f;
@@ -652,8 +653,8 @@ public class ClientLitener {
                 }
             }
             onSit();
-            if(Minecraft.getMinecraft().currentScreen==null) {
-                if(clientPlayerState.canProbe()) {
+            if(Minecraft.getMinecraft().player!=null) {
+                if(clientPlayerState.canProbe()&&!Minecraft.getMinecraft().player.isRiding()&&!Minecraft.getMinecraft().player.isElytraFlying()) {
                     if (!probeKeyLock && isButtonDown(leftProbe.getKeyCode())) {
                         probeKeyLock = true;
                         if (clientPlayerState.probe != -1) {
@@ -692,6 +693,19 @@ public class ClientLitener {
                     probeKeyLock = false;
                 }
             }
+            if(Minecraft.getMinecraft().player!=null) {
+                if (Minecraft.getMinecraft().player.isRiding()||Minecraft.getMinecraft().player.isElytraFlying()) {
+                    clientPlayerSitMoveAmplifier = 0;
+                    if (clientPlayerState.isSitting) {
+                        clientPlayerState.disableSit();
+                    }
+                    if (clientPlayerState.isCrawling) {
+                        clientPlayerState.disableCrawling();
+                    }
+                    clientPlayerState.resetProbe();
+                }  
+            }
+            
         }
     }
 
@@ -777,16 +791,6 @@ public class ClientLitener {
                 event.player.setEntityBoundingBox(lastAABB);  
             }
             
-            if (event.player.isRiding()||event.player.isElytraFlying()) {
-                clientPlayerSitMoveAmplifier = 0;
-                if (clientPlayerState.isSitting) {
-                    clientPlayerState.disableSit();
-                }
-                if (clientPlayerState.isCrawling) {
-                    clientPlayerState.disableCrawling();
-                }
-                clientPlayerState.resetProbe();
-            }
             if (event.player.isSneaking()) {
                 clientPlayerSitMoveAmplifier = 0;
             }
