@@ -22,6 +22,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -327,6 +328,8 @@ public class ClientTickHandler extends ForgeEvent {
         }
     }
 
+    
+
     public void onClientTickEnd(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)
             return;
@@ -345,7 +348,11 @@ public class ClientTickHandler extends ForgeEvent {
         antiRecoilYaw += playerRecoilYaw;
 
         player.rotationPitch += antiRecoilPitch * 0.25F;
+        if (antiRecoilPitch >= 10f) {
+            antiRecoilPitch *= 0.9f;
+        }
         player.rotationYaw += antiRecoilYaw * 0.25F;
+        //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+player.rotationPitch+" "+antiRecoilPitch+" "+totalPitchAngle+" "+playerRecoilPitch));
         antiRecoilPitch *= 0.75F;
         antiRecoilYaw *= 0.75F;
 

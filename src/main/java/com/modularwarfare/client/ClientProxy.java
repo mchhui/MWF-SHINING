@@ -807,13 +807,14 @@ public class ClientProxy extends CommonProxy {
                 offsetPitch += ((gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch);
                 offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor);
 
+
                 offsetYaw = gunType.recoilYaw;
                 offsetYaw *= new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw;
                 offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor;
                 offsetYaw *= RenderParameters.rate * (isCrawling ? 0.2f : 1.0f);
                 offsetYaw *= RenderParameters.phase ? 1 : -1;
             } else {
-                offsetYaw *= RenderParameters.phase ? 1 : -1;
+                //offsetYaw *= RenderParameters.phase ? 1 : -1;
                 offsetPitch = gunType.recoilPitch;
                 offsetPitch += ((gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch);
                 offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor);
