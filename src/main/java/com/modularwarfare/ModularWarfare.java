@@ -44,9 +44,9 @@ import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.ZipContentPack;
-import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.io.ZipInputStream;
+import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
@@ -229,9 +229,7 @@ public class ModularWarfare {
                     JsonReader jsonReader = new JsonReader(new FileReader(typeRender));
                     return GSONUtils.fromJson(gson, jsonReader, typeClass, baseType.internalName + ".render.json");
                 }
-            } catch (JsonParseException e) {
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
+            } catch (JsonParseException | FileNotFoundException e) {
                 e.printStackTrace();
             } catch (AnimationTypeException err) {
                 ModularWarfare.LOGGER.info(baseType.internalName + " was loaded. But something was wrong.");
@@ -247,9 +245,7 @@ public class ModularWarfare {
                         ZipInputStream stream = zipContentsPack.get(baseType.contentPack).getZipFile().getInputStream(foundFile);
                         JsonReader jsonReader = new JsonReader(new InputStreamReader(stream));
                         return GSONUtils.fromJson(gson, jsonReader, typeClass, baseType.internalName + ".render.json");
-                    } catch (JsonParseException e) {
-                        e.printStackTrace();
-                    } catch (ZipException e) {
+                    } catch (JsonParseException | IOException e) {
                         e.printStackTrace();
                     } catch (AnimationTypeException err) {
                         ModularWarfare.LOGGER.info(baseType.internalName + " was loaded. But something was wrong.");
@@ -352,7 +348,7 @@ public class ModularWarfare {
                                         } catch (com.google.gson.JsonParseException ex) {
                                             continue;
                                         }
-                                    } catch (ZipException e) {
+                                    } catch (IOException e) {
                                         e.printStackTrace();
                                     }
                                 }
@@ -373,7 +369,7 @@ public class ModularWarfare {
                                     }
                                     bufferedReader.close();
                                     ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID, "script/" + typeFile + ".js"), text);
-                                } catch (IOException | ZipException e) {
+                                } catch (IOException e) {
                                     // TODO Auto-generated catch block
                                     e.printStackTrace();
                                 }
@@ -420,7 +416,7 @@ public class ModularWarfare {
         }
 
         registerRayCasting(new DefaultRayCasting());
-        this.loaderManager.preInitAddons(event);
+        loaderManager.preInitAddons(event);
 
         // Loads Content Packs
         ContentTypes.registerTypes();
@@ -521,12 +517,12 @@ public class ModularWarfare {
          * Create & Check Addon System
          */
 
-        this.addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
+        addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
 
-        if (!this.addonDir.exists())
-            this.addonDir.mkdirs();
-        this.loaderManager = new AddonLoaderManager();
-        this.loaderManager.constructAddons(this.addonDir, event.getSide());
+        if (!addonDir.exists())
+            addonDir.mkdirs();
+        loaderManager = new AddonLoaderManager();
+        loaderManager.constructAddons(addonDir, event.getSide());
 
         /**
          * Load the addon from the gradle project compilation (.class folder) instead of final .jar
@@ -535,7 +531,7 @@ public class ModularWarfare {
         if (ModUtil.isIDE()) {
             File file = new File(ModUtil.getGameFolder()).getParentFile().getParentFile();
             String folder = file.toString().replace("\\", "/");
-            this.loaderManager.constructDevAddons(new File(folder + "/melee-addon/build/classes/java/main"), "com.modularwarfare.melee.ModularWarfareMelee", event.getSide());
+            loaderManager.constructDevAddons(new File(folder + "/melee-addon/build/classes/java/main"), "com.modularwarfare.melee.ModularWarfareMelee", event.getSide());
         }
 
         PROXY.construction(event);
@@ -610,19 +606,19 @@ public class ModularWarfare {
             itemRegisterEvent.tabOrder.forEach((item) -> {
                 if (item instanceof ItemGun) {
                     for (SkinType skin : ((ItemGun) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemGun) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemGun) item).type);
                     }
                 }
 
                 if (item instanceof ItemBullet) {
                     for (SkinType skin : ((ItemBullet) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
                     }
                 }
 
                 if (item instanceof ItemMWArmor) {
                     for (SkinType skin : ((ItemMWArmor) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
                     }
                 }
 

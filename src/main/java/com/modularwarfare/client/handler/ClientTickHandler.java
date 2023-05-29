@@ -22,7 +22,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -328,7 +327,6 @@ public class ClientTickHandler extends ForgeEvent {
         }
     }
 
-    
 
     public void onClientTickEnd(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)

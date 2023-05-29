@@ -8,7 +8,7 @@ import com.modularwarfare.loader.part.ModelObject;
 import com.modularwarfare.loader.part.TextureCoordinate;
 import com.modularwarfare.loader.part.Vertex;
 import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.io.ZipInputStream;
+import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResource;
@@ -251,7 +251,7 @@ public class ObjModelBuilder {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                } catch (ZipException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }

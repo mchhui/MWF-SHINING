@@ -1,9 +1,16 @@
 package com.modularwarfare.common.network;
 
+import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.WeaponFireMode;
+import com.modularwarfare.common.guns.manager.ShotManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.util.IThreadListener;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class PacketGunFire extends PacketBase {

@@ -1,7 +1,7 @@
 package com.modularwarfare.utility;
 
 import com.google.common.collect.Sets;
-import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.client.resources.AbstractResourcePack;
 import net.minecraft.client.resources.ResourcePackFileNotFoundException;

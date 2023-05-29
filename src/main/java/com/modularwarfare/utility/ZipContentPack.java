@@ -1,7 +1,7 @@
 package com.modularwarfare.utility;
 
 import com.modularwarfare.loader.ObjModel;
-import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.FileHeader;
 
 import java.util.HashMap;

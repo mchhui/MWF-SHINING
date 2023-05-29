@@ -8,7 +8,7 @@ import com.modularwarfare.common.network.PacketParticle.ParticleType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
-import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -34,7 +34,7 @@ public class CommonProxy extends ForgeEvent {
 
     public static File modularWarfareDir;
 
-    public static HashMap<SkinType, BaseType> preloadSkinTypes = new HashMap<SkinType, BaseType>();
+    public static HashMap<SkinType, BaseType> preloadSkinTypes = new HashMap<>();
 
     @Nonnull
     public static String getGameFolder() {
@@ -43,7 +43,7 @@ public class CommonProxy extends ForgeEvent {
 
     public void construction(FMLConstructionEvent event) {
         //Production-environment
-        this.modularWarfareDir = new File(getGameFolder(), "ModularWarfare");
+        modularWarfareDir = new File(getGameFolder(), "ModularWarfare");
         File modFile = null;
 
         // Creates directory if doesn't exist
