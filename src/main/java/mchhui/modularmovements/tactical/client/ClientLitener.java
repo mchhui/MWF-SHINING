@@ -227,7 +227,7 @@ public class ClientLitener {
                             Vec3d vec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,
                                     clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
                             Minecraft.getMinecraft().player.motionX = vec3d.x * clientPlayerSitMoveAmplifierCharging;
-                            Minecraft.getMinecraft().player.motionY = 0.2 * clientPlayerSitMoveAmplifierCharging;
+                            Minecraft.getMinecraft().player.motionY = 0.35 * clientPlayerSitMoveAmplifierCharging;
                             Minecraft.getMinecraft().player.motionZ = vec3d.z * clientPlayerSitMoveAmplifierCharging;
                         }
                     }
