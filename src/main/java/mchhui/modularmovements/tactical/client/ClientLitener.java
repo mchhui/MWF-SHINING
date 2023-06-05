@@ -177,9 +177,13 @@ public class ClientLitener {
                         sitKeyLock = true;
                         wannaSliding = false;
                         AxisAlignedBB axisalignedbb;
-                        axisalignedbb = new AxisAlignedBB(clientPlayer.posX - 0.1, clientPlayer.posY + 0.1,
-                                clientPlayer.posZ - 0.1, clientPlayer.posX + 0.1, clientPlayer.posY + 1.2,
-                                clientPlayer.posZ + 0.1);
+                        float w1=clientPlayer.width/2;
+                        if(clientPlayerState.isCrawling) {
+                            w1*=1.2f;
+                        }
+                        axisalignedbb = new AxisAlignedBB(clientPlayer.posX - w1, clientPlayer.posY + 0.1,
+                                clientPlayer.posZ - w1, clientPlayer.posX + w1, clientPlayer.posY + 1.2,
+                                clientPlayer.posZ + w1);
                         if (!clientPlayer.world.collidesWithAnyBlock(axisalignedbb)) {
                             if (!clientPlayerState.isSitting) {
                                 clientPlayerState.enableSit();
@@ -523,7 +527,7 @@ public class ClientLitener {
         GlStateManager.rotate(pitch, 1.0F, 0.0F, 0.0F);
         GlStateManager.translate(0, -cameraOffsetY, 0);
         GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
-
+        
         EntityPlayer player = Minecraft.getMinecraft().player;
         if (clientPlayerState.isSitting) {
             if (player.eyeHeight != 1.1f) {
@@ -531,11 +535,12 @@ public class ClientLitener {
                 player.eyeHeight = 1.1f;
             }
         } else if (clientPlayerState.isCrawling) {
-            if (player.eyeHeight != 0.4f) {
-                cameraOffsetY = player.eyeHeight - 0.4f;
-                player.eyeHeight = 0.4f;
+            
+            if (player.eyeHeight != 0.7f) {
+                cameraOffsetY = player.eyeHeight - 0.7f;
+                player.eyeHeight = 0.7f;
             }
-        } else if (player.eyeHeight == 0.4f) {
+        } else if (player.eyeHeight == 0.7f) {
             cameraOffsetY = player.eyeHeight - player.getDefaultEyeHeight();
             player.eyeHeight = player.getDefaultEyeHeight();
         } else if (player.eyeHeight == 1.1f) {
@@ -620,6 +625,7 @@ public class ClientLitener {
                         new AxisAlignedBB(clientPlayer.posX - d0, clientPlayer.posY, clientPlayer.posZ - d0,
                                 clientPlayer.posX + d0, clientPlayer.posY + 1.8, clientPlayer.posZ + d0))) {
                     clientPlayerState.disableCrawling();
+                    clientPlayerState.disableSit();
                 }
             }
         }
@@ -836,7 +842,7 @@ public class ClientLitener {
         if (clientPlayerState.isSitting) {
             f1 = 1.2f;
         } else if (clientPlayerState.isCrawling) {
-            f1 = 0.5f;
+            f1 = 0.8f;
         }
         if (f != event.player.width || f1 != event.player.height) {
             AxisAlignedBB axisalignedbb = event.player.getEntityBoundingBox();
@@ -861,7 +867,7 @@ public class ClientLitener {
         }
         if (event.player.fallDistance > 1) {
             if (wannaSliding) {
-                TacticalHandler.sendNoFall();
+                //TacticalHandler.sendNoFall();
             }
         }
         TacticalHandler.sendToServer(clientPlayerState.writeCode());
@@ -897,7 +903,7 @@ public class ClientLitener {
                 if (isSitting(event.player.getEntityId())) {
                     f1 = 1.2f;
                 } else if (isCrawling(event.player.getEntityId())) {
-                    f1 = 0.5f;
+                    f1 = 0.6f;
                 }
                 PlayerState state = ohterPlayerStateMap.get(event.player.getEntityId());
                 float cameraProbeOffset=0;
