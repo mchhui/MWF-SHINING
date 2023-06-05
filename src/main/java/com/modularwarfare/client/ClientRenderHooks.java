@@ -121,7 +121,9 @@ public class ClientRenderHooks extends ForgeEvent {
                     return;
                 if (ClientProxy.gunUI.hitMarkerTime > 0)
                     ClientProxy.gunUI.hitMarkerTime--;
-                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(mc.player.getName(), isAiming||isAimingScope));
+                if(isAiming||isAimingScope) {
+                    ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(mc.player.getName(), true));  
+                }
                 break;
             }
         }
@@ -372,7 +374,6 @@ public class ClientRenderHooks extends ForgeEvent {
         if (!(event.getEntity() instanceof AbstractClientPlayer)) {
             return;
         }
-
         AbstractClientPlayer clientPlayer = (AbstractClientPlayer)event.getEntity();
         Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().<AbstractClientPlayer>getEntityRenderObject(event.getEntity());
         RenderPlayer renderplayer = (RenderPlayer) render;
@@ -487,6 +488,7 @@ public class ClientRenderHooks extends ForgeEvent {
             Entity entity = event.getEntity();
             if (type.id == 1 && entity instanceof EntityPlayer) {
                 if (AnimationUtils.isAiming.containsKey(((EntityPlayer) entity).getName())) {
+                    System.out.println("test");
                     biped.rightArmPose = ArmPose.BOW_AND_ARROW;
                 } else {
                     biped.rightArmPose = ArmPose.BLOCK;
