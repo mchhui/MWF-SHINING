@@ -488,7 +488,6 @@ public class ClientRenderHooks extends ForgeEvent {
             Entity entity = event.getEntity();
             if (type.id == 1 && entity instanceof EntityPlayer) {
                 if (AnimationUtils.isAiming.containsKey(((EntityPlayer) entity).getName())) {
-                    System.out.println("test");
                     biped.rightArmPose = ArmPose.BOW_AND_ARROW;
                 } else {
                     biped.rightArmPose = ArmPose.BLOCK;
