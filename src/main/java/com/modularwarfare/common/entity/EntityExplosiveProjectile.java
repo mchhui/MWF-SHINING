@@ -2,6 +2,8 @@ package com.modularwarfare.common.entity;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.ItemBullet;
+import com.modularwarfare.common.world.MWFExplosion;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.player.EntityPlayer;
@@ -40,7 +42,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
         if (!this.world.isRemote) {
             if (ModularWarfare.bulletTypes.containsKey(this.getBulletName())) {
                 ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());
-                Explosion explosion = new Explosion(this.world, this.player, posX, posY, posZ, itemBullet.type.explosionStrength, false, itemBullet.type.damageWorld);
+                MWFExplosion explosion = new MWFExplosion(this.world, this.player, posX, posY, posZ, itemBullet.type.explosionStrength, false, itemBullet.type.damageWorld);
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
                 ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);
