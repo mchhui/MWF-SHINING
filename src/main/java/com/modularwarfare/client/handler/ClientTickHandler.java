@@ -27,6 +27,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -52,6 +53,7 @@ public class ClientTickHandler extends ForgeEvent {
     public static int oldCurrentItem;
     public static ItemStack oldItemStack = ItemStack.EMPTY;
     public static ItemStack lastItemStack = ItemStack.EMPTY;
+    public static World lastWorld;
     int i = 0;
     
     private static long lastSyncTime;
@@ -63,6 +65,15 @@ public class ClientTickHandler extends ForgeEvent {
     public void clientTick(TickEvent.ClientTickEvent event) {
         switch (event.phase) {
             case START:
+                
+                //CLEARING OLD_DATA BEGIN
+                if(lastWorld!=Minecraft.getMinecraft().world) {
+                    ClientRenderHooks.weaponEnhancedAnimations.clear();
+                    ClientRenderHooks.weaponBasicAnimations.clear();
+                    lastWorld=Minecraft.getMinecraft().world;
+                }
+                //CLEARING OLD_DATA END
+                
                 onClientTickStart(Minecraft.getMinecraft());
                 ModularWarfare.NETWORK.handleClientPackets();
 

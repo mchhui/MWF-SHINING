@@ -30,7 +30,7 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.GUN
 
 public class AnimationController {
 
-    final EntityPlayerSP player;
+    private EntityPlayerSP player;
 
     private GunEnhancedRenderConfig config;
 
@@ -297,6 +297,7 @@ public class AnimationController {
     }
     
     public void updateCurrentItem() {
+        this.player=Minecraft.getMinecraft().player;
         ItemStack stack = player.getHeldItemMainhand();
         Item item = stack.getItem();
         if (item instanceof ItemGun) {
