@@ -1,5 +1,7 @@
 package com.modularwarfare.client.fpp.enhanced.animation;
 
+import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
@@ -12,15 +14,27 @@ import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.maths.Interpolation;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+
 import org.lwjgl.input.Mouse;
 
+import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.GUN_CHANGE_Y;
+
 public class AnimationController {
+
+    private EntityPlayerSP player;
+
+    private GunEnhancedRenderConfig config;
+
+    private ActionPlayback playback;
 
     public static double DEFAULT;
     public static double DRAW;
@@ -29,94 +43,98 @@ public class AnimationController {
     public static double SPRINT;
     public static double SPRINT_LOOP;
     public static double SPRINT_RANDOM;
-    public static double INSPECT = 1;
+    public static double INSPECT=1;
     public static double FIRE;
     public static double MODE_CHANGE;
-    public static long sprintCoolTime = 0;
-    public static long sprintLoopCoolTime = 0;
-    public static float collideFrontDistanceAlpha = 0;
+    
+    public static long sprintCoolTime=0;
+    public static long sprintLoopCoolTime=0;
+    public static float collideFrontDistanceAlpha=0;
+
     public static int oldCurrentItem;
     public static ItemStack oldItemstack;
-    public static boolean isJumping = false;
-    public static boolean nextResetDefault = false;
-    public static double SPRINT_BASIC;
-    private static AnimationType[] RELOAD_TYPE = new AnimationType[]{
-            AnimationType.PRE_LOAD, AnimationType.LOAD, AnimationType.POST_LOAD,
-            AnimationType.PRE_UNLOAD, AnimationType.UNLOAD, AnimationType.POST_UNLOAD,
-            AnimationType.PRE_RELOAD, AnimationType.RELOAD_FIRST, AnimationType.RELOAD_SECOND,
-            AnimationType.RELOAD_FIRST_QUICKLY, AnimationType.RELOAD_SECOND_QUICKLY,
-            AnimationType.POST_RELOAD, AnimationType.POST_RELOAD_EMPTY,
-    };
-    private static AnimationType[] FIRE_TYPE = new AnimationType[]{
-            AnimationType.FIRE,
-            AnimationType.PRE_FIRE, AnimationType.POST_FIRE,
-    };
-    final EntityPlayerSP player;
-    public boolean hasPlayedDrawSound = true;
-    private GunEnhancedRenderConfig config;
-    private ActionPlayback playback;
+    public static boolean isJumping=false;
+    
+    public static boolean nextResetDefault=false;
 
-    public AnimationController(GunEnhancedRenderConfig config) {
+    public static double SPRINT_BASIC;
+
+    public boolean hasPlayedDrawSound = true;
+
+    private static AnimationType[] RELOAD_TYPE=new AnimationType[] {
+            AnimationType.PRE_LOAD,AnimationType.LOAD,AnimationType.POST_LOAD,
+            AnimationType.PRE_UNLOAD,AnimationType.UNLOAD, AnimationType.POST_UNLOAD,
+            AnimationType.PRE_RELOAD,AnimationType.RELOAD_FIRST,AnimationType.RELOAD_SECOND,
+            AnimationType.RELOAD_FIRST_QUICKLY,AnimationType.RELOAD_SECOND_QUICKLY,
+            AnimationType.POST_RELOAD,AnimationType.POST_RELOAD_EMPTY,
+    };
+    
+    private static AnimationType[] FIRE_TYPE=new AnimationType[] {
+            AnimationType.FIRE,
+            AnimationType.PRE_FIRE, AnimationType.POST_FIRE, 
+    };
+
+    public AnimationController(GunEnhancedRenderConfig config){
         this.config = config;
         this.playback = new ActionPlayback(config);
         this.playback.action = AnimationType.DEFAULT;
         this.player = Minecraft.getMinecraft().player;
     }
-
+    
     public void reset(boolean resetSprint) {
-        DEFAULT = 0;
-        DRAW = 0;
+        DEFAULT=0;
+        DRAW=0;
         hasPlayedDrawSound = false;
-        ADS = 0;
-        RELOAD = 0;
-        if (resetSprint) {
-            SPRINT = 0;
+        ADS=0;
+        RELOAD=0;
+        if(resetSprint) {
+            SPRINT=0;
         }
-        SPRINT_LOOP = 0;
-        INSPECT = 1;
-        FIRE = 0;
-        MODE_CHANGE = 1;
-        collideFrontDistanceAlpha = 0;
+        SPRINT_LOOP=0;
+        INSPECT=1;
+        FIRE=0;
+        MODE_CHANGE=1;
+        collideFrontDistanceAlpha=0;
         updateActionAndTime();
     }
-
+    
     public void resetView() {
-        INSPECT = 1;
-        MODE_CHANGE = 1;
+        INSPECT=1;
+        MODE_CHANGE=1;
     }
 
     public void onTickRender(float stepTick) {
-        long time = System.currentTimeMillis();
+        long time=System.currentTimeMillis();
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
-        float moveDistance = player.distanceWalkedModified - player.prevDistanceWalkedModified;
+        float moveDistance=player.distanceWalkedModified-player.prevDistanceWalkedModified;
         /** DEFAULT **/
         double defaultSpeed = config.animations.get(AnimationType.DEFAULT).getSpeed(config.FPS) * stepTick;
-        if (DEFAULT == 0) {
+        if(DEFAULT==0) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                GunType type = ((ItemGun) player.getHeldItemMainhand().getItem()).type;
+                GunType type=((ItemGun)player.getHeldItemMainhand().getItem()).type;
                 type.playClientSound(player, WeaponSoundType.Idle);
             }
         }
-        DEFAULT = Math.max(0F, DEFAULT + defaultSpeed);
-        if (DEFAULT > 1) {
-            DEFAULT = 0;
+        DEFAULT = Math.max(0F,DEFAULT + defaultSpeed);
+        if(DEFAULT>1) {
+            DEFAULT=0;
         }
-
+        
         /** DRAW **/
         double drawSpeed = config.animations.get(AnimationType.DRAW).getSpeed(config.FPS) * stepTick;
         DRAW = Math.max(0, DRAW + drawSpeed);
-        if (DRAW > 1F) {
-            DRAW = 1F;
+        if(DRAW>1F) {
+            DRAW=1F;
         }
 
         /** INSPECT **/
-        if (!config.animations.containsKey(AnimationType.INSPECT)) {
-            INSPECT = 1;
-        } else {
+        if(!config.animations.containsKey (AnimationType.INSPECT)) {
+            INSPECT=1;
+        }else {
             double modeChangeVal = config.animations.get(AnimationType.INSPECT).getSpeed(config.FPS) * stepTick;
-            INSPECT += modeChangeVal;
-            if (INSPECT >= 1) {
-                INSPECT = 1;
+            INSPECT+=modeChangeVal;
+            if(INSPECT>=1) {
+                INSPECT=1;
             }
         }
 
@@ -124,40 +142,40 @@ public class AnimationController {
         boolean aimChargeMisc = ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
         double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * stepTick;
         double val = 0;
-        if (Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && !aimChargeMisc && INSPECT == 1F) {
+        if(Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && !aimChargeMisc && INSPECT == 1F) {
             val = ADS + adsSpeed * (2 - ADS);
         } else {
             val = ADS - adsSpeed * (1 + ADS);
         }
-
-        if (!isDrawing()) {
+        
+        if(!isDrawing()) {
             ADS = Math.max(0, Math.min(1, val));
-        } else {
+        }else {
             ADS = 0;
         }
-
-        if (!anim.shooting) {
-            FIRE = 0;
+        
+        if(!anim.shooting) {
+            FIRE=0;
         }
-
-        if (!anim.reloading) {
-            RELOAD = 0;
+        
+        if(!anim.reloading) {
+            RELOAD=0;
         }
 
         /**
          * Sprinting
          */
-        if (!config.sprint.basicSprint) {
+        if(!config.sprint.basicSprint) {
             double sprintSpeed = 0.15f * stepTick;
             double sprintValue = 0;
 
-            if (player.movementInput.jump) {
-                isJumping = true;
-            } else if (player.onGround) {
-                isJumping = false;
+            if(player.movementInput.jump) {
+                isJumping=true;
+            }else if(player.onGround) {
+                isJumping=false;
             }
 
-            boolean flag = (player.onGround || player.fallDistance < 2f) && !isJumping;
+            boolean flag=(player.onGround||player.fallDistance<2f)&&!isJumping;
 
             if (player.isSprinting() && moveDistance > 0.05 && flag) {
                 if (time > sprintCoolTime) {
@@ -212,34 +230,34 @@ public class AnimationController {
             /** SPRINT **/
             float sprintSpeed = 0.15f * stepTick;
             float sprintValue = (float) ((player.isSprinting()) ? SPRINT_BASIC + sprintSpeed : SPRINT_BASIC - sprintSpeed);
-            if (anim.gunRecoil > 0.1F) {
-                sprintValue = (float) (SPRINT_BASIC - sprintSpeed * 3f);
+            if(anim.gunRecoil > 0.1F){
+                sprintValue = (float) (SPRINT_BASIC - sprintSpeed*3f);
             }
             SPRINT_BASIC = Math.max(0, Math.min(1, sprintValue));
         }
-
+        
         /** MODE CHANGE **/
-        if (!config.animations.containsKey(AnimationType.MODE_CHANGE)) {
-            MODE_CHANGE = 1;
-        } else {
+        if(!config.animations.containsKey (AnimationType.MODE_CHANGE)) {
+            MODE_CHANGE=1;
+        }else {
             double modeChangeVal = config.animations.get(AnimationType.MODE_CHANGE).getSpeed(config.FPS) * stepTick;
-            MODE_CHANGE += modeChangeVal;
-            if (MODE_CHANGE >= 1) {
-                MODE_CHANGE = 1;
+            MODE_CHANGE+=modeChangeVal;
+            if(MODE_CHANGE>=1) {
+                MODE_CHANGE=1;
             }
         }
-
-
+        
+        
         for (EnhancedStateMachine stateMachine : ClientRenderHooks.weaponEnhancedAnimations.values()) {
             stateMachine.onRenderTickUpdate(stepTick);
         }
-
+        
         updateActionAndTime();
-
+        
         Vec3d vecStart = player.getPositionEyes(1.0f);
-        RayTraceResult rayTraceResult = RayUtil.rayTrace(player, 1.0, 1.0f);
-        double d = Double.MAX_VALUE;
-        if (rayTraceResult != null) {
+        RayTraceResult rayTraceResult = RayUtil.rayTrace(player,1.0, 1.0f);
+        double d=Double.MAX_VALUE;
+        if(rayTraceResult != null) {
             if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
                 if (rayTraceResult.hitVec != null) {
                     d = vecStart.distanceTo(rayTraceResult.hitVec);
@@ -247,7 +265,7 @@ public class AnimationController {
             }
         }
         float collideFrontDistanceAlphaStep = 0.08f * stepTick;
-        if (d < 0.5) {
+        if (d<0.5) {
             float target = Math.max(RenderParameters.collideFrontDistance, 0.2f);
             target = 1;
             if (this.collideFrontDistanceAlpha > target) {
@@ -273,12 +291,13 @@ public class AnimationController {
             RenderParameters.adsSwitch = (float) ADS;
         }
     }
-
+    
     public AnimationType getPlayingAnimation() {
         return this.playback.action;
     }
-
+    
     public void updateCurrentItem() {
+        this.player=Minecraft.getMinecraft().player;
         ItemStack stack = player.getHeldItemMainhand();
         Item item = stack.getItem();
         if (item instanceof ItemGun) {
@@ -302,28 +321,28 @@ public class AnimationController {
                 }
             }
         }
-        boolean resetFlag = false;
-        if (oldCurrentItem != player.inventory.currentItem) {
-            resetFlag = true;
+        boolean resetFlag=false;
+        if(oldCurrentItem != player.inventory.currentItem){
+            resetFlag=true;
             oldCurrentItem = player.inventory.currentItem;
         }
-        if (oldItemstack != player.getHeldItemMainhand()) {
-            if (oldItemstack == null || oldItemstack.isEmpty()) {
-                resetFlag = true;
+        if(oldItemstack != player.getHeldItemMainhand()) {
+            if(oldItemstack==null||oldItemstack.isEmpty()) {
+                resetFlag=true;
             }
-            oldItemstack = player.getHeldItemMainhand();
+            oldItemstack=player.getHeldItemMainhand();
         }
-        if (resetFlag) {
+        if(resetFlag) {
             reset(true);
         }
     }
-
+    
     public void updateAction() {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
-        boolean flag = nextResetDefault;
-        nextResetDefault = false;
+        boolean flag=nextResetDefault;
+        nextResetDefault=false;
         if (DRAW < 1F) {
-            if (!hasPlayedDrawSound) {
+            if(!hasPlayedDrawSound){
                 Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
                 if (item instanceof ItemGun) {
                     ((ItemGun) item).type.playClientSound(player, WeaponSoundType.Draw);
@@ -331,31 +350,31 @@ public class AnimationController {
                 }
             }
             this.playback.action = AnimationType.DRAW;
-        } else if (RELOAD > 0F) {
+        }else if (RELOAD > 0F) {
             resetView();
             this.playback.action = anim.getReloadAnimationType();
-        } else if (FIRE > 0F) {
+        }else if(FIRE>0F) {
             resetView();
             this.playback.action = anim.getShootingAnimationType();
-        } else if (INSPECT < 1) {
+        } else if (INSPECT  < 1) {
             this.playback.action = AnimationType.INSPECT;
-        } else if (MODE_CHANGE < 1) {
+        } else if (MODE_CHANGE  < 1) {
             this.playback.action = AnimationType.MODE_CHANGE;
-        } else if (this.playback.hasPlayed || this.playback.action != AnimationType.DEFAULT) {
-            if (flag) {
+        } else if (this.playback.hasPlayed||this.playback.action != AnimationType.DEFAULT) {
+            if(flag) {
                 this.playback.action = AnimationType.DEFAULT;
             }
-            nextResetDefault = true;
+            nextResetDefault=true;
         }
     }
 
 
     public void updateTime() {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
-        if (this.playback.action == null) {
+        if(this.playback.action==null) {
             return;
         }
-        switch (this.playback.action) {
+        switch (this.playback.action){
             case DEFAULT:
                 this.playback.updateTime(DEFAULT);
                 //this.playback.time = this.config.animations.get(AnimationType.DEFAULT).getStartTime();
@@ -369,54 +388,54 @@ public class AnimationController {
             case MODE_CHANGE:
                 this.playback.updateTime(MODE_CHANGE);
                 break;
-            default:
-                break;
+        default:
+            break;
         }
-        for (AnimationType reloadType : RELOAD_TYPE) {
-            if (this.playback.action == reloadType) {
+        for(AnimationType reloadType:RELOAD_TYPE) {
+            if(this.playback.action==reloadType) {
                 this.playback.updateTime(RELOAD);
                 break;
-            }
+            }  
         }
-        for (AnimationType fireType : FIRE_TYPE) {
-            if (this.playback.action == fireType) {
+        for(AnimationType fireType:FIRE_TYPE) {
+            if(this.playback.action==fireType) {
                 this.playback.updateTime(FIRE);
                 break;
-            }
+            }  
         }
     }
-
+    
     public void updateActionAndTime() {
         updateAction();
         updateTime();
     }
 
-    public float getTime() {
+    public float getTime(){
         //return (280+(330-280)*(System.currentTimeMillis()%5000/5000f))/24f;
-        return (float) playback.time;
+        return (float)playback.time;
     }
-
-    public float getSprintTime() {
-        if (config.animations.get(AnimationType.SPRINT) == null) {
+    
+    public float getSprintTime(){
+        if(config.animations.get(AnimationType.SPRINT)==null) {
             return 0;
         }
         double startTime = config.animations.get(AnimationType.SPRINT).getStartTime(config.FPS);
         double endTime = config.animations.get(AnimationType.SPRINT).getEndTime(config.FPS);
-        double result = Interpolation.LINEAR.interpolate(startTime, endTime, SPRINT_LOOP);
-        if (Double.isNaN(result)) {
+        double result=Interpolation.LINEAR.interpolate(startTime, endTime, SPRINT_LOOP);
+        if(Double.isNaN(result)) {
             return 0;
         }
-        return (float) result;
+        return(float) result;
     }
 
-    public GunEnhancedRenderConfig getConfig() {
-        return this.config;
-    }
-
-    public void setConfig(GunEnhancedRenderConfig config) {
+    public void setConfig(GunEnhancedRenderConfig config){
         this.config = config;
     }
 
+    public GunEnhancedRenderConfig getConfig(){
+        return this.config;
+    }
+    
     public boolean isDrawing() {
         Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
@@ -426,7 +445,7 @@ public class AnimationController {
         }
         return false;
     }
-
+    
     public boolean isCouldReload() {
         Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
@@ -434,14 +453,14 @@ public class AnimationController {
                 if (isDrawing()) {
                     return false;
                 }
-                if (ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
+                if(ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
                     return false;
                 }
             }
         }
         return true;
     }
-
+    
     public boolean isCouldShoot() {
         Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
@@ -449,25 +468,25 @@ public class AnimationController {
                 if (isDrawing()) {
                     return false;
                 }
-                if (ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
+                if(ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
                     return false;
                 }
             }
         }
         return true;
     }
-
+    
     public ItemStack getRenderAmmo(ItemStack ammo) {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
-        if (anim.reloading) {
-            AnimationType reloadAni = anim.getReloadAnimationType();
+        if(anim.reloading) {
+            AnimationType reloadAni=anim.getReloadAnimationType();
             if (anim.getReloadType() == ReloadType.Full && (reloadAni == AnimationType.PRE_RELOAD
                     || reloadAni == AnimationType.RELOAD_FIRST || reloadAni == AnimationType.RELOAD_FIRST_QUICKLY)) {
                 return ammo;
             }
-            if (reloadAni == AnimationType.PRE_UNLOAD || reloadAni == AnimationType.UNLOAD || reloadAni == AnimationType.POST_UNLOAD) {
+            if (reloadAni == AnimationType.PRE_UNLOAD || reloadAni == AnimationType.UNLOAD|| reloadAni == AnimationType.POST_UNLOAD) {
                 return ammo;
-            }
+            }  
         }
         if (ClientTickHandler.reloadEnhancedPrognosisAmmoRendering != null
                 && !ClientTickHandler.reloadEnhancedPrognosisAmmoRendering.isEmpty()) {
@@ -475,11 +494,11 @@ public class AnimationController {
         }
         return ammo;
     }
-
+    
     public boolean shouldRenderAmmo() {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
-        if (anim.reloading) {
-            if (anim.getReloadAnimationType() == AnimationType.POST_UNLOAD) {
+        if(anim.reloading) {
+            if(anim.getReloadAnimationType()==AnimationType.POST_UNLOAD) {
                 return false;
             }
             return true;

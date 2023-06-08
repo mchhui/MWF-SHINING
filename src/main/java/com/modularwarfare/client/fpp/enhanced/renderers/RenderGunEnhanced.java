@@ -131,7 +131,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
         float partialTicks = this.timer.renderPartialTicks;
 
-        EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().getRenderViewEntity();
+        EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().player;
 
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
 

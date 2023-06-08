@@ -50,12 +50,6 @@ public class PacketExpShot extends PacketBase {
                 if (entityPlayer != null) {
                     if (entityPlayer.getHeldItemMainhand() != null) {
                         if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-
-                            if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
-                                ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
-                            }
-                            ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
-
                             if (ModularWarfare.gunTypes.get(internalname) != null) {
                                 ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
                                 WeaponFireMode fireMode = itemGun.type.getFireMode(entityPlayer.getHeldItemMainhand());
@@ -77,6 +71,12 @@ public class PacketExpShot extends PacketBase {
                                 } else {
                                     itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
                                 }
+                                
+                                //Hands upwards when shooting
+                                if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
+                                    ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
+                                }
+                                ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
                             }
                         }
                     }
