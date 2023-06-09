@@ -34,7 +34,7 @@ public class ServerTickHandler extends ForgeEvent {
             return;
         }
         boolean flag=false;
-        if(playerAimShootCooldown.contains(event.player.getName())) {
+        if(playerAimShootCooldown.containsKey(event.player.getName())) {
             flag=true;
         }
         if(playerAimInstant.get(event.player.getName())==Boolean.TRUE) {
