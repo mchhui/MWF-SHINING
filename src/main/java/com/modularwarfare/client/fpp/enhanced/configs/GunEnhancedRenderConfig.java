@@ -21,6 +21,8 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public HashMap<String, Attachment> attachment=new HashMap<String, GunEnhancedRenderConfig.Attachment>();
     public HashMap<String, AttachmentGroup> attachmentGroup=new HashMap<String, GunEnhancedRenderConfig.AttachmentGroup>();
     public HashSet<String> defaultHidePart=new HashSet<String>();
+    public HashSet<String> thirdHidePart=new HashSet<String>();
+    public HashSet<String> thirdShowPart=new HashSet<String>();
 
     public GunEnhancedRenderConfig.ThirdPerson thirdPerson = new GunEnhancedRenderConfig.ThirdPerson();
 
@@ -98,10 +100,25 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
 
     public static class ThirdPerson {
 
-        public Vector3f thirdPersonOffset = new Vector3f(0.0F, -0.1F, 0.0F);
-        public Vector3f backPersonOffset = new Vector3f(0.0F, 0.0F, 0.0F);
-        public float thirdPersonScale = 0.8F;
+        public static class RenderElement {
+            public Vector3f pos = new Vector3f(0F, 0F, 0F);
+            public Vector3f rot = new Vector3f(0F, 0F, 0F);
+            public Vector3f size = new Vector3f(1F, 1F, 1F);
+            
+            /**
+             * loot only
+             * */
+            public boolean randomYaw=false;
+        }
 
+        public HashMap<String, RenderElement> renderElements=new HashMap<String, GunEnhancedRenderConfig.ThirdPerson.RenderElement>(){{
+            put(RenderType.PLAYER.serializedName, new RenderElement());
+            put(RenderType.ITEMLOOT.serializedName, new RenderElement());
+            put(RenderType.ITEMFRAME.serializedName, new RenderElement());
+        }};
+
+        
+        
     }
 
     public static class Extra {

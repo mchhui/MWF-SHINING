@@ -7,6 +7,7 @@ import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
@@ -30,34 +31,34 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.GUN
 
 public class AnimationController {
 
-    private EntityPlayerSP player;
+    public final EntityPlayer player;
 
     private GunEnhancedRenderConfig config;
 
     private ActionPlayback playback;
 
-    public static double DEFAULT;
-    public static double DRAW;
-    public static double ADS;
-    public static double RELOAD;
-    public static double SPRINT;
-    public static double SPRINT_LOOP;
-    public static double SPRINT_RANDOM;
-    public static double INSPECT=1;
-    public static double FIRE;
-    public static double MODE_CHANGE;
+    public double DEFAULT;
+    public double DRAW;
+    public double ADS;
+    public double RELOAD;
+    public double SPRINT;
+    public double SPRINT_LOOP;
+    public double SPRINT_RANDOM;
+    public double INSPECT=1;
+    public double FIRE;
+    public double MODE_CHANGE;
     
-    public static long sprintCoolTime=0;
-    public static long sprintLoopCoolTime=0;
-    public static float collideFrontDistanceAlpha=0;
+    public long sprintCoolTime=0;
+    public long sprintLoopCoolTime=0;
+    public float collideFrontDistanceAlpha=0;
 
-    public static int oldCurrentItem;
-    public static ItemStack oldItemstack;
-    public static boolean isJumping=false;
+    public int oldCurrentItem;
+    public ItemStack oldItemstack;
+    public boolean isJumping=false;
     
-    public static boolean nextResetDefault=false;
+    public boolean nextResetDefault=false;
 
-    public static double SPRINT_BASIC;
+    public double SPRINT_BASIC;
 
     public boolean hasPlayedDrawSound = true;
 
@@ -74,11 +75,11 @@ public class AnimationController {
             AnimationType.PRE_FIRE, AnimationType.POST_FIRE, 
     };
 
-    public AnimationController(GunEnhancedRenderConfig config){
+    public AnimationController(EntityPlayer player,GunEnhancedRenderConfig config){
         this.config = config;
         this.playback = new ActionPlayback(config);
         this.playback.action = AnimationType.DEFAULT;
-        this.player = Minecraft.getMinecraft().player;
+        this.player = player;
     }
     
     public void reset(boolean resetSprint) {
@@ -104,6 +105,9 @@ public class AnimationController {
     }
 
     public void onTickRender(float stepTick) {
+        if(config==null) {
+            return;
+        }
         long time=System.currentTimeMillis();
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         float moveDistance=player.distanceWalkedModified-player.prevDistanceWalkedModified;
@@ -168,11 +172,13 @@ public class AnimationController {
         if(!config.sprint.basicSprint) {
             double sprintSpeed = 0.15f * stepTick;
             double sprintValue = 0;
-
-            if(player.movementInput.jump) {
-                isJumping=true;
-            }else if(player.onGround) {
-                isJumping=false;
+            
+            if(player instanceof EntityPlayerSP) {
+                if(((EntityPlayerSP)player).movementInput.jump) {
+                    isJumping=true;
+                }else if(player.onGround) {
+                    isJumping=false;
+                }  
             }
 
             boolean flag=(player.onGround||player.fallDistance<2f)&&!isJumping;
@@ -247,10 +253,7 @@ public class AnimationController {
             }
         }
         
-        
-        for (EnhancedStateMachine stateMachine : ClientRenderHooks.weaponEnhancedAnimations.values()) {
-            stateMachine.onRenderTickUpdate(stepTick);
-        }
+        ClientRenderHooks.getEnhancedAnimMachine(player).onRenderTickUpdate(stepTick);  
         
         updateActionAndTime();
         
@@ -297,7 +300,9 @@ public class AnimationController {
     }
     
     public void updateCurrentItem() {
-        this.player=Minecraft.getMinecraft().player;
+        if(config==null) {
+            return;
+        }
         ItemStack stack = player.getHeldItemMainhand();
         Item item = stack.getItem();
         if (item instanceof ItemGun) {
@@ -343,9 +348,11 @@ public class AnimationController {
         nextResetDefault=false;
         if (DRAW < 1F) {
             if(!hasPlayedDrawSound){
-                Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
+                Item item = player.getHeldItemMainhand().getItem();
                 if (item instanceof ItemGun) {
-                    ((ItemGun) item).type.playClientSound(player, WeaponSoundType.Draw);
+                    if(!(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify)) {
+                        ((ItemGun) item).type.playClientSound(player, WeaponSoundType.Draw);  
+                    }
                     hasPlayedDrawSound = true;
                 }
             }
@@ -437,7 +444,7 @@ public class AnimationController {
     }
     
     public boolean isDrawing() {
-        Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
+        Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
                 return this.playback.action == AnimationType.DRAW;
@@ -447,7 +454,7 @@ public class AnimationController {
     }
     
     public boolean isCouldReload() {
-        Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
+        Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
                 if (isDrawing()) {
@@ -462,7 +469,7 @@ public class AnimationController {
     }
     
     public boolean isCouldShoot() {
-        Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
+        Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
                 if (isDrawing()) {
@@ -507,7 +514,7 @@ public class AnimationController {
                 && !ClientTickHandler.reloadEnhancedPrognosisAmmoRendering.isEmpty()) {
             return true;
         }
-        return ItemGun.hasAmmoLoaded(Minecraft.getMinecraft().player.getHeldItemMainhand());
+        return ItemGun.hasAmmoLoaded(player.getHeldItemMainhand());
     }
 
 }

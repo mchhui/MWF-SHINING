@@ -14,7 +14,9 @@ import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Attachment;
+import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Transform;
+import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.scope.ScopeUtils;
@@ -44,11 +46,14 @@ import mchhui.modularmovements.tactical.client.ClientLitener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -71,6 +76,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -78,6 +84,7 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 
 public class RenderGunEnhanced extends CustomItemRenderer {
+    public static float sizeFactor=20f;
     public static boolean debug=false;
     public static boolean debug1=false;
 
@@ -88,7 +95,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
     private Timer timer;
 
-    public AnimationController controller;
+    public AnimationController controller=new AnimationController(null, null);
+    
+    public HashMap<String, AnimationController> otherControllers=new HashMap<String, AnimationController>();
 
     public FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(16);
 
@@ -118,6 +127,23 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
     }
 
+    public AnimationController getController(EntityPlayer player,GunEnhancedRenderConfig config) {
+        if(player==Minecraft.getMinecraft().player) {
+            return controller;
+        }
+        String name=player.getName();
+        if(config==null&&!otherControllers.containsKey(name)) {
+            return null;
+        }
+        if(!otherControllers.containsKey(name)) {
+            otherControllers.put(name, new AnimationController(player,config));
+        }
+        if(config!=null&&otherControllers.get(name).getConfig()!=config) {
+            otherControllers.put(name, new AnimationController(player,config));
+        }
+        return otherControllers.get(name);
+    }
+    
     public void renderItem(CustomItemRenderType type, EnumHand hand, ItemStack item, Object... data) {
         if (!(item.getItem() instanceof ItemGun))
             return;
@@ -136,8 +162,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             return;
 
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
-        if(this.controller == null || this.controller.getConfig() != config){
-            this.controller = new AnimationController(config);
+        if(this.controller == null || this.controller.getConfig() != config||this.controller.player!=Minecraft.getMinecraft().player){
+            this.controller = new AnimationController(Minecraft.getMinecraft().player,config);
         }
 
 
@@ -175,7 +201,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         //mat.translate(new Vector3f(0,1.3f,-1.8f));
         float zFar = Minecraft.getMinecraft().gameSettings.renderDistanceChunks * 16F*2;
         mat.rotate(toRadians(90.0F), new Vector3f(0,1,0));
+        
+        /**
+         * 诡异的缩放2023.6.7
+         * */
         mat.scale(new Vector3f(1/zFar, 1/zFar, 1/zFar));
+        mat.scale(new Vector3f(1/sizeFactor, 1/sizeFactor, 1/sizeFactor));
+        
         //Do hand rotations
         float f5 = player.prevRenderArmPitch + (player.renderArmPitch - player.prevRenderArmPitch) * partialTicks;
         float f6 = player.prevRenderArmYaw + (player.renderArmYaw - player.prevRenderArmYaw) * partialTicks;
@@ -183,7 +215,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         mat.rotate(toRadians((player.rotationYaw - f6) * 0.1F), new Vector3f(0, 1, 0));
 
         float rotateX=0;
-        float adsModifier = (float) (0.95f - AnimationController.ADS);
+        float adsModifier = (float) (0.95f - controller.ADS);
         
         /**
          *  global
@@ -214,7 +246,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float f3 = (player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks);
         float f4 = (player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks);
 
-        mat.translate(new Vector3f(0, adsModifier * Interpolation.SINE_IN.interpolate(0F, (-0.2f * (1F - (float)AnimationController.ADS)), GUN_BALANCING_Y),0));
+        mat.translate(new Vector3f(0, adsModifier * Interpolation.SINE_IN.interpolate(0F, (-0.2f * (1F - (float)controller.ADS)), GUN_BALANCING_Y),0));
         mat.translate(new Vector3f(0, adsModifier * ((float) (0.05f * (Math.sin(SMOOTH_SWING/10) * GUN_BALANCING_Y))),0));
 
         mat.rotate(toRadians(adsModifier * 0.1f * Interpolation.SINE_OUT.interpolate(-GUN_BALANCING_Y, GUN_BALANCING_Y, adsModifier * MathHelper.sin(f2 * (float) Math.PI))), new Vector3f(0f,1f, 0f));
@@ -241,13 +273,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         RenderParameters.VAL = (float) (Math.sin(RenderParameters.SMOOTH_SWING / 100) * 8);
         RenderParameters.VAL2 = (float) (Math.sin(RenderParameters.SMOOTH_SWING / 80) * 8);
         RenderParameters.VALROT = (float) (Math.sin(RenderParameters.SMOOTH_SWING / 90) * 1.2f);
-        mat.translate(new Vector3f(0f, ((VAL / 500) * (0.95f -  (float)AnimationController.ADS)),  ((VAL2 / 500 * (0.95f -  (float)AnimationController.ADS)))));
+        mat.translate(new Vector3f(0f, ((VAL / 500) * (0.95f -  (float)controller.ADS)),  ((VAL2 / 500 * (0.95f -  (float)controller.ADS)))));
         mat.rotate(toRadians(adsModifier * VALROT), new Vector3f(1F, 0F, 0F));
 
         /**
          * ACTION GUN BALANCING X / Y
          */
-        mat.translate(new Vector3f((float) (0.1f*GUN_BALANCING_X*Math.cos(Math.PI * RenderParameters.SMOOTH_SWING / 50)) * (1F -  (float)AnimationController.ADS),0,0));
+        mat.translate(new Vector3f((float) (0.1f*GUN_BALANCING_X*Math.cos(Math.PI * RenderParameters.SMOOTH_SWING / 50)) * (1F -  (float)controller.ADS),0,0));
         rotateX-=(GUN_BALANCING_X * 4F) + (float) (GUN_BALANCING_X * Math.sin(Math.PI * RenderParameters.SMOOTH_SWING / 35));
         rotateX-=(float) Math.sin(Math.PI * GUN_BALANCING_X);
         rotateX-=(GUN_BALANCING_X) * 0.4F;
@@ -273,21 +305,21 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             mat.rotate(toRadians(VALSPRINT2 * springModifier), new Vector3f(0, 0, 1));
             mat.translate(new Vector3f(VALSPRINT * 0.2f * springModifier, 0, VALSPRINT2 * 0.2f * springModifier));
 
-            customSprintRotation = new Vector3f((config.sprint.sprintRotate.x * (float) AnimationController.SPRINT), (config.sprint.sprintRotate.y * (float) AnimationController.SPRINT), (config.sprint.sprintRotate.z * (float) AnimationController.SPRINT));
-            customSprintTranslate = new Vector3f((config.sprint.sprintTranslate.x * (float) AnimationController.SPRINT), (config.sprint.sprintTranslate.y * (float) AnimationController.SPRINT), (config.sprint.sprintTranslate.z * (float) AnimationController.SPRINT));
+            customSprintRotation = new Vector3f((config.sprint.sprintRotate.x * (float) controller.SPRINT), (config.sprint.sprintRotate.y * (float) controller.SPRINT), (config.sprint.sprintRotate.z * (float) controller.SPRINT));
+            customSprintTranslate = new Vector3f((config.sprint.sprintTranslate.x * (float) controller.SPRINT), (config.sprint.sprintTranslate.y * (float) controller.SPRINT), (config.sprint.sprintTranslate.z * (float) controller.SPRINT));
 
-            customSprintRotation.scale((1F - (float) AnimationController.ADS));
-            customSprintTranslate.scale((1F - (float) AnimationController.ADS));
+            customSprintRotation.scale((1F - (float) controller.ADS));
+            customSprintTranslate.scale((1F - (float) controller.ADS));
         } else {
 
-            mat.rotate(toRadians((float) (adsModifier * VALSPRINT * AnimationController.SPRINT_BASIC)), new Vector3f(1, 1, -1));
-            mat.rotate(toRadians((float) (adsModifier * 0.2f * VALSPRINT2 * AnimationController.SPRINT_BASIC)), new Vector3f(0, 0, 1));
+            mat.rotate(toRadians((float) (adsModifier * VALSPRINT * controller.SPRINT_BASIC)), new Vector3f(1, 1, -1));
+            mat.rotate(toRadians((float) (adsModifier * 0.2f * VALSPRINT2 * controller.SPRINT_BASIC)), new Vector3f(0, 0, 1));
 
-            customSprintRotation = new Vector3f((float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.x * AnimationController.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.y * AnimationController.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.z * AnimationController.SPRINT_BASIC));
-            customSprintTranslate = new Vector3f((float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.x * AnimationController.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.y * AnimationController.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.z * AnimationController.SPRINT_BASIC));
+            customSprintRotation = new Vector3f((float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.x * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.y * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.z * controller.SPRINT_BASIC));
+            customSprintTranslate = new Vector3f((float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.x * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.y * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.z * controller.SPRINT_BASIC));
 
-            customSprintRotation.scale((float) (1F - AnimationController.ADS));
-            customSprintTranslate.scale((float) (1F - AnimationController.ADS));
+            customSprintRotation.scale((float) (1F - controller.ADS));
+            customSprintTranslate.scale((float) (1F - controller.ADS));
         }
         /**
          * CUSTOM HIP POSITION
@@ -296,8 +328,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         Vector3f customHipRotation = new Vector3f(config.aim.rotateHipPosition.x, config.aim.rotateHipPosition.y, config.aim.rotateHipPosition.z);
         Vector3f customHipTranslate = new Vector3f(config.aim.translateHipPosition.x, (config.aim.translateHipPosition.y), (config.aim.translateHipPosition.z));
         
-        Vector3f customAimRotation = new Vector3f((config.aim.rotateAimPosition.x *  (float)AnimationController.ADS), (config.aim.rotateAimPosition.y *  (float)AnimationController.ADS), (config.aim.rotateAimPosition.z *  (float)AnimationController.ADS));
-        Vector3f customAimTranslate = new Vector3f((config.aim.translateAimPosition.x *  (float)AnimationController.ADS), (config.aim.translateAimPosition.y *  (float)AnimationController.ADS), (config.aim.translateAimPosition.z *  (float)AnimationController.ADS));
+        Vector3f customAimRotation = new Vector3f((config.aim.rotateAimPosition.x *  (float)controller.ADS), (config.aim.rotateAimPosition.y *  (float)controller.ADS), (config.aim.rotateAimPosition.z *  (float)controller.ADS));
+        Vector3f customAimTranslate = new Vector3f((config.aim.translateAimPosition.x *  (float)controller.ADS), (config.aim.translateAimPosition.y *  (float)controller.ADS), (config.aim.translateAimPosition.z *  (float)controller.ADS));
         
         mat.rotate(toRadians(customHipRotation.x + customSprintRotation.x+customAimRotation.x), new Vector3f(1f,0f,0f));
         mat.rotate(toRadians(customHipRotation.y + customSprintRotation.y+customAimRotation.y), new Vector3f(0f,1f,0f));
@@ -392,7 +424,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         color(1, 1, 1, 1f);
         
-        boolean applySprint = AnimationController.SPRINT > 0.1 && AnimationController.INSPECT >= 1;
+        boolean applySprint = controller.SPRINT > 0.1 && controller.INSPECT >= 1;
         boolean isRenderHand0 = ScopeUtils.isRenderHand0||!OptifineHelper.isShadersEnabled();
         HashSet<String> exceptParts=new HashSet<String>();
         if(isRenderHand0) {
@@ -449,7 +481,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
         final ItemAttachment sightRendering=sight;
 
-        applySprintHandTransform(model, config.sprint.basicSprint, controller.getTime(), controller.getSprintTime(),(float)AnimationController.SPRINT, "sprint_righthand", applySprint, () -> {
+        applySprintHandTransform(model, config.sprint.basicSprint, controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, () -> {
             if(isRenderHand0) {
                 if(sightRendering!=null) {
                     String binding = "gunModel";
@@ -818,7 +850,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         /**
          * LEFT HAND GROUP
          * */
-        applySprintHandTransform(model, config.sprint.basicSprint, controller.getTime(), controller.getSprintTime(), (float) AnimationController.SPRINT, "sprint_lefthand", applySprint, () -> {
+        applySprintHandTransform(model, config.sprint.basicSprint, controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, () -> {
             if (isRenderHand0) {
                 /**
                  * player left hand
@@ -865,6 +897,347 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
+    }
+    
+    public void drawThirdGun(RenderPlayer renderPlayer,RenderType renderType,EntityPlayer player, ItemStack demoStack) {
+        if (!(demoStack.getItem() instanceof ItemGun))
+            return;
+        GunType gunType = ((ItemGun) demoStack.getItem()).type;
+        if (gunType == null)
+            return;
+        EnhancedModel model = gunType.enhancedModel;
+        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
+        AnimationController controller;
+        EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
+        if(player!=null) {
+            controller=ClientProxy.gunEnhancedRenderer.getController(player, config);
+            if (controller.getPlayingAnimation() == AnimationType.DEFAULT
+                    || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
+                    || controller.getPlayingAnimation() == AnimationType.FIRE
+                    || controller.getPlayingAnimation() == AnimationType.POST_FIRE) {
+                model.updateAnimation(controller.getTime());
+            }else {
+                model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS));
+            }
+        }else {
+            model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS));
+        }
+        
+
+        HashSet<String> exceptParts = new HashSet<String>();
+        exceptParts.addAll(config.defaultHidePart);
+        exceptParts.addAll(config.thirdHidePart);
+        exceptParts.removeAll(config.thirdShowPart);
+        //exceptParts.addAll(DEFAULT_EXCEPT);
+
+        for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+            ItemStack itemStack = GunType.getAttachment(demoStack, attachment);
+            if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
+                String binding = "gunModel";
+                if (config.attachmentGroup.containsKey(attachment.typeName)) {
+                    if (config.attachmentGroup.get(attachment.typeName).hidePart != null) {
+                        exceptParts.addAll(config.attachmentGroup.get(attachment.typeName).hidePart);
+                    }
+                }
+                if (config.attachment.containsKey(attachmentType.internalName)) {
+                    if (config.attachment.get(attachmentType.internalName).hidePart != null) {
+                        exceptParts.addAll(config.attachment.get(attachmentType.internalName).hidePart);
+                    }
+                }
+            }
+        }
+
+        for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+            ItemStack itemStack = GunType.getAttachment(demoStack, attachment);
+            if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
+                String binding = "gunModel";
+                if (config.attachmentGroup.containsKey(attachment.typeName)) {
+                    if (config.attachmentGroup.get(attachment.typeName).showPart != null) {
+                        exceptParts.removeAll(config.attachmentGroup.get(attachment.typeName).showPart);
+                    }
+                }
+                if (config.attachment.containsKey(attachmentType.internalName)) {
+                    if (config.attachment.get(attachmentType.internalName).showPart != null) {
+                        exceptParts.removeAll(config.attachment.get(attachmentType.internalName).showPart);
+                    }
+                }
+            }
+        }
+
+        exceptParts.addAll(RenderGunEnhanced.DEFAULT_EXCEPT);
+
+        float worldScale = 1;
+        HashSet<String> exceptPartsRendering = exceptParts;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
+        ClientProxy.gunEnhancedRenderer.color(1, 1, 1, 1f);
+
+        if (player!=null&&player.isSneaking()) {
+            GlStateManager.translate(0.0F, 0.2F, 0.0F);
+        }
+
+        /*
+        if (renderConfigElement.bindding.equals("head")) {
+            ((ModelBiped) this.renderPlayer.getMainModel()).bipedHead.postRender(0.0625F);
+        } else if (renderConfigElement.bindding.equals("body")) {
+            ((ModelBiped) this.renderPlayer.getMainModel()).bipedBody.postRender(0.0625F);
+        } else if (renderConfigElement.bindding.equals("rightArm")) {
+            ((ModelBiped) this.renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
+        } else if (renderConfigElement.bindding.equals("leftArm")) {
+            ((ModelBiped) this.renderPlayer.getMainModel()).bipedLeftArm.postRender(0.0625F);
+        } else if (renderConfigElement.bindding.equals("rightLeg")) {
+            ((ModelBiped) this.renderPlayer.getMainModel()).bipedRightLeg.postRender(0.0625F);
+        } else if (renderConfigElement.bindding.equals("leftLeg")) {
+            ((ModelBiped) this.renderPlayer.getMainModel()).bipedLeftLeg.postRender(0.0625F);
+        }
+
+        GlStateManager.translate(renderConfigElement.pos[0], renderConfigElement.pos[1], renderConfigElement.pos[2]);
+        GlStateManager.scale(1 / 10f, 1 / 10f, 1 / 10f);
+        GlStateManager.scale(renderConfigElement.size[0], renderConfigElement.size[1], renderConfigElement.size[2]);
+        GlStateManager.rotate(renderConfigElement.rot[1], 0, -1, 0);
+        GlStateManager.rotate(renderConfigElement.rot[0], -1, 0, 0);
+        GlStateManager.rotate(renderConfigElement.rot[2], 0, 0, -1);
+         */
+        if(renderPlayer!=null) {
+            renderPlayer.getMainModel().bipedRightArm.postRender(0.0625F);  
+        }
+        RenderElement renderConfigElement=config.thirdPerson.renderElements.get(renderType.serializedName);
+        GlStateManager.translate(renderConfigElement.pos.x, renderConfigElement.pos.y, renderConfigElement.pos.z);
+        GlStateManager.scale(1 / 10f, 1 / 10f, 1 / 10f);
+        GlStateManager.scale(renderConfigElement.size.x, renderConfigElement.size.y, renderConfigElement.size.z);
+        GlStateManager.rotate(renderConfigElement.rot.y, 0, -1, 0);
+        GlStateManager.rotate(renderConfigElement.rot.x, -1, 0, 0);
+        GlStateManager.rotate(renderConfigElement.rot.z, 0, 0, -1);
+        
+        /**
+         * gun
+         * */
+        int skinId = 0;
+        if (demoStack.hasTagCompound()) {
+            if (demoStack.getTagCompound().hasKey("skinId")) {
+                skinId = demoStack.getTagCompound().getInteger("skinId");
+            }
+        }
+        String gunPath = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
+        ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
+        model.renderPartExcept(exceptParts);
+
+        /**
+         * ammo and bullet
+         * */
+        boolean flagDynamicAmmoRendered = false;
+        ItemStack stackAmmo = ItemStack.EMPTY;
+        ItemStack bulletStack = ItemStack.EMPTY;
+        if (demoStack.hasTagCompound()) {
+            stackAmmo = new ItemStack(demoStack.getTagCompound().getCompoundTag("ammo"));
+        }
+        ItemStack orignalAmmo = stackAmmo;
+        //stackAmmo=controller.getRenderAmmo(stackAmmo);
+        ItemStack renderAmmo = stackAmmo;
+        boolean defaultAmmoFlag = true;
+        
+        VarBoolean defaultBulletFlag=new VarBoolean();
+        defaultBulletFlag.b=true;
+        int currentAmmoCount=0;
+        
+        if (gunType.acceptedBullets != null && demoStack.hasTagCompound()) {
+            currentAmmoCount= demoStack.getTagCompound().getInteger("ammocount");
+            bulletStack = new ItemStack(demoStack.getTagCompound().getCompoundTag("bullet"));
+        }
+
+        if (bulletStack != null) {
+            if (bulletStack.getItem() instanceof ItemBullet) {
+                BulletType bulletType = ((ItemBullet) bulletStack.getItem()).type;
+                if (bulletType.isDynamicBullet && bulletType.model != null) {
+                    int skinIdBullet = 0;
+                    if (bulletStack.hasTagCompound()) {
+                        if (bulletStack.getTagCompound().hasKey("skinId")) {
+                            skinIdBullet = bulletStack.getTagCompound().getInteger("skinId");
+                        }
+                    }
+                    if (bulletType.sameTextureAsGun) {
+                        ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
+                    } else {
+                        String pathAmmo = skinIdBullet > 0 ? bulletType.modelSkins[skinIdBullet].getSkin()
+                                : bulletType.modelSkins[0].getSkin();
+                        ClientProxy.gunEnhancedRenderer.bindTexture("bullets", pathAmmo);
+                    }
+                    for (int bullet = 0; bullet < currentAmmoCount && bullet < RenderGunEnhanced.BULLET_MAX_RENDER; bullet++) {
+                        int renderBullet = bullet;
+                        model.applyGlobalTransformToOther("bulletModel_" + bullet, () -> {
+                            ClientProxy.gunEnhancedRenderer.renderAttachment(config, "bullet", bulletType.internalName, () -> {
+                                bulletType.model.renderPart("bulletModel", worldScale);
+                            });
+                        });
+                    }
+                    model.applyGlobalTransformToOther("bulletModel", () -> {
+                        ClientProxy.gunEnhancedRenderer.renderAttachment(config, "bullet", bulletType.internalName, () -> {
+                            bulletType.model.renderPart("bulletModel", worldScale);
+                        });
+                    });
+                    defaultBulletFlag.b = false;
+                }
+            }
+        }
+        ItemStack[] ammoList = new ItemStack[] { stackAmmo };
+        String[] binddings = new String[] { "ammoModel" };
+        for (int x = 0; x < 1; x++) {
+            ItemStack stackAmmoX = ammoList[x];
+            if (stackAmmoX == null || stackAmmoX.isEmpty()) {
+                continue;
+            }
+            if (model.getPart(binddings[x]) == null) {
+                continue;
+            }
+            if (stackAmmoX.getItem() instanceof ItemAmmo) {
+                ItemAmmo itemAmmo = (ItemAmmo) stackAmmoX.getItem();
+                AmmoType ammoType = itemAmmo.type;
+                if (ammoType.isDynamicAmmo && ammoType.model != null) {
+                    int skinIdAmmo = 0;
+
+                    if (ammoType.sameTextureAsGun) {
+                        ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
+                    } else {
+                        String pathAmmo = skinIdAmmo > 0 ? ammoType.modelSkins[skinIdAmmo].getSkin()
+                                : ammoType.modelSkins[0].getSkin();
+                        ClientProxy.gunEnhancedRenderer.bindTexture("ammo", pathAmmo);
+                    }
+
+                    model.applyGlobalTransformToOther("ammoModel", () -> {
+                        GlStateManager.pushMatrix();
+                        if (renderAmmo.getTagCompound().hasKey("magcount")) {
+                            if (config.attachment.containsKey(itemAmmo.type.internalName)) {
+                                if (config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform != null) {
+                                    if (renderAmmo.getTagCompound().getInteger("magcount") <= config.attachment
+                                            .get(itemAmmo.type.internalName).multiMagazineTransform.size()) {
+                                        //be careful, don't mod the config
+                                        Transform ammoTransform = config.attachment
+                                                .get(itemAmmo.type.internalName).multiMagazineTransform
+                                                        .get(renderAmmo.getTagCompound().getInteger("magcount") - 1);
+                                        Transform renderTransform = ammoTransform;
+
+                                        GlStateManager.translate(renderTransform.translate.x,
+                                                renderTransform.translate.y, renderTransform.translate.z);
+                                        GlStateManager.scale(renderTransform.scale.x, renderTransform.scale.y,
+                                                renderTransform.scale.z);
+                                        GlStateManager.rotate(renderTransform.rotate.y, 0, 1, 0);
+                                        GlStateManager.rotate(renderTransform.rotate.x, 1, 0, 0);
+                                        GlStateManager.rotate(renderTransform.rotate.z, 0, 0, 1);
+                                    }
+                                }
+                            }
+                        }
+                        ClientProxy.gunEnhancedRenderer.renderAttachment(config, "ammo", ammoType.internalName, () -> {
+                            ammoType.model.renderPart("ammoModel", worldScale);
+                        });
+                        GlStateManager.popMatrix();
+                    });
+                    flagDynamicAmmoRendered = true;
+                    defaultAmmoFlag = false;
+
+                }
+            }
+        }
+
+        /**
+         * default bullet and ammo
+         * */
+
+        ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
+        
+        if(defaultBulletFlag.b) {
+            for (int bullet = 0; bullet < currentAmmoCount && bullet < RenderGunEnhanced.BULLET_MAX_RENDER; bullet++) {
+                model.renderPart("bulletModel_" + bullet);
+            }  
+        }
+        
+        if (!renderAmmo.isEmpty() && defaultAmmoFlag) {
+            model.renderPart("ammoModel");
+        }
+
+        /**
+         * attachment
+         * */
+
+        for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+            ItemStack itemStack = GunType.getAttachment(demoStack, attachment);
+            if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
+                ModelAttachment attachmentModel = (ModelAttachment) attachmentType.model;
+
+                if (ScopeUtils.isIndsideGunRendering) {
+                    if (attachment == AttachmentPresetEnum.Sight) {
+                        if (config.attachment.containsKey(attachmentType.internalName)) {
+                            if (!config.attachment.get(attachmentType.internalName).renderInsideSightModel) {
+                                continue;
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
+                }
+                if (attachmentModel != null) {
+                    String binding = "gunModel";
+                    if (config.attachment.containsKey(attachmentType.internalName)) {
+                        binding = config.attachment.get(attachmentType.internalName).binding;
+                    }
+                    model.applyGlobalTransformToOther(binding, () -> {
+                        if (attachmentType.sameTextureAsGun) {
+                            ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
+                        } else {
+                            int attachmentsSkinId = 0;
+                            if (itemStack.hasTagCompound()) {
+                                if (itemStack.getTagCompound().hasKey("skinId")) {
+                                    attachmentsSkinId = itemStack.getTagCompound().getInteger("skinId");
+                                }
+                            }
+                            String attachmentsPath = attachmentsSkinId > 0
+                                    ? attachmentType.modelSkins[attachmentsSkinId].getSkin()
+                                    : attachmentType.modelSkins[0].getSkin();
+                            ClientProxy.gunEnhancedRenderer.bindTexture("attachments", attachmentsPath);
+                        }
+                        ClientProxy.gunEnhancedRenderer.renderAttachment(config, attachment.typeName,
+                                attachmentType.internalName, () -> {
+                                    attachmentModel.renderAttachment(worldScale);
+                                    if (attachment == AttachmentPresetEnum.Sight) {
+                                        ClientProxy.gunEnhancedRenderer.renderScopeGlass(attachmentType,
+                                                attachmentModel, false, worldScale);
+                                    }
+                                });
+                    });
+                }
+            }
+        }
+        
+        /**
+         *  flashmodel 
+         *  */
+        boolean shouldRenderFlash=true;
+        if ((GunType.getAttachment(demoStack, AttachmentPresetEnum.Barrel) != null)) {
+            AttachmentType attachmentType = ((ItemAttachment) GunType.getAttachment(demoStack, AttachmentPresetEnum.Barrel).getItem()).type;
+            if (attachmentType.attachmentType == AttachmentPresetEnum.Barrel) {
+                shouldRenderFlash = !attachmentType.barrel.hideFlash;
+            }
+        }
+
+        float bx=OpenGlHelper.lastBrightnessX;
+        float by=OpenGlHelper.lastBrightnessY;
+        
+        if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType() == AnimationType.FIRE && !player.isInWater()) {
+            GlStateManager.disableLighting();
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+            TextureType flashType = gunType.flashType;
+            bindTexture(flashType.resourceLocations.get(anim.flashCount % flashType.resourceLocations.size()));
+            model.renderPart("flashModel");
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
+            GlStateManager.enableLighting();
+        }
+
+        GlStateManager.shadeModel(GL11.GL_FLAT);
+        GlStateManager.popMatrix();
     }
     
     @SideOnly(Side.CLIENT)

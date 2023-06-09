@@ -4,6 +4,8 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
+import com.modularwarfare.common.network.PacketOtherPlayerAnimation.AnimationType;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
@@ -78,6 +80,10 @@ public class PacketExpShot extends PacketBase {
                                     ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
                                 }
                                 ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
+                                
+                                //Animation
+                                ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
+                                
                             }
                         }
                     }

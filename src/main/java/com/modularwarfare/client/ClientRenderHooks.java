@@ -8,6 +8,7 @@ import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.configs.ArmorRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
+import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -132,7 +133,17 @@ public class ClientRenderHooks extends ForgeEvent {
         Item item = event.getItem().getItem();
         if (item instanceof ItemGun) {
             BaseType type = ((BaseItem) event.getItem().getItem()).baseType;
-            if (type.hasModel()) {
+            if (type.enhancedModel != null) {
+                event.setCanceled(true);
+
+                int rotation = event.getEntityItemFrame().getRotation();
+                GlStateManager.rotate(-rotation * 45F, 0F, 0F, 1F);
+                RenderHelper.enableStandardItemLighting();
+                GlStateManager.rotate(rotation * 45F, 0F, 0F, 1F);
+                GlStateManager.pushMatrix();
+                ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.ITEMFRAME, null, event.getItem());
+                GlStateManager.popMatrix();
+            } else if (type.hasModel()) {
                 event.setCanceled(true);
 
                 int rotation = event.getEntityItemFrame().getRotation();

@@ -51,7 +51,7 @@ public class ShotManager {
             if(gunType.allowReloadFiring) {
                 ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).stopReload();
                 ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reset();
-                ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).updateCurrentItem();  
+                ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).updateCurrentItem(entityPlayer);  
             }
         }
         

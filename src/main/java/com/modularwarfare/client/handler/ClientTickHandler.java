@@ -22,6 +22,7 @@ import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
@@ -70,6 +71,7 @@ public class ClientTickHandler extends ForgeEvent {
                 if(lastWorld!=Minecraft.getMinecraft().world) {
                     ClientRenderHooks.weaponEnhancedAnimations.clear();
                     ClientRenderHooks.weaponBasicAnimations.clear();
+                    ClientProxy.gunEnhancedRenderer.otherControllers.clear();
                     lastWorld=Minecraft.getMinecraft().world;
                 }
                 //CLEARING OLD_DATA END
@@ -117,11 +119,10 @@ public class ClientTickHandler extends ForgeEvent {
                 /**
                  * EnhancedGunRendered Updates
                  */
-                float stepTick = 0;
                 long time = System.currentTimeMillis();
                 if (time > lastSyncTime + 1000 / 144) {
                     if (lastSyncTime > 0) {
-                        stepTick = (time - lastSyncTime) / (1000/(float)SPS);
+                        final float stepTick = (time - lastSyncTime) / (1000/(float)SPS);
                         if (ClientProxy.gunEnhancedRenderer.controller != null) {
                             if (Minecraft.getMinecraft().player != null) {
                                 if (Minecraft.getMinecraft().player.getHeldItemMainhand()
@@ -133,6 +134,15 @@ public class ClientTickHandler extends ForgeEvent {
                                 }
                             }
                         }
+
+                        ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl) -> {
+                            if (ctrl.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                                if (((ItemGun) ctrl.player.getHeldItemMainhand().getItem()).type.animationType
+                                        .equals(WeaponAnimationType.ENHANCED)) {
+                                    ctrl.onTickRender(stepTick);
+                                }
+                            }
+                        });
                     }
                     lastSyncTime = time;
                 }
@@ -158,10 +168,16 @@ public class ClientTickHandler extends ForgeEvent {
          */
         if (ClientProxy.gunEnhancedRenderer.controller != null) {
             ClientProxy.gunEnhancedRenderer.controller.updateCurrentItem();
+            
+            ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl)->{
+                ctrl.updateCurrentItem();
+            });
         }
         
-        for (EnhancedStateMachine stateMachine : ClientRenderHooks.weaponEnhancedAnimations.values()) {
-            stateMachine.updateCurrentItem();
+        for (EntityLivingBase entity : ClientRenderHooks.weaponEnhancedAnimations.keySet()) {
+            if(entity!=null) {
+                ClientRenderHooks.weaponEnhancedAnimations.get(entity).updateCurrentItem(entity);  
+            }
         }
 
         if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {

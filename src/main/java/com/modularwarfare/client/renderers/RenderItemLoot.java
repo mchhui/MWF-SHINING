@@ -7,6 +7,7 @@ import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.guns.*;
@@ -225,27 +226,14 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                 ModelEnhancedGun model = (ModelEnhancedGun) gunType.enhancedModel;
                 GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
 
-                model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS));
-
+                float ranrot=(float) (((0.1f*(entity.posX+entity.posZ-entity.posY)+entity.getEntityId()*3f*itemstack.hashCode())));
+                
                 GlStateManager.pushMatrix();
-                GlStateManager.translate((float) x, (float) y, (float) z);
-                GlStateManager.rotate(90.0F, 1.0F, 0.0F, 0.0F);
-                GlStateManager.translate(0.15, 0.2, -0.08);
-                GlStateManager.scale(1/16F, 1/16F, 1/16F);
-
-                int skinId = 0;
-                if (itemstack.hasTagCompound()) {
-                    if (itemstack.getTagCompound().hasKey("skinId")) {
-                        skinId = itemstack.getTagCompound().getInteger("skinId");
-                    }
+                GlStateManager.translate((float) x, (float) y+0.5f, (float) z);
+                if (config.thirdPerson.renderElements.get(RenderType.ITEMLOOT.serializedName).randomYaw) {
+                    GlStateManager.rotate(ranrot % 360f, 0, 1, 0);
                 }
-                String gunPath = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
-                ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
-                if(ItemGun.hasAmmoLoaded(itemstack)){
-                   model.renderPartExcept(RenderParameters.partsWithAmmo);
-                } else {
-                   model.renderPartExcept(RenderParameters.partsWithoutAmmo);
-                }
+                ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.ITEMLOOT, null, itemstack);
                 GlStateManager.popMatrix();
             }
         } else {

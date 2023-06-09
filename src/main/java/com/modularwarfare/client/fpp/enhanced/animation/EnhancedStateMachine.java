@@ -20,12 +20,16 @@ import com.modularwarfare.common.network.PacketGunReloadEnhancedStop;
 import com.modularwarfare.common.network.PacketGunReloadSound;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class EnhancedStateMachine {
 
+    public AnimationController controller;
+    
     /**
      * RELOAD
      */
@@ -85,11 +89,11 @@ public class EnhancedStateMachine {
         shootingPhase = Phase.PRE;
     }
 
-    public void triggerShoot(ModelEnhancedGun model, GunType gunType, int fireTickDelay) {
-        triggerShoot(model, gunType, fireTickDelay, false);
+    public void triggerShoot(AnimationController controller,ModelEnhancedGun model, GunType gunType, int fireTickDelay) {
+        triggerShoot(controller,model, gunType, fireTickDelay, false);
     }
 
-    public void triggerShoot(ModelEnhancedGun model, GunType gunType, int fireTickDelay, boolean isFailed) {
+    public void triggerShoot(AnimationController controller,ModelEnhancedGun model, GunType gunType, int fireTickDelay, boolean isFailed) {
         lastGunRecoil = gunRecoil = 1F;
         lastGunSlide = gunSlide = 1F;
 
@@ -104,11 +108,12 @@ public class EnhancedStateMachine {
         isFailedShoot = isFailed;
         this.shootingPhase = Phase.PRE;
         this.currentModel = model;
+        this.controller=controller;
     }
 
-    public void triggerReload(int reloadTime, int reloadCount, ModelEnhancedGun model, ReloadType reloadType) {
+    public void triggerReload(AnimationController controller,EntityLivingBase entity,int reloadTime, int reloadCount, ModelEnhancedGun model, ReloadType reloadType) {
         reset();
-        updateCurrentItem();
+        updateCurrentItem(entity);
         this.reloadTime = reloadType != ReloadType.Full ? reloadTime * 0.65f : reloadTime;
         this.reloadCount = reloadCount;
         Item item = heldItemstStack.getItem();
@@ -124,6 +129,8 @@ public class EnhancedStateMachine {
         this.lastReloadPhase = null;
         this.reloading = true;
         this.currentModel = model;
+        
+        this.controller=controller;
     }
 
     public void onTickUpdate() {
@@ -222,12 +229,12 @@ public class EnhancedStateMachine {
     public float getReloadSppedFactor() {
         ItemStack stack = heldItemstStack;
         Item item = stack.getItem();
-        if (ClientProxy.gunEnhancedRenderer.controller != null) {
+        if (controller != null) {
             if (item instanceof ItemGun) {
                 GunType type = ((ItemGun) item).type;
                 if (ItemGun.hasAmmoLoaded(stack)) {
                     ItemStack stackAmmo = new ItemStack(stack.getTagCompound().getCompoundTag("ammo"));
-                    stackAmmo = ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(stackAmmo);
+                    stackAmmo = controller.getRenderAmmo(stackAmmo);
                     if (stackAmmo != null && stackAmmo.getItem() instanceof ItemAmmo) {
                         ItemAmmo itemAmmo = (ItemAmmo) stackAmmo.getItem();
                         return itemAmmo.type.reloadSpeedFactor;
@@ -238,8 +245,8 @@ public class EnhancedStateMachine {
         return 1;
     }
 
-    public void updateCurrentItem() {
-        if (!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemstStack,Minecraft.getMinecraft().player.getHeldItemMainhand())) {
+    public void updateCurrentItem(EntityLivingBase player) {
+        if (!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemstStack,player.getHeldItemMainhand())) {
             if (reloading) {
                 stopReload();
             }
@@ -248,11 +255,11 @@ public class EnhancedStateMachine {
             }
             //ClientTickHandler.reloadEnhancedPrognosisAmmo=ItemStack.EMPTY;
         }
-        heldItemstStack = Minecraft.getMinecraft().player.getHeldItemMainhand();
+        heldItemstStack = player.getHeldItemMainhand();
     }
 
     public void onRenderTickUpdate(float partialTick) {
-        if(ClientProxy.gunEnhancedRenderer.controller==null) {
+        if(controller==null) {
             return;
         }
         ItemStack stack = heldItemstStack;
@@ -263,7 +270,7 @@ public class EnhancedStateMachine {
                 /** RELOAD **/
                 AnimationType aniType = getReloadAnimationType();
                 Passer<Phase> phase = new Passer(reloadPhase);
-                Passer<Double> progess = new Passer(AnimationController.RELOAD);
+                Passer<Double> progess = new Passer(controller.RELOAD);
                 reloading = phaseUpdate(aniType, partialTick, getReloadSppedFactor(), phase, progess,()->{
                     if(reloadCount>0) {
                         phase.set(Phase.FIRST);  
@@ -336,9 +343,9 @@ public class EnhancedStateMachine {
                 lastReloadPhase=reloadPhase;
                 reloadPhase = phase.get();
                 //System.out.println(reloadPhase+":"+getReloadAnimationType());
-                AnimationController.RELOAD = progess.get();
+                controller.RELOAD = progess.get();
                 if (!reloading) {
-                    ClientProxy.gunEnhancedRenderer.controller.updateActionAndTime();
+                    controller.updateActionAndTime();
                     stopReload();
                 }
             }
@@ -353,7 +360,7 @@ public class EnhancedStateMachine {
                 */
                 AnimationType aniType = getShootingAnimationType();
                 Passer<Phase> phase = new Passer(shootingPhase);
-                Passer<Double> progess = new Passer(AnimationController.FIRE);
+                Passer<Double> progess = new Passer(controller.FIRE);
                 Random r = new Random();
                 int Low = 0;
                 int High = type.flashType.resourceLocations.size()-1;
@@ -365,9 +372,9 @@ public class EnhancedStateMachine {
                     phase.set(Phase.POST);
                 }, null);
                 shootingPhase = phase.get();
-                AnimationController.FIRE = progess.get();
+                controller.FIRE = progess.get();
                 if (!shooting) {
-                    ClientProxy.gunEnhancedRenderer.controller.updateActionAndTime();
+                    controller.updateActionAndTime();
                 }
             }
         }
@@ -506,7 +513,7 @@ public class EnhancedStateMachine {
     }
 
     public boolean canSprint() {
-        return !shooting && !reloading && AnimationController.ADS < 0.8f;
+        return !shooting && !reloading && controller.ADS < 0.8f;
     }
 
     public int getAmmoCountOffset(boolean really) {

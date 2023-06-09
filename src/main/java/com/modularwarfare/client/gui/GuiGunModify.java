@@ -1009,7 +1009,7 @@ public class GuiGunModify extends GuiScreen {
 			// model.updateAnimation(rge.controller.getTime(),"");
 			//rge.controller.reset(true);
 			rge.controller.updateCurrentItem();
-			AnimationController.DRAW = 1.0d;
+			rge.controller.DRAW = 1.0d;
 			// AnimationController.ADS = 1.0d;
 			rge.controller.updateActionAndTime();
 			model.updateAnimation(rge.controller.getTime());
@@ -1130,7 +1130,7 @@ public class GuiGunModify extends GuiScreen {
 			float worldScale = 1F;
 			boolean applySprint = false;
 			rge.applySprintHandTransform(model, config.sprint.basicSprint, rge.controller.getTime(),
-					rge.controller.getSprintTime(), (float) AnimationController.SPRINT, "sprint_righthand", applySprint,
+					rge.controller.getSprintTime(), (float) rge.controller.SPRINT, "sprint_righthand", applySprint,
 					() -> {
 						if (true) {// isRenderHand0
 							if (sightRendering != null) {

@@ -151,12 +151,12 @@ public class GunUI {
                             }
                         }
 
-                        boolean showCrosshair = ((adsSwitch < 0.6F) && (AnimationController.ADS < 0.5F));
+                        boolean showCrosshair = ((adsSwitch < 0.6F) && (ClientProxy.gunEnhancedRenderer.controller.ADS < 0.5F));
                         if(ClientRenderHooks.getEnhancedAnimMachine(mc.player) != null){
                             if(ClientRenderHooks.getEnhancedAnimMachine(mc.player).reloading) {
                                 showCrosshair = false;
                             }
-                            if(AnimationController.INSPECT != 1F){
+                            if(ClientProxy.gunEnhancedRenderer.controller.INSPECT != 1F){
                                 showCrosshair = false;
                             }
                         }
