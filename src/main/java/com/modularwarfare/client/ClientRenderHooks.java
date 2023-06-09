@@ -121,9 +121,7 @@ public class ClientRenderHooks extends ForgeEvent {
                     return;
                 if (ClientProxy.gunUI.hitMarkerTime > 0)
                     ClientProxy.gunUI.hitMarkerTime--;
-                if(isAiming||isAimingScope) {
-                    ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(mc.player.getName(), true));  
-                }
+                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(mc.player.getName(), isAiming||isAimingScope));  
                 break;
             }
         }
