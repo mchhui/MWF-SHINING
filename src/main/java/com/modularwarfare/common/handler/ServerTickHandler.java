@@ -6,7 +6,10 @@ import com.modularwarfare.common.network.PacketAimingReponse;
 import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
+import net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent;
+import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +27,21 @@ public class ServerTickHandler extends ForgeEvent {
 
     private long lastBackWeaponsSync = -1;
 
+    @SubscribeEvent
+    public void onPlayerTick(PlayerTickEvent event) {
+        if(event.side!=Side.SERVER||event.phase!=Phase.END) {
+            return;
+        }
+        boolean flag=false;
+        if(playerAimShootCooldown.containsKey(event.player.getName())) {
+            flag=true;
+        }
+        if(playerAimInstant.get(event.player.getName())==Boolean.TRUE) {
+            flag=true;
+        }
+        ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(event.player.getName(), flag));
+    }
+    
     @SubscribeEvent
     public void onServerTick(ServerTickEvent event) {
         {
@@ -45,7 +63,6 @@ public class ServerTickHandler extends ForgeEvent {
 
                     if (value <= 0) {
                         playerAimShootCooldown.remove(playername);
-                        ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(playername, false));
                     } else {
                         playerAimShootCooldown.replace(playername, value);
                     }

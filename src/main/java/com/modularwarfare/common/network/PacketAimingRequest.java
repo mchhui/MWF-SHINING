@@ -36,9 +36,6 @@ public class PacketAimingRequest extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        if (!ServerTickHandler.playerAimShootCooldown.contains(playername)) {
-            ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(playername, aiming));
-        }
         ServerTickHandler.playerAimInstant.put(playername, aiming);
     }
 

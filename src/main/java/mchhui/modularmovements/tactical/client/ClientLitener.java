@@ -659,7 +659,7 @@ public class ClientLitener {
                 }
             }
             onSit();
-            if(Minecraft.getMinecraft().player!=null) {
+            if(Minecraft.getMinecraft().player!=null&&Minecraft.getMinecraft().currentScreen==null) {
                 if(clientPlayerState.canProbe()&&!Minecraft.getMinecraft().player.isRiding()&&!Minecraft.getMinecraft().player.isElytraFlying()) {
                     if (!probeKeyLock && isButtonDown(leftProbe.getKeyCode())) {
                         probeKeyLock = true;

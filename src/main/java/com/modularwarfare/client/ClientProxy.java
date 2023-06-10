@@ -6,11 +6,11 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GenerateJsonModelsEvent;
 import com.modularwarfare.api.WeaponAnimations;
+import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.commands.CommandMWClient;
 import com.modularwarfare.client.export.ItemModelExport;
-import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.anims.*;
-import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
+import com.modularwarfare.client.fpp.basic.configs.*;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
@@ -65,7 +65,7 @@ import com.modularwarfare.utility.MWResourcePack;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.ModUtil;
 import mchhui.modularmovements.tactical.client.ClientLitener;
-import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.core.ZipFile;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.particle.Particle;
@@ -91,10 +91,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.FMLModContainer;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.MetadataCollection;
+import net.minecraftforge.fml.common.*;
 import net.minecraftforge.fml.common.discovery.ContainerType;
 import net.minecraftforge.fml.common.discovery.ModCandidate;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
@@ -147,7 +144,7 @@ public class ClientProxy extends CommonProxy {
     public static ObfuscateCompatInterop obfuscateInterop;
 
     public KillFeedManager getKillChatManager() {
-        return killFeedManager;
+        return this.killFeedManager;
     }
 
     @Override
@@ -228,7 +225,7 @@ public class ClientProxy extends CommonProxy {
         }
         if (Loader.isModLoaded("galacticraftcore")) {
             try {
-                ClientProxy.galacticraftInterop = Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
+                ClientProxy.galacticraftInterop = (GCCompatInterop) Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
                 ModularWarfare.LOGGER.info("Galatic Craft has been detected! Will attempt to patch.");
                 ClientProxy.galacticraftInterop.applyFix();
             } catch (Exception e) {
@@ -248,23 +245,23 @@ public class ClientProxy extends CommonProxy {
         new ClientGunHandler();
         new RenderGuiHandler();
 
-        renderHooks = new ClientRenderHooks();
-        MinecraftForge.EVENT_BUS.register(renderHooks);
+        this.renderHooks = new ClientRenderHooks();
+        MinecraftForge.EVENT_BUS.register(this.renderHooks);
 
-        scopeUtils = new ScopeUtils();
-        MinecraftForge.EVENT_BUS.register(scopeUtils);
+        this.scopeUtils = new ScopeUtils();
+        MinecraftForge.EVENT_BUS.register(this.scopeUtils);
 
-        flashImage = new FlashSystem();
-        MinecraftForge.EVENT_BUS.register(flashImage);
+        this.flashImage = new FlashSystem();
+        MinecraftForge.EVENT_BUS.register(this.flashImage);
 
-        attachmentUI = new AttachmentUI();
-        MinecraftForge.EVENT_BUS.register(attachmentUI);
+        this.attachmentUI = new AttachmentUI();
+        MinecraftForge.EVENT_BUS.register(this.attachmentUI);
 
-        gunUI = new GunUI();
-        MinecraftForge.EVENT_BUS.register(gunUI);
+        this.gunUI = new GunUI();
+        MinecraftForge.EVENT_BUS.register(this.gunUI);
 
-        killFeedManager = new KillFeedManager();
-        MinecraftForge.EVENT_BUS.register(new KillFeedRender(killFeedManager));
+        this.killFeedManager = new KillFeedManager();
+        MinecraftForge.EVENT_BUS.register(new KillFeedRender(this.killFeedManager));
 
         WeaponAnimations.registerAnimation("rifle", new AnimationRifle());
         WeaponAnimations.registerAnimation("rifle2", new AnimationRifle2());
@@ -314,7 +311,7 @@ public class ClientProxy extends CommonProxy {
         loadTextures();
 
         ClientCommandHandler.instance.registerCommand(new CommandMWClient());
-
+        
         Programs.init();
     }
 
@@ -720,10 +717,10 @@ public class ClientProxy extends CommonProxy {
                 //registry.register(modSounds.get(weaponSoundType.defaultSound));
             }
         }
-
+        
         for (SoundEvent soundEvent : modSounds.values()) {
-            if (!registry.containsKey(soundEvent.getRegistryName())) {
-                registry.register(soundEvent);
+            if(!registry.containsKey(soundEvent.getRegistryName())) {
+                registry.register(soundEvent);  
             }
         }
     }
@@ -747,7 +744,7 @@ public class ClientProxy extends CommonProxy {
             RenderingRegistry.registerEntityRenderingHandler(EntityItemLoot.class, RenderItemLoot.FACTORY);
 
             RenderingRegistry.registerEntityRenderingHandler(EntityBulletClient.class, RenderBullet.FACTORY);
-
+            
             //RENDER PROJECTILES
             RenderingRegistry.registerEntityRenderingHandler(EntityExplosiveProjectile.class, RenderProjectile.FACTORY);
         }
@@ -761,7 +758,8 @@ public class ClientProxy extends CommonProxy {
             if (gunType.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
             } else {
-                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot((ModelEnhancedGun) gunType.enhancedModel,
+                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
+                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
                         gunType, fireTickDelay);
             }
 
@@ -772,7 +770,7 @@ public class ClientProxy extends CommonProxy {
 
             float recoilPitchBarrelFactor = 1.0f;
             float recoilYawBarrelFactor = 1.0f;
-
+            
             float recoilPitchStockFactor = 1.0f;
             float recoilYawStockFactor = 1.0f;
 
@@ -787,7 +785,7 @@ public class ClientProxy extends CommonProxy {
                 recoilPitchBarrelFactor = barrelAttachment.type.barrel.recoilPitchFactor;
                 recoilYawBarrelFactor = barrelAttachment.type.barrel.recoilYawFactor;
             }
-
+            
             if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Stock) != null) {
                 ItemAttachment stockAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Stock).getItem();
                 recoilPitchStockFactor = stockAttachment.type.stock.recoilPitchFactor;
@@ -795,8 +793,8 @@ public class ClientProxy extends CommonProxy {
             }
 
             boolean isCrawling = false;
-            if (ModularWarfare.isLoadedModularMovements) {
-                if (ClientLitener.clientPlayerState.isCrawling) {
+            if(ModularWarfare.isLoadedModularMovements){
+                if(ClientLitener.clientPlayerState.isCrawling){
                     isCrawling = true;
                 }
             }
@@ -827,10 +825,10 @@ public class ClientProxy extends CommonProxy {
                 offsetYaw *= gunType.recoilAimReducer;
                 offsetYaw *= RenderParameters.phase ? 1 : -1;
             }
-            if (ModularWarfare.isLoadedModularMovements) {
-                if (ClientLitener.clientPlayerState.isCrawling) {
-                    offsetPitch *= gunType.recoilCrawlPitchFactor;
-                    offsetYaw *= gunType.recoilCrawlYawFactor;
+            if(ModularWarfare.isLoadedModularMovements) {
+                if(ClientLitener.clientPlayerState.isCrawling) {
+                    offsetPitch*=gunType.recoilCrawlPitchFactor;
+                    offsetYaw*=gunType.recoilCrawlYawFactor;
                 }
             }
             RenderParameters.playerRecoilPitch += offsetPitch;
@@ -851,28 +849,30 @@ public class ClientProxy extends CommonProxy {
             if (gunType.type.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerReload(reloadTime, reloadCount, (ModelGun) gunType.type.model, ReloadType.getTypeFromInt(reloadType), player.isSprinting());
             } else {
-                ClientRenderHooks.getEnhancedAnimMachine(player).triggerReload(reloadTime, reloadCount, (ModelEnhancedGun) gunType.type.enhancedModel, ReloadType.getTypeFromInt(reloadType));
+                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
+                ClientRenderHooks.getEnhancedAnimMachine(player).triggerReload(controller,player,reloadTime, reloadCount, (ModelEnhancedGun) gunType.type.enhancedModel, ReloadType.getTypeFromInt(reloadType));
             }
         }
     }
-
+    
     @Override
     public void onShootFailedAnimation(EntityPlayer player, String wepType) {
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
             if (gunType.type.animationType == WeaponAnimationType.ENHANCED) {
-                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot((ModelEnhancedGun) gunType.type.enhancedModel, gunType.type, 0, true);
+                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
+                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun)gunType.type.enhancedModel, gunType.type, 0,true);
             }
         }
     }
-
+    
     @Override
     public void onModeChangeAnimation(EntityPlayer player, String wepType) {
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
             if (gunType.type.animationType == WeaponAnimationType.ENHANCED) {
-                if (gunEnhancedRenderer.controller != null) {
-                    AnimationController.MODE_CHANGE = 0;
+                if(gunEnhancedRenderer.controller!=null) {
+                    gunEnhancedRenderer.controller.MODE_CHANGE=0;
                 }
             }
         }
@@ -932,7 +932,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void spawnExplosionParticle(World world, double x, double y, double z) {
-        if (!world.isRemote) {
+        if(!world.isRemote) {
             super.spawnExplosionParticle(world, x, y, z);
             return;
         }
@@ -941,14 +941,14 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void spawnRocketParticle(World world, double x, double y, double z) {
-        if (!world.isRemote) {
+        if(!world.isRemote) {
             super.spawnRocketParticle(world, x, y, z);
             return;
         }
         final Particle rocketParticle = new ParticleRocket(world, x, y, z);
         Minecraft.getMinecraft().effectRenderer.addEffect(rocketParticle);
     }
-
+    
     @Override
     public void playFlashSound(EntityPlayer entityPlayer) {
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, (float) FlashSystem.flashValue / 1000, 1, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));
