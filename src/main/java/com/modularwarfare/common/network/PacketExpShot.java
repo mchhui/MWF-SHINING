@@ -8,9 +8,12 @@ import com.modularwarfare.common.network.PacketOtherPlayerAnimation.AnimationTyp
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import mchhui.easyeffect.EasyEffect;
+import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.IThreadListener;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.WorldServer;
@@ -83,7 +86,18 @@ public class PacketExpShot extends PacketBase {
                                 
                                 //Animation
                                 ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
-                                
+                                Vec3d posSmoke = ServerListener.onGetPositionEyes(entityPlayer, 0, entityPlayer.getPositionEyes(0)).add(entityPlayer.getLookVec().scale(0.8f));
+                                Vec3d crossVec=new Vec3d(1, 0, 0).rotateYaw(-(float)Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float)Math.toRadians(entityPlayer.rotationPitch));
+                                posSmoke.add(crossVec.scale(-0.3f));
+                                Vec3d offsetVec;
+                                for(int i=0;i<5;i++) {
+                                    double rand=Math.random()-0.5f;
+                                    offsetVec=crossVec.scale((rand/Math.abs(rand)* 0.3f)).add(entityPlayer.getLookVec().scale(0.5f));
+                                    EasyEffect.sendEffect(entityPlayer, posSmoke.x,
+                                            posSmoke.y - 0.1f, posSmoke.z,
+                                            offsetVec.x/(i+1), 1.2f, offsetVec.z/(i+1), 0.5f, -1f, 0.5f, 200/(i+1), (int)(10+20*Math.random()), 20, 5,
+                                            (Math.random()*0.3f+0.2f), "modularwarfare:textures/particles/fire_smoke.png");    
+                                }
                             }
                         }
                     }

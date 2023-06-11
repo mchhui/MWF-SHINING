@@ -33,9 +33,11 @@ public class EasyEffectClient {
     @SubscribeEvent
     public void onRenderWolrd(RenderWorldLastEvent event) {
         GlStateManager.pushMatrix();
+        GlStateManager.depthMask(false);
         GlStateManager.enableBlend();
         renderer.render(event.getPartialTicks());
         GlStateManager.disableBlend();
+        GlStateManager.depthMask(true);
         GlStateManager.popMatrix();
     }
 }
