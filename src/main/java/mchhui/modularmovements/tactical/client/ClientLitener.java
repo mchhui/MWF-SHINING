@@ -903,7 +903,7 @@ public class ClientLitener {
                 if (isSitting(event.player.getEntityId())) {
                     f1 = 1.2f;
                 } else if (isCrawling(event.player.getEntityId())) {
-                    f1 = 0.6f;
+                    f1 = 0.8f;
                 }
                 PlayerState state = ohterPlayerStateMap.get(event.player.getEntityId());
                 float cameraProbeOffset=0;

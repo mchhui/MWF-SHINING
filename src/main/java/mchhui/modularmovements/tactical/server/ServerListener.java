@@ -99,10 +99,10 @@ public class ServerListener {
                     event.player.eyeHeight = 1.1f;
                 }
             } else if (isCrawling(event.player.getEntityId())) {
-                if (event.player.eyeHeight != 0.9f) {
-                    event.player.eyeHeight = 0.9f;
+                if (event.player.eyeHeight != 0.7f) {
+                    event.player.eyeHeight = 0.7f;
                 }
-            } else if (event.player.eyeHeight == 0.9f) {
+            } else if (event.player.eyeHeight == 0.7f) {
                 event.player.eyeHeight = event.player.getDefaultEyeHeight();
             } else if (event.player.eyeHeight == 1.1f) {
                 event.player.eyeHeight = event.player.getDefaultEyeHeight();
@@ -113,7 +113,7 @@ public class ServerListener {
             if (isSitting(event.player.getEntityId())) {
                 f1 = 1.2f;
             } else if (isCrawling(event.player.getEntityId())) {
-                f1 = 0.6f;
+                f1 = 0.8f;
             }
 
             if (f != event.player.width || f1 != event.player.height) {
