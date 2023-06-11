@@ -17,10 +17,10 @@ function updateAmmoTooltip(stack, tiplist) {
     if (ScriptAPI.Input.isKeyHolding(KEY_CTRL)) {
         var ammoBullets=ScriptAPI.Ammo.getAcceptedBullet(stack);
         if(ammoBullets.size()>0){
-            if(ScriptAPI.Gun.isBulletGun(stack)){
+            if(ScriptAPI.Ammo.isAmmo(stack)){
                 tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.helpinfo.bullet"));
             }else{
-                tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.helpinfo.ammo"));
+                tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.helpinfo.bullet"));
             }
             for(var i=0;i<ammoBullets.size();i++){
                 tiplist.add(ScriptAPI.Lang.format("§7 -"+ammoBullets.get(i)));
