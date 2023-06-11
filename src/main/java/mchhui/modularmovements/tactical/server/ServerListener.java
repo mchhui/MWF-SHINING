@@ -81,7 +81,7 @@ public class ServerListener {
     public static Vec3d onGetPositionEyes(EntityPlayer player, float partialTicks, Vec3d vec3d) {
         if (getCameraProbeOffset(player.getEntityId()) != 0) {
             return vec3d.add(new Vec3d(getCameraProbeOffset(player.getEntityId()) * -0.6, 0, 0)
-                    .rotateYaw((float) (-Minecraft.getMinecraft().player.rotationYaw * Math.PI / 180f)));
+                    .rotateYaw((float) (-player.rotationYaw * Math.PI / 180f)));
         }
         return vec3d;
     }
