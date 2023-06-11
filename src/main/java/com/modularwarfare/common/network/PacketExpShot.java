@@ -92,7 +92,7 @@ public class PacketExpShot extends PacketBase {
                                 Vec3d offsetVec;
                                 for(int i=0;i<5;i++) {
                                     double rand=Math.random()-0.5f;
-                                    offsetVec=crossVec.scale((rand/Math.abs(rand)* 0.3f)).add(entityPlayer.getLookVec().scale(0.5f));
+                                    offsetVec=crossVec.scale((rand/Math.abs(rand)* 0.5f)).add(entityPlayer.getLookVec().scale(0.9f));
                                     EasyEffect.sendEffect(entityPlayer, posSmoke.x,
                                             posSmoke.y - 0.1f, posSmoke.z,
                                             offsetVec.x/(i+1), 1.2f, offsetVec.z/(i+1), 0.5f, -1f, 0.5f, 200/(i+1), (int)(10+20*Math.random()), 20, 5,
