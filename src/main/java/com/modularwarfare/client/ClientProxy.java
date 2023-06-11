@@ -142,6 +142,8 @@ public class ClientProxy extends CommonProxy {
      **/
     public static GCCompatInterop galacticraftInterop;
     public static ObfuscateCompatInterop obfuscateInterop;
+    
+    private static int lastBobbingParm=1;
 
     public KillFeedManager getKillChatManager() {
         return this.killFeedManager;
@@ -758,6 +760,9 @@ public class ClientProxy extends CommonProxy {
             if (gunType.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
             } else {
+                float rand=(float) Math.random();
+                ClientEventHandler.cemeraBobbing=lastBobbingParm*(0.3f+0.4f*Math.abs(rand));
+                lastBobbingParm=-lastBobbingParm;
                 AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
                         gunType, fireTickDelay);
