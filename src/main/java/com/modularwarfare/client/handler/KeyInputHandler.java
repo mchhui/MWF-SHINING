@@ -16,6 +16,7 @@ import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
 import com.modularwarfare.common.network.PacketGunUnloadAttachment;
 import com.modularwarfare.common.network.PacketOpenGui;
+import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.client.Minecraft;
@@ -83,6 +84,7 @@ public class KeyInputHandler extends ForgeEvent {
                 case ClientReload:
 
                     ModularWarfare.loadConfig();
+                    ScriptHost.INSTANCE.reset();
 
                     if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                         final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);

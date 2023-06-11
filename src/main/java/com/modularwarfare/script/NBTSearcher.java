@@ -15,7 +15,7 @@ public class NBTSearcher {
         }
         if (keys.length == 1) {
             NBTBase base = tag.getTag(keys[0]);
-            if (base.getId() != type) {
+            if (base == null || base.getId() != type) {
                 return null;
             }
             return base;

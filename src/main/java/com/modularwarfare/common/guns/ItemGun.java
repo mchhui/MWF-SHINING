@@ -318,13 +318,9 @@ public class ItemGun extends BaseItem {
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         GunType gunType = ((ItemGun) stack.getItem()).type;
-
-        if (null == null) {
-            super.addInformation(stack, worldIn, tooltip, flagIn);
-            return;
-        }
-
-
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+        
+        /*
         if (hasAmmoLoaded(stack)) {
             ItemStack ammoStack = new ItemStack(stack.getTagCompound().getCompoundTag("ammo"));
             if (ammoStack.getItem() instanceof ItemAmmo) {
@@ -444,6 +440,7 @@ public class ItemGun extends BaseItem {
         } else {
             tooltip.add("\u00a7e" + "[Shift]");
         }
+        */
     }
 
     @Override
