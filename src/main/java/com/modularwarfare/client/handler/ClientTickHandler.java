@@ -2,6 +2,7 @@ package com.modularwarfare.client.handler;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.OnTickRenderEvent;
+import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
@@ -143,6 +144,14 @@ public class ClientTickHandler extends ForgeEvent {
                                 }
                             }
                         });
+                        float offset=stepTick/10;
+                        if (Math.abs(ClientEventHandler.cemeraBobbing) < offset) {
+                            ClientEventHandler.cemeraBobbing = 0f;
+                        } else if (ClientEventHandler.cemeraBobbing > 0) {
+                            ClientEventHandler.cemeraBobbing -= offset;
+                        } else {
+                            ClientEventHandler.cemeraBobbing += offset;
+                        }
                     }
                     lastSyncTime = time;
                 }

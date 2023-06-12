@@ -11,13 +11,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
+import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import net.minecraftforge.fml.relauncher.Side;
@@ -25,6 +28,13 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ClientEventHandler {
 
+    public static float cemeraBobbing=0f;
+    
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public void cemeraSetup(CameraSetup event) {
+        GlStateManager.rotate((float) cemeraBobbing * 5, 0, 0, 1);
+    }
+    
     @SubscribeEvent
     public void renderWorld(RenderWorldLastEvent event) {
         InstantBulletRenderer.RenderAllTrails(event.getPartialTicks());

@@ -128,6 +128,9 @@ public class ItemAmmo extends BaseItem {
      */
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack ammoStack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+        super.addInformation(ammoStack, worldIn, tooltip, flagIn);
+        
+        /*
         if (type.magazineCount == 1) {
             int currentAmmoCount = 0;
 
@@ -175,6 +178,7 @@ public class ItemAmmo extends BaseItem {
             }
         }
         tooltip.add("\u00a7e" + "[R] to reload");
+        */
     }
 
     @Override
