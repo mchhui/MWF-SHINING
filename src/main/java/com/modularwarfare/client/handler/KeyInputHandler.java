@@ -7,6 +7,7 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
@@ -36,7 +37,7 @@ public class KeyInputHandler extends ForgeEvent {
     private ArrayList<KeyEntry> keyBinds;
 
     public KeyInputHandler() {
-        keyBinds = new ArrayList<KeyEntry>();
+        keyBinds = new ArrayList<>();
         keyBinds.add(new KeyEntry(KeyType.GunReload));
         keyBinds.add(new KeyEntry(KeyType.ClientReload));
         keyBinds.add(new KeyEntry(KeyType.FireMode));
@@ -124,7 +125,7 @@ public class KeyInputHandler extends ForgeEvent {
                     if (!entityPlayer.isSpectator()) {
                         if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
                             if (ClientProxy.gunEnhancedRenderer.controller != null) {
-                                ClientProxy.gunEnhancedRenderer.controller.INSPECT = 0;
+                                AnimationController.INSPECT = 0;
                             }
                         }
                     }

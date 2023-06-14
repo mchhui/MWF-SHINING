@@ -45,8 +45,8 @@ public class ClientTickHandler extends ForgeEvent {
 
     private static final int SPS=60;
     
-    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
-    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
+    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<>();
     public static ItemStack reloadEnhancedPrognosisAmmo = ItemStack.EMPTY;
     public static ItemStack reloadEnhancedPrognosisAmmoRendering = ItemStack.EMPTY;
     public static boolean reloadEnhancedIsQuickly=false;

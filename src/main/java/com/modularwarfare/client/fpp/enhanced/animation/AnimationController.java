@@ -44,7 +44,7 @@ public class AnimationController {
     public double SPRINT;
     public double SPRINT_LOOP;
     public double SPRINT_RANDOM;
-    public double INSPECT=1;
+    public static double INSPECT=1;
     public double FIRE;
     public double MODE_CHANGE;
     
@@ -269,18 +269,18 @@ public class AnimationController {
         }
         float collideFrontDistanceAlphaStep = 0.08f * stepTick;
         if (d<0.5) {
-            float target = Math.max(RenderParameters.collideFrontDistance, 0.2f);
+            float target;
             target = 1;
-            if (this.collideFrontDistanceAlpha > target) {
-                this.collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
-            } else if (this.collideFrontDistanceAlpha < target) {
-                this.collideFrontDistanceAlpha += collideFrontDistanceAlphaStep;
+            if (collideFrontDistanceAlpha > target) {
+                collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
+            } else if (collideFrontDistanceAlpha < target) {
+                collideFrontDistanceAlpha += collideFrontDistanceAlphaStep;
             }
-            if (Math.abs(this.collideFrontDistanceAlpha - target) <= collideFrontDistanceAlphaStep) {
-                this.collideFrontDistanceAlpha = target;
+            if (Math.abs(collideFrontDistanceAlpha - target) <= collideFrontDistanceAlphaStep) {
+                collideFrontDistanceAlpha = target;
             }
         } else {
-            this.collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
+            collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
             if (this.collideFrontDistanceAlpha < 0) {
                 this.collideFrontDistanceAlpha = 0;
             }
