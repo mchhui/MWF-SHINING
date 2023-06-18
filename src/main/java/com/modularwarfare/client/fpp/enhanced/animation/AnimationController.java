@@ -444,6 +444,9 @@ public class AnimationController {
     }
     
     public boolean isDrawing() {
+        if(player==null) {
+            return false;
+        }
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
@@ -454,6 +457,9 @@ public class AnimationController {
     }
     
     public boolean isCouldReload() {
+        if(player==null) {
+            return true;
+        }
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
@@ -469,6 +475,9 @@ public class AnimationController {
     }
     
     public boolean isCouldShoot() {
+        if(player==null) {
+            return true;
+        }
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
