@@ -8,12 +8,13 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @SideOnly(Side.CLIENT)
 public class FakeLayerBipedArmor extends LayerBipedArmor {
     private final RenderLivingBase<?> renderer;
+
     public FakeLayerBipedArmor(RenderLivingBase<?> rendererIn) {
         super(rendererIn);
-        renderer=rendererIn;
+        renderer = rendererIn;
         // TODO Auto-generated constructor stub
     }
-    
+
     @Override
     protected void initArmor() {
         this.modelLeggings = new FakeModelBiped(0.5F);

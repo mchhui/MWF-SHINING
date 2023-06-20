@@ -3,13 +3,10 @@ package com.modularwarfare.common.entity;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.world.MWFExplosion;
-
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 
 public class EntityExplosiveProjectile extends EntityBullet implements IProjectile {
@@ -38,7 +35,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
         }
     }
 
-    public void explode(){
+    public void explode() {
         if (!this.world.isRemote) {
             if (ModularWarfare.bulletTypes.containsKey(this.getBulletName())) {
                 ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());

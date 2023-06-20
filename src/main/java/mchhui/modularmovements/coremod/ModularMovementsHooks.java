@@ -1,7 +1,7 @@
 package mchhui.modularmovements.coremod;
 
-import mchhui.modularmovements.tactical.server.ServerListener;
 import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.AxisAlignedBB;
@@ -22,17 +22,16 @@ public class ModularMovementsHooks {
             double d2 = player.prevPosZ + (player.posZ - player.prevPosZ) * (double) partialTicks;
             vec3d = new Vec3d(d0, d1, d2);
         }
-        
-        if(FMLCommonHandler.instance().getSide()==Side.CLIENT) {
+
+        if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
             vec3d = ClientLitener.onGetPositionEyes(player, partialTicks, vec3d);
-        }else {
+        } else {
             vec3d = ServerListener.onGetPositionEyes(player, partialTicks, vec3d);
         }
         return vec3d;
     }
 
-    public static AxisAlignedBB getEntityBoundingBox(Entity entity,AxisAlignedBB bb)
-    {
+    public static AxisAlignedBB getEntityBoundingBox(Entity entity, AxisAlignedBB bb) {
         /*
         AxisAlignedBB client= ClientLitener.getEntityBoundingBox(entity, bb);
         if(client!=bb) {

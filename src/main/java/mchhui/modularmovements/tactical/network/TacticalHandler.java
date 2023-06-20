@@ -64,27 +64,27 @@ public class TacticalHandler {
         EnumPacketType type = buffer.readEnumValue(EnumPacketType.class);
 
         switch (type) {
-        case STATE:
-            int code = buffer.readInt();
-            boolean flag = false;
-            if (ServerListener.playerStateMap.containsKey(player.getEntityId())) {
-                state = ServerListener.playerStateMap.get(player.getEntityId());
-                if (code != state.writeCode()) {
-                    flag = true;
-                    state.readCode(code);
-                    sendToClient(player, code);
+            case STATE:
+                int code = buffer.readInt();
+                boolean flag = false;
+                if (ServerListener.playerStateMap.containsKey(player.getEntityId())) {
+                    state = ServerListener.playerStateMap.get(player.getEntityId());
+                    if (code != state.writeCode()) {
+                        flag = true;
+                        state.readCode(code);
+                        sendToClient(player, code);
+                    }
                 }
-            }
-            break;
-        case NOFALL:
-            player.fallDistance = 0;
-            break;
-        case NOSTEP:
-            int time = buffer.readInt();
-            ServerListener.playerNotStepMap.put(player.getEntityId(), System.currentTimeMillis() + time);
-            break;
-        default:
-            break;
+                break;
+            case NOFALL:
+                player.fallDistance = 0;
+                break;
+            case NOSTEP:
+                int time = buffer.readInt();
+                ServerListener.playerNotStepMap.put(player.getEntityId(), System.currentTimeMillis() + time);
+                break;
+            default:
+                break;
         }
     }
 

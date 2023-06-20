@@ -10,26 +10,26 @@ public class Handler {
     @SubscribeEvent
     public void onHandle(ClientCustomPacketEvent event) {
         PacketBuffer buffer = (PacketBuffer) event.getPacket().payload();
-        EnumFeatures type= buffer.readEnumValue(EnumFeatures.class);
+        EnumFeatures type = buffer.readEnumValue(EnumFeatures.class);
         switch (type) {
-        case Tactical:
-            TacticalHandler.onHandle(event);
-            break;
-        default:
-            break;
+            case Tactical:
+                TacticalHandler.onHandle(event);
+                break;
+            default:
+                break;
         }
     }
 
     @SubscribeEvent
     public void onHandle(ServerCustomPacketEvent event) {
         PacketBuffer buffer = (PacketBuffer) event.getPacket().payload();
-        EnumFeatures type=buffer.readEnumValue(EnumFeatures.class);
+        EnumFeatures type = buffer.readEnumValue(EnumFeatures.class);
         switch (type) {
-        case Tactical:
-            TacticalHandler.onHandle(event);
-            break;
-        default:
-            break;
+            case Tactical:
+                TacticalHandler.onHandle(event);
+                break;
+            default:
+                break;
         }
     }
 }

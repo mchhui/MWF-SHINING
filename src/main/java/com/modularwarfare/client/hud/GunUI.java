@@ -5,11 +5,10 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.RenderAmmoCountEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
-import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
+import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.ReloadHelper;
@@ -27,8 +26,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -77,7 +74,7 @@ public class GunUI {
                         if (ModConfig.INSTANCE.hud.ammo_count) {
                             RenderAmmoCountEvent ammoCountEvent = new RenderAmmoCountEvent(width, height);
                             MinecraftForge.EVENT_BUS.post(ammoCountEvent);
-                            if(!ammoCountEvent.isCanceled()) {
+                            if (!ammoCountEvent.isCanceled()) {
                                 GlStateManager.pushMatrix();
                                 RenderPlayerAmmo(width, height);
                                 GlStateManager.popMatrix();
@@ -85,7 +82,7 @@ public class GunUI {
                         }
                         RenderHitMarker(Tessellator.getInstance(), width, height);
                         RenderPlayerSnap(width, height);
-                        if (mc.getRenderViewEntity().equals(mc.player) && mc.gameSettings.thirdPersonView == 0 && (ClientRenderHooks.isAimingScope||ClientRenderHooks.isAiming) && RenderParameters.collideFrontDistance <= 0.025f) {
+                        if (mc.getRenderViewEntity().equals(mc.player) && mc.gameSettings.thirdPersonView == 0 && (ClientRenderHooks.isAimingScope || ClientRenderHooks.isAiming) && RenderParameters.collideFrontDistance <= 0.025f) {
                             if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                                 final ItemStack gunStack = mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
                                 if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Sight) != null) {
@@ -130,12 +127,12 @@ public class GunUI {
                                                         factor = 2;
                                                     }
                                                     int size = (32 * 2 / (int) (event.getResolution().getScaleFactor() * factor)) + ((int) (crouchSwitch) * 5);
-                                                    float scale=Math.abs(playerRecoilYaw)+Math.abs(playerRecoilPitch);
-                                                    scale*=((ModelAttachment) itemAttachment.type.model).config.sight.factorCrossScale;
+                                                    float scale = Math.abs(playerRecoilYaw) + Math.abs(playerRecoilPitch);
+                                                    scale *= ((ModelAttachment) itemAttachment.type.model).config.sight.factorCrossScale;
                                                     size = (int) (((size * (1 + (scale > 0.8 ? scale : 0) * 0.2))) * ((ModelAttachment) itemAttachment.type.model).config.sight.rectileScale);
                                                     GL11.glTranslatef((width / 2), (height / 2), 0);
-                                                    if(!itemAttachment.type.sight.plumbCrossHair) {
-                                                        GlStateManager.rotate(CROSS_ROTATE,0,0,1);
+                                                    if (!itemAttachment.type.sight.plumbCrossHair) {
+                                                        GlStateManager.rotate(CROSS_ROTATE, 0, 0, 1);
                                                     }
                                                     GL11.glTranslatef(-size, -size, 0);
                                                     GL11.glTranslatef((VAL2 / 10), (VAL / 10), 0);
@@ -152,23 +149,23 @@ public class GunUI {
                         }
 
                         boolean showCrosshair = ((adsSwitch < 0.6F) && (ClientProxy.gunEnhancedRenderer.controller.ADS < 0.5F));
-                        if(ClientRenderHooks.getEnhancedAnimMachine(mc.player) != null){
-                            if(ClientRenderHooks.getEnhancedAnimMachine(mc.player).reloading) {
+                        if (ClientRenderHooks.getEnhancedAnimMachine(mc.player) != null) {
+                            if (ClientRenderHooks.getEnhancedAnimMachine(mc.player).reloading) {
                                 showCrosshair = false;
                             }
-                            if(ClientProxy.gunEnhancedRenderer.controller.INSPECT != 1F){
+                            if (ClientProxy.gunEnhancedRenderer.controller.INSPECT != 1F) {
                                 showCrosshair = false;
                             }
                         }
 
-                        if(mc.getRenderViewEntity() != mc.player){
+                        if (mc.getRenderViewEntity() != mc.player) {
                             showCrosshair = false;
                         }
                         if (ModConfig.INSTANCE.hud.enable_crosshair && !ClientRenderHooks.getAnimMachine(mc.player).attachmentMode && showCrosshair && mc.gameSettings.thirdPersonView == 0 && !mc.player.isSprinting() && !ClientRenderHooks.getAnimMachine(mc.player).reloading && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                            if(RenderParameters.collideFrontDistance <= 0.2f) {
+                            if (RenderParameters.collideFrontDistance <= 0.2f) {
                                 GlStateManager.pushMatrix();
 
-                                if(ModConfig.INSTANCE.hud.dynamic_crosshair) {
+                                if (ModConfig.INSTANCE.hud.dynamic_crosshair) {
                                     float gunRotX = RenderParameters.GUN_ROT_X_LAST + (RenderParameters.GUN_ROT_X - RenderParameters.GUN_ROT_X_LAST) * smoothing;
                                     float gunRotY = RenderParameters.GUN_ROT_Y_LAST + (RenderParameters.GUN_ROT_Y - RenderParameters.GUN_ROT_Y_LAST) * smoothing;
                                     GL11.glRotatef(gunRotX, 0, -1, 0);
@@ -183,7 +180,7 @@ public class GunUI {
 
 
                                 GlStateManager.translate(xPos, yPos, 0f);
-                                if(ModularWarfare.isLoadedModularMovements) {
+                                if (ModularWarfare.isLoadedModularMovements) {
                                     GL11.glRotatef(15F * ClientLitener.cameraProbeOffset, 0, 0, 1);
                                 }
                                 GlStateManager.enableBlend();
@@ -256,41 +253,41 @@ public class GunUI {
 
             if (stack.getTagCompound() != null) {
                 ItemStack ammoStack = new ItemStack(stack.getTagCompound().getCompoundTag("ammo"));
-                GunType type=((ItemGun)stack.getItem()).type;
-                if(type.animationType.equals(WeaponAnimationType.BASIC)) {
+                GunType type = ((ItemGun) stack.getItem()).type;
+                if (type.animationType.equals(WeaponAnimationType.BASIC)) {
                     ammoStack.setItemDamage(0);
                     if (ItemGun.hasAmmoLoaded(stack)) {
                         renderAmmo(stack, ammoStack, i, j, 0);
                     } else if (ItemGun.getUsedBullet(stack, ((ItemGun) (stack.getItem())).type) != null) {
-                        renderBullets(stack, null, i, j, 0,null);
+                        renderBullets(stack, null, i, j, 0, null);
                     }
-                }else {
-                    if(ClientProxy.gunEnhancedRenderer.controller!=null) {
+                } else {
+                    if (ClientProxy.gunEnhancedRenderer.controller != null) {
                         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(mc.player);
-                        AnimationType reloadAni=anim.getReloadAnimationType();
-                        if(type.acceptedAmmo!=null) {
-                            ammoStack=ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(ammoStack);
+                        AnimationType reloadAni = anim.getReloadAnimationType();
+                        if (type.acceptedAmmo != null) {
+                            ammoStack = ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(ammoStack);
                             ammoStack.setItemDamage(0);
-                            if(reloadAni==AnimationType.RELOAD_FIRST||reloadAni==AnimationType.RELOAD_FIRST_QUICKLY||reloadAni==AnimationType.UNLOAD) {
-                                ammoStack=ItemStack.EMPTY;
+                            if (reloadAni == AnimationType.RELOAD_FIRST || reloadAni == AnimationType.RELOAD_FIRST_QUICKLY || reloadAni == AnimationType.UNLOAD) {
+                                ammoStack = ItemStack.EMPTY;
                             }
                             renderAmmo(stack, ammoStack, i, j, 0);
-                        }else{
-                            boolean flag=true;
+                        } else {
+                            boolean flag = true;
                             ItemStack bulletStack = new ItemStack(stack.getTagCompound().getCompoundTag("bullet"));
-                            if(anim.reloading) {
-                                bulletStack=ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(bulletStack);
-                                if(ClientProxy.gunEnhancedRenderer.controller.getPlayingAnimation() ==AnimationType.POST_UNLOAD) {
+                            if (anim.reloading) {
+                                bulletStack = ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(bulletStack);
+                                if (ClientProxy.gunEnhancedRenderer.controller.getPlayingAnimation() == AnimationType.POST_UNLOAD) {
                                     //flag=false;
                                 }
                             }
                             bulletStack.setItemDamage(0);
                             int offset = anim.getAmmoCountOffset(false);
-                            if(!anim.reloading) {
-                                offset=0;
+                            if (!anim.reloading) {
+                                offset = 0;
                             }
-                            if(flag) {
-                                renderBullets(stack, null, i, j, offset,bulletStack);
+                            if (flag) {
+                                renderBullets(stack, null, i, j, offset, bulletStack);
                             }
                         }
                     }
@@ -299,7 +296,7 @@ public class GunUI {
         }
     }
 
-    public void renderAmmo(ItemStack stack,ItemStack ammoStack,int i, int j,int countOffset) {
+    public void renderAmmo(ItemStack stack, ItemStack ammoStack, int i, int j, int countOffset) {
         Minecraft mc = Minecraft.getMinecraft();
         int x = 0;
         final int top = j - 38;
@@ -310,11 +307,11 @@ public class GunUI {
         if (ammoStack.getTagCompound() != null && ammoStack.getItem() instanceof ItemAmmo) {
 
             ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
-            Integer currentMagcount=null;
-            if(ammoStack.getTagCompound().hasKey("magcount")) {
-                currentMagcount=ammoStack.getTagCompound().getInteger("magcount");
+            Integer currentMagcount = null;
+            if (ammoStack.getTagCompound().hasKey("magcount")) {
+                currentMagcount = ammoStack.getTagCompound().getInteger("magcount");
             }
-            int currentAmmoCount =ReloadHelper.getBulletOnMag(ammoStack,currentMagcount) + countOffset;
+            int currentAmmoCount = ReloadHelper.getBulletOnMag(ammoStack, currentMagcount) + countOffset;
 
             GlStateManager.pushMatrix();
 
@@ -352,7 +349,7 @@ public class GunUI {
         }
     }
 
-    public void renderBullets(ItemStack stack, ItemStack ammoStack, int i, int j,int countOffset,ItemStack expectItemBullet) {
+    public void renderBullets(ItemStack stack, ItemStack ammoStack, int i, int j, int countOffset, ItemStack expectItemBullet) {
         Minecraft mc = Minecraft.getMinecraft();
         int x = 0;
         final int top = j - 38;
@@ -361,7 +358,7 @@ public class GunUI {
         final int bottom = top + 22;
         /** If gun use bullets **/
         ItemBullet itemBullet = null;
-        if (expectItemBullet!=null && expectItemBullet.getItem() instanceof ItemBullet) {
+        if (expectItemBullet != null && expectItemBullet.getItem() instanceof ItemBullet) {
             itemBullet = (ItemBullet) expectItemBullet.getItem();
         }
         if (itemBullet == null) {

@@ -29,19 +29,19 @@ public class ServerTickHandler extends ForgeEvent {
 
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent event) {
-        if(event.side!=Side.SERVER||event.phase!=Phase.END) {
+        if (event.side != Side.SERVER || event.phase != Phase.END) {
             return;
         }
-        boolean flag=false;
-        if(playerAimShootCooldown.containsKey(event.player.getName())) {
-            flag=true;
+        boolean flag = false;
+        if (playerAimShootCooldown.containsKey(event.player.getName())) {
+            flag = true;
         }
-        if(playerAimInstant.get(event.player.getName())==Boolean.TRUE) {
-            flag=true;
+        if (playerAimInstant.get(event.player.getName()) == Boolean.TRUE) {
+            flag = true;
         }
         ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(event.player.getName(), flag));
     }
-    
+
     @SubscribeEvent
     public void onServerTick(ServerTickEvent event) {
         {

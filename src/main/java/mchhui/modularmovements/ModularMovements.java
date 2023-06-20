@@ -1,5 +1,6 @@
 package mchhui.modularmovements;
 
+import com.modularwarfare.ModularWarfare;
 import mchhui.modularmovements.network.Handler;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import mchhui.modularmovements.tactical.client.MWFClientListener;
@@ -19,24 +20,19 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Logger;
 
-import com.modularwarfare.ModularWarfare;
-
 import java.io.File;
 
 @Mod(modid = ModularMovements.MOD_ID)
 public class ModularMovements {
+    public static final String MOD_ID = "modularmovements";
+    public static final String MOD_NAME = "ModularMovements";
+    public static final String MOD_VERSION = "1.0.0f";
     public static boolean enableTactical = true;
-
     @SideOnly(Side.CLIENT)
     public static ClientLitener TacticalClientListener;
     public static ServerListener TacticalServerListener = new ServerListener();
     public static FMLEventChannel channel;
-    public static boolean mwfEnable=false;
-
-    public static final String MOD_ID = "modularmovements";
-    public static final String MOD_NAME = "ModularMovements";
-    public static final String MOD_VERSION = "1.0.0f";
-
+    public static boolean mwfEnable = false;
     @Mod.Instance("modularmovements")
     public static ModularMovements INSTANCE;
 
@@ -62,26 +58,26 @@ public class ModularMovements {
 
     @EventHandler
     public void onInit(FMLInitializationEvent event) {
-        
-        if(Loader.isModLoaded("modularwarfare")) {
-            mwfEnable=true;
+
+        if (Loader.isModLoaded("modularwarfare")) {
+            mwfEnable = true;
         }
-        mwfEnable=true;
-        ModularWarfare.isLoadedModularMovements=true;
+        mwfEnable = true;
+        ModularWarfare.isLoadedModularMovements = true;
         channel = NetworkRegistry.INSTANCE.newEventDrivenChannel("modularmovements");
         channel.register(new Handler());
         if (enableTactical) {
             if (FMLCommonHandler.instance().getSide().isClient()) {
                 TacticalClientListener = new ClientLitener();
                 MinecraftForge.EVENT_BUS.register(TacticalClientListener);
-                if(mwfEnable) {
+                if (mwfEnable) {
                     MinecraftForge.EVENT_BUS.register(new MWFClientListener());
                 }
                 TacticalClientListener.onFMLInit(event);
             }
             TacticalServerListener.onFMLInit(event);
             MinecraftForge.EVENT_BUS.register(TacticalServerListener);
-            if(mwfEnable) {
+            if (mwfEnable) {
                 MinecraftForge.EVENT_BUS.register(new MWFServerListener());
             }
         }

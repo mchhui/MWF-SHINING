@@ -150,7 +150,7 @@ public class ClientProxy extends CommonProxy {
     private static int lastBobbingParm = 1;
 
     public KillFeedManager getKillChatManager() {
-        return this.killFeedManager;
+        return killFeedManager;
     }
 
     @Override
@@ -158,8 +158,8 @@ public class ClientProxy extends CommonProxy {
         super.construction(event);
 
         for (File file : modularWarfareDir.listFiles(file -> !file.getName().contains("cache")
-                                                                && !file.getName().contains("officialmw")
-                                                                && !file.getName().contains("highres"))) {
+                && !file.getName().contains("officialmw")
+                && !file.getName().contains("highres"))) {
             HashMap<String, Object> map = new HashMap<>();
             map.put("modid", ModularWarfare.MOD_ID);
             map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());

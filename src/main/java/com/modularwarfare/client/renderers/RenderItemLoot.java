@@ -2,17 +2,14 @@ package com.modularwarfare.client.renderers;
 
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.model.ModelAttachment;
-import com.modularwarfare.client.model.ModelGun;
-import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
-import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
+import com.modularwarfare.client.model.ModelAttachment;
+import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
-
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -102,7 +99,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         final ItemStack itemstack = entity.getItem();
         if (itemstack.getItem() instanceof ItemGun) {
-            if(((ItemGun)itemstack.getItem()).type.animationType == WeaponAnimationType.BASIC) {
+            if (((ItemGun) itemstack.getItem()).type.animationType == WeaponAnimationType.BASIC) {
                 GlStateManager.alphaFunc(516, 0.1F);
                 GlStateManager.enableBlend();
                 RenderHelper.enableStandardItemLighting();
@@ -226,10 +223,10 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                 ModelEnhancedGun model = (ModelEnhancedGun) gunType.enhancedModel;
                 GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
 
-                float ranrot=(float) (((0.1f*(entity.posX+entity.posZ-entity.posY)+entity.getEntityId()*3f*itemstack.hashCode())));
-                
+                float ranrot = (float) (((0.1f * (entity.posX + entity.posZ - entity.posY) + entity.getEntityId() * 3f * itemstack.hashCode())));
+
                 GlStateManager.pushMatrix();
-                GlStateManager.translate((float) x, (float) y+0.5f, (float) z);
+                GlStateManager.translate((float) x, (float) y + 0.5f, (float) z);
                 if (config.thirdPerson.renderElements.get(RenderType.ITEMLOOT.serializedName).randomYaw) {
                     GlStateManager.rotate(ranrot % 360f, 0, 1, 0);
                 }
@@ -318,7 +315,7 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
             super.doRender(entity, x, y, z, entityYaw, partialTicks);
         }
         GlStateManager.shadeModel(GL11.GL_FLAT);
-        ObjModelRenderer.glowTxtureMode=glow;
+        ObjModelRenderer.glowTxtureMode = glow;
     }
 
     protected ResourceLocation getEntityTexture(final EntityItemLoot entity) {

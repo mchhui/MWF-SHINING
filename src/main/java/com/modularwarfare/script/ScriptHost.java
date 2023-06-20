@@ -93,7 +93,7 @@ public class ScriptHost {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName("UTF-8")));
                 String temp;
                 while ((temp = bufferedReader.readLine()) != null) {
-                    text += temp+"\n";
+                    text += temp + "\n";
                 }
                 bufferedReader.close();
                 scriptEngine.eval("var WeaponFireMode=Java.type('" + WeaponFireMode.class.getName() + "');");

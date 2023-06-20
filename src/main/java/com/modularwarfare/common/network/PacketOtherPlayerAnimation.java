@@ -8,7 +8,6 @@ import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.WeaponAnimationType;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
@@ -30,16 +29,12 @@ public class PacketOtherPlayerAnimation extends PacketBase {
     }
 
     public PacketOtherPlayerAnimation(String playerName, AnimationType animationType, String internalname,
-            int fireTickDelay, boolean isFailed) {
+                                      int fireTickDelay, boolean isFailed) {
         this.playerName = playerName;
         this.animationType = animationType;
         this.internalname = internalname;
         this.fireTickDelay = fireTickDelay;
         this.isFailed = isFailed;
-    }
-
-    public static enum AnimationType {
-        FIRE
     }
 
     @Override
@@ -57,9 +52,9 @@ public class PacketOtherPlayerAnimation extends PacketBase {
         PacketBuffer buffer = new PacketBuffer(data);
         playerName = buffer.readString(Short.MAX_VALUE);
         animationType = buffer.readEnumValue(AnimationType.class);
-        internalname=buffer.readString(Short.MAX_VALUE);
-        fireTickDelay=buffer.readInt();
-        isFailed=buffer.readBoolean();
+        internalname = buffer.readString(Short.MAX_VALUE);
+        fireTickDelay = buffer.readInt();
+        isFailed = buffer.readBoolean();
     }
 
     @Override
@@ -90,6 +85,10 @@ public class PacketOtherPlayerAnimation extends PacketBase {
                 }
             }
         }
+    }
+
+    public static enum AnimationType {
+        FIRE
     }
 
 }

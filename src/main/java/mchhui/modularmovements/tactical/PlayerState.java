@@ -1,8 +1,5 @@
 package mchhui.modularmovements.tactical;
 
-import java.lang.reflect.Field;
-import java.util.concurrent.TimeUnit;
-
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import net.minecraft.client.Minecraft;
@@ -13,21 +10,21 @@ import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
+
 public class PlayerState {
     public boolean isSitting = false;
     public boolean isCrawling = false;
     //0:middle -1:left 1:right
     public byte probe = 0;
     public float probeOffset = 0;
+    public AxisAlignedBB lastAABB;
+    public AxisAlignedBB lastModAABB;
     private long lastSyncTime = 0;
-
-
     private long lastSit;
     private long lastCrawl;
     private long lastProbe;
-    
-    public AxisAlignedBB lastAABB;
-    public AxisAlignedBB lastModAABB;
 
     public void updateOffset() {
         double amplifer = (System.currentTimeMillis() - lastSyncTime) * (60 / 1000d);
@@ -67,15 +64,15 @@ public class PlayerState {
     }
 
     public boolean canSit() {
-        return (System.currentTimeMillis() - this.lastSit > TimeUnit.SECONDS.toMillis((long)ModularMovements.CONFIG.cooldown.sitCooldown));
+        return (System.currentTimeMillis() - this.lastSit > TimeUnit.SECONDS.toMillis((long) ModularMovements.CONFIG.cooldown.sitCooldown));
     }
 
     public boolean canCrawl() {
-        return (System.currentTimeMillis() - this.lastCrawl > TimeUnit.SECONDS.toMillis((long)ModularMovements.CONFIG.cooldown.crawlCooldown));
+        return (System.currentTimeMillis() - this.lastCrawl > TimeUnit.SECONDS.toMillis((long) ModularMovements.CONFIG.cooldown.crawlCooldown));
     }
 
     public boolean canProbe() {
-        return (System.currentTimeMillis() - this.lastProbe > TimeUnit.SECONDS.toMillis((long)ModularMovements.CONFIG.cooldown.leanCooldown));
+        return (System.currentTimeMillis() - this.lastProbe > TimeUnit.SECONDS.toMillis((long) ModularMovements.CONFIG.cooldown.leanCooldown));
     }
 
     public void enableSit() {

@@ -1,17 +1,9 @@
 package mchhui.modularmovements.tactical.server;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.modularwarfare.api.PlayerSnapshotCreateEvent;
 import com.modularwarfare.common.type.BaseItem;
-
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -29,26 +21,15 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
 public class ServerListener {
     public static Method setSize;
     public static Map<Integer, PlayerState> playerStateMap = new HashMap<Integer, PlayerState>();
     public static Map<Integer, Long> playerNotStepMap = new HashMap<Integer, Long>();
-
-    public void onFMLInit(FMLInitializationEvent event) {
-        setSize = ReflectionHelper.findMethod(Entity.class, "setSize", "func_70105_a", Float.TYPE, Float.TYPE);
-    }
-
-    @SubscribeEvent
-    public void onLogin(PlayerLoggedInEvent event) {
-        playerStateMap.put(event.player.getEntityId(), new PlayerState());
-        TacticalHandler.sendClientConfig((EntityPlayerMP) event.player);
-    }
-
-    @SubscribeEvent
-    public void onLogout(PlayerLoggedOutEvent event) {
-        playerStateMap.remove(event.player.getEntityId());
-        playerNotStepMap.remove(event.player.getEntityId());
-    }
 
     public static double getCameraProbeOffset(Integer id) {
         if (!playerStateMap.containsKey(id)) {
@@ -86,9 +67,75 @@ public class ServerListener {
         return vec3d;
     }
 
+    public static void setRotationAngles(com.modularwarfare.raycast.obb.ModelPlayer model, float limbSwing, float limbSwingAmount, float ageInTicks,
+                                         float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
+        if (entityIn instanceof EntityPlayer && entityIn.isEntityAlive()) {
+            PlayerState state = null;
+            float offest = 0;
+            state = playerStateMap.get(entityIn.getEntityId());
+            if (state == null) {
+                return;
+            }
+            offest = state.probeOffset;
+
+            if (state.isSitting) {
+                model.bipedRightLeg.rotateAngleX = -1.4137167F;
+                model.bipedRightLeg.rotateAngleY = ((float) Math.PI / 10F);
+                model.bipedRightLeg.rotateAngleZ = 0.07853982F;
+                model.bipedLeftLeg.rotateAngleX = -1.4137167F;
+                model.bipedLeftLeg.rotateAngleY = -((float) Math.PI / 10F);
+                model.bipedLeftLeg.rotateAngleZ = -0.07853982F;
+            }
+
+            if (state.isCrawling) {
+                model.bipedHead.rotateAngleX -= 70 * 3.14 / 180;
+                model.bipedRightArm.rotateAngleX *= 0.2;
+                model.bipedLeftArm.rotateAngleX *= 0.2;
+                model.bipedRightArm.rotateAngleX += 180 * 3.14 / 180;
+                model.bipedLeftArm.rotateAngleX += 180 * 3.14 / 180;
+                if (entityIn instanceof EntityPlayer) {
+                    ItemStack itemstack = ((EntityPlayer) entityIn).getHeldItemMainhand();
+                    if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
+                        if (ModularMovements.mwfEnable) {
+                            if (itemstack.getItem() instanceof BaseItem) {
+                                model.bipedLeftArm.rotateAngleY = 0;
+                                model.bipedRightArm.rotateAngleY = 0;
+                                model.bipedLeftArm.rotateAngleX = (float) (180 * 3.14 / 180);
+                                model.bipedRightArm.rotateAngleX = (float) (180 * 3.14 / 180);
+                            }
+                        }
+                    }
+                }
+                model.bipedRightLeg.rotateAngleX *= 0.2;
+                model.bipedLeftLeg.rotateAngleX *= 0.2;
+            }
+            if (offest >= 0) {
+                model.bipedRightLeg.rotateAngleZ += offest * 20 * 3.14 / 180;
+            } else {
+                model.bipedLeftLeg.rotateAngleZ += offest * 20 * 3.14 / 180;
+            }
+        }
+    }
+
+    public void onFMLInit(FMLInitializationEvent event) {
+        setSize = ReflectionHelper.findMethod(Entity.class, "setSize", "func_70105_a", Float.TYPE, Float.TYPE);
+    }
+
+    @SubscribeEvent
+    public void onLogin(PlayerLoggedInEvent event) {
+        playerStateMap.put(event.player.getEntityId(), new PlayerState());
+        TacticalHandler.sendClientConfig((EntityPlayerMP) event.player);
+    }
+
+    @SubscribeEvent
+    public void onLogout(PlayerLoggedOutEvent event) {
+        playerStateMap.remove(event.player.getEntityId());
+        playerNotStepMap.remove(event.player.getEntityId());
+    }
+
     @SubscribeEvent
     public void onPlayerTick(PlayerTickEvent event) {
-        if(event.side != Side.SERVER) {
+        if (event.side != Side.SERVER) {
             return;
         }
         if (event.phase == Phase.END) {
@@ -131,68 +178,18 @@ public class ServerListener {
                 }
             }
             PlayerState state = playerStateMap.get(event.player.getEntityId());
-            if(state!=null) {
-                Vec3d vec3d  = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
-                state.lastAABB=event.player.getEntityBoundingBox();
-                state.lastModAABB=state.lastAABB.offset(vec3d.scale(-getCameraProbeOffset(event.player.getEntityId())));
-                event.player.setEntityBoundingBox(state.lastModAABB);  
+            if (state != null) {
+                Vec3d vec3d = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
+                state.lastAABB = event.player.getEntityBoundingBox();
+                state.lastModAABB = state.lastAABB.offset(vec3d.scale(-getCameraProbeOffset(event.player.getEntityId())));
+                event.player.setEntityBoundingBox(state.lastModAABB);
             }
-        }else {
+        } else {
             PlayerState state = playerStateMap.get(event.player.getEntityId());
-            if(state!=null) {
-                if(state.lastAABB!=null&&event.player.getEntityBoundingBox()==state.lastModAABB) {
-                    event.player.setEntityBoundingBox(state.lastAABB);  
+            if (state != null) {
+                if (state.lastAABB != null && event.player.getEntityBoundingBox() == state.lastModAABB) {
+                    event.player.setEntityBoundingBox(state.lastAABB);
                 }
-            }
-        }
-    }
-    
-    public static void setRotationAngles(com.modularwarfare.raycast.obb.ModelPlayer model, float limbSwing, float limbSwingAmount, float ageInTicks,
-            float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
-        if (entityIn instanceof EntityPlayer && entityIn.isEntityAlive()) {
-            PlayerState state = null;
-            float offest = 0;
-            state = playerStateMap.get(entityIn.getEntityId());  
-            if(state == null) {
-                return;
-            }
-            offest = state.probeOffset;
-            
-            if(state.isSitting){
-                model.bipedRightLeg.rotateAngleX = -1.4137167F;
-                model.bipedRightLeg.rotateAngleY = ((float) Math.PI / 10F);
-                model.bipedRightLeg.rotateAngleZ = 0.07853982F;
-                model.bipedLeftLeg.rotateAngleX = -1.4137167F;
-                model.bipedLeftLeg.rotateAngleY = -((float) Math.PI / 10F);
-                model.bipedLeftLeg.rotateAngleZ = -0.07853982F;
-            }
-
-            if (state.isCrawling) {
-                model.bipedHead.rotateAngleX -= 70 * 3.14 / 180;
-                model.bipedRightArm.rotateAngleX *= 0.2;
-                model.bipedLeftArm.rotateAngleX *= 0.2;
-                model.bipedRightArm.rotateAngleX += 180 * 3.14 / 180;
-                model.bipedLeftArm.rotateAngleX += 180 * 3.14 / 180;
-                if (entityIn instanceof EntityPlayer) {
-                    ItemStack itemstack = ((EntityPlayer) entityIn).getHeldItemMainhand();
-                    if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
-                        if (ModularMovements.mwfEnable) {
-                            if (itemstack.getItem() instanceof BaseItem) {
-                                model.bipedLeftArm.rotateAngleY = 0;
-                                model.bipedRightArm.rotateAngleY = 0;
-                                model.bipedLeftArm.rotateAngleX = (float) (180 * 3.14 / 180);
-                                model.bipedRightArm.rotateAngleX = (float) (180 * 3.14 / 180);
-                            }
-                        }
-                    }
-                }
-                model.bipedRightLeg.rotateAngleX *= 0.2;
-                model.bipedLeftLeg.rotateAngleX *= 0.2;
-            }
-            if (offest >= 0) {
-                model.bipedRightLeg.rotateAngleZ += offest * 20 * 3.14 / 180;
-            } else {
-                model.bipedLeftLeg.rotateAngleZ += offest * 20 * 3.14 / 180;
             }
         }
     }

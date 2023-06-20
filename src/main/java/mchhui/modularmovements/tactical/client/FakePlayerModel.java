@@ -14,7 +14,7 @@ public class FakePlayerModel extends ModelPlayer {
 
     @Override
     public void setRotationAngles(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
-            float headPitch, float scaleFactor, Entity entityIn) {
+                                  float headPitch, float scaleFactor, Entity entityIn) {
         // TODO Auto-generated method stub
         super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
         ClientLitener.setRotationAngles(this, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch,

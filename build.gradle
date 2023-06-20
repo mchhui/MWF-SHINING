@@ -101,10 +101,10 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 
     // https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
-    implementation  'net.lingala.zip4j:zip4j:2.11.5'
+//    implementation  'net.lingala.zip4j:zip4j:2.11.5'
 
     implementation fileTree(dir: 'libs', include: '*.jar')
-    implementation fileTree(dir: 'optifine', include: '*.jar')
+    implementation(fileTree(dir: 'optifine', include: '*.jar'))
 }
 
 idea { module { inheritOutputDirs = true } }

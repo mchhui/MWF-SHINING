@@ -1,18 +1,14 @@
 package mchhui.easyeffect;
 
-import java.util.List;
-
-import io.netty.buffer.Unpooled;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.PacketBuffer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
-import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
+
+import java.util.List;
 
 public class EEComand extends CommandBase {
 
@@ -57,7 +53,7 @@ public class EEComand extends CommandBase {
         double size = Double.valueOf(args[14]);
         list.forEach((e) -> {
             if (e instanceof EntityPlayerMP) {
-                EasyEffect.sendEffect((EntityPlayerMP)e, x, y, z, vx, vy, vz, ax, ay, az, delay, fps, length, unit, size, args[15]);
+                EasyEffect.sendEffect((EntityPlayerMP) e, x, y, z, vx, vy, vz, ax, ay, az, delay, fps, length, unit, size, args[15]);
             }
         });
 

@@ -1,10 +1,10 @@
 package mchhui.easyeffect;
 
-import java.util.ArrayList;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.EntityAnimal;
+
+import java.util.ArrayList;
 
 public class EasyEffectRenderer {
     public ArrayList<EEObject> objects = new ArrayList<EEObject>();
@@ -23,13 +23,12 @@ public class EasyEffectRenderer {
         float yaw = entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * partialTicks + 180.0F;
         float pitch = entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * partialTicks;
         float roll = 0.0F;
-        if (entity instanceof EntityAnimal)
-        {
-            EntityAnimal entityanimal = (EntityAnimal)entity;
+        if (entity instanceof EntityAnimal) {
+            EntityAnimal entityanimal = (EntityAnimal) entity;
             yaw = entityanimal.prevRotationYawHead + (entityanimal.rotationYawHead - entityanimal.prevRotationYawHead) * partialTicks + 180.0F;
         }
-        viewEntityRenderingYaw=yaw;
-        viewEntityRenderingPitch=pitch;
+        viewEntityRenderingYaw = yaw;
+        viewEntityRenderingPitch = pitch;
 
         for (int i = 0; i < objects.size(); i++) {
             EEObject obj = objects.get(i);

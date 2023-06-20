@@ -28,13 +28,13 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ClientEventHandler {
 
-    public static float cemeraBobbing=0f;
-    
+    public static float cemeraBobbing = 0f;
+
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void cemeraSetup(CameraSetup event) {
         GlStateManager.rotate((float) cemeraBobbing * 5, 0, 0, 1);
     }
-    
+
     @SubscribeEvent
     public void renderWorld(RenderWorldLastEvent event) {
         InstantBulletRenderer.RenderAllTrails(event.getPartialTicks());

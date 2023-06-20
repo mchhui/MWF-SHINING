@@ -3,7 +3,6 @@ package mchhui.modularmovements.tactical.client;
 import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.api.PlayerSnapshotCreateEvent;
 import com.modularwarfare.api.RenderBonesEvent;
-
 import mchhui.modularmovements.tactical.PlayerState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.Vec3d;
@@ -17,7 +16,7 @@ public class MWFClientListener {
             event.bobbing = 0;
         }
     }
-    
+
     @SubscribeEvent
     public void onRenderBonesEvent(RenderBonesEvent.RotationAngles event) {
         ClientLitener.setRotationAngles(event.bones, event.limbSwing, event.limbSwingAmount, event.ageInTicks, event.netHeadYaw,
@@ -32,13 +31,13 @@ public class MWFClientListener {
                 if (state.probeOffset != 0) {
                     Vec3d vec3d = Vec3d.ZERO.addVector(state.probeOffset * -0.5, 0, 0)
                             .rotateYaw(-(event.player.rotationYaw * 3.14f / 180));
-                    event.pos.x+=vec3d.x;
-                    event.pos.z+=vec3d.z;
+                    event.pos.x += vec3d.x;
+                    event.pos.z += vec3d.z;
                 }
-                if(state.isSitting){
+                if (state.isSitting) {
                     event.pos.y -= 0.8f;
                 }
-                if(state.isCrawling){
+                if (state.isCrawling) {
                     event.pos.y -= 1.5f;
                 }
 

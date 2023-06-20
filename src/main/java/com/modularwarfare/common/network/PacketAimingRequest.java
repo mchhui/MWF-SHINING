@@ -1,6 +1,5 @@
 package com.modularwarfare.common.network;
 
-import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

@@ -1,7 +1,5 @@
 package mchhui.easyeffect;
 
-import java.util.function.Consumer;
-
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
@@ -16,27 +14,12 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.internal.FMLProxyPacket;
 import net.minecraftforge.fml.relauncher.Side;
 
-@Mod(modid="easyeffect")
+@Mod(modid = "easyeffect")
 public class EasyEffect {
     public static FMLEventChannel channel;
-    
-    @EventHandler
-    public void onInit(FMLInitializationEvent event) {
-        channel=NetworkRegistry.INSTANCE.newEventDrivenChannel("easyeffect");
-        if(FMLCommonHandler.instance().getSide()==Side.CLIENT) {
-            EasyEffectClient client=new EasyEffectClient();
-            MinecraftForge.EVENT_BUS.register(client);
-            channel.register(client);
-        }
-    }
-    
-    @EventHandler
-    public void onServerStarting(FMLServerStartingEvent event) {
-        event.registerServerCommand(new EEComand());
-    }
-    
+
     public static void sendEffect(EntityPlayerMP e, double x, double y, double z, double vx, double vy, double vz, double ax,
-            double ay, double az, int delay, int fps, int length, int unit, double size, String path) {
+                                  double ay, double az, int delay, int fps, int length, int unit, double size, String path) {
         PacketBuffer buf = new PacketBuffer(Unpooled.buffer());
         buf.writeDouble(x);
         buf.writeDouble(y);
@@ -54,5 +37,20 @@ public class EasyEffect {
         buf.writeDouble(size);
         buf.writeString(path);
         EasyEffect.channel.sendTo(new FMLProxyPacket(buf, "easyeffect"), e);
+    }
+
+    @EventHandler
+    public void onInit(FMLInitializationEvent event) {
+        channel = NetworkRegistry.INSTANCE.newEventDrivenChannel("easyeffect");
+        if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
+            EasyEffectClient client = new EasyEffectClient();
+            MinecraftForge.EVENT_BUS.register(client);
+            channel.register(client);
+        }
+    }
+
+    @EventHandler
+    public void onServerStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new EEComand());
     }
 }

@@ -7,17 +7,13 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.animations.StateEntry;
+import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.ModelGun;
-import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.common.grenades.ItemGrenade;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemGun;
-import com.modularwarfare.common.guns.ItemSpray;
-import com.modularwarfare.common.guns.WeaponAnimationType;
-import com.modularwarfare.common.guns.WeaponSoundType;
+import com.modularwarfare.common.guns.*;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.event.ForgeEvent;
@@ -28,7 +24,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
@@ -43,22 +38,21 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
 public class ClientTickHandler extends ForgeEvent {
 
-    private static final int SPS=60;
-    
+    private static final int SPS = 60;
+
     public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<>();
     public static ItemStack reloadEnhancedPrognosisAmmo = ItemStack.EMPTY;
     public static ItemStack reloadEnhancedPrognosisAmmoRendering = ItemStack.EMPTY;
-    public static boolean reloadEnhancedIsQuickly=false;
-    public static boolean reloadEnhancedIsQuicklyRendering=false;
+    public static boolean reloadEnhancedIsQuickly = false;
+    public static boolean reloadEnhancedIsQuicklyRendering = false;
 
     public static int oldCurrentItem;
     public static ItemStack oldItemStack = ItemStack.EMPTY;
     public static ItemStack lastItemStack = ItemStack.EMPTY;
     public static World lastWorld;
-    int i = 0;
-    
     private static long lastSyncTime;
+    int i = 0;
 
     public ClientTickHandler() {
     }
@@ -67,16 +61,16 @@ public class ClientTickHandler extends ForgeEvent {
     public void clientTick(TickEvent.ClientTickEvent event) {
         switch (event.phase) {
             case START:
-                
+
                 //CLEARING OLD_DATA BEGIN
-                if(lastWorld!=Minecraft.getMinecraft().world) {
+                if (lastWorld != Minecraft.getMinecraft().world) {
                     ClientRenderHooks.weaponEnhancedAnimations.clear();
                     ClientRenderHooks.weaponBasicAnimations.clear();
                     ClientProxy.gunEnhancedRenderer.otherControllers.clear();
-                    lastWorld=Minecraft.getMinecraft().world;
+                    lastWorld = Minecraft.getMinecraft().world;
                 }
                 //CLEARING OLD_DATA END
-                
+
                 onClientTickStart(Minecraft.getMinecraft());
                 ModularWarfare.NETWORK.handleClientPackets();
 
@@ -123,7 +117,7 @@ public class ClientTickHandler extends ForgeEvent {
                 long time = System.currentTimeMillis();
                 if (time > lastSyncTime + 1000 / 144) {
                     if (lastSyncTime > 0) {
-                        final float stepTick = (time - lastSyncTime) / (1000/(float)SPS);
+                        final float stepTick = (time - lastSyncTime) / (1000 / (float) SPS);
                         if (ClientProxy.gunEnhancedRenderer.controller != null) {
                             if (Minecraft.getMinecraft().player != null) {
                                 if (Minecraft.getMinecraft().player.getHeldItemMainhand()
@@ -144,7 +138,7 @@ public class ClientTickHandler extends ForgeEvent {
                                 }
                             }
                         });
-                        float offset=stepTick/10;
+                        float offset = stepTick / 10;
                         if (Math.abs(ClientEventHandler.cemeraBobbing) < offset) {
                             ClientEventHandler.cemeraBobbing = 0f;
                         } else if (ClientEventHandler.cemeraBobbing > 0) {
@@ -165,9 +159,9 @@ public class ClientTickHandler extends ForgeEvent {
             return;
 
         EntityPlayerSP player = minecraft.player;
-        
-        reloadEnhancedPrognosisAmmoRendering=reloadEnhancedPrognosisAmmo;
-        reloadEnhancedIsQuicklyRendering=reloadEnhancedIsQuickly;
+
+        reloadEnhancedPrognosisAmmoRendering = reloadEnhancedPrognosisAmmo;
+        reloadEnhancedIsQuicklyRendering = reloadEnhancedIsQuickly;
 
         OnTickRenderEvent event = new OnTickRenderEvent(renderTick);
         MinecraftForge.EVENT_BUS.post(event);
@@ -177,21 +171,21 @@ public class ClientTickHandler extends ForgeEvent {
          */
         if (ClientProxy.gunEnhancedRenderer.controller != null) {
             ClientProxy.gunEnhancedRenderer.controller.updateCurrentItem();
-            
-            ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl)->{
+
+            ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl) -> {
                 ctrl.updateCurrentItem();
             });
         }
-        
+
         for (EntityLivingBase entity : ClientRenderHooks.weaponEnhancedAnimations.keySet()) {
-            if(entity!=null) {
-                ClientRenderHooks.weaponEnhancedAnimations.get(entity).updateCurrentItem(entity);  
+            if (entity != null) {
+                ClientRenderHooks.weaponEnhancedAnimations.get(entity).updateCurrentItem(entity);
             }
         }
 
         if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
             float adsSpeed = 0F;
-            if(((ItemGun) player.getHeldItemMainhand().getItem()).type.animationType.equals(WeaponAnimationType.BASIC)){
+            if (((ItemGun) player.getHeldItemMainhand().getItem()).type.animationType.equals(WeaponAnimationType.BASIC)) {
                 ModelGun model = (ModelGun) ((ItemGun) player.getHeldItemMainhand().getItem()).type.model;
                 if (!RenderParameters.lastModel.equalsIgnoreCase(model.getClass().getName())) {
                     RenderParameters.resetRenderMods();
@@ -204,27 +198,27 @@ public class ClientTickHandler extends ForgeEvent {
                 boolean aimChargeMisc = !anim.reloading;
                 float value = (Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && aimChargeMisc && !ClientRenderHooks.getAnimMachine(player).attachmentMode) ? RenderParameters.adsSwitch + adsSpeedFinal : RenderParameters.adsSwitch - adsSpeedFinal;
                 RenderParameters.adsSwitch = Math.max(0, Math.min(1, value));
-                
+
 
                 float sprintSpeed = 0.15f * renderTick;
                 float sprintValue = (player.isSprinting() && !ClientRenderHooks.getAnimMachine(player).attachmentMode) ? RenderParameters.sprintSwitch + sprintSpeed : RenderParameters.sprintSwitch - sprintSpeed;
                 RenderParameters.sprintSwitch = Math.max(0, Math.min(1, sprintValue));
-                
+
 
                 float attachmentSpeed = 0.15f * renderTick;
                 float attachmentValue = ClientRenderHooks.getAnimMachine(player).attachmentMode ? RenderParameters.attachmentSwitch + attachmentSpeed : RenderParameters.attachmentSwitch - attachmentSpeed;
                 RenderParameters.attachmentSwitch = Math.max(0, Math.min(1, attachmentValue));
-                
+
 
                 float crouchSpeed = 0.15f * renderTick;
                 float crouchValue = player.isSneaking() ? RenderParameters.crouchSwitch + crouchSpeed : RenderParameters.crouchSwitch - crouchSpeed;
                 RenderParameters.crouchSwitch = Math.max(0, Math.min(1, crouchValue));
-                
+
 
                 float reloadSpeed = 0.15f * renderTick;
                 float reloadValue = anim.reloading ? RenderParameters.reloadSwitch - reloadSpeed : RenderParameters.reloadSwitch + reloadSpeed;
                 RenderParameters.reloadSwitch = Math.max(0, Math.min(1, reloadValue));
-                
+
 
                 float triggerPullSpeed = 0.03f * renderTick;
                 float triggerPullValue = Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(0) && !ClientRenderHooks.getAnimMachine(player).attachmentMode ? RenderParameters.triggerPullSwitch + triggerPullSpeed : RenderParameters.triggerPullSwitch - triggerPullSpeed;
@@ -236,53 +230,53 @@ public class ClientTickHandler extends ForgeEvent {
             }
 
             float balancing_speed_x = 0.08f * renderTick;
-            if(player.moveStrafing > 0){
+            if (player.moveStrafing > 0) {
                 RenderParameters.GUN_BALANCING_X = Math.min(1.0F, RenderParameters.GUN_BALANCING_X + balancing_speed_x);
-            } else if(player.moveStrafing < 0){
+            } else if (player.moveStrafing < 0) {
                 RenderParameters.GUN_BALANCING_X = Math.max(-1.0F, RenderParameters.GUN_BALANCING_X - balancing_speed_x);
-            } else if(player.moveStrafing == 0 && RenderParameters.GUN_BALANCING_X != 0F){
-                if(RenderParameters.GUN_BALANCING_X > 0F){
+            } else if (player.moveStrafing == 0 && RenderParameters.GUN_BALANCING_X != 0F) {
+                if (RenderParameters.GUN_BALANCING_X > 0F) {
                     RenderParameters.GUN_BALANCING_X = Math.max(0, RenderParameters.GUN_BALANCING_X - balancing_speed_x);
-                } else if(RenderParameters.GUN_BALANCING_X < 0F){
+                } else if (RenderParameters.GUN_BALANCING_X < 0F) {
                     RenderParameters.GUN_BALANCING_X = Math.min(0, RenderParameters.GUN_BALANCING_X + balancing_speed_x);
                 }
             }
 
             float balancing_speed_y = 0.08f * renderTick;
-            if(player.moveForward > 0){
+            if (player.moveForward > 0) {
                 RenderParameters.GUN_BALANCING_Y = Math.min((player.isSprinting() ? 3.0F : 1.0F), RenderParameters.GUN_BALANCING_Y + balancing_speed_y);
-            } else if(player.moveForward < 0){
+            } else if (player.moveForward < 0) {
                 RenderParameters.GUN_BALANCING_Y = Math.max(-1.0F, RenderParameters.GUN_BALANCING_Y - balancing_speed_y);
-            } else if(player.moveForward == 0 && RenderParameters.GUN_BALANCING_Y != 0F){
-                if(RenderParameters.GUN_BALANCING_Y > 0F){
-                    RenderParameters.GUN_BALANCING_Y = Math.max(0, RenderParameters.GUN_BALANCING_Y - balancing_speed_y*2);
-                } else if(RenderParameters.GUN_BALANCING_Y < 0F){
-                    RenderParameters.GUN_BALANCING_Y = Math.min(0, RenderParameters.GUN_BALANCING_Y + balancing_speed_y*2);
+            } else if (player.moveForward == 0 && RenderParameters.GUN_BALANCING_Y != 0F) {
+                if (RenderParameters.GUN_BALANCING_Y > 0F) {
+                    RenderParameters.GUN_BALANCING_Y = Math.max(0, RenderParameters.GUN_BALANCING_Y - balancing_speed_y * 2);
+                } else if (RenderParameters.GUN_BALANCING_Y < 0F) {
+                    RenderParameters.GUN_BALANCING_Y = Math.min(0, RenderParameters.GUN_BALANCING_Y + balancing_speed_y * 2);
                 }
             }
 
 
             //Gun change animation
-            if(player.inventory.currentItem != oldCurrentItem){
-                if(oldItemStack.isEmpty()|| !(oldItemStack.getItem() instanceof ItemGun)) {
-                    GUN_CHANGE_Y=0.5f;
+            if (player.inventory.currentItem != oldCurrentItem) {
+                if (oldItemStack.isEmpty() || !(oldItemStack.getItem() instanceof ItemGun)) {
+                    GUN_CHANGE_Y = 0.5f;
                 }
-                if(RenderParameters.GUN_CHANGE_Y<=0.5) {
-                    if(!oldItemStack.isEmpty() && oldItemStack.getItem() instanceof ItemGun) {
+                if (RenderParameters.GUN_CHANGE_Y <= 0.5) {
+                    if (!oldItemStack.isEmpty() && oldItemStack.getItem() instanceof ItemGun) {
                         lastItemStack = oldItemStack;
                     }
-                    RenderParameters.GUN_CHANGE_Y = 1.0f-RenderParameters.GUN_CHANGE_Y;
+                    RenderParameters.GUN_CHANGE_Y = 1.0f - RenderParameters.GUN_CHANGE_Y;
                 }
             }
-            if(GUN_CHANGE_Y<0.5) {
+            if (GUN_CHANGE_Y < 0.5) {
                 lastItemStack = ItemStack.EMPTY;
             }
             float change_speed_y = 0.04f * renderTick;
             RenderParameters.GUN_CHANGE_Y = Math.max(0, RenderParameters.GUN_CHANGE_Y - change_speed_y);
 
             Vec3d vecStart = player.getPositionEyes(1.0f);
-            RayTraceResult rayTraceResult = RayUtil.rayTrace(player,1.0, 1.0f);
-            if(rayTraceResult != null) {
+            RayTraceResult rayTraceResult = RayUtil.rayTrace(player, 1.0, 1.0f);
+            if (rayTraceResult != null) {
                 if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
                     if (rayTraceResult.hitVec != null) {
                         double d = vecStart.distanceTo(rayTraceResult.hitVec);
@@ -369,7 +363,6 @@ public class ClientTickHandler extends ForgeEvent {
         }
     }
 
-    
 
     public void onClientTickEnd(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)
@@ -397,8 +390,8 @@ public class ClientTickHandler extends ForgeEvent {
         antiRecoilPitch *= 0.75F;
         antiRecoilYaw *= 0.75F;
 
-        if(!ItemGun.fireButtonHeld)
-        RenderParameters.rate = Math.max(RenderParameters.rate - 0.05f , 0f);
+        if (!ItemGun.fireButtonHeld)
+            RenderParameters.rate = Math.max(RenderParameters.rate - 0.05f, 0f);
 
         for (AnimStateMachine stateMachine : ClientRenderHooks.weaponBasicAnimations.values()) {
             stateMachine.onTickUpdate();
@@ -416,7 +409,7 @@ public class ClientTickHandler extends ForgeEvent {
         final EntityPlayer player = Minecraft.getMinecraft().player;
         if (player.inventory.currentItem != this.oldCurrentItem) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                GunType type=((ItemGun)player.getHeldItemMainhand().getItem()).type;
+                GunType type = ((ItemGun) player.getHeldItemMainhand().getItem()).type;
                 type.playClientSound(player, WeaponSoundType.Equip);
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemSpray) {
                 ModularWarfare.PROXY.playSound(new MWSound(player.getPosition(), "shake", 1f, 1f));

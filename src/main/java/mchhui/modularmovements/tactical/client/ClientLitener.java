@@ -1,24 +1,13 @@
 package mchhui.modularmovements.tactical.client;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.type.BaseItem;
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
 import mchhui.modularmovements.tactical.server.ServerListener;
-import net.minecraftforge.fml.common.Loader;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-
-import com.modularwarfare.common.type.BaseItem;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
-import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.entity.EntityPlayerSPHelper;
 import net.minecraft.client.model.ModelBiped;
@@ -40,12 +29,13 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
-import net.minecraftforge.event.entity.PlaySoundAtEntityEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.PlayerSPPushOutOfBlocksEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
+import net.minecraftforge.event.entity.PlaySoundAtEntityEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -58,6 +48,13 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.RenderTickEvent;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 @SideOnly(Side.CLIENT)
 public class ClientLitener {
@@ -79,7 +76,9 @@ public class ClientLitener {
     public static double clientPlayerSitMoveAmplifierUser = 0.8;
     public static double clientPlayerSitMoveLess = 0.1;
     public static double clientPlayerSitMoveMax = 1.0;
-
+    public static int crawlingMousePosXMove = 0;
+    public static double cameraOffsetY = 0;
+    public static float cameraProbeOffset = 0;
     private static World world;
     private static boolean sitKeyLock = false;
     private static boolean crawlingKeyLock = false;
@@ -87,179 +86,9 @@ public class ClientLitener {
     private static boolean isSneaking = false;
     private static boolean wannaSliding = false;
     private static long lastSyncTime = 0;
-    public static int crawlingMousePosXMove = 0;
-
-    public static double cameraOffsetY = 0;
-    public static float cameraProbeOffset = 0;
-
     private static Field speedInAir;
     private static AxisAlignedBB lastAABB;
     private static AxisAlignedBB lastModAABB;
-
-    @SubscribeEvent
-    public void onTickClient(ClientTickEvent event) {
-        if (event.phase == Phase.START) {
-            return;
-        }
-        if (Minecraft.getMinecraft().world != world) {
-            clientPlayerSitMoveAmplifier = 0;
-            cameraOffsetY = 0;
-            cameraProbeOffset = 0;
-            clientPlayerSitMoveAmplifierCharging = 0;
-            clientPlayerSitMoveAmplifierCharged = 0;
-            clientPlayerState.reset();
-            if (Minecraft.getMinecraft().player != null) {
-                Minecraft.getMinecraft().player.setPrimaryHand(Minecraft.getMinecraft().gameSettings.mainHand);
-            }
-        }
-        if (Minecraft.getMinecraft().player != null) {
-            if(Minecraft.getMinecraft().player.posX!=Minecraft.getMinecraft().player.lastTickPosX) {
-                crawlingMousePosXMove=0;
-            }
-            if(Minecraft.getMinecraft().player.posZ!=Minecraft.getMinecraft().player.lastTickPosZ) {
-                crawlingMousePosXMove=0;
-            }
-            if (Minecraft.getMinecraft().player.isSprinting() && !clientPlayerState.isSitting) {
-                clientPlayerSitMoveAmplifierCharging += 1.0 / (20.0 * 1.0);
-                clientPlayerSitMoveAmplifierCharging = Math.min(clientPlayerSitMoveAmplifierCharging, 1);
-            } else {
-                clientPlayerSitMoveAmplifierCharging = 0;
-            }
-        }
-        world = Minecraft.getMinecraft().world;
-    }
-
-    public void onFMLInit(FMLInitializationEvent event) {
-        ClientRegistry.registerKeyBinding(sit);
-        ClientRegistry.registerKeyBinding(crawling);
-        ClientRegistry.registerKeyBinding(leftProbe);
-        ClientRegistry.registerKeyBinding(rightProbe);
-        speedInAir = ReflectionHelper.findField(EntityPlayer.class, "speedInAir", "field_71102_ce");
-    }
-
-    public void onFMLInitPost(FMLPostInitializationEvent event) {
-        Field field = ReflectionHelper.findField(RenderManager.class, "skinMap", "field_178636_l");
-        try {
-            Map<String, RenderPlayer> skinMap = (Map<String, RenderPlayer>) field
-                    .get(Minecraft.getMinecraft().getRenderManager());
-            skinMap.clear();
-            skinMap.put("default", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager()));
-            skinMap.put("slim", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager(), true));
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        field = ReflectionHelper.findField(Minecraft.class, "tutorial", "field_193035_aW");
-        try {
-            field.set(Minecraft.getMinecraft(), new FakeTutorial(Minecraft.getMinecraft()));
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        Minecraft.getMinecraft().getTutorial().reload();
-    }
-
-    private void onSit() {
-        EntityPlayer clientPlayer = Minecraft.getMinecraft().player;
-        if (clientPlayer == null) {
-            return;
-        }
-        if (Minecraft.getMinecraft().currentScreen != null) {
-            return;
-        }
-
-        //sit
-        if(clientPlayerState.canSit()) {
-            if ((!sitKeyLock && isButtonDown(sit.getKeyCode())) || wannaSliding) {
-                if (!clientPlayerState.isSitting || wannaSliding) {
-                    if (Minecraft.getMinecraft().player.onGround) {
-                        sitKeyLock = true;
-                        wannaSliding = false;
-                        AxisAlignedBB axisalignedbb;
-                        float w1=clientPlayer.width/2;
-                        if(clientPlayerState.isCrawling) {
-                            w1*=1.2f;
-                        }
-                        axisalignedbb = new AxisAlignedBB(clientPlayer.posX - w1, clientPlayer.posY + 0.1,
-                                clientPlayer.posZ - w1, clientPlayer.posX + w1, clientPlayer.posY + 1.2,
-                                clientPlayer.posZ + w1);
-                        if (!clientPlayer.world.collidesWithAnyBlock(axisalignedbb)) {
-                            if (!clientPlayerState.isSitting) {
-                                clientPlayerState.enableSit();
-                            }
-
-                            if (Minecraft.getMinecraft().player.isSprinting() && ModularMovements.CONFIG.slide.enable) {
-                                if (wannaSliding) {
-                                    clientPlayerSitMoveAmplifierCharging = 1;
-                                }
-                                clientPlayerSitMoveAmplifierCharged = clientPlayerSitMoveAmplifierCharging;
-                                clientPlayerSitMoveAmplifier = ModularMovements.CONFIG.slide.maxForce;
-                                clientPlayerSitMoveVec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,
-                                        clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
-                            }
-                        }
-                    }
-                } else {
-                    sitKeyLock = true;
-                    double d0 = 0.3;
-                    if (!clientPlayer.world.collidesWithAnyBlock(
-                            new AxisAlignedBB(clientPlayer.posX - d0, clientPlayer.posY, clientPlayer.posZ - d0,
-                                    clientPlayer.posX + d0, clientPlayer.posY + 1.8, clientPlayer.posZ + d0))) {
-                        clientPlayerSitMoveAmplifier = 0;
-                        clientPlayerState.disableSit();
-                    }
-                }
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public void onKeyInput(KeyInputEvent event) {
-        EntityPlayer clientPlayer = Minecraft.getMinecraft().player;
-        //sit
-        onSit();
-
-        //crawling
-        if(clientPlayerState.canCrawl()) {
-            if (!crawlingKeyLock && isButtonDown(crawling.getKeyCode())) {
-                crawlingKeyLock = true;
-                if (!clientPlayerState.isCrawling) {
-                    if (Minecraft.getMinecraft().player.onGround) {
-                        clientPlayerState.enableCrawling();
-                        if (Minecraft.getMinecraft().player.isSprinting()) {
-                            Vec3d vec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,
-                                    clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
-                            Minecraft.getMinecraft().player.motionX = vec3d.x * clientPlayerSitMoveAmplifierCharging;
-                            Minecraft.getMinecraft().player.motionY = 0.35 * clientPlayerSitMoveAmplifierCharging;
-                            Minecraft.getMinecraft().player.motionZ = vec3d.z * clientPlayerSitMoveAmplifierCharging;
-                        }
-                    }
-                } else {
-                    double d0 = 0.3;
-                    if (!clientPlayer.world.collidesWithAnyBlock(
-                            new AxisAlignedBB(clientPlayer.posX - d0, clientPlayer.posY, clientPlayer.posZ - d0,
-                                    clientPlayer.posX + d0, clientPlayer.posY + 1.8, clientPlayer.posZ + d0))) {
-                        clientPlayerState.disableCrawling();
-                    }
-                }
-            }
-        }
-
-        if(ModularMovements.CONFIG.lean.withGunsOnly) {
-            if (Loader.isModLoaded("modularwarfare")) {
-                if (Minecraft.getMinecraft().player.getHeldItemMainhand() != null) {
-                    if (!(Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun)) {
-                        return;
-                    }
-                } else {
-                    return;
-                }
-            } else {
-                return;
-            }
-        }
-    }
 
     public static Vec3d onGetPositionEyes(EntityPlayer player, float partialTicks, Vec3d vec3d) {
         PlayerState state = null;
@@ -283,7 +112,7 @@ public class ClientLitener {
     }
 
     public static boolean applyRotations(RenderLivingBase renderer, EntityLivingBase entityLiving, float p_77043_2_,
-            float rotationYaw, float partialTicks) {
+                                         float rotationYaw, float partialTicks) {
         if (entityLiving == Minecraft.getMinecraft().player && entityLiving.isEntityAlive()) {
             if (clientPlayerState.isSitting) {
                 GlStateManager.translate(0, -0.5, 0);
@@ -343,9 +172,9 @@ public class ClientLitener {
             float angle = (float) (ModularMovements.CONFIG.crawl.blockAngle * Math.PI);
             if (Math.abs(crawlingMousePosXMove + mouseHelper.deltaX) > angle) {
                 if (mouseHelper.deltaX > 0) {
-                    mouseHelper.deltaX = (int)(angle - crawlingMousePosXMove);
+                    mouseHelper.deltaX = (int) (angle - crawlingMousePosXMove);
                 } else {
-                    mouseHelper.deltaX = (int)(-angle - crawlingMousePosXMove);
+                    mouseHelper.deltaX = (int) (-angle - crawlingMousePosXMove);
                 }
             }
             crawlingMousePosXMove += mouseHelper.deltaX;
@@ -353,7 +182,7 @@ public class ClientLitener {
     }
 
     public static void setRotationAngles(ModelPlayer model, float limbSwing, float limbSwingAmount, float ageInTicks,
-            float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
+                                         float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
         setRotationAngles((ModelBiped) model, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch,
                 scaleFactor, entityIn);
         model.copyModelAngles(model.bipedLeftLeg, model.bipedLeftLegwear);
@@ -365,7 +194,7 @@ public class ClientLitener {
     }
 
     public static void setRotationAngles(ModelBiped model, float limbSwing, float limbSwingAmount, float ageInTicks,
-            float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
+                                         float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
         if (entityIn instanceof EntityPlayer && entityIn.isEntityAlive()) {
             PlayerState state = null;
             float offest = 0;
@@ -380,7 +209,7 @@ public class ClientLitener {
                 offest = state.probeOffset;
             }
 
-            if(state.isSitting){
+            if (state.isSitting) {
                 model.bipedRightLeg.rotateAngleX = -1.4137167F;
                 model.bipedRightLeg.rotateAngleY = ((float) Math.PI / 10F);
                 model.bipedRightLeg.rotateAngleZ = 0.07853982F;
@@ -419,6 +248,219 @@ public class ClientLitener {
         }
     }
 
+    private static boolean isButtonDown(int id) {
+        try {
+            if (id < 0) {
+                return Mouse.isButtonDown(id + 100);
+            }
+            return Keyboard.isKeyDown(id);
+        } catch (IndexOutOfBoundsException err) {
+
+        }
+        return false;
+    }
+
+    private static boolean isButtonsDownAll(int... id) {
+        boolean flag = true;
+        for (int i = 0; i < id.length; i++) {
+            flag = flag && isButtonDown(id[i]);
+            if (!flag) {
+                break;
+            }
+        }
+        return flag;
+    }
+
+    private static boolean isButtonsDownOne(int... id) {
+        boolean flag = false;
+        for (int i = 0; i < id.length; i++) {
+            flag = flag || isButtonDown(id[i]);
+            if (flag) {
+                break;
+            }
+        }
+        return flag;
+    }
+
+    public static boolean isSitting(Integer id) {
+        if (!ohterPlayerStateMap.containsKey(id)) {
+            return false;
+        }
+        return ohterPlayerStateMap.get(id).isSitting;
+    }
+
+    public static boolean isCrawling(Integer id) {
+        if (!ohterPlayerStateMap.containsKey(id)) {
+            return false;
+        }
+        return ohterPlayerStateMap.get(id).isCrawling;
+    }
+
+    @SubscribeEvent
+    public void onTickClient(ClientTickEvent event) {
+        if (event.phase == Phase.START) {
+            return;
+        }
+        if (Minecraft.getMinecraft().world != world) {
+            clientPlayerSitMoveAmplifier = 0;
+            cameraOffsetY = 0;
+            cameraProbeOffset = 0;
+            clientPlayerSitMoveAmplifierCharging = 0;
+            clientPlayerSitMoveAmplifierCharged = 0;
+            clientPlayerState.reset();
+            if (Minecraft.getMinecraft().player != null) {
+                Minecraft.getMinecraft().player.setPrimaryHand(Minecraft.getMinecraft().gameSettings.mainHand);
+            }
+        }
+        if (Minecraft.getMinecraft().player != null) {
+            if (Minecraft.getMinecraft().player.posX != Minecraft.getMinecraft().player.lastTickPosX) {
+                crawlingMousePosXMove = 0;
+            }
+            if (Minecraft.getMinecraft().player.posZ != Minecraft.getMinecraft().player.lastTickPosZ) {
+                crawlingMousePosXMove = 0;
+            }
+            if (Minecraft.getMinecraft().player.isSprinting() && !clientPlayerState.isSitting) {
+                clientPlayerSitMoveAmplifierCharging += 1.0 / (20.0 * 1.0);
+                clientPlayerSitMoveAmplifierCharging = Math.min(clientPlayerSitMoveAmplifierCharging, 1);
+            } else {
+                clientPlayerSitMoveAmplifierCharging = 0;
+            }
+        }
+        world = Minecraft.getMinecraft().world;
+    }
+
+    public void onFMLInit(FMLInitializationEvent event) {
+        ClientRegistry.registerKeyBinding(sit);
+        ClientRegistry.registerKeyBinding(crawling);
+        ClientRegistry.registerKeyBinding(leftProbe);
+        ClientRegistry.registerKeyBinding(rightProbe);
+        speedInAir = ReflectionHelper.findField(EntityPlayer.class, "speedInAir", "field_71102_ce");
+    }
+
+    public void onFMLInitPost(FMLPostInitializationEvent event) {
+        Field field = ReflectionHelper.findField(RenderManager.class, "skinMap", "field_178636_l");
+        try {
+            Map<String, RenderPlayer> skinMap = (Map<String, RenderPlayer>) field
+                    .get(Minecraft.getMinecraft().getRenderManager());
+            skinMap.clear();
+            skinMap.put("default", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager()));
+            skinMap.put("slim", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager(), true));
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        field = ReflectionHelper.findField(Minecraft.class, "tutorial", "field_193035_aW");
+        try {
+            field.set(Minecraft.getMinecraft(), new FakeTutorial(Minecraft.getMinecraft()));
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        Minecraft.getMinecraft().getTutorial().reload();
+    }
+
+    private void onSit() {
+        EntityPlayer clientPlayer = Minecraft.getMinecraft().player;
+        if (clientPlayer == null) {
+            return;
+        }
+        if (Minecraft.getMinecraft().currentScreen != null) {
+            return;
+        }
+
+        //sit
+        if (clientPlayerState.canSit()) {
+            if ((!sitKeyLock && isButtonDown(sit.getKeyCode())) || wannaSliding) {
+                if (!clientPlayerState.isSitting || wannaSliding) {
+                    if (Minecraft.getMinecraft().player.onGround) {
+                        sitKeyLock = true;
+                        wannaSliding = false;
+                        AxisAlignedBB axisalignedbb;
+                        float w1 = clientPlayer.width / 2;
+                        if (clientPlayerState.isCrawling) {
+                            w1 *= 1.2f;
+                        }
+                        axisalignedbb = new AxisAlignedBB(clientPlayer.posX - w1, clientPlayer.posY + 0.1,
+                                clientPlayer.posZ - w1, clientPlayer.posX + w1, clientPlayer.posY + 1.2,
+                                clientPlayer.posZ + w1);
+                        if (!clientPlayer.world.collidesWithAnyBlock(axisalignedbb)) {
+                            if (!clientPlayerState.isSitting) {
+                                clientPlayerState.enableSit();
+                            }
+
+                            if (Minecraft.getMinecraft().player.isSprinting() && ModularMovements.CONFIG.slide.enable) {
+                                if (wannaSliding) {
+                                    clientPlayerSitMoveAmplifierCharging = 1;
+                                }
+                                clientPlayerSitMoveAmplifierCharged = clientPlayerSitMoveAmplifierCharging;
+                                clientPlayerSitMoveAmplifier = ModularMovements.CONFIG.slide.maxForce;
+                                clientPlayerSitMoveVec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,
+                                        clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
+                            }
+                        }
+                    }
+                } else {
+                    sitKeyLock = true;
+                    double d0 = 0.3;
+                    if (!clientPlayer.world.collidesWithAnyBlock(
+                            new AxisAlignedBB(clientPlayer.posX - d0, clientPlayer.posY, clientPlayer.posZ - d0,
+                                    clientPlayer.posX + d0, clientPlayer.posY + 1.8, clientPlayer.posZ + d0))) {
+                        clientPlayerSitMoveAmplifier = 0;
+                        clientPlayerState.disableSit();
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onKeyInput(KeyInputEvent event) {
+        EntityPlayer clientPlayer = Minecraft.getMinecraft().player;
+        //sit
+        onSit();
+
+        //crawling
+        if (clientPlayerState.canCrawl()) {
+            if (!crawlingKeyLock && isButtonDown(crawling.getKeyCode())) {
+                crawlingKeyLock = true;
+                if (!clientPlayerState.isCrawling) {
+                    if (Minecraft.getMinecraft().player.onGround) {
+                        clientPlayerState.enableCrawling();
+                        if (Minecraft.getMinecraft().player.isSprinting()) {
+                            Vec3d vec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,
+                                    clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
+                            Minecraft.getMinecraft().player.motionX = vec3d.x * clientPlayerSitMoveAmplifierCharging;
+                            Minecraft.getMinecraft().player.motionY = 0.35 * clientPlayerSitMoveAmplifierCharging;
+                            Minecraft.getMinecraft().player.motionZ = vec3d.z * clientPlayerSitMoveAmplifierCharging;
+                        }
+                    }
+                } else {
+                    double d0 = 0.3;
+                    if (!clientPlayer.world.collidesWithAnyBlock(
+                            new AxisAlignedBB(clientPlayer.posX - d0, clientPlayer.posY, clientPlayer.posZ - d0,
+                                    clientPlayer.posX + d0, clientPlayer.posY + 1.8, clientPlayer.posZ + d0))) {
+                        clientPlayerState.disableCrawling();
+                    }
+                }
+            }
+        }
+
+        if (ModularMovements.CONFIG.lean.withGunsOnly) {
+            if (Loader.isModLoaded("modularwarfare")) {
+                if (Minecraft.getMinecraft().player.getHeldItemMainhand() != null) {
+                    if (!(Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun)) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = false)
     public void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
         isSneaking = event.getEntityPlayer().isSneaking();
@@ -445,10 +487,10 @@ public class ClientLitener {
     public void onCameraUpdate(CameraSetup event) {
         float pitch = event.getPitch();
         float yaw = event.getYaw();
-        double playerPosX=Minecraft.getMinecraft().player.posX+(Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)*event.getRenderPartialTicks();
-        double playerPosY=Minecraft.getMinecraft().player.posY+(Minecraft.getMinecraft().player.posY-Minecraft.getMinecraft().player.lastTickPosY)*event.getRenderPartialTicks();
-        double playerPosZ=Minecraft.getMinecraft().player.posZ+(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ)*event.getRenderPartialTicks();
-        
+        double playerPosX = Minecraft.getMinecraft().player.posX + (Minecraft.getMinecraft().player.posX - Minecraft.getMinecraft().player.lastTickPosX) * event.getRenderPartialTicks();
+        double playerPosY = Minecraft.getMinecraft().player.posY + (Minecraft.getMinecraft().player.posY - Minecraft.getMinecraft().player.lastTickPosY) * event.getRenderPartialTicks();
+        double playerPosZ = Minecraft.getMinecraft().player.posZ + (Minecraft.getMinecraft().player.posZ - Minecraft.getMinecraft().player.lastTickPosZ) * event.getRenderPartialTicks();
+
         if (clientPlayerState.probe != 0) {
             float f = 0.22f;
             float f1 = 0.2f;
@@ -456,15 +498,15 @@ public class ClientLitener {
             Vec3d vec3d = null;
             if (clientPlayerState.probe == -1) {
                 vec3d = new Vec3d(0.6, 0, 0)
-                        .rotateYaw((float) (-(yaw-180) * Math.PI / 180f));
+                        .rotateYaw((float) (-(yaw - 180) * Math.PI / 180f));
             }
             if (clientPlayerState.probe == 1) {
                 vec3d = new Vec3d(-0.6, 0, 0)
-                        .rotateYaw((float) (-(yaw-180) * Math.PI / 180f));
+                        .rotateYaw((float) (-(yaw - 180) * Math.PI / 180f));
             }
             AxisAlignedBB axisalignedbb = Minecraft.getMinecraft().player.getEntityBoundingBox();
-            int a=(int)(Math.sqrt((Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)*(Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)+(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ)*(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ))/0.1f);
-            int testCount = 10+a;
+            int a = (int) (Math.sqrt((Minecraft.getMinecraft().player.posX - Minecraft.getMinecraft().player.lastTickPosX) * (Minecraft.getMinecraft().player.posX - Minecraft.getMinecraft().player.lastTickPosX) + (Minecraft.getMinecraft().player.posZ - Minecraft.getMinecraft().player.lastTickPosZ) * (Minecraft.getMinecraft().player.posZ - Minecraft.getMinecraft().player.lastTickPosZ)) / 0.1f);
+            int testCount = 10 + a;
             for (int i = 0; i <= testCount; i++) {
                 axisalignedbb = new AxisAlignedBB(
                         playerPosX + vec3d.x * (i / (float) testCount) - f,
@@ -487,20 +529,20 @@ public class ClientLitener {
             int testCount = 10;
             for (int i = 0; i <= testCount; i++) {
                 AxisAlignedBB axisalignedbb = Minecraft.getMinecraft().player.getEntityBoundingBox();
-                axisalignedbb = new AxisAlignedBB(playerPosX + vec3d.x * (cameraProbeOffset)*(i/(float)testCount) - f,
+                axisalignedbb = new AxisAlignedBB(playerPosX + vec3d.x * (cameraProbeOffset) * (i / (float) testCount) - f,
                         playerPosY + Minecraft.getMinecraft().player.getEyeHeight() - f1,
-                        playerPosZ + vec3d.z * (cameraProbeOffset)*(i/(float)testCount) - f,
-                        playerPosX + vec3d.x * (cameraProbeOffset)*(i/(float)testCount) + f,
+                        playerPosZ + vec3d.z * (cameraProbeOffset) * (i / (float) testCount) - f,
+                        playerPosX + vec3d.x * (cameraProbeOffset) * (i / (float) testCount) + f,
                         playerPosY + Minecraft.getMinecraft().player.getEyeHeight() + f1,
-                        playerPosZ + vec3d.z * (cameraProbeOffset)*(i/(float)testCount) + f);
+                        playerPosZ + vec3d.z * (cameraProbeOffset) * (i / (float) testCount) + f);
                 axisalignedbb = axisalignedbb.grow(f2 - f, 0, f2 - f);
                 if (Minecraft.getMinecraft().player.world.collidesWithAnyBlock(axisalignedbb)) {
                     clientPlayerState.resetProbe();
                     cameraProbeOffset = 0;
-                }  
+                }
             }
         }
-        
+
         if (clientPlayerSitMoveAmplifier > 0) {
             if (Minecraft.getMinecraft().getRenderViewEntity() instanceof EntityPlayer) {
                 float partialTicks = (float) event.getRenderPartialTicks();
@@ -527,7 +569,7 @@ public class ClientLitener {
         GlStateManager.rotate(pitch, 1.0F, 0.0F, 0.0F);
         GlStateManager.translate(0, -cameraOffsetY, 0);
         GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
-        
+
         EntityPlayer player = Minecraft.getMinecraft().player;
         if (clientPlayerState.isSitting) {
             if (player.eyeHeight != 1.1f) {
@@ -535,7 +577,7 @@ public class ClientLitener {
                 player.eyeHeight = 1.1f;
             }
         } else if (clientPlayerState.isCrawling) {
-            
+
             if (player.eyeHeight != 0.7f) {
                 cameraOffsetY = player.eyeHeight - 0.7f;
                 player.eyeHeight = 0.7f;
@@ -659,8 +701,8 @@ public class ClientLitener {
                 }
             }
             onSit();
-            if(Minecraft.getMinecraft().player!=null&&Minecraft.getMinecraft().currentScreen==null) {
-                if(clientPlayerState.canProbe()&&!Minecraft.getMinecraft().player.isRiding()&&!Minecraft.getMinecraft().player.isElytraFlying()) {
+            if (Minecraft.getMinecraft().player != null && Minecraft.getMinecraft().currentScreen == null) {
+                if (clientPlayerState.canProbe() && !Minecraft.getMinecraft().player.isRiding() && !Minecraft.getMinecraft().player.isElytraFlying()) {
                     if (!probeKeyLock && isButtonDown(leftProbe.getKeyCode())) {
                         probeKeyLock = true;
                         if (clientPlayerState.probe != -1) {
@@ -678,9 +720,9 @@ public class ClientLitener {
                             clientPlayerState.resetProbe();
                         }
                     }
-                }  
+                }
             }
-            
+
             if (!isButtonDown(crawling.getKeyCode())) {
                 crawlingKeyLock = false;
             }
@@ -699,8 +741,8 @@ public class ClientLitener {
                     probeKeyLock = false;
                 }
             }
-            if(Minecraft.getMinecraft().player!=null) {
-                if (Minecraft.getMinecraft().player.isRiding()||Minecraft.getMinecraft().player.isElytraFlying()) {
+            if (Minecraft.getMinecraft().player != null) {
+                if (Minecraft.getMinecraft().player.isRiding() || Minecraft.getMinecraft().player.isElytraFlying()) {
                     clientPlayerSitMoveAmplifier = 0;
                     if (clientPlayerState.isSitting) {
                         clientPlayerState.disableSit();
@@ -709,44 +751,10 @@ public class ClientLitener {
                         clientPlayerState.disableCrawling();
                     }
                     clientPlayerState.resetProbe();
-                }  
+                }
             }
-            
-        }
-    }
-
-    private static boolean isButtonDown(int id) {
-        try {
-            if (id < 0) {
-                return Mouse.isButtonDown(id + 100);
-            }
-            return Keyboard.isKeyDown(id);
-        } catch (IndexOutOfBoundsException err) {
 
         }
-        return false;
-    }
-
-    private static boolean isButtonsDownAll(int... id) {
-        boolean flag = true;
-        for (int i = 0; i < id.length; i++) {
-            flag = flag && isButtonDown(id[i]);
-            if (!flag) {
-                break;
-            }
-        }
-        return flag;
-    }
-
-    private static boolean isButtonsDownOne(int... id) {
-        boolean flag = false;
-        for (int i = 0; i < id.length; i++) {
-            flag = flag || isButtonDown(id[i]);
-            if (flag) {
-                break;
-            }
-        }
-        return flag;
     }
 
     //@SubscribeEvent
@@ -774,7 +782,7 @@ public class ClientLitener {
                     event.getEntityPlayer().posZ + vec3d.z + (double) event.getEntityPlayer().width * 0.35D);
         }
     }
-    
+
     @SubscribeEvent
     public void onTickPlayer(PlayerTickEvent event) {
         if (Minecraft.getMinecraft().player == null) {
@@ -793,10 +801,10 @@ public class ClientLitener {
             }
         }
         if (event.phase != Phase.END) {
-            if(lastAABB!=null&&event.player.getEntityBoundingBox()==lastModAABB) {
-                event.player.setEntityBoundingBox(lastAABB);  
+            if (lastAABB != null && event.player.getEntityBoundingBox() == lastModAABB) {
+                event.player.setEntityBoundingBox(lastAABB);
             }
-            
+
             if (event.player.isSneaking()) {
                 clientPlayerSitMoveAmplifier = 0;
             }
@@ -857,11 +865,11 @@ public class ClientLitener {
                 }
             }
         }
-        Vec3d vec3d  = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
-        lastAABB=event.player.getEntityBoundingBox();
-        lastModAABB=event.player.getEntityBoundingBox().offset(vec3d.scale(-cameraProbeOffset));
+        Vec3d vec3d = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
+        lastAABB = event.player.getEntityBoundingBox();
+        lastModAABB = event.player.getEntityBoundingBox().offset(vec3d.scale(-cameraProbeOffset));
         event.player.setEntityBoundingBox(lastModAABB);
-        
+
         if (clientPlayerSitMoveAmplifier > 0) {
             TacticalHandler.sendNoStep(100);
         }
@@ -873,31 +881,17 @@ public class ClientLitener {
         TacticalHandler.sendToServer(clientPlayerState.writeCode());
     }
 
-    public static boolean isSitting(Integer id) {
-        if (!ohterPlayerStateMap.containsKey(id)) {
-            return false;
-        }
-        return ohterPlayerStateMap.get(id).isSitting;
-    }
-
-    public static boolean isCrawling(Integer id) {
-        if (!ohterPlayerStateMap.containsKey(id)) {
-            return false;
-        }
-        return ohterPlayerStateMap.get(id).isCrawling;
-    }
-
     @SubscribeEvent
     public void onTickOtherPlayer(PlayerTickEvent event) {
         if (event.side == Side.CLIENT) {
-            if(event.phase != Phase.END) {
+            if (event.phase != Phase.END) {
                 PlayerState state = ohterPlayerStateMap.get(event.player.getEntityId());
-                if(state!=null) {
-                    if(state.lastAABB!=null&&event.player.getEntityBoundingBox()==state.lastModAABB) {
-                        event.player.setEntityBoundingBox(state.lastAABB);  
+                if (state != null) {
+                    if (state.lastAABB != null && event.player.getEntityBoundingBox() == state.lastModAABB) {
+                        event.player.setEntityBoundingBox(state.lastAABB);
                     }
                 }
-            }else {
+            } else {
                 float f = event.player.width;
                 float f1 = event.player.height;
                 if (isSitting(event.player.getEntityId())) {
@@ -906,9 +900,9 @@ public class ClientLitener {
                     f1 = 0.8f;
                 }
                 PlayerState state = ohterPlayerStateMap.get(event.player.getEntityId());
-                float cameraProbeOffset=0;
-                if(state!=null) {
-                    cameraProbeOffset=state.probeOffset;
+                float cameraProbeOffset = 0;
+                if (state != null) {
+                    cameraProbeOffset = state.probeOffset;
                 }
                 if (f != event.player.width || f1 != event.player.height) {
                     AxisAlignedBB axisalignedbb = event.player.getEntityBoundingBox();
@@ -924,11 +918,11 @@ public class ClientLitener {
                         }
                     }
                 }
-                if(state!=null) {
-                    Vec3d vec3d  = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
-                    state.lastAABB=event.player.getEntityBoundingBox();
-                    state.lastModAABB=state.lastAABB.offset(vec3d.scale(-cameraProbeOffset));
-                    event.player.setEntityBoundingBox(state.lastModAABB);  
+                if (state != null) {
+                    Vec3d vec3d = new Vec3d(-0.6, 0, 0).rotateYaw((float) (-(event.player.rotationYaw - 180) * Math.PI / 180f));
+                    state.lastAABB = event.player.getEntityBoundingBox();
+                    state.lastModAABB = state.lastAABB.offset(vec3d.scale(-cameraProbeOffset));
+                    event.player.setEntityBoundingBox(state.lastModAABB);
                 }
             }
         }

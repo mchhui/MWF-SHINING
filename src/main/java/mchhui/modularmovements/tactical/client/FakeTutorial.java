@@ -7,13 +7,13 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class FakeTutorial extends Tutorial{
+public class FakeTutorial extends Tutorial {
 
     public FakeTutorial(Minecraft minecraft) {
         super(minecraft);
         // TODO Auto-generated constructor stub
     }
-    
+
     @Override
     public void handleMouse(MouseHelper mouseHelper) {
         super.handleMouse(mouseHelper);

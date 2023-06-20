@@ -1,7 +1,6 @@
 package mchhui.modularmovements.tactical.client;
 
 
-
 import com.modularwarfare.client.model.layers.RenderLayerBackpack;
 import com.modularwarfare.client.model.layers.RenderLayerBody;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
@@ -40,7 +39,7 @@ public class FakeRenderPlayer extends RenderPlayer {
     }
 
     protected void applyRotations(AbstractClientPlayer entityLiving, float p_77043_2_, float rotationYaw,
-            float partialTicks) {
+                                  float partialTicks) {
         if (ClientLitener.applyRotations(this, entityLiving, p_77043_2_, rotationYaw, partialTicks)) {
             return;
         }
