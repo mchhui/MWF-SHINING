@@ -95,7 +95,7 @@ public class ModConfig {
 
     public boolean model_optimization = true;
     public boolean debug_hits_message = false;
-    public boolean dev_mode = true;
+    public boolean dev_mode = false;
 
     public String version = ModularWarfare.MOD_VERSION;
 
