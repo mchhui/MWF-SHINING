@@ -1,6 +1,9 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.SearchAmmo;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.SearchBullet;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.Unload;
 import com.modularwarfare.api.WeaponReloadEvent;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.common.guns.*;
@@ -514,7 +517,7 @@ public class PacketGunReload extends PacketBase {
     public void handleBulletGunReloadEnhanced(EntityPlayerMP entityPlayer, ItemStack gunStack, ItemGun itemGun, GunType gunType, InventoryPlayer inventory) {
         if (ServerTickHandler.playerReloadCooldown.containsKey(entityPlayer.getUniqueID()))
             return;
-
+        
         if (gunType.acceptedBullets != null) {
             if (!unload) {
                 ItemStack bulletStackToLoad = null;
@@ -531,7 +534,6 @@ public class PacketGunReload extends PacketBase {
                             }
                             
                             bulletStackToLoad=new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
-                            
                             if (gunStack.getTagCompound().getInteger("ammocount") >= gunType.internalAmmoStorage) {
                                 return;
                             }
@@ -583,7 +585,6 @@ public class PacketGunReload extends PacketBase {
                     }
                 }
                 
-
                 /** End of search, start to reload */
                 if (bulletStackToLoad == null)
                     return;
@@ -591,6 +592,17 @@ public class PacketGunReload extends PacketBase {
                 ItemStack loadingItemStack = bulletStackToLoad.copy();
                 loadingItemStack.setCount(1);
                 int loadingCount=ReloadHelper.inventoryItemCount(entityPlayer, loadingItemStack);
+                int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
+                int amountToLoad = gunType.internalAmmoStorage - ammoCount;
+                if(loadingCount>amountToLoad) {
+                    loadingCount=amountToLoad;
+                }
+                
+                SearchBullet searchBulletEvent=new SearchBullet(entityPlayer, gunStack, bulletStackToLoad, loadingCount);
+                MinecraftForge.EVENT_BUS.post(searchBulletEvent);
+                bulletStackToLoad=searchBulletEvent.bullet;
+                loadingCount=searchBulletEvent.count;
+                
                 if(loadingCount<=0) {
                     return;
                 }
@@ -616,12 +628,6 @@ public class PacketGunReload extends PacketBase {
                     loadOnly = true;
                 }
 
-                
-                int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
-                int amountToLoad = gunType.internalAmmoStorage - ammoCount;
-                if(loadingCount>amountToLoad) {
-                    loadingCount=amountToLoad;
-                }
                 
                 /*
                 int reserve = bulletStackToLoad.getCount();
@@ -659,6 +665,10 @@ public class PacketGunReload extends PacketBase {
                 WeaponReloadEvent.Pre preReloadEvent = new WeaponReloadEvent.Pre(entityPlayer, gunStack, itemGun, false, false);
                 MinecraftForge.EVENT_BUS.post(preReloadEvent);
                 if (preReloadEvent.isCanceled())
+                    return;
+                Unload unloadEvent = new Unload(entityPlayer, gunStack);
+                MinecraftForge.EVENT_BUS.post(unloadEvent);
+                if (unloadEvent.isCanceled())
                     return;
                 
                 Integer bulletCount = ReloadHelper.checkUnloadBullets(entityPlayer, gunStack);
@@ -698,6 +708,8 @@ public class PacketGunReload extends PacketBase {
             ItemStack currentAmmoToLoad=null;
             ItemStack multiAmmoToLoad=null;
 
+            ItemStack currentAmmoStack = new ItemStack(nbtTagCompound.getCompoundTag("ammo")).copy();
+            
             /** Offhand Reload */
             if (inventory.offHandInventory.get(0) != ItemStack.EMPTY) {
                 ItemStack itemStack = inventory.offHandInventory.get(0);
@@ -715,7 +727,6 @@ public class PacketGunReload extends PacketBase {
 
             /** Compounded Magazines */
             if (hasAmmoLoaded) {
-                ItemStack currentAmmoStack = new ItemStack(nbtTagCompound.getCompoundTag("ammo")).copy();
                 ItemAmmo currentAmmoItem = (ItemAmmo) currentAmmoStack.getItem();
                 NBTTagCompound currentAmmoTag = currentAmmoStack.getTagCompound();
 
@@ -775,6 +786,10 @@ public class PacketGunReload extends PacketBase {
                 }
             }
 
+            SearchAmmo searchAmmoEvent=new SearchAmmo(entityPlayer, gunStack, ammoStackToLoad);
+            MinecraftForge.EVENT_BUS.post(searchAmmoEvent);
+            ammoStackToLoad=searchAmmoEvent.ammo;
+            
             /** End of search, start to reload */
             if (ammoStackToLoad == null)
                 return;
@@ -863,6 +878,11 @@ public class PacketGunReload extends PacketBase {
             WeaponReloadEvent.Pre preReloadEvent = new WeaponReloadEvent.Pre(entityPlayer, gunStack, itemGun, false, false);
             MinecraftForge.EVENT_BUS.post(preReloadEvent);
             if (preReloadEvent.isCanceled())
+                return;
+            
+            Unload unloadEvent = new Unload(entityPlayer, gunStack);
+            MinecraftForge.EVENT_BUS.post(unloadEvent);
+            if (unloadEvent.isCanceled())
                 return;
 
             if (ReloadHelper.checkUnloadAmmo(entityPlayer, gunStack)) {

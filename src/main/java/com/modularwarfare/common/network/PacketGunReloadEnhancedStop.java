@@ -2,6 +2,9 @@ package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.WeaponReloadEvent;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.ReloadStopFirst;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.ReloadStopSecond;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.SearchAmmo;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
@@ -109,8 +112,9 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
         }
         
         NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
-        
-        if (unloaded) {
+        ReloadStopFirst firstEvent=new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
+        MinecraftForge.EVENT_BUS.post(firstEvent);
+        if (firstEvent.unload) {
             if (task.isUnload) {
                 ReloadHelper.unloadBullets(entityPlayer, gunStack,reloadValidCount);
             } else if (nbtTagCompound.hasKey("bullet")) {
@@ -140,7 +144,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             }
 
             if (loaded) {
-                if (ReloadHelper.removeItemstack(entityPlayer, task.prognosisAmmo, reloadValidCount)) {
+                boolean result=ReloadHelper.removeItemstack(entityPlayer, task.prognosisAmmo, reloadValidCount);
+                ReloadStopSecond secondEvent=new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
+                MinecraftForge.EVENT_BUS.post(secondEvent);
+                if (secondEvent.result) {
                     ItemStack loadingItemStack = task.prognosisAmmo.copy();
                     int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
                     gunStack.getTagCompound().setInteger("ammocount", ammoCount + reloadValidCount);
@@ -162,8 +169,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             return;
         }
         
+        ReloadStopFirst firstEvent=new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
+        MinecraftForge.EVENT_BUS.post(firstEvent);
         /** Unload old ammo stack */
-        if (unloaded) {
+        if (firstEvent.unload) {
             if(!(task.currentAmmo&&loaded)) {
                 if (ItemGun.hasAmmoLoaded(gunStack)) {
                     ReloadHelper.unloadAmmo(entityPlayer, gunStack);
@@ -189,7 +198,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
 
         /** Loading of new ammo stack */
         if (loaded) {
-            if (task.currentAmmo || ReloadHelper.removeItemstack(entityPlayer, ammoStackToLoad, 1)) {
+            boolean result=task.currentAmmo || ReloadHelper.removeItemstack(entityPlayer, ammoStackToLoad, 1);
+            ReloadStopSecond secondEvent=new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
+            MinecraftForge.EVENT_BUS.post(secondEvent);
+            if (secondEvent.result) {
                 ItemStack loadingItemStack = ammoStackToLoad.copy();
                 loadingItemStack.setCount(1);
                 if (multiMagReload && multiMagToLoad != null)
