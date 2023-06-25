@@ -129,6 +129,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
     public AnimationController getController(EntityPlayer player,GunEnhancedRenderConfig config) {
         if(player==Minecraft.getMinecraft().player) {
+            if(controller.player!=player||controller.getConfig()!=config) {
+                controller=new AnimationController(player, config);
+            }
             return controller;
         }
         String name=player.getName();
