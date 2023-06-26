@@ -41,9 +41,7 @@ import java.util.function.Function;
 
 public class ItemGun extends BaseItem {
 
-    public static final Function<GunType, ItemGun> factory = type -> {
-        return new ItemGun((type));
-    };
+    public static final Function<GunType, ItemGun> FACTORY = ItemGun::new;
     protected static final UUID MOVEMENT_SPEED_MODIFIER = UUID.fromString("99999999-4180-4865-B01B-BCCE9785ACA3");
     public static boolean canDryFire = true;
     public static boolean fireButtonHeld = false;

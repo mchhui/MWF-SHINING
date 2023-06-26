@@ -146,7 +146,7 @@ public class DefaultRayCasting extends RayCasting {
                             OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x + rayVec.x * t, startVec.y + rayVec.y * t, startVec.z + rayVec.z * t)));
                         }
                         if (finalBox != null) {
-                            PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
+                            PlayerData data = ModularWarfare.PLAYER_HANDLER.getPlayerData((EntityPlayer) obj);
                             RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
                             return new OBBHit((EntityPlayer) obj, finalBox.copy(), intercept);
                         }

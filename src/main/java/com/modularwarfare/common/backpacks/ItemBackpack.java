@@ -24,9 +24,7 @@ import java.util.function.Function;
 
 public class ItemBackpack extends BaseItem {
 
-    public static final Function<BackpackType, ItemBackpack> factory = type -> {
-        return new ItemBackpack(type);
-    };
+    public static final Function<BackpackType, ItemBackpack> FACTORY = ItemBackpack::new;
     public BackpackType type;
 
     public ItemBackpack(BackpackType type) {

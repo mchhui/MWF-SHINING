@@ -6,9 +6,7 @@ import java.util.function.Function;
 
 public class ItemSpray extends BaseItem {
 
-    public static final Function<SprayType, ItemSpray> factory = type -> {
-        return new ItemSpray(type);
-    };
+    public static final Function<SprayType, ItemSpray> FACTORY = ItemSpray::new;
     public SprayType type;
 
     public ItemSpray(SprayType type) {
@@ -18,10 +16,9 @@ public class ItemSpray extends BaseItem {
         this.setMaxDamage(type.usableMaxAmount);
     }
 
-
     @Override
     public boolean getShareTag() {
-        return true;
+        return super.getShareTag();
     }
 
 }

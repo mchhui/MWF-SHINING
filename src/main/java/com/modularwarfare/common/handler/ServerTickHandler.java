@@ -83,7 +83,7 @@ public class ServerTickHandler extends ForgeEvent {
                 }
                 break;
             case END:
-                ModularWarfare.PLAYERHANDLER.serverTick();
+                ModularWarfare.PLAYER_HANDLER.serverTick();
                 break;
         }
     }

@@ -11,9 +11,7 @@ import java.util.function.Function;
 
 public class ItemAttachment extends BaseItem {
 
-    public static final Function<AttachmentType, ItemAttachment> factory = type -> {
-        return new ItemAttachment(type);
-    };
+    public static final Function<AttachmentType, ItemAttachment> FACTORY = ItemAttachment::new;
     public AttachmentType type;
 
     public ItemAttachment(AttachmentType type) {

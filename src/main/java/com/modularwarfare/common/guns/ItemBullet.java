@@ -14,9 +14,7 @@ import java.util.function.Function;
 
 public class ItemBullet extends BaseItem {
 
-    public static final Function<BulletType, ItemBullet> factory = type -> {
-        return new ItemBullet(type);
-    };
+    public static final Function<BulletType, ItemBullet> FACTORY = ItemBullet::new;
     public BulletType type;
 
     public ItemBullet(BulletType type) {

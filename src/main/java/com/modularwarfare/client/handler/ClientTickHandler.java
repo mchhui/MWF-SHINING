@@ -311,7 +311,7 @@ public class ClientTickHandler extends ForgeEvent {
         if (minecraft.player == null || minecraft.world == null)
             return;
 
-        ModularWarfare.PLAYERHANDLER.clientTick();
+        ModularWarfare.PLAYER_HANDLER.clientTick();
 
         GUN_ROT_X_LAST = GUN_ROT_X;
         GUN_ROT_Y_LAST = GUN_ROT_Y;

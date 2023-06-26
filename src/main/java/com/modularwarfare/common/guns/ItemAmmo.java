@@ -22,9 +22,7 @@ import java.util.function.Function;
 
 public class ItemAmmo extends BaseItem {
 
-    public static final Function<AmmoType, ItemAmmo> factory = type -> {
-        return new ItemAmmo(type);
-    };
+    public static final Function<AmmoType, ItemAmmo> FACTORY = ItemAmmo::new;
     public AmmoType type;
 
     public ItemAmmo(AmmoType type) {

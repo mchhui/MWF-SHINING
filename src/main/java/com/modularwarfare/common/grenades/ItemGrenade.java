@@ -18,9 +18,7 @@ import java.util.function.Function;
 
 public class ItemGrenade extends BaseItem {
 
-    public static final Function<GrenadeType, ItemGrenade> factory = type -> {
-        return new ItemGrenade(type);
-    };
+    public static final Function<GrenadeType, ItemGrenade> FACTORY = ItemGrenade::new;
     public GrenadeType type;
 
     public ItemGrenade(GrenadeType type) {
