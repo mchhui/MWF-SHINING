@@ -1,13 +1,21 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.WeaponReloadEvent;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.ReloadStopFirst;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.ReloadStopSecond;
+import com.modularwarfare.api.WeaponEnhancedReloadEvent.SearchAmmo;
+import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
+import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.handler.data.DataGunReloadEnhancedTask;
 import com.modularwarfare.utility.ReloadHelper;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,6 +23,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.common.MinecraftForge;
 
 public class PacketGunReloadEnhancedStop extends PacketBase {
     public int reloadValidCount;
@@ -62,7 +71,7 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
                     ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
                     return;
                 }
-
+                
                 if (gunType.animationType.equals(WeaponAnimationType.ENHANCED)) {
                     if (gunType.acceptedAmmo != null) {
                         handleMagGunReloadEnhanced(entityPlayer, gunStack, itemGun, gunType, inventory);
@@ -87,7 +96,7 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
     }
 
     public void handleBulletGunReloadEnhanced(EntityPlayerMP entityPlayer, ItemStack gunStack, ItemGun itemGun,
-                                              GunType gunType, InventoryPlayer inventory) {
+            GunType gunType, InventoryPlayer inventory) {
         if (!ServerTickHandler.reloadEnhancedTask.containsKey(entityPlayer.getUniqueID())) {
             return;
         }
@@ -96,17 +105,18 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
             return;
         }
-
+        
         if (reloadValidCount > task.reloadCount || reloadValidCount < 0) {
             ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
             return;
         }
-
+        
         NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
-
-        if (unloaded) {
+        ReloadStopFirst firstEvent=new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
+        MinecraftForge.EVENT_BUS.post(firstEvent);
+        if (firstEvent.unload) {
             if (task.isUnload) {
-                ReloadHelper.unloadBullets(entityPlayer, gunStack, reloadValidCount);
+                ReloadHelper.unloadBullets(entityPlayer, gunStack,reloadValidCount);
             } else if (nbtTagCompound.hasKey("bullet")) {
                 ItemBullet bulletItemToLoad = (ItemBullet) task.prognosisAmmo.getItem();
                 ItemStack currentBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
@@ -115,11 +125,11 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
                     ReloadHelper.unloadBullets(entityPlayer, gunStack);
             }
         }
-
+        
         if (task.isUnload) {
             return;
         }
-
+        
 
         if (gunType.acceptedBullets != null) {
             if (gunStack.getTagCompound() != null) {
@@ -134,7 +144,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             }
 
             if (loaded) {
-                if (ReloadHelper.removeItemstack(entityPlayer, task.prognosisAmmo, reloadValidCount)) {
+                boolean result=ReloadHelper.removeItemstack(entityPlayer, task.prognosisAmmo, reloadValidCount);
+                ReloadStopSecond secondEvent=new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
+                MinecraftForge.EVENT_BUS.post(secondEvent);
+                if (secondEvent.result) {
                     ItemStack loadingItemStack = task.prognosisAmmo.copy();
                     int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
                     gunStack.getTagCompound().setInteger("ammocount", ammoCount + reloadValidCount);
@@ -146,7 +159,7 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
     }
 
     public void handleMagGunReloadEnhanced(EntityPlayerMP entityPlayer, ItemStack gunStack, ItemGun itemGun,
-                                           GunType gunType, InventoryPlayer inventory) {
+            GunType gunType, InventoryPlayer inventory) {
         if (!ServerTickHandler.reloadEnhancedTask.containsKey(entityPlayer.getUniqueID())) {
             return;
         }
@@ -155,13 +168,15 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
             return;
         }
-
+        
+        ReloadStopFirst firstEvent=new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
+        MinecraftForge.EVENT_BUS.post(firstEvent);
         /** Unload old ammo stack */
-        if (unloaded) {
-            if (!(task.currentAmmo && loaded)) {
+        if (firstEvent.unload) {
+            if(!(task.currentAmmo&&loaded)) {
                 if (ItemGun.hasAmmoLoaded(gunStack)) {
                     ReloadHelper.unloadAmmo(entityPlayer, gunStack);
-                }
+                }  
             }
         }
 
@@ -171,7 +186,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
 
         NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
         boolean hasAmmoLoaded = ItemGun.hasAmmoLoaded(gunStack);
+        boolean offhandedReload = false;
         ItemStack ammoStackToLoad = task.prognosisAmmo;
+        Integer ammoStackSlotToLoad = null;
+        Integer highestAmmoCount = 0;
         Integer multiMagToLoad = task.multiMagToLoad;
 
         /** Weapon Pre-Reload event */
@@ -180,7 +198,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
 
         /** Loading of new ammo stack */
         if (loaded) {
-            if (task.currentAmmo || ReloadHelper.removeItemstack(entityPlayer, ammoStackToLoad, 1)) {
+            boolean result=task.currentAmmo || ReloadHelper.removeItemstack(entityPlayer, ammoStackToLoad, 1);
+            ReloadStopSecond secondEvent=new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
+            MinecraftForge.EVENT_BUS.post(secondEvent);
+            if (secondEvent.result) {
                 ItemStack loadingItemStack = ammoStackToLoad.copy();
                 loadingItemStack.setCount(1);
                 if (multiMagReload && multiMagToLoad != null)
@@ -190,10 +211,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             }
         }
     }
-
+    
     @Override
     public String toString() {
         // TODO Auto-generated method stub
-        return "PacketGunReloadEnhancedStop[" + reloadValidCount + "," + unloaded + "," + loaded + "]";
+        return "PacketGunReloadEnhancedStop["+reloadValidCount+","+unloaded+","+loaded+"]";
     }
 }
