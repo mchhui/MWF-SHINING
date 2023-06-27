@@ -15,10 +15,8 @@ public class SkinType {
     public Texture[] textures = new Texture[0];
 
     public SkinType() {
-        /**
-         * Disable by default the texture preloading
-         */
-        //textures[0] = Texture.BASIC;
+        // Disable by default the texture preloading
+        // textures[0] = Texture.BASIC;
     }
 
     public static SkinType getDefaultSkin(BaseType baseType) {
@@ -50,10 +48,10 @@ public class SkinType {
 
     @Override
     public int hashCode() {
-        int result = internalName.hashCode();
-        result = 31 * result + displayName.hashCode();
-        result = 31 * result + skinAsset.hashCode();
-        result = 31 * result + sampling.hashCode();
+        int result = internalName != null ? internalName.hashCode() : 0;
+        result = 31 * result + (displayName != null ? displayName.hashCode() : 0);
+        result = 31 * result + (skinAsset != null ? skinAsset.hashCode() : 0);
+        result = 31 * result + (sampling != null ? sampling.hashCode() : 0);
         result = 31 * result + Arrays.hashCode(textures);
         return result;
     }
@@ -64,17 +62,35 @@ public class SkinType {
     }
 
     public enum Sampling {
+        /**
+         * Flat sampling is used for skins that are not affected by the shape of the model
+         */
         @SerializedName("flat") FLAT,
+        /**
+         * Linear sampling is used for skins that are affected by the shape of the model
+         */
         @SerializedName("linear") LINEAR;
     }
 
     public enum Texture {
+        /**
+         * Basic texture is the main texture of the model
+         */
         @SerializedName("basic") BASIC("skins/%s/%s.png"),
+        /**
+         * Glow texture is used to add a glowing effect to the model
+         */
         @SerializedName("glow") GLOW("skins/%s/%s_glow.png"),
+        /**
+         * Specular texture is used to add a specular effect to the model
+         */
         @SerializedName("specular") SPECULAR("skins/%s/%s_s.png"),
+        /**
+         * Normal texture is used to add a normal effect to the model
+         */
         @SerializedName("normal") NORMAL("skins/%s/%s_n.png");
 
-        public String format;
+        public final String format;
 
         Texture(String format) {
             this.format = format;
