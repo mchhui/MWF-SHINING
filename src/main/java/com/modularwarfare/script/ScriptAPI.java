@@ -154,7 +154,7 @@ public class ScriptAPI {
             }
             ((ItemGun) stack.getItem()).type.acceptedAttachments.forEach((k, v) -> {
                 if (!map.containsKey(k.typeName)) {
-                    map.put(k.typeName, new ArrayList<String>());
+                    map.put(k.typeName, new ArrayList<>());
                 }
                 v.forEach((name) -> {
                     map.get(k.typeName).add(ModularWarfare.attachmentTypes.get(name).type.displayName);

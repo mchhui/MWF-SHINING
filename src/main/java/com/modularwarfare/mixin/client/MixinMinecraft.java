@@ -79,7 +79,8 @@ public abstract class MixinMinecraft {
     protected abstract void sendClickBlockToController(boolean leftClick);
 
     /**
-     * @author
+     * @author Protoxy
+     * @reason Fix for reloading while scrolling
      */
     @Overwrite
     private void processKeyBinds() {

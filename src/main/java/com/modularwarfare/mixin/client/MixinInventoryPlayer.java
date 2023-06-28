@@ -29,7 +29,8 @@ public abstract class MixinInventoryPlayer {
     public abstract ItemStack getStackInSlot(int index);
 
     /**
-     * @author
+     * @author Protoxy
+     * @reason Fix for reloading while scrolling
      */
     @Overwrite
     @SideOnly(Side.CLIENT)
