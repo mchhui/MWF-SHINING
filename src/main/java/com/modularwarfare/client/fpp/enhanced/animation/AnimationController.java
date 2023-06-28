@@ -432,7 +432,7 @@ public class AnimationController {
     }
 
     public boolean isDrawing() {
-        if(player==null) {
+        if (player == null) {
             return false;
         }
         Item item = player.getHeldItemMainhand().getItem();
@@ -445,7 +445,7 @@ public class AnimationController {
     }
 
     public boolean isCouldReload() {
-        if(player==null) {
+        if (player == null) {
             return true;
         }
         Item item = player.getHeldItemMainhand().getItem();
@@ -463,7 +463,7 @@ public class AnimationController {
     }
 
     public boolean isCouldShoot() {
-        if(player==null) {
+        if (player == null) {
             return true;
         }
         Item item = player.getHeldItemMainhand().getItem();
