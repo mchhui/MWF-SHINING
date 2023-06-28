@@ -12,6 +12,7 @@ import org.lwjgl.input.Keyboard;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+@SuppressWarnings("unused")
 public class ScriptAPI {
     public Lang Lang = new Lang();
     public Stack Stack = new Stack();
@@ -21,8 +22,8 @@ public class ScriptAPI {
     public Bullet Bullet = new Bullet();
 
     public static class Lang {
-        public String format(String key, Object... parms) {
-            return I18n.format(key, parms);
+        public String format(String key, Object... params) {
+            return I18n.format(key, params);
         }
     }
 
@@ -38,8 +39,8 @@ public class ScriptAPI {
             return stack.getTagCompound().copy();
         }
 
-        public ItemStack getStack(int itemid) {
-            return new ItemStack(Item.getItemById(itemid));
+        public ItemStack getStack(int itemId) {
+            return new ItemStack(Item.getItemById(itemId));
         }
 
         public String getDisplayName(ItemStack stack) {
@@ -62,8 +63,14 @@ public class ScriptAPI {
 
         public ItemStack getAmmoStack(ItemStack gunStack) {
             if (hasAmmoLoaded(gunStack)) {
-                ItemStack ammoStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
-                return ammoStack;
+                NBTTagCompound tagCompound = gunStack.getTagCompound();
+                if (tagCompound == null) {
+                    ModularWarfare.LOGGER.error("Gun stack has no NBT tag compound");
+                    return ItemStack.EMPTY;
+                }
+
+                NBTTagCompound ammoTag = tagCompound.getCompoundTag("ammo");
+                return new ItemStack(ammoTag);
             }
             return ItemStack.EMPTY;
         }
@@ -72,11 +79,8 @@ public class ScriptAPI {
             if (!isGun(itemStack)) {
                 return false;
             }
-            if (((ItemGun) itemStack.getItem()).type.acceptedBullets != null
-                    && ((ItemGun) itemStack.getItem()).type.acceptedBullets.length > 0) {
-                return true;
-            }
-            return false;
+            return ((ItemGun) itemStack.getItem()).type.acceptedBullets != null
+                    && ((ItemGun) itemStack.getItem()).type.acceptedBullets.length > 0;
         }
 
         public String getGunExtraLore(ItemStack stack) {
@@ -160,7 +164,7 @@ public class ScriptAPI {
         }
 
         public ArrayList<String> getAcceptedAmmoOrBullet(ItemStack stack) {
-            ArrayList<String> list = new ArrayList<String>();
+            ArrayList<String> list = new ArrayList<>();
             if (!isGun(stack)) {
                 return list;
             }
