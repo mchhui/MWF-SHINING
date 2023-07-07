@@ -65,7 +65,7 @@ import com.modularwarfare.utility.MWResourcePack;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.ModUtil;
 import mchhui.modularmovements.tactical.client.ClientLitener;
-import net.lingala.zip4j.core.ZipFile;
+import moe.komi.mwprotect.IZip;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.particle.Particle;
@@ -103,6 +103,9 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -157,35 +160,18 @@ public class ClientProxy extends CommonProxy {
             if (!file.getName().contains("cache") && !file.getName().contains("officialmw") && !file.getName().contains("highres")) {
                 if (zipJar.matcher(file.getName()).matches()) {
                     try {
-                        ZipFile zipFile = new ZipFile(file);
-                        if (zipFile.isEncrypted()) {
-                            /** Check if the zipFile is encrypted by a password or not */
+                        IZip izip;
+                        izip = ModularWarfare.getiZip(file);
 
-                            ModularWarfare.PROTECTOR.dhazkjdhakjdbcjbkajb(zipFile, file.getName());
+                        HashMap<String, Object> map = new HashMap<String, Object>();
+                        map.put("modid", ModularWarfare.MOD_ID);
+                        map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());
+                        map.put("version", "1");
 
-                            HashMap<String, Object> map = new HashMap<String, Object>();
-                            map.put("modid", ModularWarfare.MOD_ID);
-                            map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());
-                            map.put("version", "1");
-
-                            FMLModContainer container = new MWResourcePack.Container("com.modularwarfare.ModularWarfare", new ModCandidate(file, file, ContainerType.JAR), map, zipFile, ModularWarfare.MOD_NAME + " : " + file.getName());
-                            container.bindMetadata(MetadataCollection.from(null, ""));
-                            FMLClientHandler.instance().addModAsResource(container);
-                            contentPacks.add(file);
-                        } else {
-                            try {
-                                HashMap<String, Object> map = new HashMap<String, Object>();
-                                map.put("modid", ModularWarfare.MOD_ID);
-                                map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());
-                                map.put("version", "1");
-                                FMLModContainer container = new FMLModContainer("com.modularwarfare.ModularWarfare", new ModCandidate(file, file, file.isDirectory() ? ContainerType.DIR : ContainerType.JAR), map);
-                                container.bindMetadata(MetadataCollection.from(null, ""));
-                                FMLClientHandler.instance().addModAsResource(container);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            contentPacks.add(file);
-                        }
+                        FMLModContainer container = new MWResourcePack.Container("com.modularwarfare.ModularWarfare", new ModCandidate(file, file, ContainerType.JAR), map, izip, ModularWarfare.MOD_NAME + " : " + file.getName());
+                        container.bindMetadata(MetadataCollection.from(null, ""));
+                        FMLClientHandler.instance().addModAsResource(container);
+                        contentPacks.add(file);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

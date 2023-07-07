@@ -9,6 +9,7 @@ import com.modularwarfare.addon.AddonLoaderManager;
 import com.modularwarfare.addon.LibClassLoader;
 import com.modularwarfare.api.ItemRegisterEvent;
 import com.modularwarfare.api.TypeRegisterEvent;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
 import com.modularwarfare.common.CommonProxy;
 import com.modularwarfare.common.MWTab;
@@ -34,8 +35,6 @@ import com.modularwarfare.common.handler.GuiHandler;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.NetworkHandler;
-import com.modularwarfare.common.protector.ModularProtector;
-import com.modularwarfare.common.protector.ModularProtectorTemplate;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
@@ -46,6 +45,7 @@ import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.ZipContentPack;
+import moe.komi.mwprotect.*;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.io.ZipInputStream;
@@ -55,12 +55,9 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.*;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.EventBus;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -71,13 +68,9 @@ import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -112,8 +105,6 @@ public class ModularWarfare {
     public static Logger LOGGER;
     // Network Handler
     public static NetworkHandler NETWORK;
-
-    public static ModularProtector PROTECTOR;
 
     public static PlayerDataHandler PLAYERHANDLER = new PlayerDataHandler();
 
@@ -158,6 +149,22 @@ public class ModularWarfare {
     
     public static boolean isLoadedModularMovements=false;
 
+    public static IZip getiZip(File file) throws IOException {
+        IZip izip;
+        try {
+            Class<?> protectorClass = Class.forName("moe.komi.mwprotect.ProtectZip");
+            Constructor<?> constructor = protectorClass.getConstructor(File.class);
+            izip = (IZip) constructor.newInstance(file);
+        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
+                 IllegalAccessException | InvocationTargetException e) {
+            if (e instanceof InvocationTargetException) {
+                ((InvocationTargetException) e).getTargetException().printStackTrace();
+            }
+            izip = new LegacyZip(file);
+        }
+        return izip;
+    }
+
 
     public static void loadContent() {
         usingDirectoryContentPack=false;
@@ -193,20 +200,16 @@ public class ModularWarfare {
             if (zipJar.matcher(file.getName()).matches()) {
                 if (!zipContentsPack.containsKey(file.getName())) {
                     try {
-                        ZipFile zipFile = new ZipFile(file);
-
-                        /** Set password */
-                        if (zipFile.isEncrypted()) {
-                            if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-                                ModularWarfare.PROTECTOR.dhazkjdhakjdbcjbkajb(zipFile, file.getName());
-                            } else {
-                                ModularWarfare.LOGGER.info("Can't use password protected content-pack on server-side.");
-                            }
+                        IZip izip;
+                        if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
+                            izip = getiZip(file);
+                        } else {
+                            izip = new LegacyZip(file);
                         }
-                        ZipContentPack zipContentPack = new ZipContentPack(file.getName(), zipFile.getFileHeaders(), zipFile);
+                        ZipContentPack zipContentPack = new ZipContentPack(file.getName(), izip.getFileList(), izip);
                         zipContentsPack.put(file.getName(), zipContentPack);
                         ModularWarfare.LOGGER.info("Registered content pack");
-                    } catch (ZipException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
@@ -268,17 +271,15 @@ public class ModularWarfare {
             if (zipContentsPack.containsKey(baseType.contentPack)) {
                 String typeName = baseType.getAssetDir();
 
-                FileHeader foundFile = zipContentsPack.get(baseType.contentPack).fileHeaders.stream().filter(fileHeader -> fileHeader.getFileName().startsWith(typeName + "/" + "render/") && fileHeader.getFileName().replace(typeName + "/render/", "").equalsIgnoreCase(baseType.internalName + ".render.json")).findFirst().orElse(null);
+                IZipEntry foundFile = zipContentsPack.get(baseType.contentPack).fileHeaders.stream().filter(fileHeader -> fileHeader.getFileName().startsWith(typeName + "/" + "render/") && fileHeader.getFileName().replace(typeName + "/render/", "").equalsIgnoreCase(baseType.internalName + ".render.json")).findFirst().orElse(null);
                 if (foundFile != null) {
                     try {
-                        ZipInputStream stream = zipContentsPack.get(baseType.contentPack).getZipFile().getInputStream(foundFile);
+                        InputStream stream = foundFile.getInputStream();
                         JsonReader jsonReader = new JsonReader(new InputStreamReader(stream));
                         return GSONUtils.fromJson(gson, jsonReader, typeClass, baseType.internalName + ".render.json");
-                    } catch (JsonParseException e){
+                    } catch (JsonParseException | IOException e){
                         e.printStackTrace();
-                    } catch (ZipException e) {
-                        e.printStackTrace();
-                    }catch (AnimationTypeException err) {
+                    } catch (AnimationTypeException err) {
                         ModularWarfare.LOGGER.info(baseType.internalName + " was loaded. But something was wrong.");
                         err.printStackTrace();
                     }
@@ -356,18 +357,21 @@ public class ModularWarfare {
                      * */
                 } else {
                     if (zipContentsPack.containsKey(file.getName())) {
-                        for (FileHeader fileHeader : zipContentsPack.get(file.getName()).fileHeaders) {
+                        for (IZipEntry fileHeader : zipContentsPack.get(file.getName()).fileHeaders) {
                             for (TypeEntry type : ContentTypes.values) {
                                 final String zipName = fileHeader.getFileName();
                                 final String typeName = type.toString();
                                 if (zipName.startsWith(typeName + "/") && zipName.split(typeName + "/").length > 1 && zipName.split(typeName + "/")[1].length() > 0 && !zipName.contains("render")) {
-                                    ZipInputStream stream = null;
+                                    InputStream stream = null;
                                     try {
-                                        stream = zipContentsPack.get(file.getName()).getZipFile().getInputStream(fileHeader);
+                                        stream = fileHeader.getInputStream();
                                         JsonReader jsonReader = new JsonReader(new InputStreamReader(stream));
 
                                         try {
                                             BaseType parsedType = (BaseType) GSONUtils.fromJson(gson, jsonReader, type.typeClass, fileHeader.getFileName());
+                                            if (parsedType.internalName.equals("siz_bg.scope_win94_texture")) {
+                                                FMLLog.log.info("found - " + parsedType.internalName + " - " + file.getName() + " - " + fileHeader.getFileName() + " - " + fileHeader.getHandle());
+                                            }
                                             parsedType.id = type.id;
                                             parsedType.contentPack = file.getName();
                                             parsedType.isInDirectory = false;
@@ -379,7 +383,7 @@ public class ModularWarfare {
                                         } catch (com.google.gson.JsonParseException ex) {
                                             continue;
                                         }
-                                    } catch (ZipException e) {
+                                    } catch (IOException e) {
                                         e.printStackTrace();
                                     }
                                 }
@@ -392,7 +396,7 @@ public class ModularWarfare {
                                 String typeFile=zipName.replaceFirst("script/", "").replace(".js", "");
                                 String text="";
                                 try {
-                                    ZipInputStream inputStream=zipContentsPack.get(file.getName()).getZipFile().getInputStream(fileHeader);
+                                    InputStream inputStream=fileHeader.getInputStream();
                                     BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(inputStream,Charset.forName("UTF-8")));
                                     String temp;
                                     while((temp=bufferedReader.readLine())!=null) {
@@ -400,7 +404,7 @@ public class ModularWarfare {
                                     }
                                     bufferedReader.close();
                                     ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID,"script/"+typeFile+".js"), text);
-                                } catch (IOException | ZipException e) {
+                                } catch (IOException e) {
                                     // TODO Auto-generated catch block
                                     e.printStackTrace();
                                 }
@@ -509,37 +513,6 @@ public class ModularWarfare {
     @Mod.EventHandler
     public void constructionEvent(FMLConstructionEvent event) {
         LOGGER = LogManager.getLogger(ModularWarfare.MOD_ID);
-
-        /**
-         * Loading ModularProtector
-         * Because of security reasons ModularProtectorOfficial class is not shown in the GitHub repository
-         * however ModularProtectorOfficial is in the official releases on Curseforge and obfuscated
-         *
-         * In order to still be able to build the repository from source, we give you a template called ModularProtectorTemplate
-         * that allow you to implement your own content-pack protector.
-         * Note: You will not be able to use existing official encrypted content-pack using the GitHub builds.
-         */
-        if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-            Class protector_class = null;
-            try {
-                try {
-                    protector_class = Class.forName("com.modularwarfare.common.protector.ModularProtectorOfficial");
-                    PROTECTOR = (ModularProtector) protector_class.newInstance();
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException(e);
-                } catch (InstantiationException e) {
-                    throw new RuntimeException(e);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }  
-            }catch(RuntimeException exception) {
-                exception.printStackTrace();
-            }
-            if(protector_class == null){
-                PROTECTOR = new ModularProtectorTemplate();
-            }
-            LOGGER.info("Registered ModularProtector :"+PROTECTOR.getClass().toString());
-        }
         /**
          * Create & Check Addon System
          */

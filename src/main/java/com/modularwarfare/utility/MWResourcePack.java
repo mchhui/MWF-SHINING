@@ -1,7 +1,8 @@
 package com.modularwarfare.utility;
 
 import com.google.common.collect.Sets;
-import net.lingala.zip4j.core.ZipFile;
+import moe.komi.mwprotect.IZip;
+import moe.komi.mwprotect.IZipEntry;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.client.resources.AbstractResourcePack;
 import net.minecraft.client.resources.ResourcePackFileNotFoundException;
@@ -54,10 +55,16 @@ public class MWResourcePack extends AbstractResourcePack implements FMLContainer
         InputStream s = null;
 
         try {
-            if (((Container) getFMLContainer()).zipFile.getFileHeader(resourceName) != null) {
-                s = ((Container) getFMLContainer()).zipFile.getInputStream(((Container) getFMLContainer()).zipFile.getFileHeader(resourceName));
+            String name1 = resourceName.replaceAll("\\\\", "/");
+            IZipEntry fileHandle = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name1)).findFirst().orElse(null);
+            if (fileHandle == null) {
+                String name2 = name1.replaceAll("/", "\\\\");
+                fileHandle = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name2)).findFirst().orElse(null);
             }
-        } catch (ZipException e) {
+            if (fileHandle != null) {
+                s = fileHandle.getInputStream();
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -77,14 +84,13 @@ public class MWResourcePack extends AbstractResourcePack implements FMLContainer
     }
 
     public boolean hasResourceName(String name) {
-        try {
-            boolean flag = ((Container) getFMLContainer()).zipFile.getFileHeader(name) != null;
-            return flag;
-        } catch (ZipException e) {
-            e.printStackTrace();
+        String name1 = name.replaceAll("\\\\", "/");
+        boolean flag = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name1)).findFirst().orElse(null) != null;
+        if (!flag) {
+            String name2 = name1.replaceAll("/", "\\\\");
+            flag = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name2)).findFirst().orElse(null) != null;
         }
-
-        return false;
+        return flag;
     }
 
     public Set<String> getResourceDomains() {
@@ -100,12 +106,14 @@ public class MWResourcePack extends AbstractResourcePack implements FMLContainer
     public static class Container extends FMLModContainer {
 
         private String packName;
-        private ZipFile zipFile;
+        private IZip zipFile;
+        private Set<IZipEntry> zipEntries;
 
-        public Container(String className, ModCandidate container, Map<String, Object> modDescriptor, ZipFile zipFile, String packName) {
+        public Container(String className, ModCandidate container, Map<String, Object> modDescriptor, IZip zipFile, String packName) throws IOException {
             super(className, container, modDescriptor);
             this.zipFile = zipFile;
             this.packName = packName.substring(15);
+            zipEntries = zipFile.getFileList();
         }
 
         @Override
