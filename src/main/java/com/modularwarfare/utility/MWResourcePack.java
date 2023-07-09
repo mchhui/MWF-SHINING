@@ -3,7 +3,6 @@ package com.modularwarfare.utility;
 import com.google.common.collect.Sets;
 import moe.komi.mwprotect.IZip;
 import moe.komi.mwprotect.IZipEntry;
-import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.client.resources.AbstractResourcePack;
 import net.minecraft.client.resources.ResourcePackFileNotFoundException;
 import net.minecraftforge.fml.common.FMLContainerHolder;
@@ -56,10 +55,10 @@ public class MWResourcePack extends AbstractResourcePack implements FMLContainer
 
         try {
             String name1 = resourceName.replaceAll("\\\\", "/");
-            IZipEntry fileHandle = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name1)).findFirst().orElse(null);
+            IZipEntry fileHandle = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equalsIgnoreCase(name1)).findFirst().orElse(null);
             if (fileHandle == null) {
                 String name2 = name1.replaceAll("/", "\\\\");
-                fileHandle = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name2)).findFirst().orElse(null);
+                fileHandle = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equalsIgnoreCase(name2)).findFirst().orElse(null);
             }
             if (fileHandle != null) {
                 s = fileHandle.getInputStream();
@@ -85,10 +84,10 @@ public class MWResourcePack extends AbstractResourcePack implements FMLContainer
 
     public boolean hasResourceName(String name) {
         String name1 = name.replaceAll("\\\\", "/");
-        boolean flag = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name1)).findFirst().orElse(null) != null;
+        boolean flag = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equalsIgnoreCase(name1)).findFirst().orElse(null) != null;
         if (!flag) {
             String name2 = name1.replaceAll("/", "\\\\");
-            flag = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equals(name2)).findFirst().orElse(null) != null;
+            flag = ((Container) getFMLContainer()).zipEntries.stream().filter(fileHeader -> fileHeader.getFileName().equalsIgnoreCase(name2)).findFirst().orElse(null) != null;
         }
         return flag;
     }
