@@ -197,9 +197,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void preload() {
         //Smooth Swing Ticker Runnable
-        SmoothSwingTicker smoothSwingTicker = new SmoothSwingTicker();
-        Thread smoothTickThread = new Thread(smoothSwingTicker, "SmoothSwingThread");
-        smoothTickThread.start();
+        SmoothSwingTicker.startSmoothSwingTimer();
 
         MinecraftForge.EVENT_BUS.register(this);
         startPatches();
