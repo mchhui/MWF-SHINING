@@ -31,6 +31,7 @@ public abstract class MixinInventoryPlayer {
 
     /**
      * @author
+     * @reason
      */
     @Overwrite
     @SideOnly(Side.CLIENT)
