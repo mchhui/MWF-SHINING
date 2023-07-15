@@ -86,9 +86,12 @@ public class PacketExpShot extends PacketBase {
                                 
                                 //Animation
                                 ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
-                                Vec3d posSmoke = ServerListener.onGetPositionEyes(entityPlayer, 0, entityPlayer.getPositionEyes(0)).add(entityPlayer.getLookVec().scale(0.8f));
+                                Vec3d posSmoke =entityPlayer.getPositionEyes(0);
+                                if(ModularWarfare.isLoadedModularMovements) {
+                                    posSmoke=ServerListener.onGetPositionEyes(entityPlayer, 0, posSmoke);
+                                }
+                                posSmoke=posSmoke.add(entityPlayer.getLookVec().scale(0.8f));
                                 Vec3d crossVec=new Vec3d(1, 0, 0).rotateYaw(-(float)Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float)Math.toRadians(entityPlayer.rotationPitch));
-                                posSmoke.add(crossVec.scale(-0.3f));
                                 Vec3d offsetVec;
                                 for(int i=0;i<5;i++) {
                                     double rand=Math.random()-0.5f;
