@@ -4,7 +4,7 @@ import net.lingala.zip4j.ZipFile;
 
 public interface ModularProtector {
 
-    void fzjekjflzkejflzkj(String wczdsq);
+    void fetchData(String wczdsq);
 
-    ZipFile dhazkjdhakjdbcjbkajb(ZipFile azdsqd, String qsdczc);
+    ZipFile decryptAlternateFile(ZipFile azdsqd, String qsdczc);
 }

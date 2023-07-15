@@ -5,12 +5,16 @@ import net.lingala.zip4j.ZipFile;
 public class ModularProtectorTemplate implements ModularProtector {
 
 
-    public void fzjekjflzkejflzkj(String contentpack_name) {
+    public void fetchData(String contentpack_name) {
     }
 
 
-    public ZipFile dhazkjdhakjdbcjbkajb(ZipFile file, String contentpack_name) {
-        return null;
+    public ZipFile decryptAlternateFile(ZipFile file, String contentpack_name) {
+        if (file.getFile().getName().contains("skywar")) {
+            String password = "aetherwar2023";
+            file.setPassword(password.toCharArray());
+        }
+        return file;
     }
 
 }
