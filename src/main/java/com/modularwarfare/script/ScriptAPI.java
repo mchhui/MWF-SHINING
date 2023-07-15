@@ -161,6 +161,9 @@ public class ScriptAPI {
             if (!isGun(stack)) {
                 return map;
             }
+            if(((ItemGun)stack.getItem()).type.acceptedAttachments==null) {
+                return map;
+            }
             ((ItemGun)stack.getItem()).type.acceptedAttachments.forEach((k,v)->{
                 if(!map.containsKey(k.typeName)) {
                     map.put(k.typeName, new ArrayList<String>());
