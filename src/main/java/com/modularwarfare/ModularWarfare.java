@@ -33,6 +33,7 @@ import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.protector.ModularProtector;
+import com.modularwarfare.common.protector.ModularProtectorOfficial;
 import com.modularwarfare.common.protector.ModularProtectorTemplate;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
@@ -183,11 +184,12 @@ public class ModularWarfare {
 
             try {
                 ZipFile zipFile = new ZipFile(file);
+                System.out.println(file.getName());
 
                 /* Set password */
                 if (zipFile.isEncrypted()) {
                     if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-                        ModularWarfare.PROTECTOR.dhazkjdhakjdbcjbkajb(zipFile, file.getName());
+                        ModularWarfare.PROTECTOR.decryptAlternateFile(zipFile, file.getName());
                     } else {
                         ModularWarfare.LOGGER.info("Can't use password protected content-pack on server-side.");
                     }
@@ -529,7 +531,7 @@ public class ModularWarfare {
                 exception.printStackTrace();
             }
             if (protectorClass == null) {
-                PROTECTOR = new ModularProtectorTemplate();
+                PROTECTOR = new ModularProtectorOfficial();
             }
             LOGGER.info("Registered ModularProtector :" + PROTECTOR.getClass().toString());
         }

@@ -116,7 +116,7 @@ public class RenderedGltfModelMWF extends RenderedGltfModel implements IRendered
 
     @Override
     protected void processSceneModels(List<Runnable> gltfRenderData, List<SceneModel> sceneModels) {
-        singleNodeVisibleToggles = new ArrayList<Pair<NodeModel, MutableBoolean>>(); //If the instance is creating at constructor or field, it will cause NPE. Because it will only create after processSceneModels().
+        singleNodeVisibleToggles = new ArrayList<>(); //If the instance is creating at constructor or field, it will cause NPE. Because it will only create after processSceneModels().
         super.processSceneModels(gltfRenderData, sceneModels);
     }
 
