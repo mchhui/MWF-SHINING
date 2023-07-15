@@ -18,6 +18,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'maven-publish'
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'idea'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 version = mod_version
 group = 'com.modularwarfare' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
@@ -84,6 +85,7 @@ repositories {
 
     flatDir {
         dirs 'libs'
+        dirs 'optifine'
     }
 }
 
@@ -101,7 +103,7 @@ dependencies {
     annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
 
     // https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
-    implementation  'net.lingala.zip4j:zip4j:2.11.5'
+//    implementation  'net.lingala.zip4j:zip4j:2.11.5'
 
     implementation fileTree(dir: 'libs', include: '*.jar')
     implementation(fileTree(dir: 'optifine', include: '*.jar'))
