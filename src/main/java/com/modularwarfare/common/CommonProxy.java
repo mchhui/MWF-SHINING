@@ -19,6 +19,7 @@ import net.minecraftforge.fml.relauncher.FMLInjectionData;
 
 import javax.annotation.Nonnull;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,7 +47,7 @@ public class CommonProxy extends ForgeEvent {
         modularWarfareDir = new File(getGameFolder(), "ModularWarfare");
         File modFile = null;
 
-        // Creates directory if doesn't exist
+        // Creates directory if it doesn't exist
         ModularWarfare.MOD_DIR = modularWarfareDir;
         if (!ModularWarfare.MOD_DIR.exists()) {
             ModularWarfare.MOD_DIR.mkdir();
@@ -73,10 +74,9 @@ public class CommonProxy extends ForgeEvent {
             }
         }
         if (needPrototypeExtract) {
-            try {
-                ZipFile zipFile = new ZipFile(modFile);
+            try (ZipFile zipFile = new ZipFile(modFile)) {
                 zipFile.extractFile("prototype-" + MOD_VERSION + "-contentpack.zip", modularWarfareDir.getAbsolutePath());
-            } catch (ZipException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -93,10 +93,9 @@ public class CommonProxy extends ForgeEvent {
             }
         }
         if (needAnimatedExtract) {
-            try {
-                ZipFile zipFile = new ZipFile(modFile);
+            try (ZipFile zipFile = new ZipFile(modFile)) {
                 zipFile.extractFile("animated-" + MOD_VERSION + "-contentpack.zip", modularWarfareDir.getAbsolutePath());
-            } catch (ZipException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -117,20 +116,19 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public List<File> getContentList() {
-        List<File> contentPacks = new ArrayList<File>();
+        List<File> contentPacks = new ArrayList<>();
         for (File file : ModularWarfare.MOD_DIR.listFiles()) {
             if (!file.getName().contains("cache") && !file.getName().contains("officialmw") && !file.getName().contains("highres")) {
                 if (file.isDirectory()) {
                     contentPacks.add(file);
                 } else if (zipJar.matcher(file.getName()).matches()) {
-                    try {
-                        ZipFile zipFile = new ZipFile(file);
+                    try (ZipFile zipFile = new ZipFile(file)) {
                         if (!zipFile.isEncrypted()) {
                             contentPacks.add(file);
                         } else {
                             ModularWarfare.LOGGER.info("[WARNING] ModularWarfare can't load encrypted content-packs in server-side (" + file.getName() + ") !");
                         }
-                    } catch (ZipException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }

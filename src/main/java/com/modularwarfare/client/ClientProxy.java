@@ -74,7 +74,6 @@ import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.entity.MWFRenderHelper;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.resources.IReloadableResourceManager;
-import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -86,7 +85,6 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.client.resource.IResourceType;
 import net.minecraftforge.client.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
@@ -107,12 +105,11 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.function.Predicate;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
 
@@ -120,7 +117,9 @@ public class ClientProxy extends CommonProxy {
 
     public static String modelDir = "com.modularwarfare.client.model.";
 
-    //Renderes
+    /**
+     * Renders
+     */
     public static RenderGunStatic gunStaticRenderer;
     public static RenderGunEnhanced gunEnhancedRenderer;
 
@@ -157,9 +156,15 @@ public class ClientProxy extends CommonProxy {
     public void construction(FMLConstructionEvent event) {
         super.construction(event);
 
-        for (File file : modularWarfareDir.listFiles(file -> !file.getName().contains("cache")
+        File[] contentPackFiles = modularWarfareDir.listFiles(file -> !file.getName().contains("cache")
                 && !file.getName().contains("officialmw")
-                && !file.getName().contains("highres"))) {
+                && !file.getName().contains("highres"));
+
+        if (contentPackFiles == null) {
+            return;
+        }
+
+        for (File file : contentPackFiles) {
             HashMap<String, Object> map = new HashMap<>();
             map.put("modid", ModularWarfare.MOD_ID);
             map.put("name", ModularWarfare.MOD_NAME + " : " + file.getName());
@@ -171,8 +176,8 @@ public class ClientProxy extends CommonProxy {
 
                 try {
                     if (zipFile.isEncrypted()) {
-                        /** Check if the zipFile is encrypted by a password or not */
-                        ModularWarfare.PROTECTOR.dhazkjdhakjdbcjbkajb(zipFile, file.getName());
+                        /* Check if the zipFile is encrypted by a password or not */
+                        ModularWarfare.PROTECTOR.decryptAlternateFile(zipFile, file.getName());
 
                         container = new MWResourcePack.Container("com.modularwarfare.ModularWarfare", new ModCandidate(file, file, ContainerType.JAR), map, zipFile, ModularWarfare.MOD_NAME + " : " + file.getName());
                     } else {
@@ -213,9 +218,10 @@ public class ClientProxy extends CommonProxy {
             CustomNPCListener customNPCListener = new CustomNPCListener();
             MinecraftForge.EVENT_BUS.register(customNPCListener);
         }
+
         if (Loader.isModLoaded("galacticraftcore")) {
             try {
-                ClientProxy.galacticraftInterop = (GCCompatInterop) Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
+                ClientProxy.galacticraftInterop = Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
                 ModularWarfare.LOGGER.info("Galatic Craft has been detected! Will attempt to patch.");
                 ClientProxy.galacticraftInterop.applyFix();
             } catch (Exception e) {
@@ -235,23 +241,23 @@ public class ClientProxy extends CommonProxy {
         new ClientGunHandler();
         new RenderGuiHandler();
 
-        this.renderHooks = new ClientRenderHooks();
-        MinecraftForge.EVENT_BUS.register(this.renderHooks);
+        renderHooks = new ClientRenderHooks();
+        MinecraftForge.EVENT_BUS.register(renderHooks);
 
-        this.scopeUtils = new ScopeUtils();
-        MinecraftForge.EVENT_BUS.register(this.scopeUtils);
+        scopeUtils = new ScopeUtils();
+        MinecraftForge.EVENT_BUS.register(scopeUtils);
 
-        this.flashImage = new FlashSystem();
-        MinecraftForge.EVENT_BUS.register(this.flashImage);
+        flashImage = new FlashSystem();
+        MinecraftForge.EVENT_BUS.register(flashImage);
 
-        this.attachmentUI = new AttachmentUI();
-        MinecraftForge.EVENT_BUS.register(this.attachmentUI);
+        attachmentUI = new AttachmentUI();
+        MinecraftForge.EVENT_BUS.register(attachmentUI);
 
-        this.gunUI = new GunUI();
-        MinecraftForge.EVENT_BUS.register(this.gunUI);
+        gunUI = new GunUI();
+        MinecraftForge.EVENT_BUS.register(gunUI);
 
-        this.killFeedManager = new KillFeedManager();
-        MinecraftForge.EVENT_BUS.register(new KillFeedRender(this.killFeedManager));
+        killFeedManager = new KillFeedManager();
+        MinecraftForge.EVENT_BUS.register(new KillFeedRender(killFeedManager));
 
         WeaponAnimations.registerAnimation("rifle", new AnimationRifle());
         WeaponAnimations.registerAnimation("rifle2", new AnimationRifle2());
@@ -289,15 +295,7 @@ public class ClientProxy extends CommonProxy {
             ModConfig.INSTANCE.model_optimization = false;
         }
 
-        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(new ISelectiveResourceReloadListener() {
-
-            @Override
-            public void onResourceManagerReload(IResourceManager resourceManager,
-                                                Predicate<IResourceType> resourcePredicate) {
-                loadTextures();
-            }
-
-        });
+        ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener((ISelectiveResourceReloadListener) (resourceManager, resourcePredicate) -> loadTextures());
         loadTextures();
 
         ClientCommandHandler.instance.registerCommand(new CommandMWClient());
@@ -368,7 +366,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void forceReload() {
-        FMLClientHandler.instance().refreshResources(new IResourceType[0]);
+        FMLClientHandler.instance().refreshResources();
     }
 
     /**
@@ -508,8 +506,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void generateJsonSounds(Collection<BaseType> types, boolean replace) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        HashMap<String, ArrayList<String>> cpSounds = new HashMap<String, ArrayList<String>>();
+        HashMap<String, ArrayList<String>> cpSounds = new HashMap<>();
 
         for (BaseType baseType : types) {
             if (baseType.contentPack == null)
@@ -544,7 +541,7 @@ public class ClientProxy extends CommonProxy {
                         Path soundsFile = Paths.get(assetsDir + "/sounds.json");
 
                         boolean soundsExists = Files.exists(soundsFile);
-                        boolean shouldCreate = soundsExists ? replace : true;
+                        boolean shouldCreate = !soundsExists || replace;
                         if (shouldCreate) {
                             if (!soundsExists)
                                 Files.createFile(soundsFile);
@@ -562,7 +559,7 @@ public class ClientProxy extends CommonProxy {
                                 }
                             }
                             jsonEntries.add("}");
-                            Files.write(soundsFile, jsonEntries, Charset.forName("UTF-8"));
+                            Files.write(soundsFile, jsonEntries, StandardCharsets.UTF_8);
                         }
                     }
                 }
@@ -578,8 +575,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void generateLangFiles(ArrayList<BaseType> types, boolean replace) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        HashMap<String, ArrayList<BaseType>> langEntryMap = new HashMap<String, ArrayList<BaseType>>();
+        HashMap<String, ArrayList<BaseType>> langEntryMap = new HashMap<>();
 
         for (BaseType baseType : types) {
             if (baseType.contentPack == null)
@@ -588,7 +584,7 @@ public class ClientProxy extends CommonProxy {
             String contentPack = baseType.contentPack;
 
             if (!langEntryMap.containsKey(contentPack))
-                langEntryMap.put(contentPack, new ArrayList<BaseType>());
+                langEntryMap.put(contentPack, new ArrayList<>());
 
             if (baseType.displayName != null && !langEntryMap.get(contentPack).contains(baseType))
                 langEntryMap.get(contentPack).add(baseType);
@@ -609,15 +605,14 @@ public class ClientProxy extends CommonProxy {
                         Path langPath = Paths.get(langDir + "/en_US.lang");
 
                         boolean soundsExists = Files.exists(langPath);
-                        boolean shouldCreate = soundsExists ? replace : true;
+                        boolean shouldCreate = !soundsExists || replace;
                         if (shouldCreate) {
                             if (!soundsExists)
                                 Files.createFile(langPath);
 
-                            ArrayList<String> jsonEntries = new ArrayList<String>();
+                            ArrayList<String> jsonEntries = new ArrayList<>();
                             String format = "item.%s.name=%s";
-                            for (int i = 0; i < langEntries.size(); i++) {
-                                BaseType type = langEntries.get(i);
+                            for (BaseType type : langEntries) {
                                 if (type instanceof ArmorType) {
                                     ArmorType armorType = (ArmorType) type;
                                     for (ArmorInfo armorInfo : armorType.armorTypes.values()) {
@@ -628,7 +623,7 @@ public class ClientProxy extends CommonProxy {
                                     jsonEntries.add(String.format(format, type.internalName, type.displayName));
                                 }
                             }
-                            Files.write(langPath, jsonEntries, Charset.forName("UTF-8"));
+                            Files.write(langPath, jsonEntries, StandardCharsets.UTF_8);
                         }
                     }
                 }
@@ -645,23 +640,9 @@ public class ClientProxy extends CommonProxy {
     private ItemModelExport createJson(BaseType type) {
         ItemModelExport exportedModel = new ItemModelExport();
 
-        if (!(type instanceof GunType) && !(type instanceof GrenadeType)) {
-            exportedModel.display.thirdperson_lefthand.scale[0] = 0.4f;
-            exportedModel.display.thirdperson_lefthand.scale[1] = 0.4f;
-            exportedModel.display.thirdperson_lefthand.scale[2] = 0.4f;
+        float scale = !(type instanceof GunType) && !(type instanceof GrenadeType) ? 0.4f : 0.0f;
+        setThirdPersonScale(exportedModel, scale);
 
-            exportedModel.display.thirdperson_righthand.scale[0] = 0.4f;
-            exportedModel.display.thirdperson_righthand.scale[1] = 0.4f;
-            exportedModel.display.thirdperson_righthand.scale[2] = 0.4f;
-        } else {
-            exportedModel.display.thirdperson_lefthand.scale[0] = 0.0f;
-            exportedModel.display.thirdperson_lefthand.scale[1] = 0.0f;
-            exportedModel.display.thirdperson_lefthand.scale[2] = 0.0f;
-
-            exportedModel.display.thirdperson_righthand.scale[0] = 0.0f;
-            exportedModel.display.thirdperson_righthand.scale[1] = 0.0f;
-            exportedModel.display.thirdperson_righthand.scale[2] = 0.0f;
-        }
         exportedModel.setBaseLayer(type.getAssetDir() + "/" + (type.iconName != null ? type.iconName : type.internalName));
         return exportedModel;
     }
@@ -669,16 +650,20 @@ public class ClientProxy extends CommonProxy {
     private ItemModelExport createJson(BaseType type, String iconName) {
         ItemModelExport exportedModel = new ItemModelExport();
 
-        exportedModel.display.thirdperson_lefthand.scale[0] = 0.4f;
-        exportedModel.display.thirdperson_lefthand.scale[1] = 0.4f;
-        exportedModel.display.thirdperson_lefthand.scale[2] = 0.4f;
-
-        exportedModel.display.thirdperson_righthand.scale[0] = 0.4f;
-        exportedModel.display.thirdperson_righthand.scale[1] = 0.4f;
-        exportedModel.display.thirdperson_righthand.scale[2] = 0.4f;
+        setThirdPersonScale(exportedModel, 0.4f);
 
         exportedModel.setBaseLayer(type.getAssetDir() + "/" + iconName);
         return exportedModel;
+    }
+
+    private void setThirdPersonScale(ItemModelExport exportedModel, float scale) {
+        exportedModel.display.thirdperson_lefthand.scale[0] = scale;
+        exportedModel.display.thirdperson_lefthand.scale[1] = scale;
+        exportedModel.display.thirdperson_lefthand.scale[2] = scale;
+
+        exportedModel.display.thirdperson_righthand.scale[0] = scale;
+        exportedModel.display.thirdperson_righthand.scale[1] = scale;
+        exportedModel.display.thirdperson_righthand.scale[2] = scale;
     }
 
     @Override
@@ -742,7 +727,8 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public void onShootAnimation(EntityPlayer player, String wepType, int fireTickDelay, float recoilPitch, float recoilYaw) {
+    public void onShootAnimation(EntityPlayer player, String wepType, int fireTickDelay, float recoilPitch,
+                                 float recoilYaw) {
         GunType gunType = ModularWarfare.gunTypes.get(wepType).type;
         if (gunType != null) {
             if (gunType.animationType == WeaponAnimationType.BASIC) {
@@ -835,7 +821,8 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public void onReloadAnimation(EntityPlayer player, String wepType, int reloadTime, int reloadCount, int reloadType) {
+    public void onReloadAnimation(EntityPlayer player, String wepType, int reloadTime, int reloadCount,
+                                  int reloadType) {
         ClientTickHandler.playerReloadCooldown.put(player.getUniqueID(), reloadTime);
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
@@ -895,7 +882,7 @@ public class ClientProxy extends CommonProxy {
     public void playHitmarker(boolean headshot) {
         if (ModConfig.INSTANCE.hud.hitmarkers) {
             Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getRecord(ClientProxy.modSounds.get("hitmarker"), 1f, 4f));
-            ClientProxy.gunUI.addHitMarker(headshot);
+            GunUI.addHitMarker(headshot);
         }
     }
 
