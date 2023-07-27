@@ -35,6 +35,7 @@ import com.modularwarfare.common.guns.WeaponScopeModeType;
 import com.modularwarfare.common.handler.data.VarBoolean;
 import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.textures.TextureType;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.modularwarfare.utility.OptifineHelper;
 import com.modularwarfare.utility.ReloadHelper;
 import com.modularwarfare.utility.maths.Interpolation;
@@ -484,6 +485,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
         final ItemAttachment sightRendering=sight;
 
+        boolean glowMode=ObjModelRenderer.glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode=true;
         applySprintHandTransform(model, config.sprint.basicSprint, controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, () -> {
             if(isRenderHand0) {
                 if(sightRendering!=null) {
@@ -896,7 +899,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 }
             }
         }
-
+        ObjModelRenderer.glowTxtureMode=glowMode;
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
