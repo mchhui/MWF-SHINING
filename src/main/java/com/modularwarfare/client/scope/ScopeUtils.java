@@ -165,8 +165,12 @@ public class ScopeUtils {
                                         lastHeight=mc.displayHeight;
                                         GL11.glPopMatrix();
                                     }
-                                    if(itemAttachment.type.sight.modeType.isPIP&&RenderParameters.adsSwitch != 0) {
-                                        renderWorld(mc, itemAttachment, event.renderTickTime);  
+                                    
+                                    if (itemAttachment.type.sight.modeType.isPIP) {
+                                        if (ModConfig.INSTANCE.hud.alwaysRenderPIPWorld
+                                            || RenderParameters.adsSwitch != 0) {
+                                            renderWorld(mc, itemAttachment, event.renderTickTime);
+                                        }
                                     }
                                 }
                             }
@@ -191,6 +195,9 @@ public class ScopeUtils {
         }
     }
     
+    /**
+     * hand1为半透明渲染 在hand0之前
+     * */
     public void onPreRenderHand1() {
         if(needRenderHand1) {
             needRenderHand1=false;
@@ -293,7 +300,7 @@ public class ScopeUtils {
             if (GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight) != null) {
                 final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight).getItem();
                 if(itemAttachment.type.sight.modeType.isPIP) {
-                    renderPostScope(event.getPartialTicks(),false,true,true, 1 );
+                    //renderPostScope(event.getPartialTicks(),false,true,true, 1 );
                     GlStateManager.enableDepth();
                     GlStateManager.disableAlpha();
                     GlStateManager.enableBlend();

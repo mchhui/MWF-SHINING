@@ -50,7 +50,6 @@ public class AnimationController {
     
     public long sprintCoolTime=0;
     public long sprintLoopCoolTime=0;
-    public float collideFrontDistanceAlpha=0;
 
     public int oldCurrentItem;
     public ItemStack oldItemstack;
@@ -95,7 +94,6 @@ public class AnimationController {
         INSPECT=1;
         FIRE=0;
         MODE_CHANGE=1;
-        collideFrontDistanceAlpha=0;
         updateActionAndTime();
     }
     
@@ -254,44 +252,14 @@ public class AnimationController {
         }
         
         ClientRenderHooks.getEnhancedAnimMachine(player).onRenderTickUpdate(stepTick);  
-        
+
         updateActionAndTime();
-        
-        Vec3d vecStart = player.getPositionEyes(1.0f);
-        RayTraceResult rayTraceResult = RayUtil.rayTrace(player,1.0, 1.0f);
-        double d=Double.MAX_VALUE;
-        if(rayTraceResult != null) {
-            if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
-                if (rayTraceResult.hitVec != null) {
-                    d = vecStart.distanceTo(rayTraceResult.hitVec);
-                }
-            }
-        }
-        float collideFrontDistanceAlphaStep = 0.08f * stepTick;
-        if (d<0.5) {
-            float target = Math.max(RenderParameters.collideFrontDistance, 0.2f);
-            target = 1;
-            if (this.collideFrontDistanceAlpha > target) {
-                this.collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
-            } else if (this.collideFrontDistanceAlpha < target) {
-                this.collideFrontDistanceAlpha += collideFrontDistanceAlphaStep;
-            }
-            if (Math.abs(this.collideFrontDistanceAlpha - target) <= collideFrontDistanceAlphaStep) {
-                this.collideFrontDistanceAlpha = target;
-            }
+
+        if (RenderParameters.collideFrontDistance > 0) {
+            RenderParameters.adsSwitch = (float)(ADS - RenderParameters.collideFrontDistance > 0
+                ? ADS - RenderParameters.collideFrontDistance : 0);
         } else {
-            this.collideFrontDistanceAlpha -= collideFrontDistanceAlphaStep;
-            if (this.collideFrontDistanceAlpha < 0) {
-                this.collideFrontDistanceAlpha = 0;
-            }
-        }
-        RenderParameters.collideFrontDistance = this.collideFrontDistanceAlpha;
-        if (this.collideFrontDistanceAlpha > 0) {
-            RenderParameters.adsSwitch = (float) (ADS - this.collideFrontDistanceAlpha > 0
-                    ? ADS - this.collideFrontDistanceAlpha
-                    : 0);
-        } else {
-            RenderParameters.adsSwitch = (float) ADS;
+            RenderParameters.adsSwitch = (float)ADS;
         }
     }
     

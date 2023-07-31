@@ -4,10 +4,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
+import net.minecraft.util.math.Vec3d;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.vecmath.Vector3f;
 
 public class ModConfig {
 
@@ -25,6 +29,8 @@ public class ModConfig {
         public ArrayList<String> content_pack_hash_list=new ArrayList<String>();
         
         public boolean drop_extra_slots_on_death = true;
+        
+        public float playerShadowOffset = 1f;
     }
 
     //shots
@@ -67,9 +73,12 @@ public class ModConfig {
         public boolean snap_fade_hit = true;
         public boolean isDynamicFov = false;
         public boolean ads_blur=false;
-        public float handDepthRange = 0.6f;
+        public float handDepthRangeMax = 0.6f;
+        public float handDepthRangeMin = 0f;
+        public Vector3f projectionScale = new Vector3f(0.125f, 0.125f, 0.125f);
         public float eraseScopeDepth=1f;
         public int shadersColorTexID=0;
+        public boolean alwaysRenderPIPWorld=false;
     }
 
     //walk sounds

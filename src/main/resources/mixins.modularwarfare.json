@@ -6,6 +6,6 @@
   "minVersion": "0.7.11",
   "compatibilityLevel": "JAVA_8",
   "mixins": [],
-  "client": ["client.MixinInventoryPlayer", "client.MixinMinecraft", "client.accessor.IShaderGroup"],
+  "client": ["client.MixinInventoryPlayer", "client.MixinMinecraft","client.MixinRenderPlayer", "client.accessor.IShaderGroup"],
   "server": []
 }

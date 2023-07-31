@@ -263,10 +263,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         /**
          * ACTION GUN COLLIDE
          */
-        float collideFrontDistanceAlpha = controller.collideFrontDistanceAlpha;
-        float rotateZ = (58F * collideFrontDistanceAlpha);
-        float translateX = -(6F * collideFrontDistanceAlpha);
-        float translateY = -(4F * collideFrontDistanceAlpha);
+        float collideFrontDistanceAlpha = RenderParameters.collideFrontDistance;
+        float rotateZ = (10F * collideFrontDistanceAlpha);
+        float translateX = -(15F * collideFrontDistanceAlpha);
+        float translateY = -(2F * collideFrontDistanceAlpha);
         mat.translate(new Vector3f(0, translateY, 0));
         mat.rotate(toRadians(rotateZ), new Vector3f(0, 0, 1));
         mat.translate(new Vector3f(translateX, 0, 0));
@@ -804,7 +804,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                 renderAttachment(config, attachment.typeName, attachmentType.internalName, () -> {
                                     attachmentModel.renderAttachment(worldScale);
                                     if(attachment==AttachmentPresetEnum.Sight) {
-                                        renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
+                                        //renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
                                     }
                                 });
                             });
@@ -879,7 +879,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 if(!sightRendering.type.sight.modeType.isPIP) {
                     if (!OptifineHelper.isShadersEnabled()) {
                         copyMirrorTexture();
-                        ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
+                        //ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
                         eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
                     }else {
                         if (isRenderHand0) {
@@ -887,13 +887,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                             
                             GL11.glDepthRange(0,1);
                             copyMirrorTexture();
-                            ClientProxy.scopeUtils.renderPostScope(partialTicks, true, false, true, 1);
+                            //ClientProxy.scopeUtils.renderPostScope(partialTicks, true, false, true, 1);
                             eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
                             writeScopeSoildDepth(controller.ADS > 0);
                             
                             GL11.glPopAttrib();
                         } else {
-                            ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
+                            //ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
                         }
                     }  
                 }
@@ -1260,7 +1260,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
         
     }
-    
+    /**
+     * 将blurFramebuffer图案保存到SCOPE_MASK_TEX
+     * */
     public void copyMirrorTexture() {
         if(ScopeUtils.isIndsideGunRendering) {
             return;
@@ -1272,6 +1274,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GL43.glCopyImageSubData(ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture, GL_TEXTURE_2D, 0, 0, 0, 0, ScopeUtils.SCOPE_MASK_TEX, GL_TEXTURE_2D, 0, 0, 0, 0, mc.displayWidth, mc.displayHeight, 1);
     }
     
+    
+    /**
+     *以SCOPE_MASK_TEX为遮罩  将深度改为cofnig.eraseScopeDepth
+     ***/
     @SideOnly(Side.CLIENT)
     public void eraseScopeGlassDepth(AttachmentType attachmentType, ModelAttachment modelAttachment, boolean isAiming,float worldScale) {
         if(ScopeUtils.isIndsideGunRendering) {
@@ -1475,6 +1481,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
     }
     
+    /**
+     * 把世界深度写入blurFramebuffer
+     * */
     public void copyDepthBuffer() {
         Minecraft mc=Minecraft.getMinecraft();
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());

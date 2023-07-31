@@ -11,6 +11,10 @@ public class MWFOptifineShadesHelper {
         return Shaders.dfbColorTexturesFlip;
     }
     
+    public static int getColorTexture(int i) {
+        return Shaders.dfbColorTextures.get(i);
+    }
+    
     public static int getDFB() {
         return Shaders.dfb;
     }
@@ -25,5 +29,9 @@ public class MWFOptifineShadesHelper {
     
     public static IntBuffer getDFBDepthTextures() {
         return Shaders.dfbDepthTextures;
+    }
+    
+    public static int getPreShadowPassThirdPersonView() {
+        return Shaders.preShadowPassThirdPersonView;
     }
 }

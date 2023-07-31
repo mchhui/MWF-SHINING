@@ -52,6 +52,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.optifine.shaders.Shaders;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
@@ -210,14 +211,16 @@ public class ClientRenderHooks extends ForgeEvent {
                 float farPlaneDistance = mc.gameSettings.renderDistanceChunks * 16F;
                 ItemRenderer itemRenderer = mc.getItemRenderer();
                 
-                GL11.glDepthRange(0, ModConfig.INSTANCE.hud.handDepthRange);
+                GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
                 
                 GlStateManager.matrixMode(GL11.GL_PROJECTION);
                 GlStateManager.pushMatrix();
                 GlStateManager.loadIdentity();
                 
                 float zFar=2*farPlaneDistance;
-                Project.gluPerspective(fov, (float) mc.displayWidth / (float) mc.displayHeight, 0.00001F, zFar);
+                Project.gluPerspective(fov, (float)mc.displayWidth / (float)mc.displayHeight, 0.00001F, zFar);
+                GlStateManager.scale(ModConfig.INSTANCE.hud.projectionScale.x, ModConfig.INSTANCE.hud.projectionScale.y,
+                    ModConfig.INSTANCE.hud.projectionScale.z);
                 GlStateManager.matrixMode(GL11.GL_MODELVIEW);
                 GlStateManager.pushMatrix();
                 GlStateManager.loadIdentity();
@@ -229,7 +232,6 @@ public class ClientRenderHooks extends ForgeEvent {
                 if(Double.isNaN(RenderParameters.collideFrontDistance)) {
                     RenderParameters.collideFrontDistance=0;
                 }
-
                 boolean flag = mc.getRenderViewEntity() instanceof EntityLivingBase && ((EntityLivingBase) mc.getRenderViewEntity()).isPlayerSleeping();
 
                 if (mc.gameSettings.thirdPersonView == 0 && !flag && !mc.gameSettings.hideGUI && !mc.playerController.isSpectator() && mc.getRenderViewEntity().equals(mc.player)) {
@@ -284,6 +286,7 @@ public class ClientRenderHooks extends ForgeEvent {
                                 f10,f11
                         });
                     }
+                    
                     if(!ScopeUtils.isIndsideGunRendering) {
                         ClientProxy.scopeUtils.initBlur();  
                         OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());  
@@ -301,7 +304,7 @@ public class ClientRenderHooks extends ForgeEvent {
                                 final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight).getItem();
                                 if(itemAttachment.type.sight.modeType.insideGunRendering) {
                                     renderInsideGun(stack, hand, partialTicksTime, fov);
-                                    GL11.glDepthRange(0, ModConfig.INSTANCE.hud.handDepthRange);
+                                    GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
                                 }
                             }
                             customRenderers[0].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, mc.player.getHeldItemMainhand(), mc.world, mc.player);
