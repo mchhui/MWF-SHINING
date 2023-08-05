@@ -39,13 +39,14 @@ public class RayUtil {
     public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
         final float randAccPitch = rand.nextFloat() * accuracy;
         final float randAccYaw = rand.nextFloat() * accuracy;
-        pitch += (rand.nextBoolean() ? randAccPitch : (-randAccPitch));
-        yaw += (rand.nextBoolean() ? randAccYaw : (-randAccYaw));
-        final float f = MathHelper.cos(-yaw * 0.017453292f - 3.1415927f);
-        final float f2 = MathHelper.sin(-yaw * 0.017453292f - 3.1415927f);
-        final float f3 = -MathHelper.cos(-pitch * 0.017453292f);
-        final float f4 = MathHelper.sin(-pitch * 0.017453292f);
-        return new Vec3d((f2 * f3), f4, (f * f3));
+        /*
+         * 2023/8/5
+         * 修复万向轴死锁带来的bug
+         * */
+        Vec3d vec3d = new Vec3d(rand.nextBoolean() ? randAccYaw : (-randAccYaw), rand.nextBoolean() ? randAccPitch : (-randAccPitch), 100).normalize();
+        vec3d = vec3d.rotatePitch((float)(-pitch * 3.14 / 180));
+        vec3d = vec3d.rotateYaw((float)(-yaw * 3.14 / 180));
+        return vec3d;
     }
 
     public static float calculateAccuracyServer(final ItemGun item, final EntityLivingBase player) {
