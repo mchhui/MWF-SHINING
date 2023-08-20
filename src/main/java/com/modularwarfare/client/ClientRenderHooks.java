@@ -59,11 +59,12 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.glu.Project;
 
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 
 public class ClientRenderHooks extends ForgeEvent {
 
     public static HashMap<EntityLivingBase, AnimStateMachine> weaponBasicAnimations = new HashMap<EntityLivingBase, AnimStateMachine>();
-    public static HashMap<EntityLivingBase, EnhancedStateMachine> weaponEnhancedAnimations = new HashMap<EntityLivingBase, EnhancedStateMachine>();
+    public static IdentityHashMap<EntityLivingBase, EnhancedStateMachine> weaponEnhancedAnimations = new IdentityHashMap<EntityLivingBase, EnhancedStateMachine>();
 
     public static CustomItemRenderer[] customRenderers = new CustomItemRenderer[20];
     public static boolean isAimingScope;

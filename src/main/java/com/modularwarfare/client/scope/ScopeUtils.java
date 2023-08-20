@@ -2,7 +2,6 @@ package com.modularwarfare.client.scope;
 
 
 import com.google.gson.JsonSyntaxException;
-import com.modularmods.mcgltf.MCglTF;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientProxy;
@@ -300,7 +299,7 @@ public class ScopeUtils {
             if (GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight) != null) {
                 final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight).getItem();
                 if(itemAttachment.type.sight.modeType.isPIP) {
-                    //renderPostScope(event.getPartialTicks(),false,true,true, 1 );
+                    renderPostScope(event.getPartialTicks(),false,true,true, 1 );
                     GlStateManager.enableDepth();
                     GlStateManager.disableAlpha();
                     GlStateManager.enableBlend();

@@ -1012,7 +1012,7 @@ public class GuiGunModify extends GuiScreen {
 			rge.controller.DRAW = 1.0d;
 			// AnimationController.ADS = 1.0d;
 			rge.controller.updateActionAndTime();
-			model.updateAnimation(rge.controller.getTime());
+			model.updateAnimation(rge.controller.getTime(),true);
 			HashSet<String> exceptParts = new HashSet<String>();
 			exceptParts.addAll(config.defaultHidePart);
 			// exceptParts.addAll(DEFAULT_EXCEPT);
@@ -1252,7 +1252,7 @@ public class GuiGunModify extends GuiScreen {
 									if (stackAmmoX == null || stackAmmoX.isEmpty()) {
 										continue;
 									}
-									if (model.getPart(binddings[x]) == null) {
+									if (!model.existPart(binddings[x])) {
 										continue;
 									}
 									if (stackAmmoX.getItem() instanceof ItemAmmo) {

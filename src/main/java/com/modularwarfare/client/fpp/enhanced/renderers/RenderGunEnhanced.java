@@ -1,6 +1,5 @@
 package com.modularwarfare.client.fpp.enhanced.renderers;
 
-import com.modularmods.mcgltf.MCglTF;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientProxy;
@@ -41,8 +40,7 @@ import com.modularwarfare.utility.ReloadHelper;
 import com.modularwarfare.utility.maths.Interpolation;
 
 import de.javagl.jgltf.model.NodeModel;
-
-import com.modularmods.mcgltf.RenderedGltfModel;
+import mchhui.hegltf.DataNode;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -68,6 +66,9 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.optifine.shaders.Shaders;
 
+import org.joml.Math;
+import org.joml.Quaterniond;
+import org.joml.Quaternionf;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix3f;
@@ -157,7 +158,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             return;
 
         EnhancedModel model = gunType.enhancedModel;
-
         if(!(Minecraft.getMinecraft().getRenderViewEntity() instanceof EntityPlayerSP)) {
             return;
         }
@@ -477,7 +477,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         HashSet<String> exceptPartsRendering=exceptParts;
         
         
-        model.updateAnimation(controller.getTime());
+        model.updateAnimation(controller.getTime(),true);
         
         /**
          * RIGHT HAND GROUP
@@ -528,7 +528,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 String gunPath = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
                 bindTexture("guns", gunPath);
                 model.renderPartExcept(exceptPartsRendering);
-                //model.renderPart(controller.getTime(),"flashModel", "gunModel");
                 
                 /**
                  * selecotr
@@ -623,7 +622,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     if (stackAmmoX == null || stackAmmoX.isEmpty()) {
                         continue;
                     }
-                    if (model.getPart(binddings[x]) == null) {
+                    if (!model.existPart(binddings[x])) {
                         continue;
                     }
                     if (stackAmmoX.getItem() instanceof ItemAmmo) {
@@ -804,7 +803,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                 renderAttachment(config, attachment.typeName, attachmentType.internalName, () -> {
                                     attachmentModel.renderAttachment(worldScale);
                                     if(attachment==AttachmentPresetEnum.Sight) {
-                                        //renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
+                                        renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
                                     }
                                 });
                             });
@@ -879,7 +878,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 if(!sightRendering.type.sight.modeType.isPIP) {
                     if (!OptifineHelper.isShadersEnabled()) {
                         copyMirrorTexture();
-                        //ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
+                        ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
                         eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
                     }else {
                         if (isRenderHand0) {
@@ -887,13 +886,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                             
                             GL11.glDepthRange(0,1);
                             copyMirrorTexture();
-                            //ClientProxy.scopeUtils.renderPostScope(partialTicks, true, false, true, 1);
+                            ClientProxy.scopeUtils.renderPostScope(partialTicks, true, false, true, 1);
                             eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,controller.ADS > 0, worldScale);
                             writeScopeSoildDepth(controller.ADS > 0);
                             
                             GL11.glPopAttrib();
                         } else {
-                            //ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
+                            ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
                         }
                     }  
                 }
@@ -915,18 +914,19 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
         AnimationController controller;
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
+        //这里可以考虑一下 是否可以对骨骼枪做一些优化
         if(player!=null) {
             controller=ClientProxy.gunEnhancedRenderer.getController(player, config);
             if (controller.getPlayingAnimation() == AnimationType.DEFAULT
                     || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
                     || controller.getPlayingAnimation() == AnimationType.FIRE
                     || controller.getPlayingAnimation() == AnimationType.POST_FIRE) {
-                model.updateAnimation(controller.getTime());
+                model.updateAnimation(controller.getTime(),true);
             }else {
-                model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS));
+                model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS),true);
             }
         }else {
-            model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS));
+            model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS),true);
         }
         
 
@@ -1095,7 +1095,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             if (stackAmmoX == null || stackAmmoX.isEmpty()) {
                 continue;
             }
-            if (model.getPart(binddings[x]) == null) {
+            if (!model.existPart(binddings[x])) {
                 continue;
             }
             if (stackAmmoX.getItem() instanceof ItemAmmo) {
@@ -1575,57 +1575,66 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             return;
         }
 
-        if(!applySprint) {
+        if (!applySprint) {
             runnable.run();
             return;
         }
-        
-        model.updateAnimation(sprintTime);
-        float[] end_transform=getGlobalTransform(model.getPart(hand));
-        
-        //updateAnimation current time
-        model.updateAnimation(time);
-        float[] begin_transform=getGlobalTransform(model.getPart(hand));
-        
-        Matrix3f begin_rot_matrix=new Matrix3f();
-        Matrix3f end_rot_matrix=new Matrix3f();
-        genMatrix(begin_rot_matrix, begin_transform);
-        genMatrix(end_rot_matrix, end_transform);
-        Quaternion begin_quat = new Quaternion();
-        begin_quat=Quaternion.setFromMatrix(begin_rot_matrix, begin_quat);
-        Quaternion end_quat = new Quaternion();
-        end_quat=Quaternion.setFromMatrix(end_rot_matrix, end_quat);
-        Quaternion in_quat=interpolationRot(begin_quat, end_quat, alpha);
-        Vector3f in_pos=new Vector3f(0,0,0);
-        in_pos.x=begin_transform[12]+(end_transform[12]-begin_transform[12])*alpha;
-        in_pos.y=begin_transform[13]+(end_transform[13]-begin_transform[13])*alpha;
-        in_pos.z=begin_transform[14]+(end_transform[14]-begin_transform[14])*alpha;
-        Matrix3f original_matrix=genMatrixFromQuaternion(in_quat);
-        in_quat=in_quat.normalise(null);
-        Matrix3f base_matrix=genMatrixFromQuaternion(in_quat);
-        Matrix3f scale_matrix=Matrix3f.mul(original_matrix, Matrix3f.invert(base_matrix, null), null);
-        
+        model.updateAnimation(sprintTime, false);
+        org.joml.Matrix4f end_transform = getGlobalTransform(model, hand);
+
+        // updateAnimation current time
+        model.updateAnimation(time, false);
+        org.joml.Matrix4f begin_transform = getGlobalTransform(model, hand);
+
+        Quaternionf quat1 = new Quaternionf();
+        quat1.setFromUnnormalized(begin_transform);
+        Quaternionf quat2 = new Quaternionf();
+        quat2.setFromUnnormalized(end_transform);
+        quat2 = interpolationRot(quat1, quat2, alpha);
+
+        org.joml.Vector3f pos1 = new org.joml.Vector3f();
+        begin_transform.getTranslation(pos1);
+        org.joml.Vector3f pos2 = new org.joml.Vector3f();
+        end_transform.getTranslation(pos2);
+        pos2.set(pos1.x + (pos2.x - pos1.x) * alpha, pos1.y + (pos2.y - pos1.y) * alpha,
+            pos1.z + (pos2.z - pos1.x) * alpha);
+
+        org.joml.Vector3f size1 = new org.joml.Vector3f();
+        begin_transform.getScale(size1);
+        org.joml.Vector3f size2 = new org.joml.Vector3f();
+        end_transform.getScale(size2);
+        pos2.set(pos1.x + (pos2.x - pos1.x) * alpha, pos1.y + (pos2.y - pos1.y) * alpha,
+            pos1.z + (pos2.z - pos1.x) * alpha);
+
         GlStateManager.pushMatrix();
-        GlStateManager.translate(in_pos.x,in_pos.y,in_pos.z);
-        GlStateManager.scale(scale_matrix.m00, scale_matrix.m11, scale_matrix.m22);
-        GlStateManager.rotate(in_quat);
+        GlStateManager.translate(pos2.x, pos2.y, pos2.z);
+        GlStateManager.rotate(new Quaternion(quat2.x, quat2.y, quat2.z, quat2.w));
+        GlStateManager.scale(size2.x, size2.y, size2.z);
         model.applyGlobalInverseTransformToOther(hand, () -> {
             runnable.run();
         });
         GlStateManager.popMatrix();
     }
+    
+    public Quaternionf interpolationRot(Quaternionf q0, Quaternionf q1, float t) {
+        float theata = (float)Math.acos(q0.dot(q1));
+        if (theata >= theata90 || -theata >= theata90) {
+            q1.set(-q1.x, -q1.y, -q1.z, -q1.w);
+            theata = q0.dot(q1);
+        }
+        float sinTheata = MathHelper.sin(theata);
+        if (sinTheata == 0) {
+            return new Quaternionf(q0.x + (q1.x - q0.x) * t, q0.y + (q1.y - q0.y) * t, q0.z + (q1.z - q0.z) * t,
+                q0.w + (q1.w - q0.w) * t).normalize();
+        }
+        float c1 = (float)(MathHelper.sin(theata * (1 - t)) / sinTheata);
+        float c2 = (float)(MathHelper.sin(theata * t) / sinTheata);
+        return new Quaternionf(c1 * q0.x + c2 * q1.x, c1 * q0.y + c2 * q1.y, c1 * q0.z + c2 * q1.z,
+            c1 * q0.w + c2 * q1.w).normalize();
+    }
 
-    public float[] getGlobalTransform(NodeModel nodeModel) {
-        float[] transform = new float[] {
-                1,0,0,0,
-                0,1,0,0,
-                0,0,1,0,
-                0,0,0,1
-        };
-        // If you want to calculate global transform of single NodeModel outside of RenderedGltfModel,
-        // please using NodeModel.computeGlobalTransform() instead of RenderedGltfModel.findGlobalTransform()
-        if(nodeModel != null) nodeModel.computeGlobalTransform(transform);
-        return transform;
+    public org.joml.Matrix4f getGlobalTransform(EnhancedModel model,String name) {
+        return model.getGlobalTransform(name);
     }
     
     private Matrix3f genMatrixFromQuaternion(Quaternion quaternion) {
@@ -1645,6 +1654,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     }
     
     //4x4 floats
+    @Deprecated
     private void genMatrix(Matrix3f m,float[] floats) {
         m.m00=floats[0];
         m.m01=floats[4];
@@ -1657,23 +1667,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         m.m20=floats[2];
         m.m21=floats[6];
         m.m22=floats[10];
-    }
-    
-    public Quaternion interpolationRot(Quaternion q0, Quaternion q1, float t) {
-            float theata = (float) Math.acos(Quaternion.dot(q0, q1));
-            if (theata >= theata90 || -theata >= theata90) {
-                q1.set(-q1.x, -q1.y, -q1.z, -q1.w);
-                theata = Quaternion.dot(q0, q1);
-            }
-            float sinTheata = MathHelper.sin(theata);
-            if (sinTheata == 0) {
-                return new Quaternion(q0.x + (q1.x - q0.x) * t, q0.y + (q1.y - q0.y) * t, q0.z + (q1.z - q0.z) * t,
-                        q0.w + (q1.w - q0.w) * t);
-            }
-            float c1 = (float) (MathHelper.sin(theata * (1 - t)) / sinTheata);
-            float c2 = (float) (MathHelper.sin(theata * t) / sinTheata);
-            return new Quaternion(c1 * q0.x + c2 * q1.x, c1 * q0.y + c2 * q1.y, c1 * q0.z + c2 * q1.z,
-                    c1 * q0.w + c2 * q1.w);
     }
     
     public boolean onGltfRenderCallback(String part) {
@@ -1690,26 +1683,30 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         this.g=g;
         this.b=b;
         this.a=a;
+        GlStateManager.color(r, g, b,a);
     }
 
     @Override
     public void bindTexture(String type, String fileName) {
         super.bindTexture(type, fileName);
-        String pathFormat = "skins/%s/%s.png";
-        bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, String.format(pathFormat, type, fileName)));
+//        String pathFormat = "skins/%s/%s.png";
+//        bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, String.format(pathFormat, type, fileName)));
     }
 
     public void bindTexture(ResourceLocation location) {
         bindingTexture = location;
+       Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
     }
 
     public void bindPlayerSkin() {
         bindingTexture = Minecraft.getMinecraft().player.getLocationSkin();
+        Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
     }
 
     public void bindCustomHands(TextureType handTextureType){
         if(handTextureType.resourceLocations != null) {
             bindingTexture = handTextureType.resourceLocations.get(0);
         }
+        Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
     }
 }

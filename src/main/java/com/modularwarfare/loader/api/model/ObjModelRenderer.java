@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ObjModelRenderer {
-    private static CustomItemRenderer customItemRenderer = new CustomItemRenderer();
+    public static CustomItemRenderer customItemRenderer = new CustomItemRenderer();
     public static boolean glowTxtureMode = false;
     public static String glowType;
     public static String glowPath;

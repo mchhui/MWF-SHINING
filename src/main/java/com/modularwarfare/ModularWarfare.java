@@ -82,7 +82,7 @@ import java.util.List;
 
 import static com.modularwarfare.common.CommonProxy.zipJar;
 
-@Mod(modid = ModularWarfare.MOD_ID, name = ModularWarfare.MOD_NAME, version = ModularWarfare.MOD_VERSION, dependencies = "required-client:mcgltf@[1.12.2-Forge-2.0.3.0,);")
+@Mod(modid = ModularWarfare.MOD_ID, name = ModularWarfare.MOD_NAME, version = ModularWarfare.MOD_VERSION)
 public class ModularWarfare {
 
     // Mod Info
