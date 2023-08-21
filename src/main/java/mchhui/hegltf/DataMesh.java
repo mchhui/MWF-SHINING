@@ -21,9 +21,11 @@ import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GL45;
 
+import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import io.netty.buffer.ByteBuf;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 
@@ -78,7 +80,7 @@ public class DataMesh {
             float y = OpenGlHelper.lastBrightnessY;
             ObjModelRenderer.glowTxtureMode=false;
             GlStateManager.depthMask(false);
-            GlStateManager.enableBlend();
+            //GlStateManager.enableBlend();
             GlStateManager.depthFunc(GL11.GL_EQUAL);
             GlStateManager.disableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
@@ -86,10 +88,15 @@ public class DataMesh {
             GlStateManager.enableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x, y);
             GlStateManager.depthFunc(GL11.GL_LEQUAL);
-            GlStateManager.disableBlend();
+            //GlStateManager.disableBlend();
             GlStateManager.depthMask(true);
             ObjModelRenderer.glowTxtureMode=true;
             ObjModelRenderer.customItemRenderer.bindTexture(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
+            
+            //垃圾bug 迟早把这改装界面扬了
+            if(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
+                GlStateManager.disableLighting();
+            }
         }
     }
 
@@ -225,6 +232,7 @@ public class DataMesh {
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, ssbo);
             GL30.glBindVertexArray(displayList);
             GL11.glDrawElements(glDrawingMode, elementCount, GL11.GL_UNSIGNED_INT, 0);
+            GL30.glBindVertexArray(0);
             GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
             initSkinning = true;
         }
@@ -242,7 +250,6 @@ public class DataMesh {
             GL11.glDrawElements(glDrawingMode, elementCount, GL11.GL_UNSIGNED_INT, 0);
             GL30.glBindVertexArray(0);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-
         } else {
             GL30.glBindVertexArray(displayList);
             GL11.glDrawArrays(glDrawingMode, 0, vertexCount);

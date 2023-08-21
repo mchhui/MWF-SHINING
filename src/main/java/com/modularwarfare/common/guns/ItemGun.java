@@ -1,6 +1,7 @@
 package com.modularwarfare.common.guns;
 
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset.Entry;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
@@ -41,6 +42,7 @@ import javax.annotation.Nullable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -195,6 +197,12 @@ public class ItemGun extends BaseItem {
                     nbtTagCompound.setInteger("skinId", 0);
                     nbtTagCompound.setBoolean("punched", gunType.isEnergyGun);
                     heldStack.setTagCompound(nbtTagCompound);
+                    if (gunType.defaultAttachments != null) {
+                        for (Map.Entry<AttachmentPresetEnum, String> e : gunType.defaultAttachments.entrySet()) {
+                            GunType.addAttachment(heldStack, e.getKey(),
+                                new ItemStack(ModularWarfare.attachmentTypes.get(e.getValue())));
+                        }
+                    }
                 }
             }
         }

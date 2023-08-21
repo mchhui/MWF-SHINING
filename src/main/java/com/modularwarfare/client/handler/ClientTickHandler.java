@@ -281,24 +281,29 @@ public class ClientTickHandler extends ForgeEvent {
             RenderParameters.GUN_CHANGE_Y = Math.max(0, RenderParameters.GUN_CHANGE_Y - change_speed_y);
 
             Vec3d vecStart = player.getPositionEyes(1.0f);
-            RayTraceResult rayTraceResult = RayUtil.rayTrace(player,1.0, 1.0f);
+            RayTraceResult rayTraceResult = RayUtil.rayTrace(player,5f, 1.0f);
+            float recover=0.1f;
+            if(Mouse.isButtonDown(1)) {
+                recover=0.8f;  
+            }
             if(rayTraceResult != null) {
                 if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
                     if (rayTraceResult.hitVec != null) {
                         double d = vecStart.distanceTo(rayTraceResult.hitVec);
-                        if (d <= 1.0f) {
-                            RenderParameters.collideFrontDistance = (float) (RenderParameters.collideFrontDistance + ((1.0f - d) - RenderParameters.collideFrontDistance) * renderTick * 0.5f);
+                        double testD=1.5;
+                        if (d <= testD) {
+                            RenderParameters.collideFrontDistance = (float) (RenderParameters.collideFrontDistance + ((testD - d) - RenderParameters.collideFrontDistance) * renderTick * 0.5f);
                         } else {
-                            RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * 0.1f);
+                            RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
                         }
                     } else {
-                        RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * 0.1f);
+                        RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
                     }
                 } else {
-                    RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * 0.1f);
+                    RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
                 }
             } else {
-                RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * 0.1f);
+                RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
             }
 
             /**

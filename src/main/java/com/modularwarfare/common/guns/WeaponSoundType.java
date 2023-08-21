@@ -108,6 +108,8 @@ public enum WeaponSoundType {
      * The sound to play upon switching fire modes
      */
     @SerializedName("weaponModeSwitch") ModeSwitch("weaponModeSwitch", 8, "defweaponmodeswitch"),
+    
+    @SerializedName("inspect") Inspect("inspect",8,null),
 
     /**
      * The sound of flyby

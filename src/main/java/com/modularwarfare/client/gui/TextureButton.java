@@ -15,6 +15,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -202,7 +203,7 @@ public class TextureButton extends GuiButton {
             	GlStateManager.pushMatrix();
             	double scale=6.0d/scaledresolution.getScaleFactor()*0.5D;
             	GlStateManager.scale(scale, scale,scale);
-            	RenderHelperMW.renderText("无", (int)((x+2)/scale), (int)((y+2)/scale), 0xFFFFFF);
+            	RenderHelperMW.renderText(I18n.format("mwf:gui.modify.none"), (int)((x+2)/scale), (int)((y+2)/scale), 0xFFFFFF);
             	GlStateManager.popMatrix();
             }
             

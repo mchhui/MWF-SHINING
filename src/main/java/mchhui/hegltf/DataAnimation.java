@@ -2,8 +2,9 @@ package mchhui.hegltf;
 
 import java.util.ArrayList;
 
-import org.joml.*;
-import org.joml.Math;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.util.vector.Quaternion;
 
 import net.minecraft.util.math.MathHelper;
@@ -86,29 +87,12 @@ public class DataAnimation {
                 }
                 vec=channel.get(left).vec;
                 vecTemp=channel.get(right).vec;
-                Quaternionf q0=new Quaternionf(vec.x,vec.y,vec.z,vec.w);
-                Quaternionf q1=new Quaternionf(vecTemp.x,vecTemp.y,vecTemp.z,vecTemp.w);
-                transform.rot=interpolationRot(q0,q1,per);
+                Quaternionf q0=new Quaternionf(vec.x,vec.y,vec.z,vec.w).normalize();
+                Quaternionf q1=new Quaternionf(vecTemp.x,vecTemp.y,vecTemp.z,vecTemp.w).normalize();
+                transform.rot=q0.slerp(q1, per);
             }
         }
         return transform;
-    }
-
-    public Quaternionf interpolationRot(Quaternionf q0, Quaternionf q1, float t) {
-        float theata = (float)Math.acos(q0.dot(q1));
-        if (theata >= theata90 || -theata >= theata90) {
-            q1.set(-q1.x, -q1.y, -q1.z, -q1.w);
-            theata = q0.dot(q1);
-        }
-        float sinTheata = MathHelper.sin(theata);
-        if (sinTheata == 0) {
-            return new Quaternionf(q0.x + (q1.x - q0.x) * t, q0.y + (q1.y - q0.y) * t, q0.z + (q1.z - q0.z) * t,
-                q0.w + (q1.w - q0.w) * t).normalize();
-        }
-        float c1 = (float)(MathHelper.sin(theata * (1 - t)) / sinTheata);
-        float c2 = (float)(MathHelper.sin(theata * t) / sinTheata);
-        return new Quaternionf(c1 * q0.x + c2 * q1.x, c1 * q0.y + c2 * q1.y, c1 * q0.z + c2 * q1.z,
-            c1 * q0.w + c2 * q1.w).normalize();
     }
 
     public static class Transform {

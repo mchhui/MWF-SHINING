@@ -41,6 +41,7 @@ import com.modularwarfare.utility.maths.Interpolation;
 
 import de.javagl.jgltf.model.NodeModel;
 import mchhui.hegltf.DataNode;
+import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -66,7 +67,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.optifine.shaders.Shaders;
 
-import org.joml.Math;
 import org.joml.Quaterniond;
 import org.joml.Quaternionf;
 import org.lwjgl.BufferUtils;
@@ -86,7 +86,7 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 
 public class RenderGunEnhanced extends CustomItemRenderer {
-    public static float sizeFactor=20f;
+    public static float sizeFactor=10000f;
     public static boolean debug=false;
     public static boolean debug1=false;
 
@@ -191,7 +191,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
         float bx = OpenGlHelper.lastBrightnessX;
         float by = OpenGlHelper.lastBrightnessY;
-        
         /**
          * INITIAL BLENDER POSITION
          * nonono this is minecrfat hand transform
@@ -203,15 +202,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
          * DEFAULT TRANSFORM
          * */
         //mat.translate(new Vector3f(0,1.3f,-1.8f));
-        float zFar = Minecraft.getMinecraft().gameSettings.renderDistanceChunks * 16F*2;
         mat.rotate(toRadians(90.0F), new Vector3f(0,1,0));
         
         /**
          * 诡异的缩放2023.6.7
          * */
-        mat.scale(new Vector3f(1/zFar, 1/zFar, 1/zFar));
         mat.scale(new Vector3f(1/sizeFactor, 1/sizeFactor, 1/sizeFactor));
-        
         //Do hand rotations
         float f5 = player.prevRenderArmPitch + (player.renderArmPitch - player.prevRenderArmPitch) * partialTicks;
         float f6 = player.prevRenderArmYaw + (player.renderArmYaw - player.prevRenderArmYaw) * partialTicks;
@@ -301,30 +297,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         RenderParameters.VALSPRINT = (float) (Math.cos(controller.SPRINT_RANDOM*2*Math.PI)) * gunType.moveSpeedModifier;
         RenderParameters.VALSPRINT2 = (float)(Math.sin(controller.SPRINT_RANDOM*2*Math.PI)) * gunType.moveSpeedModifier;
 
-        Vector3f customSprintRotation;
-        Vector3f customSprintTranslate;
-        if(!config.sprint.basicSprint) {
-            float springModifier = (float) (0.8f - controller.ADS);
-            mat.rotate(toRadians(0.2f * VALSPRINT * springModifier), new Vector3f(1, 0, 0));
-            mat.rotate(toRadians(VALSPRINT2 * springModifier), new Vector3f(0, 0, 1));
-            mat.translate(new Vector3f(VALSPRINT * 0.2f * springModifier, 0, VALSPRINT2 * 0.2f * springModifier));
-
-            customSprintRotation = new Vector3f((config.sprint.sprintRotate.x * (float) controller.SPRINT), (config.sprint.sprintRotate.y * (float) controller.SPRINT), (config.sprint.sprintRotate.z * (float) controller.SPRINT));
-            customSprintTranslate = new Vector3f((config.sprint.sprintTranslate.x * (float) controller.SPRINT), (config.sprint.sprintTranslate.y * (float) controller.SPRINT), (config.sprint.sprintTranslate.z * (float) controller.SPRINT));
-
-            customSprintRotation.scale((1F - (float) controller.ADS));
-            customSprintTranslate.scale((1F - (float) controller.ADS));
-        } else {
-
-            mat.rotate(toRadians((float) (adsModifier * VALSPRINT * controller.SPRINT_BASIC)), new Vector3f(1, 1, -1));
-            mat.rotate(toRadians((float) (adsModifier * 0.2f * VALSPRINT2 * controller.SPRINT_BASIC)), new Vector3f(0, 0, 1));
-
-            customSprintRotation = new Vector3f((float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.x * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.y * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintRotate.z * controller.SPRINT_BASIC));
-            customSprintTranslate = new Vector3f((float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.x * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.y * controller.SPRINT_BASIC), (float) (((GunEnhancedRenderConfig) model.config).sprint.sprintTranslate.z * controller.SPRINT_BASIC));
-
-            customSprintRotation.scale((float) (1F - controller.ADS));
-            customSprintTranslate.scale((float) (1F - controller.ADS));
-        }
+        Vector3f customSprintRotation = new Vector3f();
+        Vector3f customSprintTranslate = new Vector3f();
+        float springModifier = (float) (0.8f - controller.ADS);
+//        mat.rotate(toRadians(0.2f * VALSPRINT * springModifier), new Vector3f(1, 0, 0));
+//        mat.rotate(toRadians(VALSPRINT2 * springModifier), new Vector3f(0, 0, 1));
+//        mat.translate(new Vector3f(VALSPRINT * 0.2f * springModifier, 0, VALSPRINT2 * 0.2f * springModifier));
+//
+//        customSprintRotation = new Vector3f((config.sprint.sprintRotate.x * (float) controller.SPRINT), (config.sprint.sprintRotate.y * (float) controller.SPRINT), (config.sprint.sprintRotate.z * (float) controller.SPRINT));
+//        customSprintTranslate = new Vector3f((config.sprint.sprintTranslate.x * (float) controller.SPRINT), (config.sprint.sprintTranslate.y * (float) controller.SPRINT), (config.sprint.sprintTranslate.z * (float) controller.SPRINT));
+//
+//        customSprintRotation.scale((1F - (float) controller.ADS));
+//        customSprintTranslate.scale((1F - (float) controller.ADS));
         /**
          * CUSTOM HIP POSITION
          */
@@ -477,7 +461,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         HashSet<String> exceptPartsRendering=exceptParts;
         
         
-        model.updateAnimation(controller.getTime(),true);
+        //model.updateAnimation(controller.getTime(),false);
         
         /**
          * RIGHT HAND GROUP
@@ -487,7 +471,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
         boolean glowMode=ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode=true;
-        applySprintHandTransform(model, config.sprint.basicSprint, controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, () -> {
+        applySprintHandTransform(model, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, true, () -> {
             if(isRenderHand0) {
                 if(sightRendering!=null) {
                     String binding = "gunModel";
@@ -510,12 +494,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 } else {
                     bindPlayerSkin();
                 }
+                ObjModelRenderer.glowTxtureMode=false;
                 if(!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
                     model.renderPart(RIGHT_HAND_PART);
                 }else {
                     model.renderPart(RIGHT_SLIM_HAND_PART);
                 }
-
+                ObjModelRenderer.glowTxtureMode=true;
                 /**
                  * gun
                  * */
@@ -802,9 +787,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                 }
                                 renderAttachment(config, attachment.typeName, attachmentType.internalName, () -> {
                                     attachmentModel.renderAttachment(worldScale);
+                                    ObjModelRenderer.glowTxtureMode=false;
                                     if(attachment==AttachmentPresetEnum.Sight) {
                                         renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
                                     }
+                                    ObjModelRenderer.glowTxtureMode=true;
                                 });
                             });
                         }
@@ -855,7 +842,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         /**
          * LEFT HAND GROUP
          * */
-        applySprintHandTransform(model, config.sprint.basicSprint, controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, () -> {
+        applySprintHandTransform(model, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, () -> {
             if (isRenderHand0) {
                 /**
                  * player left hand
@@ -865,11 +852,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 } else {
                     bindPlayerSkin();
                 }
+                ObjModelRenderer.glowTxtureMode=false;
                 if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
                     model.renderPart(LEFT_HAND_PART);
                 } else {
                     model.renderPart(LEFT_SLIM_HAND_PART);
                 }
+                ObjModelRenderer.glowTxtureMode=true;
             }
         });
         
@@ -936,6 +925,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         exceptParts.removeAll(config.thirdShowPart);
         //exceptParts.addAll(DEFAULT_EXCEPT);
 
+        boolean glowTxtureMode=ObjModelRenderer.glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode=true;
         for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
             ItemStack itemStack = GunType.getAttachment(demoStack, attachment);
             if (itemStack != null && itemStack.getItem() != Items.AIR) {
@@ -1209,14 +1200,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                 attachmentType.internalName, () -> {
                                     attachmentModel.renderAttachment(worldScale);
                                     if (attachment == AttachmentPresetEnum.Sight) {
+                                        ObjModelRenderer.glowTxtureMode=false;
                                         ClientProxy.gunEnhancedRenderer.renderScopeGlass(attachmentType,
                                                 attachmentModel, false, worldScale);
+                                        ObjModelRenderer.glowTxtureMode=true;
                                     }
                                 });
                     });
                 }
             }
         }
+        
+        ObjModelRenderer.glowTxtureMode=glowTxtureMode;
         
         /**
          *  flashmodel 
@@ -1569,68 +1564,44 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.rotate(transform.rotate.z, 0,0,1);
     }
     
-    public void applySprintHandTransform(EnhancedModel model, boolean basicSprint, float time,float sprintTime,float alpha,String hand,boolean applySprint, Runnable runnable) {
-        if(basicSprint) {
-            runnable.run();
-            return;
-        }
-
-        if (!applySprint) {
-            runnable.run();
-            return;
-        }
-        model.updateAnimation(sprintTime, false);
-        org.joml.Matrix4f end_transform = getGlobalTransform(model, hand);
-
-        // updateAnimation current time
-        model.updateAnimation(time, false);
-        org.joml.Matrix4f begin_transform = getGlobalTransform(model, hand);
-
-        Quaternionf quat1 = new Quaternionf();
-        quat1.setFromUnnormalized(begin_transform);
-        Quaternionf quat2 = new Quaternionf();
-        quat2.setFromUnnormalized(end_transform);
-        quat2 = interpolationRot(quat1, quat2, alpha);
-
-        org.joml.Vector3f pos1 = new org.joml.Vector3f();
-        begin_transform.getTranslation(pos1);
-        org.joml.Vector3f pos2 = new org.joml.Vector3f();
-        end_transform.getTranslation(pos2);
-        pos2.set(pos1.x + (pos2.x - pos1.x) * alpha, pos1.y + (pos2.y - pos1.y) * alpha,
-            pos1.z + (pos2.z - pos1.x) * alpha);
-
-        org.joml.Vector3f size1 = new org.joml.Vector3f();
-        begin_transform.getScale(size1);
-        org.joml.Vector3f size2 = new org.joml.Vector3f();
-        end_transform.getScale(size2);
-        pos2.set(pos1.x + (pos2.x - pos1.x) * alpha, pos1.y + (pos2.y - pos1.y) * alpha,
-            pos1.z + (pos2.z - pos1.x) * alpha);
-
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(pos2.x, pos2.y, pos2.z);
-        GlStateManager.rotate(new Quaternion(quat2.x, quat2.y, quat2.z, quat2.w));
-        GlStateManager.scale(size2.x, size2.y, size2.z);
-        model.applyGlobalInverseTransformToOther(hand, () -> {
-            runnable.run();
+    public void applySprintHandTransform(EnhancedModel model, boolean basicSprint, float time, float sprintTime,
+        float alpha, String hand, boolean applySprint,boolean skin, Runnable runnable) {
+        model.setAnimationBlender(new NodeAnimationBlender("sprintBlender") {
+            @Override
+            public void handle(DataNode node, org.joml.Matrix4f mat) {
+                if(alpha==0) {
+                    return;
+                }
+                org.joml.Matrix4f begin_transform = mat;
+                mchhui.hegltf.DataAnimation.Transform end_transform = model.findLocalTransform(node.name, sprintTime);
+                if (end_transform == null) {
+                    return;
+                }
+                if (!node.name.equals("root") && !node.name.equals("sprint_lefthand")
+                    && !node.name.equals("sprint_righthand") && !node.name.equals("root_bone")
+                    && !node.name.equals("sprint_lefthand_bone") && !node.name.equals("sprint_righthand_bone")) {
+                    return;
+                }
+                Quaternionf quat = new Quaternionf();
+                quat.setFromUnnormalized(begin_transform);
+                quat.normalize().slerp(end_transform.rot.normalize(), alpha);
+                org.joml.Vector3f pos = new org.joml.Vector3f();
+                begin_transform.getTranslation(pos);
+                pos.set(pos.x + (end_transform.pos.x - pos.x) * alpha, pos.y + (end_transform.pos.y - pos.y) * alpha,
+                    pos.z + (end_transform.pos.z - pos.z) * alpha);
+                org.joml.Vector3f size = new org.joml.Vector3f();
+                begin_transform.getScale(size);
+                size.set(size.x + (end_transform.size.x - size.x) * alpha,
+                    size.y + (end_transform.size.y - size.y) * alpha, size.z + (end_transform.size.z - size.z) * alpha);
+                mat.identity();
+                mat.translate(pos);
+                mat.scale(size);
+                mat.rotate(quat);
+            }
         });
-        GlStateManager.popMatrix();
-    }
-    
-    public Quaternionf interpolationRot(Quaternionf q0, Quaternionf q1, float t) {
-        float theata = (float)Math.acos(q0.dot(q1));
-        if (theata >= theata90 || -theata >= theata90) {
-            q1.set(-q1.x, -q1.y, -q1.z, -q1.w);
-            theata = q0.dot(q1);
-        }
-        float sinTheata = MathHelper.sin(theata);
-        if (sinTheata == 0) {
-            return new Quaternionf(q0.x + (q1.x - q0.x) * t, q0.y + (q1.y - q0.y) * t, q0.z + (q1.z - q0.z) * t,
-                q0.w + (q1.w - q0.w) * t).normalize();
-        }
-        float c1 = (float)(MathHelper.sin(theata * (1 - t)) / sinTheata);
-        float c2 = (float)(MathHelper.sin(theata * t) / sinTheata);
-        return new Quaternionf(c1 * q0.x + c2 * q1.x, c1 * q0.y + c2 * q1.y, c1 * q0.z + c2 * q1.z,
-            c1 * q0.w + c2 * q1.w).normalize();
+        model.updateAnimation(time, skin);
+        runnable.run();
+        model.setAnimationBlender(null);
     }
 
     public org.joml.Matrix4f getGlobalTransform(EnhancedModel model,String name) {

@@ -160,6 +160,7 @@ jar {
 }
 
 /* Dev build */
+/*
 task deobfJar(type: Jar) {
     from sourceSets.main.output
     classifier = 'dev'
@@ -174,5 +175,5 @@ artifacts {
     archives deobfJar
     archives sourcesJar
 }
-
+*/
 jar.finalizedBy('reobfJar')

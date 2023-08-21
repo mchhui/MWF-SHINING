@@ -17,11 +17,16 @@ import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.maths.Interpolation;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.ISound;
+import net.minecraft.client.audio.MovingSound;
+import net.minecraft.client.audio.PositionedSound;
+import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 
@@ -57,9 +62,8 @@ public class AnimationController {
     
     public boolean nextResetDefault=false;
 
-    public double SPRINT_BASIC;
-
     public boolean hasPlayedDrawSound = true;
+    public ISound inspectSound=null;
 
     private static AnimationType[] RELOAD_TYPE=new AnimationType[] {
             AnimationType.PRE_LOAD,AnimationType.LOAD,AnimationType.POST_LOAD,
@@ -92,6 +96,10 @@ public class AnimationController {
         }
         SPRINT_LOOP=0;
         INSPECT=1;
+        if(inspectSound!=null) {
+            Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
+            inspectSound=null;
+        }
         FIRE=0;
         MODE_CHANGE=1;
         updateActionAndTime();
@@ -130,6 +138,22 @@ public class AnimationController {
         }
 
         /** INSPECT **/
+        if (INSPECT == 0) {
+            if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
+                SoundEvent se = type.getSound(player, WeaponSoundType.Inspect);
+                if(se!=null) {
+                    inspectSound=PositionedSoundRecord.getRecord(se, 1, 1);
+                    Minecraft.getMinecraft().getSoundHandler().playSound(inspectSound);  
+                }
+            }
+        }
+        if(INSPECT == 1) {
+            if(inspectSound!=null) {
+                Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
+                inspectSound=null;
+            }
+        }
         if(!config.animations.containsKey (AnimationType.INSPECT)) {
             INSPECT=1;
         }else {
@@ -144,11 +168,13 @@ public class AnimationController {
         boolean aimChargeMisc = ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
         double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * stepTick;
         double val = 0;
-        if(Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && !aimChargeMisc && INSPECT == 1F) {
+        if (RenderParameters.collideFrontDistance == 0 && Minecraft.getMinecraft().inGameHasFocus
+            && Mouse.isButtonDown(1) && !aimChargeMisc && INSPECT == 1F) {
             val = ADS + adsSpeed * (2 - ADS);
         } else {
             val = ADS - adsSpeed * (1 + ADS);
         }
+        RenderParameters.adsSwitch = (float)ADS;
         
         if(!isDrawing()) {
             ADS = Math.max(0, Math.min(1, val));
@@ -167,79 +193,72 @@ public class AnimationController {
         /**
          * Sprinting
          */
-        if(!config.sprint.basicSprint) {
-            double sprintSpeed = 0.15f * stepTick;
-            double sprintValue = 0;
-            
-            if(player instanceof EntityPlayerSP) {
-                if(((EntityPlayerSP)player).movementInput.jump) {
-                    isJumping=true;
-                }else if(player.onGround) {
-                    isJumping=false;
-                }  
-            }
+        double sprintSpeed = Math.sin(SPRINT * 3.14) * 0.09f;
+        if (sprintSpeed < 0.03f) {
+            sprintSpeed = 0.03f;
+        }
+        sprintSpeed *= stepTick;
+        double sprintValue = 0;
+        
+        if(player instanceof EntityPlayerSP) {
+            if(((EntityPlayerSP)player).movementInput.jump) {
+                isJumping=true;
+            }else if(player.onGround) {
+                isJumping=false;
+            }  
+        }
 
-            boolean flag=(player.onGround||player.fallDistance<2f)&&!isJumping;
+        boolean flag=(player.onGround||player.fallDistance<2f)&&!isJumping;
 
-            if (player.isSprinting() && moveDistance > 0.05 && flag) {
-                if (time > sprintCoolTime) {
-                    sprintValue = SPRINT + sprintSpeed;
-                }
-            } else {
-                sprintCoolTime = time + 100;
-                sprintValue = SPRINT - sprintSpeed;
-            }
-            if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0) {
-                sprintValue = SPRINT - sprintSpeed * 2.5f;
-            }
-
-            SPRINT = Math.max(0, Math.min(1, sprintValue));
-
-            /** SPRINT_LOOP **/
-            if (!config.animations.containsKey(AnimationType.SPRINT)) {
-                SPRINT_LOOP = 0;
-                SPRINT_RANDOM = 0;
-            } else {
-                double sprintLoopSpeed = config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * stepTick
-                        * (moveDistance / 0.15f);
-                boolean flagSprintRand = false;
-                if (flag) {
-                    if (time > sprintLoopCoolTime) {
-                        if (player.isSprinting()) {
-                            SPRINT_LOOP += sprintLoopSpeed;
-                            SPRINT_RANDOM += sprintLoopSpeed;
-                            flagSprintRand = true;
-                        }
-                    }
-                } else {
-                    sprintLoopCoolTime = time + 100;
-                }
-                if (!flagSprintRand) {
-                    SPRINT_RANDOM -= config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * 3 * stepTick;
-                }
-                if (SPRINT_LOOP > 1) {
-                    SPRINT_LOOP = 0;
-                }
-                if (SPRINT_RANDOM > 1) {
-                    SPRINT_RANDOM = 0;
-                }
-                if (SPRINT_RANDOM < 0) {
-                    SPRINT_RANDOM = 0;
-                }
-                if (Double.isNaN(SPRINT_RANDOM)) {
-                    SPRINT_RANDOM = 0;
-                }
+        if (player.isSprinting() && moveDistance > 0.05 && flag) {
+            if (time > sprintCoolTime) {
+                sprintValue = SPRINT + sprintSpeed;
             }
         } else {
-            /** SPRINT **/
-            float sprintSpeed = 0.15f * stepTick;
-            float sprintValue = (float) ((player.isSprinting()) ? SPRINT_BASIC + sprintSpeed : SPRINT_BASIC - sprintSpeed);
-            if(anim.gunRecoil > 0.1F){
-                sprintValue = (float) (SPRINT_BASIC - sprintSpeed*3f);
-            }
-            SPRINT_BASIC = Math.max(0, Math.min(1, sprintValue));
+            sprintCoolTime = time + 100;
+            sprintValue = SPRINT - sprintSpeed;
         }
-        
+        if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0) {
+            sprintValue = SPRINT - sprintSpeed * 2.5f;
+        }
+
+        SPRINT = Math.max(0, Math.min(1, sprintValue));
+
+        /** SPRINT_LOOP **/
+        if (!config.animations.containsKey(AnimationType.SPRINT)) {
+            SPRINT_LOOP = 0;
+            SPRINT_RANDOM = 0;
+        } else {
+            double sprintLoopSpeed = config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * stepTick
+                    * (moveDistance / 0.15f);
+            boolean flagSprintRand = false;
+            if (flag) {
+                if (time > sprintLoopCoolTime) {
+                    if (player.isSprinting()) {
+                        SPRINT_LOOP += sprintLoopSpeed;
+                        SPRINT_RANDOM += sprintLoopSpeed;
+                        flagSprintRand = true;
+                    }
+                }
+            } else {
+                sprintLoopCoolTime = time + 100;
+            }
+            if (!flagSprintRand) {
+                SPRINT_RANDOM -= config.animations.get(AnimationType.SPRINT).getSpeed(config.FPS) * 3 * stepTick;
+            }
+            if (SPRINT_LOOP > 1) {
+                SPRINT_LOOP = 0;
+            }
+            if (SPRINT_RANDOM > 1) {
+                SPRINT_RANDOM = 0;
+            }
+            if (SPRINT_RANDOM < 0) {
+                SPRINT_RANDOM = 0;
+            }
+            if (Double.isNaN(SPRINT_RANDOM)) {
+                SPRINT_RANDOM = 0;
+            }
+        }
         /** MODE CHANGE **/
         if(!config.animations.containsKey (AnimationType.MODE_CHANGE)) {
             MODE_CHANGE=1;
@@ -254,13 +273,6 @@ public class AnimationController {
         ClientRenderHooks.getEnhancedAnimMachine(player).onRenderTickUpdate(stepTick);  
 
         updateActionAndTime();
-
-        if (RenderParameters.collideFrontDistance > 0) {
-            RenderParameters.adsSwitch = (float)(ADS - RenderParameters.collideFrontDistance > 0
-                ? ADS - RenderParameters.collideFrontDistance : 0);
-        } else {
-            RenderParameters.adsSwitch = (float)ADS;
-        }
     }
     
     public AnimationType getPlayingAnimation() {

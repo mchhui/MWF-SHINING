@@ -60,6 +60,7 @@ import com.modularwarfare.common.network.PacketGunUnloadAttachment;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.modularwarfare.utility.ColorUtils;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.OptifineHelper;
@@ -178,7 +179,7 @@ public class GuiGunModify extends GuiScreen {
 		PAGEBUTTON.height=buttonSize;
 		subPageX=0;
 		subPageY=0;
-		subPageWidth=(PAGEBUTTON.state==-1?256:0)*scaleFactor;
+		subPageWidth=(PAGEBUTTON.state==-1?320:0)*scaleFactor;
 		subPageHeight=512*scaleFactor;
 		PAGEBUTTON.x=subPageX+subPageWidth;
 		PAGEBUTTON.y=0;
@@ -362,7 +363,7 @@ public class GuiGunModify extends GuiScreen {
 
 		renderer.enableLightmap();
 		// Setup lighting
-		GlStateManager.disableLighting();
+		//GlStateManager.disableLighting();
 		GlStateManager.pushMatrix();
 		GlStateManager.rotate(f3, 1.0F, 0.0F, 0.0F);
 		GlStateManager.rotate(f4, 0.0F, 1.0F, 0.0F);
@@ -401,11 +402,12 @@ public class GuiGunModify extends GuiScreen {
 		GlStateManager.popMatrix();
 		renderSlotStuff(mouseX,mouseY,entitylivingbaseIn, type, scale,sFactor, itemstack, scaledresolution, f4);
 		if(PAGEBUTTON.state==-1) {
-			drawSubPage(mouseY, mouseY, partialTicks,sFactor,scaledresolution);
+			//drawSubPage(mouseY, mouseY, partialTicks,sFactor,scaledresolution);
 		}
+		//drawSubPage(mouseY, mouseY, partialTicks,sFactor,scaledresolution);
 		
-		QUITBUTTON.drawButton(mc, mouseX, mouseY, partialTicks);
-		PAGEBUTTON.drawButton(mc, mouseX, mouseY, partialTicks);
+		//QUITBUTTON.drawButton(mc, mouseX, mouseY, partialTicks);
+		//PAGEBUTTON.drawButton(mc, mouseX, mouseY, partialTicks);
 		
 		
 		GlStateManager.matrixMode(GL11.GL_PROJECTION);
@@ -637,94 +639,20 @@ public class GuiGunModify extends GuiScreen {
 		int color=0xFFFFFF;
 		double fontScale=2d*sFactor/scaledresolution.getScaleFactor();
 		GlStateManager.pushMatrix();
-		GlStateManager.scale(fontScale, fontScale, fontScale);
-		RenderHelperMW.renderCenteredText(this.currentModify.getDisplayName(), (int)((subPageX+subPageWidth/2)/fontScale), (int)(subPageY/fontScale), color);
+		GlStateManager.scale(4/6F, 1/2F, 1/2F);
+		RenderHelperMW.renderCenteredText(this.currentModify.getDisplayName(), (int)((subPageX+subPageWidth/2)/fontScale), (int)(subPageY/fontScale+10), color);
 		ArrayList<String> toolTips=new ArrayList();
-		toolTips.add("Weapon status");
-		String baseDisplayLine = "%bFire Mode: %g%s";
-        baseDisplayLine = baseDisplayLine.replaceAll("%b", TextFormatting.BLUE.toString());
-        baseDisplayLine = baseDisplayLine.replaceAll("%g", TextFormatting.GRAY.toString());
-        toolTips.add(String.format(baseDisplayLine, GunType.getFireMode(currentModify) != null ? GunType.getFireMode(currentModify) : gunType.fireModes[0]));
-        DecimalFormat decimalFormat = new DecimalFormat("#.#");
-        String damageLine = "%bDamage: %g%s";
-        damageLine = damageLine.replaceAll("%b", TextFormatting.BLUE.toString());
-        damageLine = damageLine.replaceAll("%g", TextFormatting.RED.toString());
-        if (gunType.numBullets > 1) {
-        	toolTips.add(String.format(damageLine, gunType.gunDamage + " x " + gunType.numBullets));
-        } else {
-        	toolTips.add(String.format(damageLine, gunType.gunDamage));
-        }
-        String accuracyLine = "%bAccuracy: %g%s";
-        accuracyLine = accuracyLine.replaceAll("%b", TextFormatting.BLUE.toString());
-        accuracyLine = accuracyLine.replaceAll("%g", TextFormatting.RED.toString());
-        toolTips.add(String.format(accuracyLine, decimalFormat.format((1 / gunType.bulletSpread) * 100) + "%"));
-		if (gunType.acceptedAttachments != null) {
-            if (!gunType.acceptedAttachments.isEmpty()) {
-            	toolTips.add("Accepted attachments");
-            	for (AttachmentPresetEnum attachmentType : AttachmentPresetEnum.values()) {
-            		if(attachmentType!=AttachmentPresetEnum.Skin) {
-            			toolTips.add(TextFormatting.BLUE.toString() + attachmentType.typeName+":");
-            			for (ArrayList<String> strings : gunType.acceptedAttachments.values()) {
-                            for (int i = 0; i < strings.size(); i++) {
-                                try {
-                                	ItemAttachment itemAtt=ModularWarfare.attachmentTypes.get(strings.get(i));
-                                	if(itemAtt.type.attachmentType==attachmentType) {
-                                		final String attachment = itemAtt.type.displayName;
-                                        if (attachment != null) {
-                                        	toolTips.add(" " + attachment);
-                                        }
-                                	}
-                                } catch (NullPointerException error) {
-                                }
-                            }
-                        }
-            		}else if(gunType.modelSkins!=null&&gunType.modelSkins.length>1) {
-            			toolTips.add(TextFormatting.BLUE.toString() + attachmentType.typeName+":");
-            			for (int j = 1; j < gunType.modelSkins.length; j++) {
-            				toolTips.add(" " + gunType.modelSkins[j].internalName);
-                        }
-            		}
-            	}
-            }
-        }
-		if (gunType.acceptedAmmo != null) {
-			toolTips.add("" + TextFormatting.BLUE.toString() + "Accepted mags:");
-            if (gunType.acceptedAmmo.length > 0) {
-                for (String internalName : gunType.acceptedAmmo) {
-                    if (ModularWarfare.ammoTypes.containsKey(internalName)) {
-                        final String magName = ModularWarfare.ammoTypes.get(internalName).type.displayName;
-                        if (magName != null) {
-                        	toolTips.add("" + magName);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (gunType.acceptedBullets != null) {
-        	toolTips.add("" + TextFormatting.BLUE.toString() + "Accepted bullets:");
-
-            if (gunType.acceptedBullets.length > 0) {
-                for (String internalName : gunType.acceptedBullets) {
-                    if (ModularWarfare.bulletTypes.containsKey(internalName)) {
-                        final String magName = ModularWarfare.bulletTypes.get(internalName).type.displayName;
-                        if (magName != null) {
-                        	toolTips.add("" + magName);
-                        }
-                    }
-                }
-            }
-        }
+		((BaseItem) this.currentModify.getItem()).addInformation(currentModify, null, toolTips, null);
         
 		double indexY=1;
-		int limitWidth=128;
+		int limitWidth=320;
 		for(String str:toolTips) {
 			int strW=mc.fontRenderer.getStringWidth(str);
 			while(strW>limitWidth) {
         		str=str.substring(0, str.length()-1);
         		strW=mc.fontRenderer.getStringWidth(str);
         	}
-			RenderHelperMW.renderText(str, (int)(0), (int)(indexY*10), color);
+			RenderHelperMW.renderText(str, (int)(2), (int)(indexY*10)+20, color);
 			indexY++;
 		}
 		GlStateManager.popMatrix();
@@ -1002,9 +930,11 @@ public class GuiGunModify extends GuiScreen {
 		GunType gunType = (GunType) type;
 		EnhancedModel model = type.enhancedModel;
 		GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
-
+        //OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
 		if (config.animations.containsKey(AnimationType.DEFAULT)) {
-
+	        boolean glowTxtureMode=ObjModelRenderer.glowTxtureMode;
+	        ObjModelRenderer.glowTxtureMode=true;
+	        
 			RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
 			// model.updateAnimation(rge.controller.getTime(),"");
 			//rge.controller.reset(true);
@@ -1129,8 +1059,8 @@ public class GuiGunModify extends GuiScreen {
 			final ItemAttachment sightRendering = sight;
 			float worldScale = 1F;
 			boolean applySprint = false;
-			rge.applySprintHandTransform(model, config.sprint.basicSprint, rge.controller.getTime(),
-					rge.controller.getSprintTime(), (float) rge.controller.SPRINT, "sprint_righthand", applySprint,
+			rge.applySprintHandTransform(model, false, rge.controller.getTime(),
+					rge.controller.getSprintTime(), (float) rge.controller.SPRINT, "sprint_righthand", applySprint,true,
 					() -> {
 						if (true) {// isRenderHand0
 							if (sightRendering != null) {
@@ -1485,7 +1415,7 @@ public class GuiGunModify extends GuiScreen {
 												//GlStateManager.translate(0, 1, 0);
 												
 												GlStateManager.color(1, 1, 1,1);
-												GlStateManager.disableLighting();
+												//GlStateManager.disableLighting();
 												GlStateManager.disableTexture2D();
 												GlStateManager.disableDepth();
 												if(true) {
@@ -1501,7 +1431,7 @@ public class GuiGunModify extends GuiScreen {
 												GlStateManager.color(1, 1, 1,1);
 												GlStateManager.popMatrix();
 												GlStateManager.enableDepth();
-												GlStateManager.enableLighting();
+												//GlStateManager.enableLighting();
 												GlStateManager.enableTexture2D();
 												GL11.glDisable(GL11.GL_POLYGON_OFFSET_LINE);
 												GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
@@ -1528,8 +1458,10 @@ public class GuiGunModify extends GuiScreen {
 													attachmentType.internalName, () -> {
 														attachmentModel.renderAttachment(worldScale);
 														if (attachment == AttachmentPresetEnum.Sight) {
+														    ObjModelRenderer.glowTxtureMode=false;
 															rge.renderScopeGlass(attachmentType, attachmentModel,
 																	rge.controller.ADS > 0, worldScale);
+															ObjModelRenderer.glowTxtureMode=true;
 														}
 													});
 											
@@ -1577,6 +1509,7 @@ public class GuiGunModify extends GuiScreen {
 				}
 			}
 			rge.controller.ADS = 0;
+	        ObjModelRenderer.glowTxtureMode=glowTxtureMode;
 		}
 
 	}

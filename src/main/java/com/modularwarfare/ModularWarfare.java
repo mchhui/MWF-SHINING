@@ -51,6 +51,7 @@ import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.io.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
 import net.minecraft.item.Item;
+import net.minecraft.launchwrapper.LaunchClassLoader;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
@@ -70,6 +71,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -79,6 +81,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 import static com.modularwarfare.common.CommonProxy.zipJar;
 
@@ -426,6 +429,25 @@ public class ModularWarfare {
      */
     @EventHandler
     public void onPreInitialization(FMLPreInitializationEvent event) {
+        
+        /**
+         * JACKSON兼容处理
+         * */
+        if (getClass().getClassLoader() instanceof LaunchClassLoader) {
+            LaunchClassLoader loader = (LaunchClassLoader) getClass().getClassLoader();
+            loader.addTransformerExclusion("com.fasterxml.jackson.");
+            Method add;
+            try {
+                Field f = LaunchClassLoader.class.getDeclaredField("invalidClasses");
+                f.setAccessible(true);
+                Set<String> invalidClasses = (Set<String>) f.get(getClass().getClassLoader());
+                invalidClasses.remove("com.fasterxml.jackson.databind.ObjectMapper");
+            } catch (SecurityException | NoSuchFieldException | IllegalArgumentException | IllegalAccessException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+        }
+        
         PROXY.preload();
 
         if (FMLCommonHandler.instance().getSide().isServer()) {

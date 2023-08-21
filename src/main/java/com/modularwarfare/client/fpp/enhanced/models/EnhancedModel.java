@@ -10,9 +10,12 @@ import com.modularwarfare.utility.maths.MathUtils;
 import de.javagl.jgltf.model.AnimationModel;
 import de.javagl.jgltf.model.GltfModel;
 import de.javagl.jgltf.model.NodeModel;
+import mchhui.hegltf.DataAnimation;
+import mchhui.hegltf.DataAnimation.Transform;
 import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfDataModel;
 import mchhui.hegltf.GltfRenderModel;
+import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
 import mchhui.hegltf.GltfRenderModel.NodeState;
 import mchhui.hegltf.ShaderGltf;
 import net.minecraft.client.renderer.GlStateManager;
@@ -37,13 +40,13 @@ import java.util.Map.Entry;
 
 public class EnhancedModel implements IMWModel {
     private static final FloatBuffer MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
-    public GunEnhancedRenderConfig config;
+    public EnhancedRenderConfig config;
     public BaseType baseType;
     public GltfRenderModel model;
     public boolean initCal = false;
     private HashMap<String, Matrix4f> invMatCache = new HashMap<String, Matrix4f>();
 
-    public EnhancedModel(GunEnhancedRenderConfig config, BaseType baseType) {
+    public EnhancedModel(EnhancedRenderConfig config, BaseType baseType) {
         this.config = config;
         this.baseType = baseType;
         // 这里可以考虑下 是否做点记忆化
@@ -59,9 +62,49 @@ public class EnhancedModel implements IMWModel {
         invMatCache.clear();
         initCal = model.updateAnimation(time,skin||!initCal);
     }
+    
+    public Transform findLocalTransform(String name,float time) {
+        if(model==null) {
+            return null;
+        }
+        DataNode node=model.geoModel.nodes.get(name);
+        if(node==null) {
+            return null;
+        }
+        DataAnimation ani=model.geoModel.animations.get(name);
+        if(ani==null) {
+            return null;
+        }
+        return model.geoModel.animations.get(name).findTransform(time, node.pos, node.size, node.rot);
+    }
+    
+    public void setAnimationBlender(NodeAnimationBlender blender) {
+        model.setNodeAnimationBlender(blender);
+    }
+    
+    
+    /**
+     * 兼容旧版 请勿使用
+     * */
+    @Deprecated
+    public void updateAnimation(float time) {
+        updateAnimation(time, true);
+    }
 
     public boolean existPart(String part) {
         return model.geoModel.nodes.containsKey(part);
+    }
+    
+    /**
+     * 兼容旧版 请勿使用
+     * */
+    @Deprecated
+    public NodeModel getPart(String part) {
+        DataNode node=model.geoModel.nodes.get(part);
+        if(node==null) {
+            return null;
+        }
+        return node.unsafeNode;
     }
     
     @Override
