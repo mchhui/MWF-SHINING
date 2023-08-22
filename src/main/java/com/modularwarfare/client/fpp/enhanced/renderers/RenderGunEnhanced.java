@@ -858,7 +858,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 
                 //model.renderPart("smokeModel");
                 GlStateManager.depthMask(true);
-                GlStateManager.disableBlend();
                 ObjModelRenderer.glowTxtureMode=true;
             }
         });

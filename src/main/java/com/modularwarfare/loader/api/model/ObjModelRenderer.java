@@ -158,7 +158,7 @@ public class ObjModelRenderer {
             }
             glowTxtureMode=false;
             GlStateManager.depthMask(false);
-            GlStateManager.enableBlend();
+            //GlStateManager.enableBlend();
             GlStateManager.depthFunc(GL11.GL_EQUAL);
             GlStateManager.disableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
@@ -166,7 +166,7 @@ public class ObjModelRenderer {
             GlStateManager.enableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x, y);
             GlStateManager.depthFunc(GL11.GL_LEQUAL);
-            GlStateManager.disableBlend();
+            //GlStateManager.disableBlend();
             GlStateManager.depthMask(true);
             glowTxtureMode=true;
             customItemRenderer.bindTexture(glowType, glowPath);
