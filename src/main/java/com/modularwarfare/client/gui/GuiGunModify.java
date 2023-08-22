@@ -32,6 +32,7 @@ import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.At
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.AttachmentGroup;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Transform;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
+import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.TextureButton.TypeEnum;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -928,7 +929,7 @@ public class GuiGunModify extends GuiScreen {
 		// System.out.println(scaledresolution.getScaledWidth()+","+mc.displayWidth);
 	    
 		GunType gunType = (GunType) type;
-		EnhancedModel model = type.enhancedModel;
+		ModelEnhancedGun model = (ModelEnhancedGun)type.enhancedModel;
 		GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
         //OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
 		if (config.animations.containsKey(AnimationType.DEFAULT)) {
@@ -1059,7 +1060,7 @@ public class GuiGunModify extends GuiScreen {
 			final ItemAttachment sightRendering = sight;
 			float worldScale = 1F;
 			boolean applySprint = false;
-			rge.applySprintHandTransform(model, false, rge.controller.getTime(),
+			rge.blendTransform(model,itemstack, false, rge.controller.getTime(),
 					rge.controller.getSprintTime(), (float) rge.controller.SPRINT, "sprint_righthand", applySprint,true,
 					() -> {
 						if (true) {// isRenderHand0

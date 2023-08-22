@@ -16,6 +16,7 @@ import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfDataModel;
 import mchhui.hegltf.GltfRenderModel;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
+import mchhui.hegltf.GltfRenderModel.NodeAnimationMapper;
 import mchhui.hegltf.GltfRenderModel.NodeState;
 import mchhui.hegltf.ShaderGltf;
 import net.minecraft.client.renderer.GlStateManager;
@@ -58,6 +59,13 @@ public class EnhancedModel implements IMWModel {
             "gltf/" + baseType.getAssetDir() + "/" + this.config.modelFileName);
     }
 
+    public void loadAnimation(EnhancedModel other,boolean skin) {
+        if(model==null||other==null||other.model==null) {
+            return;
+        }
+        model.loadAnimation(other.model,skin);
+    }
+    
     public void updateAnimation(float time,boolean skin) {
         invMatCache.clear();
         initCal = model.updateAnimation(time,skin||!initCal);
@@ -78,10 +86,13 @@ public class EnhancedModel implements IMWModel {
         return model.geoModel.animations.get(name).findTransform(time, node.pos, node.size, node.rot);
     }
     
-    public void setAnimationBlender(NodeAnimationBlender blender) {
-        model.setNodeAnimationBlender(blender);
+    public void setAnimationCalBlender(NodeAnimationBlender blender) {
+        model.setNodeAnimationCalBlender(blender);
     }
     
+    public void setAnimationLoadMapper(NodeAnimationMapper mapper) {
+        model.setNodeAnimationLoadMapper(mapper);
+    }
     
     /**
      * 兼容旧版 请勿使用

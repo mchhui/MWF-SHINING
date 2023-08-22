@@ -271,9 +271,9 @@ public class RayUtil {
         double dz = dir.z * range;
 
         if(side.isServer()) {
-            ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
+            ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(item.type,player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
         } else {
-            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
+            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(item.type,player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
         }
 
         int ping = 0;

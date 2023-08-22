@@ -381,39 +381,33 @@ public class ClientRenderHooks extends ForgeEvent {
     public void SetPartialTick(float dT) {
         partialTicks = dT;
     }
-
-    @SubscribeEvent
-    public void renderThirdPose(RenderLivingEvent.Pre event) {
-        if (!(event.getEntity() instanceof AbstractClientPlayer)) {
-            return;
-        }
-        AbstractClientPlayer clientPlayer = (AbstractClientPlayer)event.getEntity();
-        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().<AbstractClientPlayer>getEntityRenderObject(event.getEntity());
-        RenderPlayer renderplayer = (RenderPlayer) render;
-
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()){
-            renderplayer.getMainModel().bipedHeadwear.isHidden = false;
-        } else {
-            renderplayer.getMainModel().bipedHeadwear.isHidden = true;
-        }
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()){
-            renderplayer.getMainModel().bipedLeftArmwear.isHidden = false;
-            renderplayer.getMainModel().bipedRightArmwear.isHidden = false;
-            renderplayer.getMainModel().bipedBodyWear.isHidden = false;
-        } else {
-            renderplayer.getMainModel().bipedLeftArmwear.isHidden = true;
-            renderplayer.getMainModel().bipedRightArmwear.isHidden = true;
-            renderplayer.getMainModel().bipedBodyWear.isHidden = true;
-        }
-        if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty()){
-            renderplayer.getMainModel().bipedLeftLegwear.isHidden = false;
-            renderplayer.getMainModel().bipedRightLegwear.isHidden = false;
-        } else {
-            renderplayer.getMainModel().bipedLeftLegwear.isHidden = true;
-            renderplayer.getMainModel().bipedRightLegwear.isHidden = true;
+    
+    public void hidePlayerModel(AbstractClientPlayer clientPlayer,RenderPlayer renderplayer) {
+        //mwf愚蠢的隐藏双层
+        if(ModConfig.INSTANCE.client.hideSecondSkinWhenDressed) {
+            if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()){
+                renderplayer.getMainModel().bipedHeadwear.isHidden = false;
+            } else {
+                renderplayer.getMainModel().bipedHeadwear.isHidden = true;
+            }
+            if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()){
+                renderplayer.getMainModel().bipedLeftArmwear.isHidden = false;
+                renderplayer.getMainModel().bipedRightArmwear.isHidden = false;
+                renderplayer.getMainModel().bipedBodyWear.isHidden = false;
+            } else {
+                renderplayer.getMainModel().bipedLeftArmwear.isHidden = true;
+                renderplayer.getMainModel().bipedRightArmwear.isHidden = true;
+                renderplayer.getMainModel().bipedBodyWear.isHidden = true;
+            }
+            if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty()){
+                renderplayer.getMainModel().bipedLeftLegwear.isHidden = false;
+                renderplayer.getMainModel().bipedRightLegwear.isHidden = false;
+            } else {
+                renderplayer.getMainModel().bipedLeftLegwear.isHidden = true;
+                renderplayer.getMainModel().bipedRightLegwear.isHidden = true;
+            }  
         }
         
-        //hide begin
         renderplayer.getMainModel().bipedHead.isHidden = false;
         renderplayer.getMainModel().bipedBody.isHidden = false;
         renderplayer.getMainModel().bipedLeftArm.isHidden = false;
@@ -478,6 +472,19 @@ public class ClientRenderHooks extends ForgeEvent {
                 }
             }
         });
+    }
+
+    @SubscribeEvent
+    public void renderThirdPose(RenderLivingEvent.Pre event) {
+        if (!(event.getEntity() instanceof AbstractClientPlayer)) {
+            return;
+        }
+        AbstractClientPlayer clientPlayer = (AbstractClientPlayer)event.getEntity();
+        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().<AbstractClientPlayer>getEntityRenderObject(event.getEntity());
+        RenderPlayer renderplayer = (RenderPlayer) render;
+
+        //hide begin
+        hidePlayerModel(clientPlayer, renderplayer);
         //hide end
 
 

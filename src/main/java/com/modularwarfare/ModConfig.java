@@ -17,6 +17,18 @@ public class ModConfig {
 
     public transient static ModConfig INSTANCE;
 
+    public ModConfig() {
+        this.general = new General();
+        this.client = new Client();
+        this.shots = new Shots();
+        this.guns = new Guns();
+        this.drops = new Drops();
+        this.hud = new Hud();
+        this.walks_sounds = new Walk();
+        this.casings_drops = new Casings();
+        this.killFeed = new KillFeed();
+    }
+    
     //general
     public General general = new General();
     public static class General {
@@ -31,6 +43,12 @@ public class ModConfig {
         public boolean drop_extra_slots_on_death = true;
         
         public float playerShadowOffset = 1f;
+    }
+    
+    //client
+    public Client client = new Client();
+    public static class Client {
+        public boolean hideSecondSkinWhenDressed=true;
     }
 
     //shots
@@ -50,7 +68,7 @@ public class ModConfig {
                 "leftArmSlimModel", "leftArmLayerSlimModel",
                 "rightArmModel", "rightArmLayerModel",
                 "rightArmSlimModel", "rightArmLayerSlimModel",
-                "flashModel","sprint_righthand","sprint_lefthand",
+                "flashModel","smokeModel","sprint_righthand","sprint_lefthand",
                 "selector_semi","selector_full","selector_brust",
                 "bulletModel");
     }
@@ -114,15 +132,17 @@ public class ModConfig {
             if (configFile.exists()) {
                 JsonReader jsonReader = new JsonReader(new FileReader(configFile));
                 ModConfig config = gson.fromJson(jsonReader, ModConfig.class);
-                System.out.println("Comparing version " + config.version + " to " + ModularWarfare.MOD_VERSION);
-                if (config.version == null || !config.version.matches(ModularWarfare.MOD_VERSION)) {
-                    try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
-                        gson.toJson(this, writer);
-                    }
-                    INSTANCE = this;
-                } else {
-                    INSTANCE = config;
-                }
+//                System.out.println("Comparing version " + config.version + " to " + ModularWarfare.MOD_VERSION);
+//                if (config.version == null || !config.version.matches(ModularWarfare.MOD_VERSION)) {
+//                    try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
+//                        gson.toJson(this, writer);
+//                    }
+//                    INSTANCE = this;
+//                } else {
+//                    INSTANCE = config;
+//                }
+            INSTANCE = config;
+            System.out.println("test:"+config.client);
             } else {
                 try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
                     gson.toJson(this, writer);

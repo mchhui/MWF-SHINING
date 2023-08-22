@@ -15,5 +15,6 @@ public class ArmorRenderConfig {
         public boolean isSuit = false;
         public boolean hidePlayerModel = false;
         public boolean hideAllPlayerWearModel = false;
+        public String enhancedArmModel;
     }
 }

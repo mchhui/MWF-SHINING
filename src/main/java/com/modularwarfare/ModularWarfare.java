@@ -630,6 +630,7 @@ public class ModularWarfare {
                     for(SkinType skin: ((ItemGun) item).type.modelSkins) {
                         PROXY.preloadSkinTypes.put(skin, ((ItemGun) item).type);
                     }
+                    PROXY.preloadFlashTex.add(((ItemGun) item).type.flashType);
                 }
                 
                 if(item instanceof ItemBullet){

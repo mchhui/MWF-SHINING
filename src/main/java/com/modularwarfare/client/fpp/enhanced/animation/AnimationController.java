@@ -218,7 +218,7 @@ public class AnimationController {
             sprintCoolTime = time + 100;
             sprintValue = SPRINT - sprintSpeed;
         }
-        if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0) {
+        if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0 || INSPECT < 1) {
             sprintValue = SPRINT - sprintSpeed * 2.5f;
         }
 

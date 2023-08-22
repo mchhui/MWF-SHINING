@@ -43,7 +43,8 @@ public class GltfRenderModel {
     };
 
     public HashMap<String, NodeState> nodeStates = new HashMap<String, NodeState>();
-    public NodeAnimationBlender animationBlender;
+    public NodeAnimationBlender animationCalBlender;
+    public NodeAnimationMapper animationLoadMapper;
 
     public GltfDataModel geoModel;
 
@@ -68,9 +69,25 @@ public class GltfRenderModel {
 
         }
     }
+    
+    public static class NodeAnimationMapper {
+        public String name;
 
-    public void setNodeAnimationBlender(NodeAnimationBlender blender) {
-        animationBlender=blender;
+        public NodeAnimationMapper(String name) {
+            this.name = name;
+        }
+
+        public void handle(GltfRenderModel model,GltfRenderModel other,String target) {
+
+        }
+    }
+
+    public void setNodeAnimationCalBlender(NodeAnimationBlender blender) {
+        animationCalBlender=blender;
+    }
+    
+    public void setNodeAnimationLoadMapper(NodeAnimationMapper mapper) {
+        animationLoadMapper=mapper;
     }
 
     public GltfRenderModel(GltfDataModel geoModel) {
@@ -96,16 +113,16 @@ public class GltfRenderModel {
         if (animation != null) {
             Transform trans = animation.findTransform(time, node.pos, node.size, node.rot);
             matrix.translate(trans.pos.x, trans.pos.y, trans.pos.z);
-            matrix.scale(trans.size.x, trans.size.y, trans.size.z);
             matrix.rotate(trans.rot);
+            matrix.scale(trans.size.x, trans.size.y, trans.size.z);
         } else {
             matrix.translate(node.pos);
-            matrix.scale(node.size);
             matrix.rotate(node.rot);
+            matrix.scale(node.size);
         }
         
-        if(animationBlender!=null) {
-            animationBlender.handle(node, matrix);
+        if(animationCalBlender!=null) {
+            animationCalBlender.handle(node, matrix);
         }
         
         if (parent != null) {
@@ -160,17 +177,29 @@ public class GltfRenderModel {
             skinNodeAndChildren(geoModel.nodes.get(child), sun, moon);
         });
     }
-
-    public boolean updateAnimation(float time, boolean skin) {
-        // System.out.println(time);
-        if (!geoModel.loaded) {
+    
+    public boolean loadAnimation(GltfRenderModel other,boolean skin) {
+        if(!other.initedNodeStates) {
             return false;
         }
-        calculateAllNodePose(time);
-        uploadAllJointTransform();
+        if (!initedNodeStates) {
+            geoModel.nodes.keySet().forEach((name) -> {
+                nodeStates.put(name, new NodeState());
+            });
+            initedNodeStates = true;
+        }
+        nodeStates.forEach((k,v)->{
+            NodeState s=other.nodeStates.get(k);
+            if(s!=null) {
+                v.mat.set(s.mat);
+            }
+            if(animationLoadMapper!=null) {
+                animationLoadMapper.handle(this,other, k);
+            }
+        });
         if (skin) {
-            
             if (geoModel.joints.size() > 0) {
+                uploadAllJointTransform();
                 ShaderGltf.useShader();
                 GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING,
                     jointMatsBufferId);
@@ -194,8 +223,40 @@ public class GltfRenderModel {
         return true;
     }
 
+    public boolean updateAnimation(float time, boolean skin) {
+        // System.out.println(time);
+        if (!geoModel.loaded) {
+            return false;
+        }
+        calculateAllNodePose(time);
+        if (skin) {
+            if (geoModel.joints.size() > 0) {
+                uploadAllJointTransform();
+                ShaderGltf.useShader();
+                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING,
+                    jointMatsBufferId);
+
+                GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
+                for (Entry<String, DataNode> e : geoModel.rootNodes.entrySet()) {
+                    skinNodeAndChildren(e.getValue(), null, null);
+                }
+                GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
+
+                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
+                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
+                if(OptifineHelper.isShadersEnabled()) {
+                    GL20.glUseProgram(OptifineHelper.getProgram());
+                }else {
+                    GL20.glUseProgram(0);  
+                }
+            }
+        }
+        return true;
+    }
+
     // 阴阳！哈哈哈 下次试试aplle和pear XD
     public void render(HashSet<String> sun, HashSet<String> moon) {
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
         if (!geoModel.loaded) {
             return;
         }

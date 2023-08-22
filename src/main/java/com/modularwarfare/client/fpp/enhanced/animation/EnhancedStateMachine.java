@@ -366,9 +366,9 @@ public class EnhancedStateMachine {
                 int High = type.flashType.resourceLocations.size()-1;
                 int result = r.nextInt(High - Low) + Low;
                 shooting = phaseUpdate(aniType, partialTick, 1, phase, progess,()->{
+                    flashCount = result;
                     phase.set(Phase.FIRST);
                 }, () -> {
-                    flashCount = result;
                     phase.set(Phase.POST);
                 }, null);
                 shootingPhase = phase.get();

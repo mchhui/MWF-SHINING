@@ -163,7 +163,13 @@ public class ClientTickHandler extends ForgeEvent {
     public void onRenderTickStart(Minecraft minecraft, float renderTick) {
         if (minecraft.player == null || minecraft.world == null)
             return;
-
+        
+        if (minecraft.mouseHelper.deltaY > 0 || -minecraft.mouseHelper.deltaY > 1) {
+            antiRecoilPitch *= 0.25;
+        }
+        if (minecraft.mouseHelper.deltaX > 2 || -minecraft.mouseHelper.deltaX > 2) {
+            antiRecoilYaw *= 0.25;
+        }
         EntityPlayerSP player = minecraft.player;
         
         reloadEnhancedPrognosisAmmoRendering=reloadEnhancedPrognosisAmmo;
@@ -382,21 +388,21 @@ public class ClientTickHandler extends ForgeEvent {
 
         EntityPlayerSP player = minecraft.player;
 
-        if (playerRecoilPitch > 0)
+        if (playerRecoilPitch > 0 || -playerRecoilPitch > 0)
             playerRecoilPitch *= 0.8F;
 
-        if (playerRecoilYaw > 0)
+        if (playerRecoilYaw > 0 || -playerRecoilYaw > 0)
             playerRecoilYaw *= 0.8F;
 
         player.rotationPitch -= playerRecoilPitch;
         player.rotationYaw -= playerRecoilYaw;
         antiRecoilPitch += playerRecoilPitch;
-        antiRecoilYaw += playerRecoilYaw;
-
-        player.rotationPitch += antiRecoilPitch * 0.25F;
         if (antiRecoilPitch >= 10f) {
             antiRecoilPitch *= 0.9f;
         }
+        antiRecoilYaw += playerRecoilYaw;
+
+        player.rotationPitch += antiRecoilPitch * 0.25F;
         player.rotationYaw += antiRecoilYaw * 0.25F;
         //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+player.rotationPitch+" "+antiRecoilPitch+" "+totalPitchAngle+" "+playerRecoilPitch));
         antiRecoilPitch *= 0.75F;

@@ -5,6 +5,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelAttachment;
+import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
@@ -13,13 +14,17 @@ import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Attachment;
+import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ObjectControl;
+import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ShowHandArmorType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Transform;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
+import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.shader.Programs;
+import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.guns.AmmoType;
 import com.modularwarfare.common.guns.AttachmentPresetEnum;
 import com.modularwarfare.common.guns.AttachmentType;
@@ -44,15 +49,18 @@ import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.model.ModelBiped;
+import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -157,13 +165,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if (gunType == null)
             return;
 
-        EnhancedModel model = gunType.enhancedModel;
-        if(!(Minecraft.getMinecraft().getRenderViewEntity() instanceof EntityPlayerSP)) {
+        ModelEnhancedGun model = (ModelEnhancedGun)gunType.enhancedModel;
+        if(!(Minecraft.getMinecraft().getRenderViewEntity() instanceof AbstractClientPlayer)) {
             return;
         }
         
         if (model == null)
             return;
+        
+        Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(Minecraft.getMinecraft().player);
+        RenderPlayer renderplayer = (RenderPlayer) render;
+        ModelPlayer modelPlayer=renderplayer.getMainModel();
+        ClientProxy.renderHooks.hidePlayerModel((AbstractClientPlayer)Minecraft.getMinecraft().getRenderViewEntity(), renderplayer);
 
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
         if(this.controller == null || this.controller.getConfig() != config||this.controller.player!=Minecraft.getMinecraft().player){
@@ -300,15 +313,15 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         Vector3f customSprintRotation = new Vector3f();
         Vector3f customSprintTranslate = new Vector3f();
         float springModifier = (float) (0.8f - controller.ADS);
-//        mat.rotate(toRadians(0.2f * VALSPRINT * springModifier), new Vector3f(1, 0, 0));
-//        mat.rotate(toRadians(VALSPRINT2 * springModifier), new Vector3f(0, 0, 1));
-//        mat.translate(new Vector3f(VALSPRINT * 0.2f * springModifier, 0, VALSPRINT2 * 0.2f * springModifier));
-//
-//        customSprintRotation = new Vector3f((config.sprint.sprintRotate.x * (float) controller.SPRINT), (config.sprint.sprintRotate.y * (float) controller.SPRINT), (config.sprint.sprintRotate.z * (float) controller.SPRINT));
-//        customSprintTranslate = new Vector3f((config.sprint.sprintTranslate.x * (float) controller.SPRINT), (config.sprint.sprintTranslate.y * (float) controller.SPRINT), (config.sprint.sprintTranslate.z * (float) controller.SPRINT));
-//
-//        customSprintRotation.scale((1F - (float) controller.ADS));
-//        customSprintTranslate.scale((1F - (float) controller.ADS));
+        mat.rotate(toRadians(0.2f * VALSPRINT * springModifier), new Vector3f(1, 0, 0));
+        mat.rotate(toRadians(VALSPRINT2 * springModifier), new Vector3f(0, 0, 1));
+        mat.translate(new Vector3f(VALSPRINT * 0.2f * springModifier, 0, VALSPRINT2 * 0.2f * springModifier));
+
+        customSprintRotation = new Vector3f((config.sprint.sprintRotate.x * (float) controller.SPRINT), (config.sprint.sprintRotate.y * (float) controller.SPRINT), (config.sprint.sprintRotate.z * (float) controller.SPRINT));
+        customSprintTranslate = new Vector3f((config.sprint.sprintTranslate.x * (float) controller.SPRINT), (config.sprint.sprintTranslate.y * (float) controller.SPRINT), (config.sprint.sprintTranslate.z * (float) controller.SPRINT));
+
+        customSprintRotation.scale((1F - (float) controller.ADS));
+        customSprintTranslate.scale((1F - (float) controller.ADS));
         /**
          * CUSTOM HIP POSITION
          */
@@ -471,7 +484,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
         boolean glowMode=ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode=true;
-        applySprintHandTransform(model, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, true, () -> {
+        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, true, () -> {
             if(isRenderHand0) {
                 if(sightRendering!=null) {
                     String binding = "gunModel";
@@ -495,10 +508,62 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     bindPlayerSkin();
                 }
                 ObjModelRenderer.glowTxtureMode=false;
-                if(!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                    model.renderPart(RIGHT_HAND_PART);
+                if (config.showHandArmorType != ShowHandArmorType.NONE) {
+                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                        if(modelPlayer.bipedRightArm.showModel&&!modelPlayer.bipedRightArm.isHidden) {
+                            model.renderPart("rightArmModel");
+                        }
+                        if(modelPlayer.bipedRightArmwear.showModel&&!modelPlayer.bipedRightArmwear.isHidden) {
+                            model.renderPart("rightArmLayerModel");
+                        }
+                    } else {
+                        if(modelPlayer.bipedRightArm.showModel&&!modelPlayer.bipedRightArm.isHidden) {
+                            model.renderPart("rightArmSlimModel");
+                        }
+                        if(modelPlayer.bipedRightArmwear.showModel&&!modelPlayer.bipedRightArmwear.isHidden) {
+                            model.renderPart("rightArmLayerSlimModel");
+                        }
+                    }
+                    if (player.inventory.armorItemInSlot(2) != null) {
+                        ItemStack armorStack = player.inventory.armorItemInSlot(2);
+                        if (armorStack.getItem() instanceof ItemMWArmor) {
+                            int skinId = 0;
+                            String path =
+                                skinId > 0 ? ((ItemMWArmor)armorStack.getItem()).type.modelSkins[skinId].getSkin()
+                                    : ((ItemMWArmor)armorStack.getItem()).type.modelSkins[0].getSkin();
+
+                            if (!((ItemMWArmor)armorStack.getItem()).type.simpleArmor) {
+                                ModelCustomArmor modelArmor =
+                                    ((ModelCustomArmor)((ItemMWArmor)armorStack.getItem()).type.bipedModel);
+
+                                bindTexture("armor", path);
+                                if (modelArmor.enhancedArmModel != null) {
+                                    modelArmor.enhancedArmModel.loadAnimation(model, config.showHandArmorType == ShowHandArmorType.SKIN);
+                                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                            modelArmor.enhancedArmModel.renderPart("rightArmModel");
+                                        }
+                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                            modelArmor.enhancedArmModel.renderPart("rightArmModel_bone");
+                                        }
+                                    } else {
+                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                            modelArmor.enhancedArmModel.renderPart("rightArmSlimModel");
+                                        }
+                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                            modelArmor.enhancedArmModel.renderPart("rightArmSlimModel_bone");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }else {
-                    model.renderPart(RIGHT_SLIM_HAND_PART);
+                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                        model.renderPart(RIGHT_HAND_PART);
+                    } else {
+                        model.renderPart(RIGHT_SLIM_HAND_PART);
+                    }
                 }
                 ObjModelRenderer.glowTxtureMode=true;
                 /**
@@ -818,6 +883,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 /**
                  *  flashmodel 
                  *  */
+                
+                ObjModelRenderer.glowTxtureMode=false;
+                GlStateManager.enableBlend();
+                GlStateManager.depthMask(false);
                 boolean shouldRenderFlash=true;
                 if ((GunType.getAttachment(item, AttachmentPresetEnum.Barrel) != null)) {
                     AttachmentType attachmentType = ((ItemAttachment) GunType.getAttachment(item, AttachmentPresetEnum.Barrel).getItem()).type;
@@ -825,7 +894,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                         shouldRenderFlash = !attachmentType.barrel.hideFlash;
                     }
                 }
-
                 
                 if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType() == AnimationType.FIRE && !player.isInWater()) {
                     GlStateManager.disableLighting();
@@ -836,13 +904,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
                     GlStateManager.enableLighting();
                 }
+                
+                //model.renderPart("smokeModel");
+                GlStateManager.depthMask(true);
+                GlStateManager.disableBlend();
+                ObjModelRenderer.glowTxtureMode=true;
             }
         });
         
         /**
          * LEFT HAND GROUP
          * */
-        applySprintHandTransform(model, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, () -> {
+        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, () -> {
             if (isRenderHand0) {
                 /**
                  * player left hand
@@ -853,10 +926,62 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     bindPlayerSkin();
                 }
                 ObjModelRenderer.glowTxtureMode=false;
-                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                    model.renderPart(LEFT_HAND_PART);
-                } else {
-                    model.renderPart(LEFT_SLIM_HAND_PART);
+                if (config.showHandArmorType != ShowHandArmorType.NONE) {
+                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                        if(modelPlayer.bipedLeftArm.showModel&&!modelPlayer.bipedLeftArm.isHidden) {
+                            model.renderPart("leftArmModel");
+                        }
+                        if(modelPlayer.bipedLeftArmwear.showModel&&!modelPlayer.bipedLeftArmwear.isHidden) {
+                            model.renderPart("leftArmLayerModel");
+                        }
+                    } else {
+                        if(modelPlayer.bipedLeftArm.showModel&&!modelPlayer.bipedLeftArm.isHidden) {
+                            model.renderPart("leftArmSlimModel");
+                        }
+                        if(modelPlayer.bipedLeftArmwear.showModel&&!modelPlayer.bipedLeftArmwear.isHidden) {
+                            model.renderPart("leftArmLayerSlimModel");
+                        }
+                    }
+                    if (player.inventory.armorItemInSlot(2) != null) {
+                        ItemStack armorStack = player.inventory.armorItemInSlot(2);
+                        if (armorStack.getItem() instanceof ItemMWArmor) {
+                            int skinId = 0;
+                            String path =
+                                skinId > 0 ? ((ItemMWArmor)armorStack.getItem()).type.modelSkins[skinId].getSkin()
+                                    : ((ItemMWArmor)armorStack.getItem()).type.modelSkins[0].getSkin();
+
+                            if (!((ItemMWArmor)armorStack.getItem()).type.simpleArmor) {
+                                ModelCustomArmor modelArmor =
+                                    ((ModelCustomArmor)((ItemMWArmor)armorStack.getItem()).type.bipedModel);
+
+                                bindTexture("armor", path);
+                                if (modelArmor.enhancedArmModel != null) {
+                                    modelArmor.enhancedArmModel.loadAnimation(model, config.showHandArmorType == ShowHandArmorType.SKIN);
+                                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                            modelArmor.enhancedArmModel.renderPart("leftArmModel");
+                                        }
+                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                            modelArmor.enhancedArmModel.renderPart("leftArmModel_bone");
+                                        }
+                                    } else {
+                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                            modelArmor.enhancedArmModel.renderPart("leftArmSlimModel");
+                                        }
+                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                            modelArmor.enhancedArmModel.renderPart("leftArmSlimModel_bone");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }else {
+                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                        model.renderPart(LEFT_HAND_PART);
+                    } else {
+                        model.renderPart(LEFT_SLIM_HAND_PART);
+                    }
                 }
                 ObjModelRenderer.glowTxtureMode=true;
             }
@@ -1564,44 +1689,81 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.rotate(transform.rotate.z, 0,0,1);
     }
     
-    public void applySprintHandTransform(EnhancedModel model, boolean basicSprint, float time, float sprintTime,
+    public void blendTransform(ModelEnhancedGun model,ItemStack gunStack, boolean basicSprint, float time, float sprintTime,
         float alpha, String hand, boolean applySprint,boolean skin, Runnable runnable) {
-        model.setAnimationBlender(new NodeAnimationBlender("sprintBlender") {
+        float ammoPer=0;
+        if (gunStack.getTagCompound() != null) {
+            if (ItemGun.hasAmmoLoaded(gunStack)) {
+                ItemStack ammoStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
+                if (ammoStack.getTagCompound() != null && ammoStack.getItem() instanceof ItemAmmo) {
+
+                    ItemAmmo itemAmmo = (ItemAmmo)ammoStack.getItem();
+                    Integer currentMagcount = null;
+                    if (ammoStack.getTagCompound().hasKey("magcount")) {
+                        currentMagcount = ammoStack.getTagCompound().getInteger("magcount");
+                    }
+                    int currentAmmoCount = ReloadHelper.getBulletOnMag(ammoStack, currentMagcount);
+                    ammoPer = currentAmmoCount / (float)itemAmmo.type.ammoCapacity;
+                }
+            }
+            if (ItemGun.getUsedBullet(gunStack, ((ItemGun)(gunStack.getItem())).type) != null) {
+                
+            }
+        }
+        float ammoPerParam=ammoPer;
+        
+        model.setAnimationCalBlender(new NodeAnimationBlender("FirstPersonBlender") {
+            
             @Override
             public void handle(DataNode node, org.joml.Matrix4f mat) {
-                if(alpha==0) {
-                    return;
+                if(!basicSprint) {
+                    if(alpha!=0) {
+                        sprint:{
+                            org.joml.Matrix4f begin_transform = mat;
+                            mchhui.hegltf.DataAnimation.Transform end_transform = model.findLocalTransform(node.name, sprintTime);
+                            if (end_transform == null) {
+                                break sprint;
+                            }
+                            if (!node.name.equals("root") && !node.name.equals("sprint_lefthand")
+                                && !node.name.equals("sprint_righthand") && !node.name.equals("root_bone")
+                                && !node.name.equals("sprint_lefthand_bone") && !node.name.equals("sprint_righthand_bone")) {
+                                break sprint;
+                            }
+                            Quaternionf quat = new Quaternionf();
+                            quat.setFromUnnormalized(begin_transform);
+                            quat.normalize().slerp(end_transform.rot.normalize(), alpha);
+                            org.joml.Vector3f pos = new org.joml.Vector3f();
+                            begin_transform.getTranslation(pos);
+                            pos.set(pos.x + (end_transform.pos.x - pos.x) * alpha, pos.y + (end_transform.pos.y - pos.y) * alpha,
+                                pos.z + (end_transform.pos.z - pos.z) * alpha);
+                            org.joml.Vector3f size = new org.joml.Vector3f();
+                            begin_transform.getScale(size);
+                            size.set(size.x + (end_transform.size.x - size.x) * alpha,
+                                size.y + (end_transform.size.y - size.y) * alpha, size.z + (end_transform.size.z - size.z) * alpha);
+                            mat.identity();
+                            mat.translate(pos);
+                            mat.scale(size);
+                            mat.rotate(quat);
+                        }
+                    }
                 }
-                org.joml.Matrix4f begin_transform = mat;
-                mchhui.hegltf.DataAnimation.Transform end_transform = model.findLocalTransform(node.name, sprintTime);
-                if (end_transform == null) {
-                    return;
+                ObjectControl cfg=((GunEnhancedRenderConfig)model.config).objectControl.get(node.name);
+                if(cfg!=null) {
+                    float per = ammoPerParam;
+                    if (!cfg.progress) {
+                        per = 1 - per;
+                    }
+                    //System.out.println(per);
+                    mat.translate(cfg.translate.x * per, cfg.translate.y * per, cfg.translate.z * per);
+                    mat.rotate(cfg.rotate.y * per * 3.14f / 180, 0, 1, 0);
+                    mat.rotate(cfg.rotate.x * per * 3.14f / 180, 1, 0, 0);
+                    mat.rotate(cfg.rotate.z * per * 3.14f / 180, 0, 0, 1);
                 }
-                if (!node.name.equals("root") && !node.name.equals("sprint_lefthand")
-                    && !node.name.equals("sprint_righthand") && !node.name.equals("root_bone")
-                    && !node.name.equals("sprint_lefthand_bone") && !node.name.equals("sprint_righthand_bone")) {
-                    return;
-                }
-                Quaternionf quat = new Quaternionf();
-                quat.setFromUnnormalized(begin_transform);
-                quat.normalize().slerp(end_transform.rot.normalize(), alpha);
-                org.joml.Vector3f pos = new org.joml.Vector3f();
-                begin_transform.getTranslation(pos);
-                pos.set(pos.x + (end_transform.pos.x - pos.x) * alpha, pos.y + (end_transform.pos.y - pos.y) * alpha,
-                    pos.z + (end_transform.pos.z - pos.z) * alpha);
-                org.joml.Vector3f size = new org.joml.Vector3f();
-                begin_transform.getScale(size);
-                size.set(size.x + (end_transform.size.x - size.x) * alpha,
-                    size.y + (end_transform.size.y - size.y) * alpha, size.z + (end_transform.size.z - size.z) * alpha);
-                mat.identity();
-                mat.translate(pos);
-                mat.scale(size);
-                mat.rotate(quat);
             }
         });
         model.updateAnimation(time, skin);
         runnable.run();
-        model.setAnimationBlender(null);
+        model.setAnimationCalBlender(null);
     }
 
     public org.joml.Matrix4f getGlobalTransform(EnhancedModel model,String name) {

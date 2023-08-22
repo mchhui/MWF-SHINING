@@ -1,5 +1,6 @@
 package com.modularwarfare.client.fpp.enhanced.configs;
 
+import com.google.gson.annotations.SerializedName;
 import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 
@@ -13,7 +14,8 @@ import java.util.HashSet;
 public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
 
     public HashMap<AnimationType, Animation> animations = new HashMap<>();
-
+    public HashMap<String, ObjectControl> objectControl = new HashMap<>();
+    
     public GunEnhancedRenderConfig.Global global = new GunEnhancedRenderConfig.Global();
     public GunEnhancedRenderConfig.Sprint sprint = new GunEnhancedRenderConfig.Sprint();
     public GunEnhancedRenderConfig.Aim aim = new GunEnhancedRenderConfig.Aim();
@@ -25,11 +27,23 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public HashSet<String> thirdShowPart=new HashSet<String>();
 
     public GunEnhancedRenderConfig.ThirdPerson thirdPerson = new GunEnhancedRenderConfig.ThirdPerson();
+    
+    public ShowHandArmorType showHandArmorType=ShowHandArmorType.NONE;
+    
+    public static enum ShowHandArmorType{
+        @SerializedName("none")NONE,
+        @SerializedName("static")STATIC,
+        @SerializedName("skin")SKIN
+    }
 
     public static class Transform{
         public Vector3f translate = new Vector3f(0, 0, 0);
         public Vector3f scale = new Vector3f(1, 1, 1);
         public Vector3f rotate = new Vector3f(0, 0, 0);
+    }
+    
+    public static class ObjectControl extends Transform{
+        public boolean progress;
     }
     
     public static class Animation {

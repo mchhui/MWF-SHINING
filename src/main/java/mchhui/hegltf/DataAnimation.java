@@ -102,7 +102,7 @@ public class DataAnimation {
         
         public Transform(Vector3f pos,Vector3f size,Quaternionf rot) {
             this.pos.set(pos, 0);
-            this.size.set(pos, 0);
+            this.size.set(size, 0);
             this.rot.set(rot);
         }
     }

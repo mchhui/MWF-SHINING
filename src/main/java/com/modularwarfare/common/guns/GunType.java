@@ -224,6 +224,10 @@ public class GunType extends BaseType {
      */
     public String customHandsTexture;
     public transient TextureType handsTextureType;
+    
+    public String customTrailTexture;
+    public String customTrailModel;
+    public boolean customTrailGlow;
 
     public static boolean isPackAPunched(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {

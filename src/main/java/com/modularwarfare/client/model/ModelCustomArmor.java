@@ -4,11 +4,17 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.RenderBonesEvent;
 import com.modularwarfare.api.RenderMWArmorEvent;
 import com.modularwarfare.client.fpp.basic.configs.ArmorRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.model.ModelCustomArmor.Bones.BonePart.EnumBoneType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.loader.MWModelBipedBase;
 import com.modularwarfare.loader.api.ObjModelLoader;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
+
+import mchhui.hegltf.GltfRenderModel;
+import mchhui.hegltf.GltfRenderModel.NodeAnimationMapper;
+import mchhui.hegltf.GltfRenderModel.NodeState;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
@@ -27,6 +33,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
     public Entity renderingEntity;
 
     public ArmorRenderConfig config;
+    public EnhancedModel enhancedArmModel;
 
     public ModelCustomArmor(ArmorRenderConfig config, BaseType type) {
         this.config = config;
@@ -40,6 +47,25 @@ public class ModelCustomArmor extends MWModelBipedBase {
             }
         } else {
             ModularWarfare.LOGGER.info("Internal error: " + this.config.modelFileName + " is not a valid format.");
+        }
+        if(this.config.extra.enhancedArmModel!=null) {
+            enhancedArmModel=new EnhancedModel(new EnhancedRenderConfig(this.config.extra.enhancedArmModel, 24), type);
+            enhancedArmModel.updateAnimation(0);
+            enhancedArmModel.setAnimationLoadMapper(new NodeAnimationMapper(null) {
+                @Override
+                public void handle(GltfRenderModel model, GltfRenderModel other, String target) {
+                    if(target.equals("leftArmSlimModel")) {
+                        if(other.nodeStates.get("leftArmModel")!=null) {
+                            model.nodeStates.get(target).mat=other.nodeStates.get("leftArmModel").mat;
+                        }
+                    }
+                    if(target.equals("rightArmSlimModel")) {
+                        if(other.nodeStates.get("rightArmModel")!=null) {
+                            model.nodeStates.get(target).mat=other.nodeStates.get("rightArmModel").mat;
+                        }
+                    }
+                }
+            });
         }
         this.type = type;
     }

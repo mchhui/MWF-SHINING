@@ -5,6 +5,7 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.SkinType;
 import com.modularwarfare.common.network.PacketParticle;
 import com.modularwarfare.common.network.PacketPlayerHit;
+import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.network.PacketParticle.ParticleType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
@@ -26,6 +27,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -39,6 +41,7 @@ public class CommonProxy extends ForgeEvent {
     public static File modularWarfareDir;
 
     public static HashMap<SkinType,BaseType> preloadSkinTypes = new HashMap<SkinType,BaseType>();
+    public static HashSet<TextureType> preloadFlashTex = new HashSet<TextureType>();
 
     public void construction(FMLConstructionEvent event) {
         //Production-environment
