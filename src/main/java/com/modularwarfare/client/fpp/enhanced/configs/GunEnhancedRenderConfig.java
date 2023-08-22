@@ -28,13 +28,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
 
     public GunEnhancedRenderConfig.ThirdPerson thirdPerson = new GunEnhancedRenderConfig.ThirdPerson();
     
-    public ShowHandArmorType showHandArmorType=ShowHandArmorType.NONE;
-    
-    public static enum ShowHandArmorType{
-        @SerializedName("none")NONE,
-        @SerializedName("static")STATIC,
-        @SerializedName("skin")SKIN
-    }
+   
 
     public static class Transform{
         public Vector3f translate = new Vector3f(0, 0, 0);

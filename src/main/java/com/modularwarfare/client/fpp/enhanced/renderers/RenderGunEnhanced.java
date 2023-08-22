@@ -2,6 +2,10 @@ package com.modularwarfare.client.fpp.enhanced.renderers;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent;
+import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreFirstLayer;
+import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreSecondLayer;
+import com.modularwarfare.api.RenderHandSleeveEnhancedEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelAttachment;
@@ -15,7 +19,8 @@ import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Attachment;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ObjectControl;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ShowHandArmorType;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ShowHandArmorType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Transform;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
@@ -66,9 +71,11 @@ import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Timer;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
@@ -508,63 +515,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     bindPlayerSkin();
                 }
                 ObjModelRenderer.glowTxtureMode=false;
-                if (config.showHandArmorType != ShowHandArmorType.NONE) {
-                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                        if(modelPlayer.bipedRightArm.showModel&&!modelPlayer.bipedRightArm.isHidden) {
-                            model.renderPart("rightArmModel");
-                        }
-                        if(modelPlayer.bipedRightArmwear.showModel&&!modelPlayer.bipedRightArmwear.isHidden) {
-                            model.renderPart("rightArmLayerModel");
-                        }
-                    } else {
-                        if(modelPlayer.bipedRightArm.showModel&&!modelPlayer.bipedRightArm.isHidden) {
-                            model.renderPart("rightArmSlimModel");
-                        }
-                        if(modelPlayer.bipedRightArmwear.showModel&&!modelPlayer.bipedRightArmwear.isHidden) {
-                            model.renderPart("rightArmLayerSlimModel");
-                        }
-                    }
-                    if (player.inventory.armorItemInSlot(2) != null) {
-                        ItemStack armorStack = player.inventory.armorItemInSlot(2);
-                        if (armorStack.getItem() instanceof ItemMWArmor) {
-                            int skinId = 0;
-                            String path =
-                                skinId > 0 ? ((ItemMWArmor)armorStack.getItem()).type.modelSkins[skinId].getSkin()
-                                    : ((ItemMWArmor)armorStack.getItem()).type.modelSkins[0].getSkin();
-
-                            if (!((ItemMWArmor)armorStack.getItem()).type.simpleArmor) {
-                                ModelCustomArmor modelArmor =
-                                    ((ModelCustomArmor)((ItemMWArmor)armorStack.getItem()).type.bipedModel);
-
-                                bindTexture("armor", path);
-                                if (modelArmor.enhancedArmModel != null) {
-                                    modelArmor.enhancedArmModel.loadAnimation(model, config.showHandArmorType == ShowHandArmorType.SKIN);
-                                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                            modelArmor.enhancedArmModel.renderPart("rightArmModel");
-                                        }
-                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                            modelArmor.enhancedArmModel.renderPart("rightArmModel_bone");
-                                        }
-                                    } else {
-                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                            modelArmor.enhancedArmModel.renderPart("rightArmSlimModel");
-                                        }
-                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                            modelArmor.enhancedArmModel.renderPart("rightArmSlimModel_bone");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }else {
-                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                        model.renderPart(RIGHT_HAND_PART);
-                    } else {
-                        model.renderPart(RIGHT_SLIM_HAND_PART);
-                    }
-                }
+                renderHandAndArmor(EnumHandSide.RIGHT, player, config, modelPlayer, model);
                 ObjModelRenderer.glowTxtureMode=true;
                 /**
                  * gun
@@ -926,63 +877,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     bindPlayerSkin();
                 }
                 ObjModelRenderer.glowTxtureMode=false;
-                if (config.showHandArmorType != ShowHandArmorType.NONE) {
-                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                        if(modelPlayer.bipedLeftArm.showModel&&!modelPlayer.bipedLeftArm.isHidden) {
-                            model.renderPart("leftArmModel");
-                        }
-                        if(modelPlayer.bipedLeftArmwear.showModel&&!modelPlayer.bipedLeftArmwear.isHidden) {
-                            model.renderPart("leftArmLayerModel");
-                        }
-                    } else {
-                        if(modelPlayer.bipedLeftArm.showModel&&!modelPlayer.bipedLeftArm.isHidden) {
-                            model.renderPart("leftArmSlimModel");
-                        }
-                        if(modelPlayer.bipedLeftArmwear.showModel&&!modelPlayer.bipedLeftArmwear.isHidden) {
-                            model.renderPart("leftArmLayerSlimModel");
-                        }
-                    }
-                    if (player.inventory.armorItemInSlot(2) != null) {
-                        ItemStack armorStack = player.inventory.armorItemInSlot(2);
-                        if (armorStack.getItem() instanceof ItemMWArmor) {
-                            int skinId = 0;
-                            String path =
-                                skinId > 0 ? ((ItemMWArmor)armorStack.getItem()).type.modelSkins[skinId].getSkin()
-                                    : ((ItemMWArmor)armorStack.getItem()).type.modelSkins[0].getSkin();
-
-                            if (!((ItemMWArmor)armorStack.getItem()).type.simpleArmor) {
-                                ModelCustomArmor modelArmor =
-                                    ((ModelCustomArmor)((ItemMWArmor)armorStack.getItem()).type.bipedModel);
-
-                                bindTexture("armor", path);
-                                if (modelArmor.enhancedArmModel != null) {
-                                    modelArmor.enhancedArmModel.loadAnimation(model, config.showHandArmorType == ShowHandArmorType.SKIN);
-                                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                            modelArmor.enhancedArmModel.renderPart("leftArmModel");
-                                        }
-                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                            modelArmor.enhancedArmModel.renderPart("leftArmModel_bone");
-                                        }
-                                    } else {
-                                        if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                            modelArmor.enhancedArmModel.renderPart("leftArmSlimModel");
-                                        }
-                                        if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                            modelArmor.enhancedArmModel.renderPart("leftArmSlimModel_bone");
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }else {
-                    if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                        model.renderPart(LEFT_HAND_PART);
-                    } else {
-                        model.renderPart(LEFT_SLIM_HAND_PART);
-                    }
-                }
+                renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
                 ObjModelRenderer.glowTxtureMode=true;
             }
         });
@@ -1016,6 +911,153 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
+    }
+    
+    public void renderHandAndArmor(EnumHandSide side, AbstractClientPlayer player, EnhancedRenderConfig config,
+        ModelPlayer modelPlayer, EnhancedModel model) {
+        if (side == EnumHandSide.LEFT) {
+            if (config.showHandArmorType != ShowHandArmorType.NONE) {
+                PreFirstLayer leftFirst = new PreFirstLayer(this, EnumHandSide.LEFT);
+                PreSecondLayer leftSecond = new PreSecondLayer(this, EnumHandSide.LEFT);
+                MinecraftForge.EVENT_BUS.post(leftFirst);
+                MinecraftForge.EVENT_BUS.post(leftSecond);
+                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                    if (!leftFirst.isCanceled()) {
+                        if (modelPlayer.bipedLeftArm.showModel && !modelPlayer.bipedLeftArm.isHidden) {
+                            model.renderPart("leftArmModel");
+                        }
+                    }
+                    if (!leftSecond.isCanceled()) {
+                        if (modelPlayer.bipedLeftArmwear.showModel && !modelPlayer.bipedLeftArmwear.isHidden) {
+                            model.renderPart("leftArmLayerModel");
+                        }
+                    }
+                } else {
+                    if (!leftFirst.isCanceled()) {
+                        if (modelPlayer.bipedLeftArm.showModel && !modelPlayer.bipedLeftArm.isHidden) {
+                            model.renderPart("leftArmSlimModel");
+                        }
+                    }
+                    if (!leftSecond.isCanceled()) {
+                        if (modelPlayer.bipedLeftArmwear.showModel && !modelPlayer.bipedLeftArmwear.isHidden) {
+                            model.renderPart("leftArmLayerSlimModel");
+                        }
+                    }
+                }
+                if (player.inventory.armorItemInSlot(2) != null) {
+                    ItemStack armorStack = player.inventory.armorItemInSlot(2);
+                    if (armorStack.getItem() instanceof ItemMWArmor) {
+                        int skinId = 0;
+                        String path = skinId > 0 ? ((ItemMWArmor)armorStack.getItem()).type.modelSkins[skinId].getSkin()
+                            : ((ItemMWArmor)armorStack.getItem()).type.modelSkins[0].getSkin();
+
+                        if (!((ItemMWArmor)armorStack.getItem()).type.simpleArmor) {
+                            ModelCustomArmor modelArmor =
+                                ((ModelCustomArmor)((ItemMWArmor)armorStack.getItem()).type.bipedModel);
+
+                            bindTexture("armor", path);
+                            if (modelArmor.enhancedArmModel != null) {
+                                modelArmor.enhancedArmModel.loadAnimation(model,
+                                    config.showHandArmorType == ShowHandArmorType.SKIN);
+                                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                        modelArmor.enhancedArmModel.renderPart("leftArmModel");
+                                    }
+                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                        modelArmor.enhancedArmModel.renderPart("leftArmModel_bone");
+                                    }
+                                } else {
+                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                        modelArmor.enhancedArmModel.renderPart("leftArmSlimModel");
+                                    }
+                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                        modelArmor.enhancedArmModel.renderPart("leftArmSlimModel_bone");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEnhancedEvent.Post(this, EnumHandSide.LEFT, model));
+            } else {
+                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                    model.renderPart(LEFT_HAND_PART);
+                } else {
+                    model.renderPart(LEFT_SLIM_HAND_PART);
+                }
+            }
+        } else {
+            if (config.showHandArmorType != ShowHandArmorType.NONE) {
+                PreFirstLayer rightFirst = new PreFirstLayer(this, EnumHandSide.RIGHT);
+                PreSecondLayer rightSecond = new PreSecondLayer(this, EnumHandSide.RIGHT);
+                MinecraftForge.EVENT_BUS.post(rightFirst);
+                MinecraftForge.EVENT_BUS.post(rightSecond);
+                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                    if (!rightFirst.isCanceled()) {
+                        if (modelPlayer.bipedRightArm.showModel && !modelPlayer.bipedRightArm.isHidden) {
+                            model.renderPart("rightArmModel");
+                        }
+                    }
+                    if (!rightSecond.isCanceled()) {
+                        if (modelPlayer.bipedRightArmwear.showModel && !modelPlayer.bipedRightArmwear.isHidden) {
+                            model.renderPart("rightArmLayerModel");
+                        }
+                    }
+                } else {
+                    if (!rightFirst.isCanceled()) {
+                        if (modelPlayer.bipedRightArm.showModel && !modelPlayer.bipedRightArm.isHidden) {
+                            model.renderPart("rightArmSlimModel");
+                        }
+                    }
+                    if (!rightSecond.isCanceled()) {
+                        if (modelPlayer.bipedRightArmwear.showModel && !modelPlayer.bipedRightArmwear.isHidden) {
+                            model.renderPart("rightArmLayerSlimModel");
+                        }
+                    }
+                }
+                if (player.inventory.armorItemInSlot(2) != null) {
+                    ItemStack armorStack = player.inventory.armorItemInSlot(2);
+                    if (armorStack.getItem() instanceof ItemMWArmor) {
+                        int skinId = 0;
+                        String path = skinId > 0 ? ((ItemMWArmor)armorStack.getItem()).type.modelSkins[skinId].getSkin()
+                            : ((ItemMWArmor)armorStack.getItem()).type.modelSkins[0].getSkin();
+
+                        if (!((ItemMWArmor)armorStack.getItem()).type.simpleArmor) {
+                            ModelCustomArmor modelArmor =
+                                ((ModelCustomArmor)((ItemMWArmor)armorStack.getItem()).type.bipedModel);
+
+                            bindTexture("armor", path);
+                            if (modelArmor.enhancedArmModel != null) {
+                                modelArmor.enhancedArmModel.loadAnimation(model,
+                                    config.showHandArmorType == ShowHandArmorType.SKIN);
+                                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                        modelArmor.enhancedArmModel.renderPart("rightArmModel");
+                                    }
+                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                        modelArmor.enhancedArmModel.renderPart("rightArmModel_bone");
+                                    }
+                                } else {
+                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
+                                        modelArmor.enhancedArmModel.renderPart("rightArmSlimModel");
+                                    }
+                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
+                                        modelArmor.enhancedArmModel.renderPart("rightArmSlimModel_bone");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEnhancedEvent.Post(this, EnumHandSide.RIGHT, model));
+            } else {
+                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
+                    model.renderPart(RIGHT_HAND_PART);
+                } else {
+                    model.renderPart(RIGHT_SLIM_HAND_PART);
+                }
+            }
+        }
     }
     
     public void drawThirdGun(RenderPlayer renderPlayer,RenderType renderType,EntityPlayer player, ItemStack demoStack) {
