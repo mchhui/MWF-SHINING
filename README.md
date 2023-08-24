@@ -6,8 +6,14 @@ ModularWarfare是ModularWarfare-Shining的前身和基础，由[Protoxy](https:/
 
 感谢[Protoxy](https://github.com/Protoxy22)长期以来对MCMOD社区的不懈努力与无私耕耘。
 
+## 关于许可：
+>对于没有另外说明的代码（modularwarfare原本含有的代码）和资产 使用CC4：
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![License: CC BY-NC-SA 4.0](https://licensebuttons.net/l/by-nc-sa/4.0/80x15.png)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+>对于HE-GLTF使用HE-GLTF许可
+
+>对于jgltf延用其本身的MIT许可
 
 Important for content-pack creators:
 - `F9` to reload .obj models + render.json files
