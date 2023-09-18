@@ -54,11 +54,7 @@ public class GCInteropImpl implements GCCompatInterop {
         try {
             Field field = Class.forName("micdoodle8.mods.galacticraft.core.util.CompatibilityManager").getField("RenderPlayerAPILoaded");
             field.set(Boolean.class, true);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
     }

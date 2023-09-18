@@ -24,14 +24,14 @@ import org.lwjgl.input.Mouse;
 
 public class AnimationController {
 
-    private static AnimationType[] RELOAD_TYPE = new AnimationType[]{
+    private static final AnimationType[] RELOAD_TYPE = new AnimationType[]{
             AnimationType.PRE_LOAD, AnimationType.LOAD, AnimationType.POST_LOAD,
             AnimationType.PRE_UNLOAD, AnimationType.UNLOAD, AnimationType.POST_UNLOAD,
             AnimationType.PRE_RELOAD, AnimationType.RELOAD_FIRST, AnimationType.RELOAD_SECOND,
             AnimationType.RELOAD_FIRST_QUICKLY, AnimationType.RELOAD_SECOND_QUICKLY,
             AnimationType.POST_RELOAD, AnimationType.POST_RELOAD_EMPTY,
     };
-    private static AnimationType[] FIRE_TYPE = new AnimationType[]{
+    private static final AnimationType[] FIRE_TYPE = new AnimationType[]{
             AnimationType.FIRE,
             AnimationType.PRE_FIRE, AnimationType.POST_FIRE,
     };
@@ -43,7 +43,7 @@ public class AnimationController {
     public double SPRINT;
     public double SPRINT_LOOP;
     public double SPRINT_RANDOM;
-    public double INSPECT = 1;
+    public static double INSPECT = 1;
     public double FIRE;
     public double MODE_CHANGE;
 
@@ -429,9 +429,7 @@ public class AnimationController {
                 if (isDrawing()) {
                     return false;
                 }
-                if (ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
-                    return false;
-                }
+                return !ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
             }
         }
         return true;
@@ -447,9 +445,7 @@ public class AnimationController {
                 if (isDrawing()) {
                     return false;
                 }
-                if (ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
-                    return false;
-                }
+                return !ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
             }
         }
         return true;
@@ -459,7 +455,7 @@ public class AnimationController {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         if (anim.reloading) {
             AnimationType reloadAni = anim.getReloadAnimationType();
-            if (anim.getReloadType() == ReloadType.Full && (reloadAni == AnimationType.PRE_RELOAD
+            if (anim.getReloadType() == ReloadType.FULL && (reloadAni == AnimationType.PRE_RELOAD
                     || reloadAni == AnimationType.RELOAD_FIRST || reloadAni == AnimationType.RELOAD_FIRST_QUICKLY)) {
                 return ammo;
             }
@@ -477,10 +473,7 @@ public class AnimationController {
     public boolean shouldRenderAmmo() {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         if (anim.reloading) {
-            if (anim.getReloadAnimationType() == AnimationType.POST_UNLOAD) {
-                return false;
-            }
-            return true;
+            return anim.getReloadAnimationType() != AnimationType.POST_UNLOAD;
         }
         if (ClientTickHandler.reloadEnhancedPrognosisAmmoRendering != null
                 && !ClientTickHandler.reloadEnhancedPrognosisAmmoRendering.isEmpty()) {

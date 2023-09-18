@@ -101,12 +101,12 @@ public class EnhancedStateMachine {
     public void triggerReload(AnimationController controller, EntityLivingBase entity, int reloadTime, int reloadCount, ModelEnhancedGun model, ReloadType reloadType) {
         reset();
         updateCurrentItem(entity);
-        this.reloadTime = reloadType != ReloadType.Full ? reloadTime * 0.65f : reloadTime;
+        this.reloadTime = reloadType != ReloadType.FULL ? reloadTime * 0.65f : reloadTime;
         this.reloadCount = reloadCount;
         Item item = heldItemstStack.getItem();
         if (item instanceof ItemGun) {
             GunType type = ((ItemGun) item).type;
-            if (reloadType == ReloadType.Unload) {
+            if (reloadType == ReloadType.UNLOAD) {
                 this.reloadCount -= type.modifyUnloadBullets;
             }
         }
@@ -133,7 +133,7 @@ public class EnhancedStateMachine {
 
     public AnimationType getReloadAnimationType() {
         AnimationType aniType = null;
-        if (reloadType == ReloadType.Load) {
+        if (reloadType == ReloadType.LOAD) {
             ItemStack stack = heldItemstStack;
             Item item = stack.getItem();
             if (item instanceof ItemGun) {
@@ -163,7 +163,7 @@ public class EnhancedStateMachine {
                     }
                 }
             }
-        } else if (reloadType == ReloadType.Unload) {
+        } else if (reloadType == ReloadType.UNLOAD) {
             if (reloadPhase == Phase.FIRST) {
                 aniType = AnimationType.UNLOAD;
             } else if (reloadPhase == Phase.POST) {
@@ -171,7 +171,7 @@ public class EnhancedStateMachine {
             } else if (reloadPhase == Phase.PRE) {
                 aniType = AnimationType.PRE_UNLOAD;
             }
-        } else if (reloadType == ReloadType.Full) {
+        } else if (reloadType == ReloadType.FULL) {
             if (reloadPhase == Phase.FIRST) {
                 if (ClientTickHandler.reloadEnhancedIsQuicklyRendering
                         && ((GunEnhancedRenderConfig) currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_QUICKLY)) {
@@ -306,14 +306,10 @@ public class EnhancedStateMachine {
                             ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreReload));
                             break;
                         case RELOAD_FIRST:
-                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
-                            break;
-                        case RELOAD_SECOND:
-                            ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
-                            break;
                         case RELOAD_FIRST_QUICKLY:
                             ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
                             break;
+                        case RELOAD_SECOND:
                         case RELOAD_SECOND_QUICKLY:
                             ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
                             break;
@@ -347,19 +343,19 @@ public class EnhancedStateMachine {
                 */
                 AnimationType aniType = getShootingAnimationType();
                 Passer<Phase> phase = new Passer(shootingPhase);
-                Passer<Double> progess = new Passer(controller.FIRE);
+                Passer<Double> progress = new Passer(controller.FIRE);
                 Random r = new Random();
-                int Low = 0;
-                int High = type.flashType.resourceLocations.size() - 1;
-                int result = r.nextInt(High - Low) + Low;
-                shooting = phaseUpdate(aniType, partialTick, 1, phase, progess, () -> {
+                int low = 0;
+                int high = type.flashType.resourceLocations.size() - 1;
+                int result = r.nextInt(high - low) + low;
+                shooting = phaseUpdate(aniType, partialTick, 1, phase, progress, () -> {
                     flashCount = result;
                     phase.set(Phase.FIRST);
                 }, () -> {
                     phase.set(Phase.POST);
                 }, null);
                 shootingPhase = phase.get();
-                controller.FIRE = progess.get();
+                controller.FIRE = progress.get();
                 if (!shooting) {
                     controller.updateActionAndTime();
                 }
@@ -419,7 +415,7 @@ public class EnhancedStateMachine {
 
             AnimationType reloadAni = getReloadAnimationType();
 
-            if (reloadType == ReloadType.Load) {
+            if (reloadType == ReloadType.LOAD) {
                 if (type.acceptedAmmo != null) {
                     if (reloadPhase == Phase.PRE) {
                         packet = new PacketGunReloadEnhancedStop(0, false, false);
@@ -433,7 +429,7 @@ public class EnhancedStateMachine {
                         packet = new PacketGunReloadEnhancedStop(reloadMaxCount - reloadCount, true, true);
                     }
                 }
-            } else if (reloadType == ReloadType.Full) {
+            } else if (reloadType == ReloadType.FULL) {
                 if (type.acceptedAmmo != null) {
                     if (reloadPhase == Phase.POST || reloadPhase == Phase.SECOND) {
                         packet = new PacketGunReloadEnhancedStop(0, true, true);
@@ -449,7 +445,7 @@ public class EnhancedStateMachine {
                         packet = new PacketGunReloadEnhancedStop(reloadMaxCount - reloadCount, true, true);
                     }
                 }
-            } else if (reloadType == ReloadType.Unload) {
+            } else if (reloadType == ReloadType.UNLOAD) {
                 if (reloadPhase == Phase.PRE) {
                     packet = new PacketGunReloadEnhancedStop(0, false, false);
                 } else {
@@ -510,7 +506,7 @@ public class EnhancedStateMachine {
             if (item instanceof ItemGun) {
                 GunType type = ((ItemGun) item).type;
                 if (reloading) {
-                    if (reloadType == ReloadType.Unload) {
+                    if (reloadType == ReloadType.UNLOAD) {
                         if (really) {
                             return -(reloadMaxCount - reloadCount);
                         } else {
@@ -522,7 +518,7 @@ public class EnhancedStateMachine {
                 }
             }
         }
-        if (reloadType == ReloadType.Unload) {
+        if (reloadType == ReloadType.UNLOAD) {
             return -reloadMaxCount;
         } else {
             return reloadMaxCount;

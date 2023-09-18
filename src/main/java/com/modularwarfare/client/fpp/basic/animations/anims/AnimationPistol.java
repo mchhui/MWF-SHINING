@@ -57,13 +57,13 @@ public class AnimationPistol extends WeaponAnimation {
 
     @Override
     public ArrayList<StateEntry> getReloadStates(ReloadType reloadType, int reloadCount) {
-        ArrayList<StateEntry> states = new ArrayList<StateEntry>();
-        states.add(new StateEntry(StateType.Tilt, 0.20f, 0f, MathType.Add));
-        states.add(new StateEntry(StateType.Unload, 0.20f, 0f, MathType.Add));
-        states.add(new StateEntry(StateType.Load, 0.20f, 1f, MathType.Sub));
-        states.add(new StateEntry(StateType.Untilt, 0.20f, 1f, MathType.Sub));
-        states.add(new StateEntry(StateType.Charge, 0.18f, 1f, MathType.Sub));
-        states.add(new StateEntry(StateType.Uncharge, 0.02f, 0f, MathType.Add));
+        ArrayList<StateEntry> states = new ArrayList<>();
+        states.add(new StateEntry(StateType.TILT, 0.20f, 0f, MathType.ADD));
+        states.add(new StateEntry(StateType.UNLOAD, 0.20f, 0f, MathType.ADD));
+        states.add(new StateEntry(StateType.LOAD, 0.20f, 1f, MathType.SUB));
+        states.add(new StateEntry(StateType.UNTILT, 0.20f, 1f, MathType.SUB));
+        states.add(new StateEntry(StateType.CHARGE, 0.18f, 1f, MathType.SUB));
+        states.add(new StateEntry(StateType.UNCHARGE, 0.02f, 0f, MathType.ADD));
         return states;
     }
 

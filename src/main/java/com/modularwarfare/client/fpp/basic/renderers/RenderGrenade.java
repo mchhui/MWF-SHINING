@@ -167,7 +167,7 @@ public class RenderGrenade extends CustomItemRenderer {
                 float f = 1F / 16F;
                 float modelScale = model.config.extra.modelScale;
                 int skinId = 0;
-                String path = skinId > 0 ? "skins/" + grenadeType.modelSkins[skinId].getSkin() : grenadeType.modelSkins[0].getSkin();
+                String path = grenadeType.modelSkins[0].getSkin();
                 bindTexture("grenades", path);
                 GL11.glScalef(modelScale, modelScale, modelScale);
                 model.renderPart("grenadeModel", f);

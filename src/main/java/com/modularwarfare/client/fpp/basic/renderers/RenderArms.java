@@ -29,10 +29,10 @@ public class RenderArms {
 
         if (NumberHelper.subtractVector(targetPos, originPos) != null) {
             Vector3f offsetPosition = NumberHelper.multiplyVector(NumberHelper.subtractVector(targetPos, originPos), progress);
-            float cancelOut = anim.getReloadState().isPresent() ? anim.getReloadState().get().stateType == StateType.ReturnHands ? 0f : 1f : anim.getShootState().isPresent() ? anim.getShootState().get().stateType == StateType.ReturnHands ? 0f : 1f : 1f;
-            GL11.glTranslatef(originPos.x + offsetPosition.x + (cancelOut * (Math.abs(1f + (1f - 1f) * smoothing) * (model.config.bolt.chargeModifier.x * model.config.extra.modelScale))), 0F, 0F);
-            GL11.glTranslatef(0F, originPos.y + offsetPosition.y + (cancelOut * (Math.abs(1f + (1f - 1f) * smoothing) * (model.config.bolt.chargeModifier.y * model.config.extra.modelScale))), 0F);
-            GL11.glTranslatef(0F, 0F, originPos.z + offsetPosition.z + (cancelOut * (Math.abs(1f + (1f - 1f) * smoothing) * (model.config.bolt.chargeModifier.z * model.config.extra.modelScale))));
+            float cancelOut = anim.getReloadState().isPresent() ? anim.getReloadState().get().stateType == StateType.RETURN_HANDS ? 0f : 1f : anim.getShootState().isPresent() ? anim.getShootState().get().stateType == StateType.RETURN_HANDS ? 0f : 1f : 1f;
+            GL11.glTranslatef(originPos.x + offsetPosition.x + (cancelOut * (Math.abs(1f + (0.0f) * smoothing) * (model.config.bolt.chargeModifier.x * model.config.extra.modelScale))), 0F, 0F);
+            GL11.glTranslatef(0F, originPos.y + offsetPosition.y + (cancelOut * (Math.abs(1f + (0.0f) * smoothing) * (model.config.bolt.chargeModifier.y * model.config.extra.modelScale))), 0F);
+            GL11.glTranslatef(0F, 0F, originPos.z + offsetPosition.z + (cancelOut * (Math.abs(1f + (0.0f) * smoothing) * (model.config.bolt.chargeModifier.z * model.config.extra.modelScale))));
 
             //Rotation
             Vector3f offsetRotation = NumberHelper.multiplyVector(NumberHelper.subtractVector(targetRot, originRot), progress);
@@ -54,14 +54,15 @@ public class RenderArms {
 
     public static void renderArmPump(ModelGun model, AnimStateMachine anim, float smoothing, Vector3f reloadRot, Vector3f reloadPos, boolean leftHand) {
         Optional<StateEntry> currentShootState = anim.getShootState();
-        float pumpCurrent = currentShootState.isPresent() ? (currentShootState.get().stateType == StateType.PumpOut || currentShootState.get().stateType == StateType.PumpIn) ? currentShootState.get().currentValue : 1f : 1f;
-        float pumpLast = currentShootState.isPresent() ? (currentShootState.get().stateType == StateType.PumpOut || currentShootState.get().stateType == StateType.PumpIn) ? currentShootState.get().lastValue : 1f : 1f;
+        float pumpCurrent = currentShootState.filter(stateEntry -> (stateEntry.stateType == StateType.PUMP_OUT || stateEntry.stateType == StateType.PUMP_IN)).map(stateEntry -> stateEntry.currentValue).orElse(1f);
+        float pumpLast = currentShootState.filter(stateEntry -> (stateEntry.stateType == StateType.PUMP_OUT || stateEntry.stateType == StateType.PUMP_IN)).map(stateEntry -> stateEntry.lastValue).orElse(1f);
 
+        float v = 1 - Math.abs(pumpLast + (pumpCurrent - pumpLast) * smoothing);
         if (leftHand) {
-            GL11.glTranslatef((model.config.arms.leftArm.armPos.x - (1 - Math.abs(pumpLast + (pumpCurrent - pumpLast) * smoothing)) * model.config.bolt.pumpHandleDistance), model.config.arms.leftArm.armPos.y, model.config.arms.leftArm.armPos.z);
+            GL11.glTranslatef((model.config.arms.leftArm.armPos.x - v * model.config.bolt.pumpHandleDistance), model.config.arms.leftArm.armPos.y, model.config.arms.leftArm.armPos.z);
             handleRotateLeft(reloadRot);
         } else {
-            GL11.glTranslatef((model.config.arms.rightArm.armPos.x - (1 - Math.abs(pumpLast + (pumpCurrent - pumpLast) * smoothing)) * model.config.bolt.pumpHandleDistance), model.config.arms.rightArm.armPos.y, model.config.arms.rightArm.armPos.z);
+            GL11.glTranslatef((model.config.arms.rightArm.armPos.x - v * model.config.bolt.pumpHandleDistance), model.config.arms.rightArm.armPos.y, model.config.arms.rightArm.armPos.z);
             handleRotateRight(reloadRot);
         }
     }
@@ -71,8 +72,8 @@ public class RenderArms {
     public static void renderArmCharge(ModelGun model, AnimStateMachine anim, float smoothing, Vector3f reloadRot, Vector3f reloadPos, Vector3f defaultRot, Vector3f defaultPos, boolean leftHand) {
         Vector3f offsetPosition = NumberHelper.multiplyVector(NumberHelper.subtractVector(reloadPos, defaultPos), 1f);
         Optional<StateEntry> currentReloadState = anim.getReloadState();
-        float chargeCurrent = currentReloadState.isPresent() ? (currentReloadState.get().stateType == StateType.Charge || currentReloadState.get().stateType == StateType.Uncharge) ? currentReloadState.get().currentValue : 1f : 1f;
-        float chargeLast = currentReloadState.isPresent() ? (currentReloadState.get().stateType == StateType.Charge || currentReloadState.get().stateType == StateType.Uncharge) ? currentReloadState.get().lastValue : 1f : 1f;
+        float chargeCurrent = currentReloadState.filter(stateEntry -> (stateEntry.stateType == StateType.CHARGE || stateEntry.stateType == StateType.UNCHARGE)).map(stateEntry -> stateEntry.currentValue).orElse(1f);
+        float chargeLast = currentReloadState.filter(stateEntry -> (stateEntry.stateType == StateType.CHARGE || stateEntry.stateType == StateType.UNCHARGE)).map(stateEntry -> stateEntry.lastValue).orElse(1f);
 
         GL11.glTranslatef(defaultPos.x + offsetPosition.x + Math.abs(chargeLast + (chargeCurrent - chargeLast) * smoothing) * (model.config.extra.chargeHandleDistance * model.config.extra.modelScale), 0F, 0F);
 
@@ -100,18 +101,21 @@ public class RenderArms {
     // reload with right hand bolt action)
     public static void renderArmBolt(ModelGun model, AnimStateMachine anim, float smoothing, Vector3f reloadRot, Vector3f reloadPos, boolean leftHand) {
         Optional<StateEntry> currentShootState = anim.getShootState();
-        float pumpCurrent = currentShootState.isPresent() ? (currentShootState.get().stateType == StateType.Charge || currentShootState.get().stateType == StateType.Uncharge) ? currentShootState.get().currentValue : 1f : 1f;
-        float pumpLast = currentShootState.isPresent() ? (currentShootState.get().stateType == StateType.Charge || currentShootState.get().stateType == StateType.Uncharge) ? currentShootState.get().lastValue : 1f : 1f;
+        float pumpCurrent = currentShootState.filter(stateEntry -> (stateEntry.stateType == StateType.CHARGE || stateEntry.stateType == StateType.UNCHARGE)).map(stateEntry -> stateEntry.currentValue).orElse(1f);
+        float pumpLast = currentShootState.filter(stateEntry -> (stateEntry.stateType == StateType.CHARGE || stateEntry.stateType == StateType.UNCHARGE)).map(stateEntry -> stateEntry.lastValue).orElse(1f);
 
-        if (anim.isReloadState(StateType.Charge) || anim.isReloadState(StateType.Uncharge)) {
-            StateEntry boltState = anim.getReloadState().get();
-            pumpCurrent = boltState.currentValue;
-            pumpLast = boltState.lastValue;
+        if (anim.isReloadState(StateType.CHARGE) || anim.isReloadState(StateType.UNCHARGE)) {
+            if (anim.getReloadState().isPresent()) {
+                StateEntry boltState = anim.getReloadState().get();
+                pumpCurrent = boltState.currentValue;
+                pumpLast = boltState.lastValue;
+            }
         }
 
-        GL11.glTranslatef((reloadPos.x - (1 - Math.abs(pumpLast + (pumpCurrent - pumpLast) * smoothing)) * model.config.bolt.chargeModifier.x), 0F, 0F);
-        GL11.glTranslatef(0F, (reloadPos.y - (1 - Math.abs(pumpLast + (pumpCurrent - pumpLast) * smoothing)) * model.config.bolt.chargeModifier.y), 0F);
-        GL11.glTranslatef(0F, 0F, (reloadPos.z - (1 - Math.abs(pumpLast + (pumpCurrent - pumpLast) * smoothing)) * model.config.bolt.chargeModifier.z));
+        float v = 1 - Math.abs(pumpLast + (pumpCurrent - pumpLast) * smoothing);
+        GL11.glTranslatef((reloadPos.x - v * model.config.bolt.chargeModifier.x), 0F, 0F);
+        GL11.glTranslatef(0F, (reloadPos.y - v * model.config.bolt.chargeModifier.y), 0F);
+        GL11.glTranslatef(0F, 0F, (reloadPos.z - v * model.config.bolt.chargeModifier.z));
 
         if (leftHand)
             handleRotateLeft(reloadRot);
@@ -132,7 +136,7 @@ public class RenderArms {
         Vector3f offsetPosition = NumberHelper.multiplyVector(NumberHelper.subtractVector(reloadPos, defaultPos), tiltProgress);
 
         Optional<StateEntry> currentState = anim.getReloadState();
-        Vector3f ammoLoadOffset = anim.isReloadType(ReloadType.Load) && currentState.isPresent() && currentState.get().stateType != StateType.Load && currentState.get().stateType != StateType.Untilt ? animation.ammoLoadOffset != null ? animation.ammoLoadOffset : new Vector3f(0f, 0f, 0f) : new Vector3f(0f, 0f, 0f);
+        Vector3f ammoLoadOffset = anim.isReloadType(ReloadType.LOAD) && currentState.isPresent() && currentState.get().stateType != StateType.LOAD && currentState.get().stateType != StateType.UNTILT ? animation.ammoLoadOffset != null ? animation.ammoLoadOffset : new Vector3f(0f, 0f, 0f) : new Vector3f(0f, 0f, 0f);
         //System.out.println(tiltProgress);
         //System.out.println(anim.isLoadOnly());
         GL11.glTranslatef(defaultPos.x + offsetPosition.x + (ammoLoadOffset.x * tiltProgress), 0F, 0F);
@@ -183,7 +187,7 @@ public class RenderArms {
         //Translation
         Vector3f offsetPosition = NumberHelper.multiplyVector(NumberHelper.subtractVector(reloadPos, defaultPos), tiltProgress);
         Optional<StateEntry> currentState = anim.getReloadState();
-        Vector3f ammoLoadOffset = anim.isReloadType(ReloadType.Load) && currentState.isPresent() && currentState.get().stateType != StateType.Load ? animation.ammoLoadOffset != null ? animation.ammoLoadOffset : new Vector3f(0f, 0f, 0f) : new Vector3f(0f, 0f, 0f);
+        Vector3f ammoLoadOffset = anim.isReloadType(ReloadType.LOAD) && currentState.isPresent() && currentState.get().stateType != StateType.LOAD ? animation.ammoLoadOffset != null ? animation.ammoLoadOffset : new Vector3f(0f, 0f, 0f) : new Vector3f(0f, 0f, 0f);
         //System.out.println(ammoLoadOffset);
         //System.out.println(anim.isLoadOnly());
 
@@ -213,7 +217,7 @@ public class RenderArms {
     public static void renderArmUnload(ModelGun model, AnimStateMachine anim, WeaponAnimation animation, float smoothing, float tiltProgress, Vector3f reloadRot, Vector3f reloadPos, Vector3f defaultRot, Vector3f defaultPos, boolean leftHand) {
         //Translation
         Vector3f offsetPosition = NumberHelper.multiplyVector(NumberHelper.subtractVector(reloadPos, defaultPos), tiltProgress);
-        Vector3f ammoLoadOffset = anim.isReloadType(ReloadType.Load) ? animation.ammoLoadOffset != null ? animation.ammoLoadOffset : new Vector3f(0f, 0f, 0f) : new Vector3f(0f, 0f, 0f);
+        Vector3f ammoLoadOffset = anim.isReloadType(ReloadType.LOAD) ? animation.ammoLoadOffset != null ? animation.ammoLoadOffset : new Vector3f(0f, 0f, 0f) : new Vector3f(0f, 0f, 0f);
         GL11.glTranslatef(defaultPos.x + offsetPosition.x + (ammoLoadOffset.x * tiltProgress), 0F, 0F);
         GL11.glTranslatef(0F, defaultPos.y + offsetPosition.y + (ammoLoadOffset.y * tiltProgress), 0F);
         GL11.glTranslatef(0F, 0F, defaultPos.z + offsetPosition.z + (ammoLoadOffset.z * tiltProgress));

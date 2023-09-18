@@ -8,8 +8,10 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.animations.StateEntry;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.hud.FlashSystem;
+import com.modularwarfare.client.hud.GunUI;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.grenades.ItemGrenade;
@@ -31,6 +33,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.input.Mouse;
 
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -40,8 +43,8 @@ public class ClientTickHandler extends ForgeEvent {
 
     private static final int SPS = 60;
 
-    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
-    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
+    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<>();
     public static ItemStack reloadEnhancedPrognosisAmmo = ItemStack.EMPTY;
     public static ItemStack reloadEnhancedPrognosisAmmoRendering = ItemStack.EMPTY;
     public static boolean reloadEnhancedIsQuickly = false;
@@ -104,52 +107,48 @@ public class ClientTickHandler extends ForgeEvent {
 
     @SubscribeEvent
     public void renderTick(TickEvent.RenderTickEvent event) {
-        switch (event.phase) {
-            case START: {
-                //System.out.println(ClientTickHandler.reloadEnhancedPrognosisAmmoRendering);
-                float renderTick = event.renderTickTime;
-                renderTick *= 60d / (double) Minecraft.getDebugFPS();
-                StateEntry.smoothing = renderTick;
-                onRenderTickStart(Minecraft.getMinecraft(), renderTick);
-                /**
-                 * EnhancedGunRendered Updates
-                 */
-                long time = System.currentTimeMillis();
-                if (time > lastSyncTime + 1000 / 144) {
-                    if (lastSyncTime > 0) {
-                        final float stepTick = (time - lastSyncTime) / (1000 / (float) SPS);
-                        if (ClientProxy.gunEnhancedRenderer.controller != null) {
-                            if (Minecraft.getMinecraft().player != null) {
-                                if (Minecraft.getMinecraft().player.getHeldItemMainhand()
-                                        .getItem() instanceof ItemGun) {
-                                    if (((ItemGun) Minecraft.getMinecraft().player.getHeldItemMainhand()
-                                            .getItem()).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                                        ClientProxy.gunEnhancedRenderer.controller.onTickRender(stepTick);
-                                    }
+        if (Objects.requireNonNull(event.phase) == TickEvent.Phase.START) {//System.out.println(ClientTickHandler.reloadEnhancedPrognosisAmmoRendering);
+            float renderTick = event.renderTickTime;
+            renderTick *= (float) (60d / (double) Minecraft.getDebugFPS());
+            StateEntry.smoothing = renderTick;
+            onRenderTickStart(Minecraft.getMinecraft(), renderTick);
+            /**
+             * EnhancedGunRendered Updates
+             */
+            long time = System.currentTimeMillis();
+            if (time > lastSyncTime + 1000 / 144) {
+                if (lastSyncTime > 0) {
+                    final float stepTick = (time - lastSyncTime) / (1000 / (float) SPS);
+                    if (ClientProxy.gunEnhancedRenderer.controller != null) {
+                        if (Minecraft.getMinecraft().player != null) {
+                            if (Minecraft.getMinecraft().player.getHeldItemMainhand()
+                                    .getItem() instanceof ItemGun) {
+                                if (((ItemGun) Minecraft.getMinecraft().player.getHeldItemMainhand()
+                                        .getItem()).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
+                                    ClientProxy.gunEnhancedRenderer.controller.onTickRender(stepTick);
                                 }
                             }
-                        }
-
-                        ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl) -> {
-                            if (ctrl.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                                if (((ItemGun) ctrl.player.getHeldItemMainhand().getItem()).type.animationType
-                                        .equals(WeaponAnimationType.ENHANCED)) {
-                                    ctrl.onTickRender(stepTick);
-                                }
-                            }
-                        });
-                        float offset = stepTick / 10;
-                        if (Math.abs(ClientEventHandler.cemeraBobbing) < offset) {
-                            ClientEventHandler.cemeraBobbing = 0f;
-                        } else if (ClientEventHandler.cemeraBobbing > 0) {
-                            ClientEventHandler.cemeraBobbing -= offset;
-                        } else {
-                            ClientEventHandler.cemeraBobbing += offset;
                         }
                     }
-                    lastSyncTime = time;
+
+                    ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl) -> {
+                        if (ctrl.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                            if (((ItemGun) ctrl.player.getHeldItemMainhand().getItem()).type.animationType
+                                    .equals(WeaponAnimationType.ENHANCED)) {
+                                ctrl.onTickRender(stepTick);
+                            }
+                        }
+                    });
+                    float offset = stepTick / 10;
+                    if (Math.abs(ClientEventHandler.cemeraBobbing) < offset) {
+                        ClientEventHandler.cemeraBobbing = 0f;
+                    } else if (ClientEventHandler.cemeraBobbing > 0) {
+                        ClientEventHandler.cemeraBobbing -= offset;
+                    } else {
+                        ClientEventHandler.cemeraBobbing += offset;
+                    }
                 }
-                break;
+                lastSyncTime = time;
             }
         }
     }
@@ -159,10 +158,10 @@ public class ClientTickHandler extends ForgeEvent {
             return;
 
         if (minecraft.mouseHelper.deltaY > 0 || -minecraft.mouseHelper.deltaY > 1) {
-            antiRecoilPitch *= 0.25;
+            antiRecoilPitch *= 0.25F;
         }
         if (minecraft.mouseHelper.deltaX > 2 || -minecraft.mouseHelper.deltaX > 2) {
-            antiRecoilYaw *= 0.25;
+            antiRecoilYaw *= 0.25F;
         }
         EntityPlayerSP player = minecraft.player;
 
@@ -178,9 +177,7 @@ public class ClientTickHandler extends ForgeEvent {
         if (ClientProxy.gunEnhancedRenderer.controller != null) {
             ClientProxy.gunEnhancedRenderer.controller.updateCurrentItem();
 
-            ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl) -> {
-                ctrl.updateCurrentItem();
-            });
+            ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach(AnimationController::updateCurrentItem);
         }
 
         for (EntityLivingBase entity : ClientRenderHooks.weaponEnhancedAnimations.keySet()) {
@@ -235,16 +232,16 @@ public class ClientTickHandler extends ForgeEvent {
                 RenderParameters.triggerPullSwitch = Math.max(0, Math.min(0.02f, triggerPullValue));
             }
 
-            float balancing_speed_x = 0.08f * renderTick;
+            float balancingSpeedX = 0.08f * renderTick;
             if (player.moveStrafing > 0) {
-                RenderParameters.GUN_BALANCING_X = Math.min(1.0F, RenderParameters.GUN_BALANCING_X + balancing_speed_x);
+                RenderParameters.GUN_BALANCING_X = Math.min(1.0F, RenderParameters.GUN_BALANCING_X + balancingSpeedX);
             } else if (player.moveStrafing < 0) {
-                RenderParameters.GUN_BALANCING_X = Math.max(-1.0F, RenderParameters.GUN_BALANCING_X - balancing_speed_x);
-            } else if (player.moveStrafing == 0 && RenderParameters.GUN_BALANCING_X != 0F) {
+                RenderParameters.GUN_BALANCING_X = Math.max(-1.0F, RenderParameters.GUN_BALANCING_X - balancingSpeedX);
+            } else if (RenderParameters.GUN_BALANCING_X != 0F) {
                 if (RenderParameters.GUN_BALANCING_X > 0F) {
-                    RenderParameters.GUN_BALANCING_X = Math.max(0, RenderParameters.GUN_BALANCING_X - balancing_speed_x);
+                    RenderParameters.GUN_BALANCING_X = Math.max(0, RenderParameters.GUN_BALANCING_X - balancingSpeedX);
                 } else if (RenderParameters.GUN_BALANCING_X < 0F) {
-                    RenderParameters.GUN_BALANCING_X = Math.min(0, RenderParameters.GUN_BALANCING_X + balancing_speed_x);
+                    RenderParameters.GUN_BALANCING_X = Math.min(0, RenderParameters.GUN_BALANCING_X + balancingSpeedX);
                 }
             }
 
@@ -332,9 +329,9 @@ public class ClientTickHandler extends ForgeEvent {
 
         if (mc.getRenderViewEntity() != null) {
             if (mc.getRenderViewEntity().getRotationYawHead() > mc.getRenderViewEntity().prevRotationYaw) {
-                GUN_ROT_X += (mc.getRenderViewEntity().getRotationYawHead() - mc.getRenderViewEntity().prevRotationYaw) / 1.5;
+                GUN_ROT_X += (float) ((mc.getRenderViewEntity().getRotationYawHead() - mc.getRenderViewEntity().prevRotationYaw) / 1.5);
             } else if (mc.getRenderViewEntity().getRotationYawHead() < mc.getRenderViewEntity().prevRotationYaw) {
-                GUN_ROT_X -= (mc.getRenderViewEntity().prevRotationYaw - mc.getRenderViewEntity().getRotationYawHead()) / 1.5;
+                GUN_ROT_X -= (float) ((mc.getRenderViewEntity().prevRotationYaw - mc.getRenderViewEntity().getRotationYawHead()) / 1.5);
             }
             if (mc.getRenderViewEntity().rotationPitch > prevPitch) {
                 GUN_ROT_Y += (mc.getRenderViewEntity().rotationPitch - prevPitch) / 5;
@@ -363,8 +360,8 @@ public class ClientTickHandler extends ForgeEvent {
         this.processGunChange();
         ItemGun.fireButtonHeld = Mouse.isButtonDown(0);
 
-        if (ClientProxy.gunUI.bulletSnapFade > 0) {
-            ClientProxy.gunUI.bulletSnapFade -= 0.01F;
+        if (GunUI.bulletSnapFade > 0) {
+            GunUI.bulletSnapFade -= 0.01F;
         }
         //Client Flash Grenade
         if (FlashSystem.flashValue > 0) {
@@ -412,13 +409,13 @@ public class ClientTickHandler extends ForgeEvent {
             stateMachine.onTickUpdate();
         }
 
-        InstantBulletRenderer.UpdateAllTrails();
+        InstantBulletRenderer.updateAllTrails();
     }
 
 
     public void processGunChange() {
         final EntityPlayer player = Minecraft.getMinecraft().player;
-        if (player.inventory.currentItem != this.oldCurrentItem) {
+        if (player.inventory.currentItem != oldCurrentItem) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 GunType type = ((ItemGun) player.getHeldItemMainhand().getItem()).type;
                 type.playClientSound(player, WeaponSoundType.Equip);
@@ -428,9 +425,9 @@ public class ClientTickHandler extends ForgeEvent {
                 ModularWarfare.PROXY.playSound(new MWSound(player.getPosition(), "human.equip.extra", 1f, 1f));
             }
         }
-        if (this.oldCurrentItem != player.inventory.currentItem) {
-            this.oldCurrentItem = player.inventory.currentItem;
-            this.oldItemStack = player.getHeldItemMainhand();
+        if (oldCurrentItem != player.inventory.currentItem) {
+            oldCurrentItem = player.inventory.currentItem;
+            oldItemStack = player.getHeldItemMainhand();
         }
     }
 }

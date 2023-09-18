@@ -2,9 +2,9 @@ package com.modularwarfare.client.fpp.basic.animations;
 
 public enum ReloadType {
 
-    Unload(0),
-    Load(1),
-    Full(2);
+    UNLOAD(0),
+    LOAD(1),
+    FULL(2);
 
     public int i;
 

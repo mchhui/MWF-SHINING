@@ -382,7 +382,7 @@ public class ScopeUtils {
 
             GlStateManager.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.colorMask(true, true, true, false);
-            GlStateManager.bindTexture(ClientProxy.scopeUtils.MIRROR_TEX);
+            GlStateManager.bindTexture(MIRROR_TEX);
             ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1, resolution.getScaledWidth(), resolution.getScaledHeight(), 1, 1);
             GlStateManager.depthMask(true);
 
@@ -395,7 +395,7 @@ public class ScopeUtils {
 
             if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                 if (((ItemGun) mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.ENHANCED) {
-                    GlStateManager.bindTexture(ClientProxy.scopeUtils.INSIDE_GUN_TEX);
+                    GlStateManager.bindTexture(INSIDE_GUN_TEX);
                     ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1, resolution.getScaledWidth(), resolution.getScaledHeight(), 1, 1);
                 }
             }
@@ -437,7 +437,7 @@ public class ScopeUtils {
                     GlStateManager.alphaFunc(GL11.GL_GEQUAL, 1f);
 
                     GlStateManager.colorMask(false, false, false, false);
-                    GlStateManager.bindTexture(ClientProxy.scopeUtils.OVERLAY_TEX);
+                    GlStateManager.bindTexture(OVERLAY_TEX);
                     ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1, resolution.getScaledWidth(), resolution.getScaledHeight(), 1, 1);
                     GlStateManager.colorMask(true, true, true, true);
                     GlStateManager.depthMask(false);
@@ -456,7 +456,7 @@ public class ScopeUtils {
                     int tex4 = GlStateManager.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
                     GlStateManager.bindTexture(SCOPE_LIGHTMAP_TEX);
                     GlStateManager.setActiveTexture(GL13.GL_TEXTURE0);
-                    GlStateManager.bindTexture(ClientProxy.scopeUtils.OVERLAY_TEX);
+                    GlStateManager.bindTexture(OVERLAY_TEX);
                     ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1, resolution.getScaledWidth(), resolution.getScaledHeight(), 1, 1);
                     GlStateManager.setActiveTexture(GL13.GL_TEXTURE3);
                     GlStateManager.bindTexture(tex3);
@@ -484,7 +484,7 @@ public class ScopeUtils {
     }
 
     public void setupOverlayRendering() {
-        ScaledResolution scaledresolution = new ScaledResolution(this.mc);
+        ScaledResolution scaledresolution = new ScaledResolution(mc);
         GlStateManager.matrixMode(GL11.GL_PROJECTION);
         GlStateManager.loadIdentity();
         GlStateManager.ortho(0.0D, scaledresolution.getScaledWidth_double(), scaledresolution.getScaledHeight_double(), 0.0D, 1000.0D, 3000.0D);
@@ -527,14 +527,14 @@ public class ScopeUtils {
         GL11.glDepthRange(0, 1);
 
 
-        ScaledResolution resolution = new ScaledResolution(this.mc);
+        ScaledResolution resolution = new ScaledResolution(mc);
         GL20.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT1);
 
         GL20.glUseProgram(Programs.sunglassesProgram);
 
         GlStateManager.disableBlend();
         GlStateManager.setActiveTexture(GL13.GL_TEXTURE0);
-        GlStateManager.bindTexture(ClientProxy.scopeUtils.OVERLAY_TEX);
+        GlStateManager.bindTexture(OVERLAY_TEX);
         ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1, resolution.getScaledWidth(), resolution.getScaledHeight(), 1, 1);
         GlStateManager.enableBlend();
 

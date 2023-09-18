@@ -26,8 +26,7 @@ public class ShotValidation {
                     return false;
                 }
             }
-            if ((!itemGun.type.allowSprintFiring && entityPlayer.isSprinting()) || !itemGun.type.hasFireMode(fireMode))
-                return false;
+            return (itemGun.type.allowSprintFiring || !entityPlayer.isSprinting()) && itemGun.type.hasFireMode(fireMode);
         }
         return true;
     }

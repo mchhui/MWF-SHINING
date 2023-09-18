@@ -57,17 +57,17 @@ public class AnimationShotgun extends WeaponAnimation {
     @Override
     public ArrayList<StateEntry> getReloadStates(ReloadType reloadType, int reloadCount) {
         ArrayList<StateEntry> states = new ArrayList<StateEntry>();
-        states.add(new StateEntry(StateType.Tilt, 0.15f, 0f, MathType.Add));
+        states.add(new StateEntry(StateType.TILT, 0.15f, 0f, MathType.ADD));
 
         if (reloadCount >= 6) {
-            states.add(new StateEntry(StateType.Load, 0.35f, 1f, MathType.Sub, reloadCount));
+            states.add(new StateEntry(StateType.LOAD, 0.35f, 1f, MathType.SUB, reloadCount));
         } else if (reloadCount >= 3) {
-            states.add(new StateEntry(StateType.Load, 0.15f, 1f, MathType.Sub, reloadCount));
+            states.add(new StateEntry(StateType.LOAD, 0.15f, 1f, MathType.SUB, reloadCount));
         } else if (reloadCount >= 0) {
-            states.add(new StateEntry(StateType.Load, 0.1f, 1f, MathType.Sub, reloadCount));
+            states.add(new StateEntry(StateType.LOAD, 0.1f, 1f, MathType.SUB, reloadCount));
         }
 
-        states.add(new StateEntry(StateType.Untilt, 0.15f, 1f, MathType.Sub));
+        states.add(new StateEntry(StateType.UNTILT, 0.15f, 1f, MathType.SUB));
         return states;
     }
 

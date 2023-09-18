@@ -5,11 +5,11 @@ import net.minecraft.inventory.EntityEquipmentSlot;
 
 public enum MWArmorType {
 
-    @SerializedName("head") Head,
-    @SerializedName("chest") Chest,
-    @SerializedName("legs") Legs,
-    @SerializedName("feet") Feet,
-    @SerializedName("vest") Vest(1);
+    @SerializedName("head") HEAD,
+    @SerializedName("chest") CHEST,
+    @SerializedName("legs") LEGS,
+    @SerializedName("feet") FEET,
+    @SerializedName("vest") VEST(1);
 
     int[] validSlots;
 
@@ -19,22 +19,22 @@ public enum MWArmorType {
 
     public static MWArmorType fromVanillaSlot(EntityEquipmentSlot entityEquipmentSlot) {
         if (entityEquipmentSlot == EntityEquipmentSlot.HEAD) {
-            return Head;
+            return HEAD;
         }
         if (entityEquipmentSlot == EntityEquipmentSlot.CHEST) {
-            return Chest;
+            return CHEST;
         }
         if (entityEquipmentSlot == EntityEquipmentSlot.LEGS) {
-            return Legs;
+            return LEGS;
         }
         if (entityEquipmentSlot == EntityEquipmentSlot.FEET) {
-            return Feet;
+            return FEET;
         }
         return null;
     }
 
     public static boolean isVanilla(MWArmorType type) {
-        return type == Head || type == Chest || type == Legs || type == Feet;
+        return type == HEAD || type == CHEST || type == LEGS || type == FEET;
     }
 
     public boolean hasSlot(int slot) {

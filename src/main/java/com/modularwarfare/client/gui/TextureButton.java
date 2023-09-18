@@ -212,13 +212,13 @@ public class TextureButton extends GuiButton {
 //                return;
 //            }
             if (this.type == TypeEnum.SideButton) {
-                Minecraft.getMinecraft().renderEngine.bindTexture(this.state == 0 ? GuiGunModify.arrow_down : GuiGunModify.arrow_up);
+                Minecraft.getMinecraft().renderEngine.bindTexture(this.state == 0 ? GuiGunModify.ARROW_DOWN : GuiGunModify.ARROW_UP);
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
                 RenderHelperMW.drawTexturedRect(x, y, width + 0.05d, height);
             }
             if (this.type == TypeEnum.SideButtonVert) {
-                Minecraft.getMinecraft().renderEngine.bindTexture(this.state == 0 ? GuiGunModify.arrow_right : GuiGunModify.arrow_left);
+                Minecraft.getMinecraft().renderEngine.bindTexture(this.state == 0 ? GuiGunModify.ARROW_RIGHT : GuiGunModify.ARROW_LEFT);
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
                 RenderHelperMW.drawTexturedRect(x - (width / 1.7), y, height / 2, height);

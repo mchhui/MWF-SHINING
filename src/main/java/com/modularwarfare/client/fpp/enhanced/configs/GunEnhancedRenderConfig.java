@@ -17,11 +17,11 @@ public class GunEnhancedRenderConfig extends EnhancedRenderConfig {
     public GunEnhancedRenderConfig.Sprint sprint = new GunEnhancedRenderConfig.Sprint();
     public GunEnhancedRenderConfig.Aim aim = new GunEnhancedRenderConfig.Aim();
     public GunEnhancedRenderConfig.Extra extra = new GunEnhancedRenderConfig.Extra();
-    public HashMap<String, Attachment> attachment = new HashMap<String, GunEnhancedRenderConfig.Attachment>();
-    public HashMap<String, AttachmentGroup> attachmentGroup = new HashMap<String, GunEnhancedRenderConfig.AttachmentGroup>();
-    public HashSet<String> defaultHidePart = new HashSet<String>();
-    public HashSet<String> thirdHidePart = new HashSet<String>();
-    public HashSet<String> thirdShowPart = new HashSet<String>();
+    public HashMap<String, Attachment> attachment = new HashMap<>();
+    public HashMap<String, AttachmentGroup> attachmentGroup = new HashMap<>();
+    public HashSet<String> defaultHidePart = new HashSet<>();
+    public HashSet<String> thirdHidePart = new HashSet<>();
+    public HashSet<String> thirdShowPart = new HashSet<>();
 
     public GunEnhancedRenderConfig.ThirdPerson thirdPerson = new GunEnhancedRenderConfig.ThirdPerson();
 
@@ -41,16 +41,16 @@ public class GunEnhancedRenderConfig extends EnhancedRenderConfig {
         public double endTime = 1;
         public double speed = 1;
 
-        public double getStartTime(double FPS) {
-            return startTime * 1 / FPS;
+        public double getStartTime(double fps) {
+            return startTime * 1 / fps;
         }
 
-        public double getEndTime(double FPS) {
-            return endTime * 1 / FPS;
+        public double getEndTime(double fps) {
+            return endTime * 1 / fps;
         }
 
-        public double getSpeed(double FPS) {
-            double a = (getEndTime(FPS) - getStartTime(FPS));
+        public double getSpeed(double fps) {
+            double a = (getEndTime(fps) - getStartTime(fps));
             if (a <= 0) {
                 a = 1;
             }

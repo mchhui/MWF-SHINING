@@ -50,12 +50,12 @@ public class ModelCustomArmor extends MWModelBipedBase {
             enhancedArmModel.setAnimationLoadMapper(new NodeAnimationMapper(null) {
                 @Override
                 public void handle(GltfRenderModel model, GltfRenderModel other, String target) {
-                    if (target.equals("leftArmSlimModel")) {
+                    if ("leftArmSlimModel".equals(target)) {
                         if (other.nodeStates.get("leftArmModel") != null) {
                             model.nodeStates.get(target).mat = other.nodeStates.get("leftArmModel").mat;
                         }
                     }
-                    if (target.equals("rightArmSlimModel")) {
+                    if ("rightArmSlimModel".equals(target)) {
                         if (other.nodeStates.get("rightArmModel") != null) {
                             model.nodeStates.get(target).mat = other.nodeStates.get("rightArmModel").mat;
                         }
@@ -70,10 +70,10 @@ public class ModelCustomArmor extends MWModelBipedBase {
         GL11.glPushMatrix();
         renderingEntity = entity;
         isSneak = entity.isSneaking();
-        Bones bones = this.bones;
+        Bones bones = ModelCustomArmor.bones;
         if (entity instanceof AbstractClientPlayer) {
             if (((AbstractClientPlayer) entity).getSkinType().equals("slim")) {
-                bones = this.bonesSmall;
+                bones = bonesSmall;
             }
         }
         bones.armor = this;
@@ -104,9 +104,9 @@ public class ModelCustomArmor extends MWModelBipedBase {
     }
 
     public void renderRightArm(AbstractClientPlayer clientPlayer, ModelBiped baseBiped) {
-        Bones bones = this.bones;
-        if (clientPlayer.getSkinType().equals("slim")) {
-            bones = this.bonesSmall;
+        Bones bones = ModelCustomArmor.bones;
+        if ("slim".equals(clientPlayer.getSkinType())) {
+            bones = bonesSmall;
         }
         bones.armor = this;
         float f = 1.0F;
@@ -127,9 +127,9 @@ public class ModelCustomArmor extends MWModelBipedBase {
     }
 
     public void renderLeftArm(AbstractClientPlayer clientPlayer, ModelBiped baseBiped) {
-        Bones bones = this.bones;
-        if (clientPlayer.getSkinType().equals("slim")) {
-            bones = this.bonesSmall;
+        Bones bones = ModelCustomArmor.bones;
+        if ("slim".equals(clientPlayer.getSkinType())) {
+            bones = bonesSmall;
         }
         bones.armor = this;
         float f = 1.0F;

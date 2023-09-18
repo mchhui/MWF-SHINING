@@ -112,9 +112,9 @@ public class AnimStateMachine {
             if (currentReloadState == null)
                 currentReloadState = reloadStateEntries.get(0);
 
-            if (currentReloadState.stateType == StateType.Tilt)
+            if (currentReloadState.stateType == StateType.TILT)
                 tiltHold = true;
-            if (currentReloadState.stateType == StateType.Untilt)
+            if (currentReloadState.stateType == StateType.UNTILT)
                 tiltHold = false;
 
             if (reloadProgress >= currentReloadState.cutOffTime) {
@@ -265,7 +265,7 @@ public class AnimStateMachine {
                 }
             }
         }
-        this.reloadTime = reloadType != ReloadType.Full ? reloadTime * 0.65f : reloadTime;
+        this.reloadTime = reloadType != ReloadType.FULL ? reloadTime * 0.65f : reloadTime;
         this.reloadType = reloadType;
         this.reloading = true;
         this.hasPlayedReloadSound = false;
@@ -291,12 +291,12 @@ public class AnimStateMachine {
     public boolean shouldRenderAmmo() {
         if (reloading) {
             switch (reloadType) {
-                case Load: {
-                    Optional<StateEntry> state = getState(StateType.Load);
+                case LOAD: {
+                    Optional<StateEntry> state = getState(StateType.LOAD);
                     return state.filter(stateEntry -> stateEntry.currentValue < 1f).isPresent();
                 }
-                case Unload: {
-                    Optional<StateEntry> state = getState(StateType.Unload);
+                case UNLOAD: {
+                    Optional<StateEntry> state = getState(StateType.UNLOAD);
                     return state.filter(stateEntry -> stateEntry.currentValue < 1f).isPresent();
                 }
 

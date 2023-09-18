@@ -62,17 +62,17 @@ public class AnimationRevolver extends WeaponAnimation {
             reloadCount++;
         }
         ArrayList<StateEntry> states = new ArrayList<StateEntry>();
-        states.add(new StateEntry(StateType.Tilt, 0.20f, 0.7f, MathType.Add));
+        states.add(new StateEntry(StateType.TILT, 0.20f, 0.7f, MathType.ADD));
         if (reloadCount >= 6) {
-            states.add(new StateEntry(StateType.Load, 0.35f, 1f, MathType.Sub, reloadCount));
+            states.add(new StateEntry(StateType.LOAD, 0.35f, 1f, MathType.SUB, reloadCount));
         } else if (reloadCount >= 3) {
-            states.add(new StateEntry(StateType.Load, 0.15f, 1f, MathType.Sub, reloadCount));
+            states.add(new StateEntry(StateType.LOAD, 0.15f, 1f, MathType.SUB, reloadCount));
         } else if (reloadCount >= 0) {
-            states.add(new StateEntry(StateType.Load, 0.1f, 1f, MathType.Sub, reloadCount));
+            states.add(new StateEntry(StateType.LOAD, 0.1f, 1f, MathType.SUB, reloadCount));
         }
-        states.add(new StateEntry(StateType.Untilt, 0.20f, 1f, MathType.Sub));
-        states.add(new StateEntry(StateType.Charge, 0.18f, 0.1f, MathType.Sub));
-        states.add(new StateEntry(StateType.Uncharge, 0.02f, 0.9f, MathType.Add));
+        states.add(new StateEntry(StateType.UNTILT, 0.20f, 1f, MathType.SUB));
+        states.add(new StateEntry(StateType.CHARGE, 0.18f, 0.1f, MathType.SUB));
+        states.add(new StateEntry(StateType.UNCHARGE, 0.02f, 0.9f, MathType.ADD));
         return states;
     }
 

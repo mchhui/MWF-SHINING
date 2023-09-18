@@ -31,8 +31,8 @@ public class ContainerGunParts extends GuiMWContainer {
         //this.gunParts = Arrays.asList("body", "stock", "slide", "sight", "pipe", "muzzle", "magazine", "grip", "front_receiver", "forearm", "back_receiver");
         this.gunParts = Arrays.asList("gunModel", "slideModel", "ammoModel");
 
-        for (int i = 0; i < gunParts.size(); i++) {
-            this.partsSets.put(gunParts.get(i), true);
+        for (String gunPart : gunParts) {
+            this.partsSets.put(gunPart, true);
         }
         this.partsSets.put("gunModel", true);
 

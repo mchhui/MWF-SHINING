@@ -229,10 +229,10 @@ public class GuiUtils {
         GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
         GlStateManager.color(f, f1, f2, f3);
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
-        bufferbuilder.pos((double) givenX, (double) givenHeight, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenHeight, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenY, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenX, (double) givenY, 0.0D).endVertex();
+        bufferbuilder.pos(givenX, givenHeight, 0.0D).endVertex();
+        bufferbuilder.pos(givenWidth, givenHeight, 0.0D).endVertex();
+        bufferbuilder.pos(givenWidth, givenY, 0.0D).endVertex();
+        bufferbuilder.pos(givenX, givenY, 0.0D).endVertex();
         tessellator.draw();
         GlStateManager.enableTexture2D();
         GlStateManager.enableAlpha();
@@ -257,8 +257,6 @@ public class GuiUtils {
             givenHeight = j;
         }
 
-        float f3 = givenAlpha;
-
         float f = (float) (givenColor >> 16 & 255) / 255.0F;
         float f1 = (float) (givenColor >> 8 & 255) / 255.0F;
         float f2 = (float) (givenColor & 255) / 255.0F;
@@ -268,12 +266,12 @@ public class GuiUtils {
         GlStateManager.enableBlend();
         GlStateManager.disableTexture2D();
         GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-        GlStateManager.color(f, f1, f2, f3);
+        GlStateManager.color(f, f1, f2, givenAlpha);
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
-        bufferbuilder.pos((double) givenX, (double) givenHeight, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenHeight, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenY, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenX, (double) givenY, 0.0D).endVertex();
+        bufferbuilder.pos(givenX, givenHeight, 0.0D).endVertex();
+        bufferbuilder.pos(givenWidth, givenHeight, 0.0D).endVertex();
+        bufferbuilder.pos(givenWidth, givenY, 0.0D).endVertex();
+        bufferbuilder.pos(givenX, givenY, 0.0D).endVertex();
         tessellator.draw();
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();
@@ -308,10 +306,10 @@ public class GuiUtils {
         GlStateManager.tryBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
         GlStateManager.color(f, f1, f2, givenFade);
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION);
-        bufferbuilder.pos((double) givenX, (double) givenHeight, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenHeight, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenY, 0.0D).endVertex();
-        bufferbuilder.pos((double) givenX, (double) givenY, 0.0D).endVertex();
+        bufferbuilder.pos(givenX, givenHeight, 0.0D).endVertex();
+        bufferbuilder.pos(givenWidth, givenHeight, 0.0D).endVertex();
+        bufferbuilder.pos(givenWidth, givenY, 0.0D).endVertex();
+        bufferbuilder.pos(givenX, givenY, 0.0D).endVertex();
         tessellator.draw();
         GlStateManager.enableTexture2D();
         GlStateManager.disableBlend();
@@ -366,10 +364,10 @@ public class GuiUtils {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos((double) givenWidth, (double) givenY, givenZLevel).color(f1, f2, f3, f).endVertex();
-        bufferbuilder.pos((double) givenX, (double) givenY, givenZLevel).color(f1, f2, f3, f).endVertex();
-        bufferbuilder.pos((double) givenX, (double) givenHeight, givenZLevel).color(f5, f6, f7, f4).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenHeight, givenZLevel).color(f5, f6, f7, f4).endVertex();
+        bufferbuilder.pos(givenWidth, givenY, givenZLevel).color(f1, f2, f3, f).endVertex();
+        bufferbuilder.pos(givenX, givenY, givenZLevel).color(f1, f2, f3, f).endVertex();
+        bufferbuilder.pos(givenX, givenHeight, givenZLevel).color(f5, f6, f7, f4).endVertex();
+        bufferbuilder.pos(givenWidth, givenHeight, givenZLevel).color(f5, f6, f7, f4).endVertex();
         tessellator.draw();
         GlStateManager.shadeModel(7424);
         GlStateManager.disableBlend();
@@ -401,10 +399,10 @@ public class GuiUtils {
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder bufferbuilder = tessellator.getBuffer();
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_COLOR);
-        bufferbuilder.pos((double) givenWidth, (double) givenY, givenZLevel).color(f1, f2, f3, givenAlphaStart).endVertex();
-        bufferbuilder.pos((double) givenX, (double) givenY, givenZLevel).color(f1, f2, f3, givenAlphaStart).endVertex();
-        bufferbuilder.pos((double) givenX, (double) givenHeight, givenZLevel).color(f5, f6, f7, givenAlphaEnd).endVertex();
-        bufferbuilder.pos((double) givenWidth, (double) givenHeight, givenZLevel).color(f5, f6, f7, givenAlphaEnd).endVertex();
+        bufferbuilder.pos(givenWidth, givenY, givenZLevel).color(f1, f2, f3, givenAlphaStart).endVertex();
+        bufferbuilder.pos(givenX, givenY, givenZLevel).color(f1, f2, f3, givenAlphaStart).endVertex();
+        bufferbuilder.pos(givenX, givenHeight, givenZLevel).color(f5, f6, f7, givenAlphaEnd).endVertex();
+        bufferbuilder.pos(givenWidth, givenHeight, givenZLevel).color(f5, f6, f7, givenAlphaEnd).endVertex();
         tessellator.draw();
         GlStateManager.shadeModel(7424);
         GlStateManager.disableBlend();
@@ -594,12 +592,11 @@ public class GuiUtils {
             ScoreObjective scoreobjective = mc.world.getScoreboard().getObjectiveInDisplaySlot(1);
 
             if (scoreobjective != null) {
-                String scoreTitle = scoreobjective.getDisplayName()
+
+                return scoreobjective.getDisplayName()
                         .replace("§", "")
                         .replaceAll("[a-z]", "")
                         .replaceAll("[0-9]", "");
-
-                return scoreTitle;
 
             }
 
@@ -746,7 +743,7 @@ public class GuiUtils {
         double d3 = renderManager.viewerPosX - x;
         double d4 = renderManager.viewerPosY - y;
         double d5 = renderManager.viewerPosZ - z;
-        return (double) MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
+        return MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
     }
 
     public static BufferedImage downloadBanner(String url) {

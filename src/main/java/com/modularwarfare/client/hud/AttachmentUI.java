@@ -20,6 +20,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class AttachmentUI {
 
@@ -44,38 +45,36 @@ public class AttachmentUI {
     public void clientTick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
 
-        switch (event.phase) {
-            case START:
-                if (mc.player != null) {
-                    if (mc.player.world != null) {
-                        if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
-                            if (ClientRenderHooks.getAnimMachine(mc.player).attachmentMode) {
-                                ItemStack gunStack = mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-                                ItemGun gun = (ItemGun) gunStack.getItem();
+        if (Objects.requireNonNull(event.phase) == TickEvent.Phase.START) {
+            if (mc.player != null) {
+                if (mc.player.world != null) {
+                    if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
+                        if (ClientRenderHooks.getAnimMachine(mc.player).attachmentMode) {
+                            ItemStack gunStack = mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+                            ItemGun gun = (ItemGun) gunStack.getItem();
 
-                                if (gun.type.modelSkins != null && gun.type.acceptedAttachments != null) {
-                                    if (!gun.type.acceptedAttachments.isEmpty() || gun.type.modelSkins.length > 1) {
-                                        List<AttachmentPresetEnum> keys = new ArrayList<>(gun.type.acceptedAttachments.keySet());
-                                        if (gun.type.modelSkins.length > 1) {
-                                            keys.add(AttachmentPresetEnum.Skin);
-                                        }
-                                        if ((selectedAttachTypeIndex < keys.size() && selectedAttachTypeIndex >= 0)) {
-                                            selectedAttachEnum = keys.get(selectedAttachTypeIndex);
-                                            List<Integer> slotsAttachments = checkAttach(mc.player, gun.type, selectedAttachEnum);
+                            if (gun.type.modelSkins != null && gun.type.acceptedAttachments != null) {
+                                if (!gun.type.acceptedAttachments.isEmpty() || gun.type.modelSkins.length > 1) {
+                                    List<AttachmentPresetEnum> keys = new ArrayList<>(gun.type.acceptedAttachments.keySet());
+                                    if (gun.type.modelSkins.length > 1) {
+                                        keys.add(AttachmentPresetEnum.Skin);
+                                    }
+                                    if ((selectedAttachTypeIndex < keys.size() && selectedAttachTypeIndex >= 0)) {
+                                        selectedAttachEnum = keys.get(selectedAttachTypeIndex);
+                                        List<Integer> slotsAttachments = checkAttach(mc.player, gun.type, selectedAttachEnum);
 
-                                            sizeAttachTypeIndex = keys.size();
-                                            sizeAttachAttachIndex = slotsAttachments.size();
+                                        sizeAttachTypeIndex = keys.size();
+                                        sizeAttachAttachIndex = slotsAttachments.size();
 
-                                            if (selectedAttachIndex < slotsAttachments.size()) {
-                                                if (selectedAttachIndex != 0) {
-                                                    if (GunType.getAttachment(gunStack, selectedAttachEnum) != mc.player.inventory.getStackInSlot(slotsAttachments.get(selectedAttachIndex))) {
-                                                        ModularWarfare.NETWORK.sendToServer(new PacketGunAddAttachment(slotsAttachments.get(selectedAttachIndex)));
-                                                        selectedAttachIndex = 0;
-                                                    }
+                                        if (selectedAttachIndex < slotsAttachments.size()) {
+                                            if (selectedAttachIndex != 0) {
+                                                if (GunType.getAttachment(gunStack, selectedAttachEnum) != mc.player.inventory.getStackInSlot(slotsAttachments.get(selectedAttachIndex))) {
+                                                    ModularWarfare.NETWORK.sendToServer(new PacketGunAddAttachment(slotsAttachments.get(selectedAttachIndex)));
+                                                    selectedAttachIndex = 0;
                                                 }
-                                            } else {
-                                                selectedAttachIndex = 0;
                                             }
+                                        } else {
+                                            selectedAttachIndex = 0;
                                         }
                                     }
                                 }
@@ -83,7 +82,7 @@ public class AttachmentUI {
                         }
                     }
                 }
-                break;
+            }
         }
     }
 
@@ -121,7 +120,7 @@ public class AttachmentUI {
 
 
                                         GL11.glPushMatrix();
-                                        GL11.glTranslated(width / 2 + 10, height - 42, 0.0D);
+                                        GL11.glTranslated((double) width / 2 + 10, height - 42, 0.0D);
                                         GL11.glRotatef(180, 0, 0, 1);
                                         RenderHelperMW.renderCenteredText(firstArrowAttach(selectedAttachIndex, sizeAttachAttachIndex) + "[V]", 0, 0, 0xFFFFFFFF);
                                         GL11.glPopMatrix();
@@ -156,7 +155,7 @@ public class AttachmentUI {
                     ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
                     AttachmentType attachType = itemAttachment.type;
                     if (attachType.attachmentType == attachmentEnum) {
-                        if (gunType.acceptedAttachments.get(attachType.attachmentType) != null && gunType.acceptedAttachments.get(attachType.attachmentType).size() >= 1) {
+                        if (gunType.acceptedAttachments.get(attachType.attachmentType) != null && !gunType.acceptedAttachments.get(attachType.attachmentType).isEmpty()) {
                             if (gunType.acceptedAttachments.get(attachType.attachmentType).contains(attachType.internalName)) {
                                 attachments.add(i);
                             }

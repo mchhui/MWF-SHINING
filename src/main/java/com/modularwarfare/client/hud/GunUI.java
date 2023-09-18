@@ -7,6 +7,7 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.common.guns.*;
@@ -34,14 +35,14 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
 public class GunUI {
 
-    public static final ResourceLocation crosshair = new ResourceLocation("modularwarfare", "textures/gui/crosshair.png");
+    public static final ResourceLocation CROSS_HAIR = new ResourceLocation("modularwarfare", "textures/gui/crosshair.png");
 
-    public static final ResourceLocation reddot = new ResourceLocation("modularwarfare", "textures/gui/reddot.png");
-    public static final ResourceLocation greendot = new ResourceLocation("modularwarfare", "textures/gui/greendot.png");
-    public static final ResourceLocation bluedot = new ResourceLocation("modularwarfare", "textures/gui/bluedot.png");
+    public static final ResourceLocation RED_DOT = new ResourceLocation("modularwarfare", "textures/gui/reddot.png");
+    public static final ResourceLocation GREEN_DOT = new ResourceLocation("modularwarfare", "textures/gui/greendot.png");
+    public static final ResourceLocation BLUE_DOT = new ResourceLocation("modularwarfare", "textures/gui/bluedot.png");
 
-    public static final ResourceLocation hitMarker = new ResourceLocation("modularwarfare", "textures/gui/hitmarker.png");
-    public static final ResourceLocation hitMarkerHS = new ResourceLocation("modularwarfare", "textures/gui/hitmarkerhs.png");
+    public static final ResourceLocation HIT_MARKER = new ResourceLocation("modularwarfare", "textures/gui/hitmarker.png");
+    public static final ResourceLocation HIT_MARKER_HS = new ResourceLocation("modularwarfare", "textures/gui/hitmarkerhs.png");
 
 
     public static int hitMarkerTime = 0;
@@ -76,12 +77,12 @@ public class GunUI {
                             MinecraftForge.EVENT_BUS.post(ammoCountEvent);
                             if (!ammoCountEvent.isCanceled()) {
                                 GlStateManager.pushMatrix();
-                                RenderPlayerAmmo(width, height);
+                                renderPlayerAmmo(width, height);
                                 GlStateManager.popMatrix();
                             }
                         }
-                        RenderHitMarker(Tessellator.getInstance(), width, height);
-                        RenderPlayerSnap(width, height);
+                        renderHitMarker(Tessellator.getInstance(), width, height);
+                        renderPlayerSnap(width, height);
                         if (mc.getRenderViewEntity().equals(mc.player) && mc.gameSettings.thirdPersonView == 0 && (ClientRenderHooks.isAimingScope || ClientRenderHooks.isAiming) && RenderParameters.collideFrontDistance <= 0.025f) {
                             if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                                 final ItemStack gunStack = mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
@@ -105,16 +106,16 @@ public class GunUI {
                                                 if (itemAttachment.type.sight.modeType.isDot) {
                                                     switch (itemAttachment.type.sight.dotColorType) {
                                                         case RED:
-                                                            mc.renderEngine.bindTexture(reddot);
+                                                            mc.renderEngine.bindTexture(RED_DOT);
                                                             break;
                                                         case BLUE:
-                                                            mc.renderEngine.bindTexture(bluedot);
+                                                            mc.renderEngine.bindTexture(BLUE_DOT);
                                                             break;
                                                         case GREEN:
-                                                            mc.renderEngine.bindTexture(greendot);
+                                                            mc.renderEngine.bindTexture(GREEN_DOT);
                                                             break;
                                                         default:
-                                                            mc.renderEngine.bindTexture(reddot);
+                                                            mc.renderEngine.bindTexture(RED_DOT);
                                                             break;
                                                     }
                                                     GlStateManager.color(1.0f, 1.0f, 1.0f, 1 - alpha);
@@ -153,7 +154,7 @@ public class GunUI {
                             if (ClientRenderHooks.getEnhancedAnimMachine(mc.player).reloading) {
                                 showCrosshair = false;
                             }
-                            if (ClientProxy.gunEnhancedRenderer.controller.INSPECT != 1F) {
+                            if (AnimationController.INSPECT != 1F) {
                                 showCrosshair = false;
                             }
                         }
@@ -174,7 +175,7 @@ public class GunUI {
 
                                 final float accuracy = RayUtil.calculateAccuracyClient((ItemGun) mc.player.getHeldItemMainhand().getItem(), mc.player);
                                 int move = Math.max(0, (int) (accuracy * 3.0f));
-                                mc.renderEngine.bindTexture(crosshair);
+                                mc.renderEngine.bindTexture(CROSS_HAIR);
                                 int xPos = width / 2;
                                 int yPos = height / 2;
 
@@ -208,7 +209,7 @@ public class GunUI {
         GlStateManager.popMatrix();
     }
 
-    private void RenderHitMarker(Tessellator tessellator, int i, int j) {
+    private void renderHitMarker(Tessellator tessellator, int i, int j) {
 
         Minecraft mc = Minecraft.getMinecraft();
 
@@ -216,9 +217,9 @@ public class GunUI {
             GlStateManager.pushMatrix();
 
             if (!hitMarkerheadshot) {
-                mc.renderEngine.bindTexture(hitMarker);
+                mc.renderEngine.bindTexture(HIT_MARKER);
             } else {
-                mc.renderEngine.bindTexture(hitMarkerHS);
+                mc.renderEngine.bindTexture(HIT_MARKER_HS);
 
             }
 
@@ -245,7 +246,7 @@ public class GunUI {
         }
     }
 
-    private void RenderPlayerAmmo(int i, int j) {
+    private void renderPlayerAmmo(int i, int j) {
         Minecraft mc = Minecraft.getMinecraft();
 
         ItemStack stack = mc.player.getHeldItem(EnumHand.MAIN_HAND);
@@ -341,8 +342,8 @@ public class GunUI {
             x += 16 + mc.fontRenderer.getStringWidth(s);
 
             ItemGun gun = (ItemGun) stack.getItem();
-            if (gun.type.getFireMode(stack) != null) {
-                RenderHelperMW.renderCenteredTextWithShadow(String.valueOf(gun.type.getFireMode(stack)), left + 90, j - 50, 0xffffff);
+            if (GunType.getFireMode(stack) != null) {
+                RenderHelperMW.renderCenteredTextWithShadow(String.valueOf(GunType.getFireMode(stack)), left + 90, j - 50, 0xffffff);
             }
 
             GlStateManager.popMatrix();
@@ -397,18 +398,18 @@ public class GunUI {
         x += 16 + mc.fontRenderer.getStringWidth(s);
 
         ItemGun gun = (ItemGun) stack.getItem();
-        if (gun.type.getFireMode(stack) != null) {
-            RenderHelperMW.renderCenteredTextWithShadow(String.valueOf(gun.type.getFireMode(stack)), left + 90, j - 50, 0xffffff);
+        if (GunType.getFireMode(stack) != null) {
+            RenderHelperMW.renderCenteredTextWithShadow(String.valueOf(GunType.getFireMode(stack)), left + 90, j - 50, 0xffffff);
         }
 
         GlStateManager.popMatrix();
     }
 
-    public void RenderPlayerSnap(int i, int j) {
+    public void renderPlayerSnap(int i, int j) {
         GL11.glPushMatrix();
         GlStateManager.enableAlpha();
         GlStateManager.enableBlend();
-        RenderHelperMW.renderImageAlpha(0, 0, new ResourceLocation(ModularWarfare.MOD_ID, "textures/gui/snapshadow.png"), i, j, this.bulletSnapFade);
+        RenderHelperMW.renderImageAlpha(0, 0, new ResourceLocation(ModularWarfare.MOD_ID, "textures/gui/snapshadow.png"), i, j, bulletSnapFade);
         GlStateManager.disableBlend();
         GlStateManager.disableAlpha();
         GL11.glPopMatrix();

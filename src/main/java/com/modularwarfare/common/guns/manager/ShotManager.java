@@ -195,7 +195,7 @@ public class ShotManager {
             } else {
                 gunType.playSound(entityPlayer, WeaponSoundType.Fire, gunStack, entityPlayer);
             }
-            List<Entity> entities = new ArrayList();
+            List<Entity> entities = new ArrayList<>();
             int numBullets = gunType.numBullets;
             ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
             if (bulletItem != null) {
@@ -355,7 +355,7 @@ public class ShotManager {
 
     public static void fireClientSide(EntityPlayer entityPlayer, ItemGun itemGun) {
         if (entityPlayer.world.isRemote) {
-            List<Entity> entities = new ArrayList();
+            List<Entity> entities = new ArrayList<>();
             int numBullets = itemGun.type.numBullets;
             ItemBullet bulletItem = ItemGun.getUsedBullet(entityPlayer.getHeldItemMainhand(), itemGun.type);
             if (bulletItem != null) {

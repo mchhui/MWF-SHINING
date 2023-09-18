@@ -31,9 +31,7 @@ public class ModelBackpack extends MWModelBase {
 
         ObjModelRenderer part = this.staticModel.getPart(modelPart);
         if (part != null) {
-            if (part != null) {
-                part.render(scale * modelScale);
-            }
+            part.render(scale * modelScale);
         }
         GlStateManager.popMatrix();
 

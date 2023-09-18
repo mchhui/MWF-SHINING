@@ -5,7 +5,6 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.HandleKeyEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
@@ -169,14 +168,8 @@ public class KeyInputHandler extends ForgeEvent {
                                 }*/
 
 
-                                if (false) {
-                                    AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
-                                    stateMachine.attachmentMode = !stateMachine.attachmentMode;
-                                    ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
-                                } else {
-                                    ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
-                                    Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
-                                }
+                                ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
+                                Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
                             }
                         }
                     }
@@ -218,7 +211,7 @@ public class KeyInputHandler extends ForgeEvent {
                     break;
 
                 default:
-                    ModularWarfare.LOGGER.warn("Default case called on handleKeyInput for " + keyType.toString());
+                    ModularWarfare.LOGGER.warn("Default case called on handleKeyInput for " + keyType);
                     break;
             }
         }

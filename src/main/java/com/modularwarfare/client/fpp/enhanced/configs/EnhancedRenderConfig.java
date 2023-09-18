@@ -13,9 +13,9 @@ public class EnhancedRenderConfig {
         // TODO Auto-generated constructor stub
     }
 
-    public EnhancedRenderConfig(String modelFileName, int fPS) {
+    public EnhancedRenderConfig(String modelFileName, int fps) {
         this.modelFileName = modelFileName;
-        FPS = fPS;
+        FPS = fps;
     }
 
     public static enum ShowHandArmorType {

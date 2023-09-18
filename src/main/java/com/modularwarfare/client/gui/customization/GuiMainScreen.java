@@ -26,7 +26,7 @@ import java.awt.*;
 
 public class GuiMainScreen extends GuiMWScreen {
 
-    private static final ProjectionHelper projectionHelper = new ProjectionHelper();
+    private static final ProjectionHelper PROJECTION_HELPER = new ProjectionHelper();
     public ItemStack gunStack;
     public ItemGun gun;
     public ContainerGunParts containerGunParts = new ContainerGunParts(0, 10, 10, 100, 170, this);
@@ -38,7 +38,7 @@ public class GuiMainScreen extends GuiMWScreen {
     }
 
     private static Vec3d getMouseVector(float z) {
-        return projectionHelper.unproject(Mouse.getX(), Mouse.getY(), z);
+        return PROJECTION_HELPER.unproject(Mouse.getX(), Mouse.getY(), z);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class GuiMainScreen extends GuiMWScreen {
 
         int dWheel = Mouse.getEventDWheel();
         if (dWheel != 0) {
-            float inc = zoom + dWheel / 120 * 0.01f;
+            float inc = zoom + (float) dWheel / 120 * 0.01f;
             zoom = MathHelper.clamp(inc, 1.0f, 1.75f);
         }
     }
@@ -69,8 +69,8 @@ public class GuiMainScreen extends GuiMWScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(mouseX, mouseY, partialTicks);
 
-        float MENU_ROTATION = (width - mouseX) / 8 - 80;
-        float MENU_ROTATION_2 = (height - mouseY) / 12;
+        float MENU_ROTATION = (float) (width - mouseX) / 8 - 80;
+        float MENU_ROTATION_2 = (float) (height - mouseY) / 12;
         float angleY = (float) (-10 + (-MENU_ROTATION / 2) + (9.0f * Math.sin(RenderParameters.SMOOTH_SWING / 80)));
         float angleX = (float) ((-MENU_ROTATION_2 / 2) + 10 + (6.0f * Math.cos(RenderParameters.SMOOTH_SWING / 80)));
 
@@ -82,7 +82,7 @@ public class GuiMainScreen extends GuiMWScreen {
         GuiUtils.renderRectWithGradient(0, 0, width + (int) backgroundGradientSwing, height + (int) backgroundGradientSwing, 0x33737373, 0x66000000, 0);
         GuiUtils.renderCenteredTextScaledWithOutline("- Weapon Modding -", this.width / 2, 15, 0xFFFFFF, 0xFF262626, 2.5);
         GuiUtils.renderCenteredTextScaled(gun.type.displayName + " - " + gun.type.weaponType.typeName, this.width / 2, 40, 0xFFFFFF, 1);
-        GuiUtils.renderTextScaled("\u00a9 Copyright - ModularWarfare", 3, height - 7, 0xFFFFFFFF, 0.5);
+        GuiUtils.renderTextScaled("© Copyright - ModularWarfare", 3, height - 7, 0xFFFFFFFF, 0.5);
         GuiUtils.renderTextScaled("https://modularmods.net", width - 65, height - 7, 0xFFFFFFFF, 0.5);
         GuiUtils.renderTextScaledWithOutline("EXIT >", width - 90, height - 45, 0xFFFFFFFF, 0xFF262626, 2.5);
         GlStateManager.popMatrix();
@@ -119,7 +119,7 @@ public class GuiMainScreen extends GuiMWScreen {
                 GlStateManager.scale(1.75f, 1.75f, 1.0f);
                 GlStateManager.scale(200F, 200F, 200F);
 
-                IMWModel model = null;
+                IMWModel model;
                 if (gun.type.animationType.equals(WeaponAnimationType.BASIC)) {
                     model = gun.type.model;
                 } else {
@@ -129,7 +129,7 @@ public class GuiMainScreen extends GuiMWScreen {
                 for (String part : this.containerGunParts.partsSets.keySet()) {
                     if (this.containerGunParts.partsSets.get(part)) {
                         ClientRenderHooks.customRenderers[gun.type.id].bindTexture(gun.type.getAssetDir(), gun.type.modelSkins[0].getSkin());
-                        if (part.equalsIgnoreCase("gunModel")) {
+                        if ("gunModel".equalsIgnoreCase(part)) {
                             GlStateManager.pushMatrix();
                             GlStateManager.color(1.0F, 1.0F, 1.0F, 0.15F);
                             GlStateManager.depthMask(false);
@@ -177,7 +177,7 @@ public class GuiMainScreen extends GuiMWScreen {
 
     @Override
     public boolean doesGuiPauseGame() {
-        return true;
+        return super.doesGuiPauseGame();
     }
 
 

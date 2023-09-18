@@ -25,7 +25,7 @@ public class SlotVest extends SlotItemHandler {
     public boolean isItemValid(@Nonnull final ItemStack stack) {
         if (stack.getItem() instanceof ItemSpecialArmor) {
             ItemSpecialArmor armor = (ItemSpecialArmor) stack.getItem();
-            return (armor.armorType == MWArmorType.Vest);
+            return (armor.armorType == MWArmorType.VEST);
         }
         return false;
     }

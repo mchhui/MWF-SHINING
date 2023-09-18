@@ -302,7 +302,7 @@ public class PacketGunReload extends PacketBase {
                 WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, offhandedReload, loadOnly, false, preReloadEvent.getReloadTime(), loadingCount);
                 MinecraftForge.EVENT_BUS.post(postReloadEvent);
                 ServerTickHandler.playerReloadCooldown.put(entityPlayer.getUniqueID(), preReloadEvent.getReloadTime());
-                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : (postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full)).i;
+                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : (postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL)).i;
                 ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, postReloadEvent.getReloadTime(), postReloadEvent.getReloadCount(), reloadType), entityPlayer);
 
 				/*
@@ -490,7 +490,7 @@ public class PacketGunReload extends PacketBase {
             } else if (!postReloadEvent.isLoadOnly() && !postReloadEvent.isUnload()) {
                 gunType.playSound(entityPlayer, WeaponSoundType.Reload, gunStack);
             }
-            int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full).i;
+            int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL).i;
             ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, reloadTime, postReloadEvent.getReloadCount(), reloadType), entityPlayer);
             ServerTickHandler.playerReloadCooldown.put(entityPlayer.getUniqueID(), reloadTime);
         } else {
@@ -653,7 +653,7 @@ public class PacketGunReload extends PacketBase {
 
                 WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, offhandedReload, loadOnly, false, preReloadEvent.getReloadTime(), loadingCount);
                 MinecraftForge.EVENT_BUS.post(postReloadEvent);
-                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : (postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full)).i;
+                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : (postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL)).i;
                 ServerTickHandler.playerReloadCooldown.put(entityPlayer.getUniqueID(), preReloadEvent.getReloadTime());
                 ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, loadingItemStack.copy(), postReloadEvent.getReloadCount()));
                 ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(loadingItemStack), entityPlayer);
@@ -679,7 +679,7 @@ public class PacketGunReload extends PacketBase {
                         gunType.playSound(entityPlayer, WeaponSoundType.Unload, gunStack);
                     */
 
-                    int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full).i;
+                    int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL).i;
                     ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, true, bulletCount));
                     ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(UNLOAD_EMPTY), entityPlayer);
                     ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, 0, bulletCount, reloadType), entityPlayer);
@@ -857,7 +857,7 @@ public class PacketGunReload extends PacketBase {
             /** Post Reload */
             WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, offhandedReload, multiMagReload, loadOnly, false, reloadTime);
             MinecraftForge.EVENT_BUS.post(postReloadEvent);
-            int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full).i;
+            int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL).i;
             
             /*
             if (postReloadEvent.isLoadOnly()) {
@@ -893,7 +893,7 @@ public class PacketGunReload extends PacketBase {
                 }
                 */
 
-                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full).i;
+                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL).i;
                 ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, true));
                 ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(UNLOAD_EMPTY), entityPlayer);
                 ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, 0, 1, reloadType), entityPlayer);

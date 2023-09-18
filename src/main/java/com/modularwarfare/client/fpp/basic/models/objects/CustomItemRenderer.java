@@ -26,8 +26,8 @@ public class CustomItemRenderer {
     public float g = 1;
     public float b = 1;
     public float a = 1;
-    private HashMap<String, ResourceLocation> cachedSkins = new HashMap<String, ResourceLocation>();
-    private ArrayList<String> cachedBadSkins = new ArrayList<String>();
+    private HashMap<String, ResourceLocation> cachedSkins = new HashMap<>();
+    private ArrayList<String> cachedBadSkins = new ArrayList<>();
 
     public void renderItem(CustomItemRenderType type, EnumHand hand, ItemStack item, Object... data) {
     }
@@ -62,9 +62,8 @@ public class CustomItemRenderer {
             if (cachedSkins.containsKey(type + "_" + fileName)) {
                 renderEngine.bindTexture(cachedSkins.get(type + "_" + fileName));
                 return;
-            } else if (renderEngine.getTexture(resourceLocation) == null) {
-                ITextureObject itextureobject = new SimpleTexture(resourceLocation);
-                itextureobject.loadTexture(Minecraft.getMinecraft().getResourceManager());
+            } else {
+                renderEngine.getTexture(resourceLocation);
             }
 
             renderEngine.bindTexture(resourceLocation);

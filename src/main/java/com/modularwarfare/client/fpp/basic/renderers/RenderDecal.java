@@ -45,7 +45,7 @@ public class RenderDecal extends Render<EntityDecal> {
         }
 
         if (var1 instanceof EntityBulletHole) {
-            transparency = var1.getAgeRatio() * 1.0F;
+            transparency = var1.getAgeRatio();
         }
 
         switch (var1.getSideID()) {

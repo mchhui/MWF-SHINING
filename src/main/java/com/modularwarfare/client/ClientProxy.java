@@ -107,6 +107,7 @@ import org.lwjgl.opengl.GL11;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -149,7 +150,7 @@ public class ClientProxy extends CommonProxy {
     private static int lastBobbingParm = 1;
 
     public KillFeedManager getKillChatManager() {
-        return this.killFeedManager;
+        return killFeedManager;
     }
 
     @Override
@@ -231,23 +232,23 @@ public class ClientProxy extends CommonProxy {
         new ClientGunHandler();
         new RenderGuiHandler();
 
-        this.renderHooks = new ClientRenderHooks();
-        MinecraftForge.EVENT_BUS.register(this.renderHooks);
+        renderHooks = new ClientRenderHooks();
+        MinecraftForge.EVENT_BUS.register(renderHooks);
 
-        this.scopeUtils = new ScopeUtils();
-        MinecraftForge.EVENT_BUS.register(this.scopeUtils);
+        scopeUtils = new ScopeUtils();
+        MinecraftForge.EVENT_BUS.register(scopeUtils);
 
-        this.flashImage = new FlashSystem();
-        MinecraftForge.EVENT_BUS.register(this.flashImage);
+        flashImage = new FlashSystem();
+        MinecraftForge.EVENT_BUS.register(flashImage);
 
-        this.attachmentUI = new AttachmentUI();
-        MinecraftForge.EVENT_BUS.register(this.attachmentUI);
+        attachmentUI = new AttachmentUI();
+        MinecraftForge.EVENT_BUS.register(attachmentUI);
 
-        this.gunUI = new GunUI();
-        MinecraftForge.EVENT_BUS.register(this.gunUI);
+        gunUI = new GunUI();
+        MinecraftForge.EVENT_BUS.register(gunUI);
 
-        this.killFeedManager = new KillFeedManager();
-        MinecraftForge.EVENT_BUS.register(new KillFeedRender(this.killFeedManager));
+        killFeedManager = new KillFeedManager();
+        MinecraftForge.EVENT_BUS.register(new KillFeedRender(killFeedManager));
 
         WeaponAnimations.registerAnimation("rifle", new AnimationRifle());
         WeaponAnimations.registerAnimation("rifle2", new AnimationRifle2());
@@ -387,11 +388,11 @@ public class ClientProxy extends CommonProxy {
             return in;
             //Otherwise, we need to slightly rearrange the wording of the string for it to make sense
         else if (split.length > 1) {
-            String out = split[split.length - 1];
+            StringBuilder out = new StringBuilder(split[split.length - 1]);
             for (int i = split.length - 2; i >= 0; i--) {
-                out = split[i] + "." + out;
+                out.insert(0, split[i] + ".");
             }
-            return out;
+            return out.toString();
         }
         return in;
     }
@@ -546,7 +547,7 @@ public class ClientProxy extends CommonProxy {
                         Path soundsFile = Paths.get(assetsDir + "/sounds.json");
 
                         boolean soundsExists = Files.exists(soundsFile);
-                        boolean shouldCreate = soundsExists ? replace : true;
+                        boolean shouldCreate = !soundsExists || replace;
                         if (shouldCreate) {
                             if (!soundsExists)
                                 Files.createFile(soundsFile);
@@ -564,7 +565,7 @@ public class ClientProxy extends CommonProxy {
                                 }
                             }
                             jsonEntries.add("}");
-                            Files.write(soundsFile, jsonEntries, Charset.forName("UTF-8"));
+                            Files.write(soundsFile, jsonEntries, StandardCharsets.UTF_8);
                         }
                     }
                 }
@@ -630,7 +631,7 @@ public class ClientProxy extends CommonProxy {
                                     jsonEntries.add(String.format(format, type.internalName, type.displayName));
                                 }
                             }
-                            Files.write(langPath, jsonEntries, Charset.forName("UTF-8"));
+                            Files.write(langPath, jsonEntries, StandardCharsets.UTF_8);
                         }
                     }
                 }
@@ -897,7 +898,7 @@ public class ClientProxy extends CommonProxy {
     public void playHitmarker(boolean headshot) {
         if (ModConfig.INSTANCE.hud.hitmarkers) {
             Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getRecord(ClientProxy.modSounds.get("hitmarker"), 1f, 4f));
-            ClientProxy.gunUI.addHitMarker(headshot);
+            GunUI.addHitMarker(headshot);
         }
     }
 

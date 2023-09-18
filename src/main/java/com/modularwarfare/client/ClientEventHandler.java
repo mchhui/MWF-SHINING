@@ -37,7 +37,7 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public void renderWorld(RenderWorldLastEvent event) {
-        InstantBulletRenderer.RenderAllTrails(event.getPartialTicks());
+        InstantBulletRenderer.renderAllTrails(event.getPartialTicks());
     }
 
     @SubscribeEvent
@@ -74,46 +74,46 @@ public class ClientEventHandler {
                 }});
             }
 
-            if (currentSound.toString().equals("minecraft:entity.generic.explode")) {
+            if ("minecraft:entity.generic.explode".equals(currentSound.toString())) {
                 event.setResultSound(null);
             }
-            if (currentSound.toString().equals("minecraft:block.grass.step")) {
+            if ("minecraft:block.grass.step".equals(currentSound.toString())) {
                 if (mc.player.isSprinting()) {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_GRASS_SPRINT, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 } else {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_GRASS_WALK, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 }
-            } else if (currentSound.toString().equals("minecraft:block.stone.step")) {
+            } else if ("minecraft:block.stone.step".equals(currentSound.toString())) {
                 if (mc.player.isSprinting()) {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_STONE_SPRINT, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 } else {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_STONE_WALK, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 }
-            } else if (currentSound.toString().equals("minecraft:block.gravel.step")) {
+            } else if ("minecraft:block.gravel.step".equals(currentSound.toString())) {
                 if (mc.player.isSprinting()) {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_GRAVEL_SPRINT, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 } else {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_GRAVEL_WALK, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 }
-            } else if (currentSound.toString().equals("minecraft:block.metal.step")) {
+            } else if ("minecraft:block.metal.step".equals(currentSound.toString())) {
                 if (mc.player.isSprinting()) {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_METAL_SPRINT, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 } else {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_METAL_WALK, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 }
-            } else if (currentSound.toString().equals("minecraft:block.wood.step")) {
+            } else if ("minecraft:block.wood.step".equals(currentSound.toString())) {
                 if (mc.player.isSprinting()) {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_WOOD_SPRINT, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 } else {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_WOOD_WALK, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 }
-            } else if (currentSound.toString().equals("minecraft:block.sand.step")) {
+            } else if ("minecraft:block.sand.step".equals(currentSound.toString())) {
                 if (mc.player.isSprinting()) {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_SAND_SPRINT, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 } else {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_SAND_WALK, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 }
-            } else if (currentSound.toString().equals("minecraft:block.snow.step")) {
+            } else if ("minecraft:block.snow.step".equals(currentSound.toString())) {
                 if (mc.player.isSprinting()) {
                     event.setResultSound(new PositionedSoundRecord(ModSounds.STEP_SNOW_SPRINT, SoundCategory.BLOCKS, (FlashSystem.flashValue > 0) ? soundVolume * 0.05f : soundVolume, (FlashSystem.flashValue > 0) ? 1.0f - ((float) FlashSystem.flashValue / 50) : 1.0f, event.getSound().getXPosF(), event.getSound().getYPosF(), event.getSound().getZPosF()));
                 } else {

@@ -26,17 +26,17 @@ public class InstantBulletRenderer {
     private static TextureManager textureManager;
     private static ArrayList<InstantShotTrail> trails = new ArrayList<>();
 
-    public static void AddTrail(InstantShotTrail trail) {
+    public static void addTrail(InstantShotTrail trail) {
         trails.add(trail);
     }
 
-    public static void RenderAllTrails(float partialTicks) {
+    public static void renderAllTrails(float partialTicks) {
         for (InstantShotTrail trail : trails) {
-            trail.Render(partialTicks);
+            trail.render(partialTicks);
         }
     }
 
-    public static void UpdateAllTrails() {
+    public static void updateAllTrails() {
         for (int i = trails.size() - 1; i >= 0; i--) {
             if (trails.get(i).Update()) {
                 trails.remove(i);
@@ -104,7 +104,7 @@ public class InstantBulletRenderer {
             return (ticksExisted) * bulletSpeed >= distanceToTarget - length / 4;
         }
 
-        public void Render(float partialTicks) {
+        public void render(float partialTicks) {
             float x_ = OpenGlHelper.lastBrightnessX;
             float y_ = OpenGlHelper.lastBrightnessY;
 

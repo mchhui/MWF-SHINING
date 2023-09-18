@@ -14,6 +14,7 @@ import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.hud.GunUI;
 import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.common.armor.ArmorType;
@@ -59,12 +60,13 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.glu.Project;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 
 public class ClientRenderHooks extends ForgeEvent {
 
-    public static final ResourceLocation grenade_smoke = new ResourceLocation("modularwarfare", "textures/particles/smoke.png");
+    public static final ResourceLocation GRENADE_SMOKE = new ResourceLocation("modularwarfare", "textures/particles/smoke.png");
     public static HashMap<EntityLivingBase, AnimStateMachine> weaponBasicAnimations = new HashMap<EntityLivingBase, AnimStateMachine>();
     public static IdentityHashMap<EntityLivingBase, EnhancedStateMachine> weaponEnhancedAnimations = new IdentityHashMap<EntityLivingBase, EnhancedStateMachine>();
     public static CustomItemRenderer[] customRenderers = new CustomItemRenderer[20];
@@ -112,7 +114,7 @@ public class ClientRenderHooks extends ForgeEvent {
         switch (event.phase) {
             case START: {
                 RenderParameters.smoothing = event.renderTickTime;
-                SetPartialTick(event.renderTickTime);
+                setPartialTick(event.renderTickTime);
                 if (!Minecraft.getMinecraft().getFramebuffer().isStencilEnabled()) {
                     Minecraft.getMinecraft().getFramebuffer().enableStencil();
                 }
@@ -121,8 +123,8 @@ public class ClientRenderHooks extends ForgeEvent {
             case END: {
                 if (mc.player == null || mc.world == null)
                     return;
-                if (ClientProxy.gunUI.hitMarkerTime > 0)
-                    ClientProxy.gunUI.hitMarkerTime--;
+                if (GunUI.hitMarkerTime > 0)
+                    GunUI.hitMarkerTime--;
                 ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(mc.player.getName(), isAiming || isAimingScope));
                 break;
             }
@@ -164,14 +166,13 @@ public class ClientRenderHooks extends ForgeEvent {
     @SubscribeEvent
     public void onWorldRenderLast(RenderWorldLastEvent event) {
         //For each entity loaded, process with layers
-        for (Object o : mc.world.getLoadedEntityList()) {
-            Entity givenEntity = (Entity) o;
+        for (Entity o : mc.world.getLoadedEntityList()) {
             //If entity is smoke grenade, render smoke
-            if (givenEntity instanceof EntitySmokeGrenade) {
-                EntitySmokeGrenade smokeGrenade = (EntitySmokeGrenade) givenEntity;
+            if (o instanceof EntitySmokeGrenade) {
+                EntitySmokeGrenade smokeGrenade = (EntitySmokeGrenade) o;
                 if (smokeGrenade.exploded) {
                     if (smokeGrenade.smokeTime <= 220) {
-                        RenderHelperMW.renderSmoke(grenade_smoke, smokeGrenade.posX, smokeGrenade.posY + 1, smokeGrenade.posZ, partialTicks, 600, 600, "0xFFFFFF", 0.8f);
+                        RenderHelperMW.renderSmoke(GRENADE_SMOKE, smokeGrenade.posX, smokeGrenade.posY + 1, smokeGrenade.posZ, partialTicks, 600, 600, "0xFFFFFF", 0.8f);
                     }
                 }
             }
@@ -196,17 +197,15 @@ public class ClientRenderHooks extends ForgeEvent {
             BaseItem item = ((BaseItem) stack.getItem());
 
             if (hand != EnumHand.MAIN_HAND) {
-                result = true;
-                return result;
+                return true;
             }
 
             if (type.id > customRenderers.length)
-                return result;
+                return false;
 
-            if (item.render3d && customRenderers[type.id] != null && type.hasModel() && !type.getAssetDir().equalsIgnoreCase("attachments")) {
+            if (item.render3d && customRenderers[type.id] != null && type.hasModel() && !"attachments".equalsIgnoreCase(type.getAssetDir())) {
                 result = true;
 
-                float partialTicks = partialTicksTime;
                 EntityRenderer renderer = mc.entityRenderer;
                 float farPlaneDistance = mc.gameSettings.renderDistanceChunks * 16F;
                 ItemRenderer itemRenderer = mc.getItemRenderer();
@@ -236,11 +235,11 @@ public class ClientRenderHooks extends ForgeEvent {
 
                 if (mc.gameSettings.thirdPersonView == 0 && !flag && !mc.gameSettings.hideGUI && !mc.playerController.isSpectator() && mc.getRenderViewEntity().equals(mc.player)) {
                     renderer.enableLightmap();
-                    float f1 = 1.0F - (prevEquippedProgress + (equippedProgress - prevEquippedProgress) * partialTicks);
+                    float f1 = 1.0F - (prevEquippedProgress + (equippedProgress - prevEquippedProgress) * partialTicksTime);
                     EntityPlayerSP entityplayersp = this.mc.player;
-                    float f2 = entityplayersp.getSwingProgress(partialTicks);
-                    float f3 = entityplayersp.prevRotationPitch + (entityplayersp.rotationPitch - entityplayersp.prevRotationPitch) * partialTicks;
-                    float f4 = entityplayersp.prevRotationYaw + (entityplayersp.rotationYaw - entityplayersp.prevRotationYaw) * partialTicks;
+                    float f2 = entityplayersp.getSwingProgress(partialTicksTime);
+                    float f3 = entityplayersp.prevRotationPitch + (entityplayersp.rotationPitch - entityplayersp.prevRotationPitch) * partialTicksTime;
+                    float f4 = entityplayersp.prevRotationYaw + (entityplayersp.rotationYaw - entityplayersp.prevRotationYaw) * partialTicksTime;
 
                     //Setup lighting
                     GlStateManager.disableLighting();
@@ -256,8 +255,8 @@ public class ClientRenderHooks extends ForgeEvent {
 
 
                     //Do hand rotations
-                    float f5 = entityplayersp.prevRenderArmPitch + (entityplayersp.renderArmPitch - entityplayersp.prevRenderArmPitch) * partialTicks;
-                    float f6 = entityplayersp.prevRenderArmYaw + (entityplayersp.renderArmYaw - entityplayersp.prevRenderArmYaw) * partialTicks;
+                    float f5 = entityplayersp.prevRenderArmPitch + (entityplayersp.renderArmPitch - entityplayersp.prevRenderArmPitch) * partialTicksTime;
+                    float f6 = entityplayersp.prevRenderArmYaw + (entityplayersp.renderArmYaw - entityplayersp.prevRenderArmYaw) * partialTicksTime;
                     GlStateManager.rotate((entityplayersp.rotationPitch - f5) * 0.1F, 1.0F, 0.0F, 0.0F);
                     GlStateManager.rotate((entityplayersp.rotationYaw - f6) * 0.1F, 0.0F, 1.0F, 0.0F);
 
@@ -281,10 +280,10 @@ public class ClientRenderHooks extends ForgeEvent {
                     GlStateManager.scale(0.4F, 0.4F, 0.4F);
 
                     if (debug) {
-                        System.out.println(new float[]{
+                        System.out.println(Arrays.toString(new float[]{
                                 f1, f2, f3, f4, f5, f6, f7, f8, f9,
                                 f10, f11
-                        });
+                        }));
                     }
 
                     if (!ScopeUtils.isIndsideGunRendering) {
@@ -328,7 +327,7 @@ public class ClientRenderHooks extends ForgeEvent {
                 GL11.glDepthRange(0, 1);
                 if (mc.gameSettings.thirdPersonView == 0 && !flag) {
                     if (!ScopeUtils.isIndsideGunRendering) {
-                        itemRenderer.renderOverlays(partialTicks);
+                        itemRenderer.renderOverlays(partialTicksTime);
                     }
                 }
 
@@ -377,18 +376,14 @@ public class ClientRenderHooks extends ForgeEvent {
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, GL11.GL_NONE);
     }
 
-    public void SetPartialTick(float dT) {
+    public void setPartialTick(float dT) {
         partialTicks = dT;
     }
 
     public void hidePlayerModel(AbstractClientPlayer clientPlayer, RenderPlayer renderplayer) {
         //mwf愚蠢的隐藏双层
         if (ModConfig.INSTANCE.client.hideSecondSkinWhenDressed) {
-            if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()) {
-                renderplayer.getMainModel().bipedHeadwear.isHidden = false;
-            } else {
-                renderplayer.getMainModel().bipedHeadwear.isHidden = true;
-            }
+            renderplayer.getMainModel().bipedHeadwear.isHidden = !clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty();
             if (clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()) {
                 renderplayer.getMainModel().bipedLeftArmwear.isHidden = false;
                 renderplayer.getMainModel().bipedRightArmwear.isHidden = false;

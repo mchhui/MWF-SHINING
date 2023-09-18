@@ -101,10 +101,10 @@ public class DevGui extends Gui {
             //Hand debug
             String movingArmState = "Moving Arm State - " + RenderGunStatic.getMovingArmState(gunModel, anim);
             String staticArmState = "Static Arm State - " + RenderGunStatic.getStaticArmState(gunModel, anim);
-            String animTilt = "Tilt State - " + Boolean.toString(anim.isReloadState(StateType.Tilt));
-            String animUnload = "Unload State - " + Boolean.toString(anim.isReloadState(StateType.Unload));
-            String animLoad = "Load State - " + Boolean.toString(anim.isReloadState(StateType.Load));
-            String animUntilt = "Untilt State - " + Boolean.toString(anim.isReloadState(StateType.Untilt));
+            String animTilt = "Tilt State - " + Boolean.toString(anim.isReloadState(StateType.TILT));
+            String animUnload = "Unload State - " + Boolean.toString(anim.isReloadState(StateType.UNLOAD));
+            String animLoad = "Load State - " + Boolean.toString(anim.isReloadState(StateType.LOAD));
+            String animUntilt = "Untilt State - " + Boolean.toString(anim.isReloadState(StateType.UNTILT));
             GL11.glPushMatrix();
             {
                 GL11.glScalef(textScale, textScale, textScale);

@@ -63,7 +63,7 @@ public class ItemSpecialArmor extends BaseItem {
     }
 
     public boolean getShareTag() {
-        return true;
+        return super.getShareTag();
     }
 }
 

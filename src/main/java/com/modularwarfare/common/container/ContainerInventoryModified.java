@@ -72,8 +72,7 @@ public class ContainerInventoryModified extends Container {
                 @Override
                 public boolean canTakeStack(final EntityPlayer playerIn) {
                     final ItemStack itemstack = this.getStack();
-                    return !itemstack.isEmpty() && !playerIn.isCreative() && EnchantmentHelper.hasBindingCurse(itemstack) ? false
-                            : super.canTakeStack(playerIn);
+                    return (itemstack.isEmpty() || playerIn.isCreative() || !EnchantmentHelper.hasBindingCurse(itemstack)) && super.canTakeStack(playerIn);
                 }
 
                 @Override
@@ -98,7 +97,7 @@ public class ContainerInventoryModified extends Container {
         // This is for the OFFHAND MouseHover
         this.addSlotToContainer(new Slot(playerInv, 40, 76, 62) {
             @Override
-            @Nullable
+            @Nullable // TODO error NotNull
             @SideOnly(Side.CLIENT)
             public String getSlotTexture() {
                 return "minecraft:items/empty_armor_slot_shield";
@@ -148,10 +147,7 @@ public class ContainerInventoryModified extends Container {
                                     if (itemBackpack.type.allowSmallerBackpackStorage) {
                                         final int otherBackpackSize = ((ItemBackpack) stack.getItem()).type.size;
                                         final int thisBackpackSize = backpackInvent.getSlots();
-                                        if (otherBackpackSize <= thisBackpackSize) {
-                                            return true;
-                                        }
-                                        return false;
+                                        return otherBackpackSize <= thisBackpackSize;
                                     } else {
                                         return false;
                                     }

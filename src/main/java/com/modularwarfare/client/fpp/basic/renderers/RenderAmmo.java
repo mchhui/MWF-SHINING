@@ -75,7 +75,7 @@ public class RenderAmmo extends CustomItemRenderer {
                     float modelScale = this.modelScale;
                     //System.out.println(this.modelScale);
                     float rotateX = 0; //ROLL LEFT-RIGHT (0 Total ADS Default)
-                    float rotateY = 46F - 1F * adsSwitch; //ANGLE LEFT-RIGHT (45 Total ADS Default)
+                    float rotateY = 46F - adsSwitch; //ANGLE LEFT-RIGHT (45 Total ADS Default)
                     float rotateZ = 1 + (-1.0F * adsSwitch); //ANGLE UP-DOWN (0 Total ADS Default)
                     Vector3f translateXYZ = new Vector3f(0.05F + -1.35F, 0.834F - -0.064F * adsSwitch, -1.05F - 0.35F * adsSwitch); //(-1.3F, 0.898F, -1.4F Total ADS Defaults)
 

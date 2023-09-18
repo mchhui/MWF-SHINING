@@ -65,17 +65,17 @@ public class AnimationSniperBottom extends WeaponAnimation {
     public ArrayList<StateEntry> getReloadStates(ReloadType reloadType, int reloadCount) {
         ArrayList<StateEntry> states = new ArrayList<StateEntry>();
 
-        states.add(new StateEntry(StateType.Tilt, 0.15f, 0f, MathType.Add));
-        if (reloadType == ReloadType.Unload || reloadType == ReloadType.Full)
-            states.add(new StateEntry(StateType.Unload, 0.15f, 0f, MathType.Add));
-        if (reloadType == ReloadType.Load || reloadType == ReloadType.Full)
-            states.add(new StateEntry(StateType.Load, 0.15f, 1f, MathType.Sub, reloadCount));
+        states.add(new StateEntry(StateType.TILT, 0.15f, 0f, MathType.ADD));
+        if (reloadType == ReloadType.UNLOAD || reloadType == ReloadType.FULL)
+            states.add(new StateEntry(StateType.UNLOAD, 0.15f, 0f, MathType.ADD));
+        if (reloadType == ReloadType.LOAD || reloadType == ReloadType.FULL)
+            states.add(new StateEntry(StateType.LOAD, 0.15f, 1f, MathType.SUB, reloadCount));
 
-        states.add(new StateEntry(StateType.Untilt, 0.15f, 1f, MathType.Sub));
-        states.add(new StateEntry(StateType.MoveHands, 0.10f, 0f, MathType.Add));
-        states.add(new StateEntry(StateType.Charge, 0.10f, 1f, MathType.Sub));
-        states.add(new StateEntry(StateType.Uncharge, 0.10f, 0f, MathType.Add));
-        states.add(new StateEntry(StateType.ReturnHands, 0.10f, 1f, MathType.Sub));
+        states.add(new StateEntry(StateType.UNTILT, 0.15f, 1f, MathType.SUB));
+        states.add(new StateEntry(StateType.MOVE_HANDS, 0.10f, 0f, MathType.ADD));
+        states.add(new StateEntry(StateType.CHARGE, 0.10f, 1f, MathType.SUB));
+        states.add(new StateEntry(StateType.UNCHARGE, 0.10f, 0f, MathType.ADD));
+        states.add(new StateEntry(StateType.RETURN_HANDS, 0.10f, 1f, MathType.SUB));
         return states;
     }
 
@@ -83,10 +83,10 @@ public class AnimationSniperBottom extends WeaponAnimation {
     public ArrayList<StateEntry> getShootStates(ModelGun gunModel, GunType gunType) {
         ArrayList<StateEntry> states = new ArrayList<StateEntry>();
         if (gunType.weaponType == WeaponType.BoltSniper) {
-            states.add(new StateEntry(StateType.MoveHands, 0.15f, 0f, MathType.Add));
-            states.add(new StateEntry(StateType.Charge, 0.35f, 1f, MathType.Sub));
-            states.add(new StateEntry(StateType.Uncharge, 0.35f, 0f, MathType.Add));
-            states.add(new StateEntry(StateType.ReturnHands, 0.15f, 1f, MathType.Sub));
+            states.add(new StateEntry(StateType.MOVE_HANDS, 0.15f, 0f, MathType.ADD));
+            states.add(new StateEntry(StateType.CHARGE, 0.35f, 1f, MathType.SUB));
+            states.add(new StateEntry(StateType.UNCHARGE, 0.35f, 0f, MathType.ADD));
+            states.add(new StateEntry(StateType.RETURN_HANDS, 0.15f, 1f, MathType.SUB));
         }
         return states;
     }

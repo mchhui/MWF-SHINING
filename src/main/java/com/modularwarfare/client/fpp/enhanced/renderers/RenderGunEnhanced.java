@@ -83,7 +83,7 @@ import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 public class RenderGunEnhanced extends CustomItemRenderer {
     public static final float PI = 3.14159265f;
     public static final int BULLET_MAX_RENDER = 256;
-    public static final HashSet<String> DEFAULT_EXCEPT = new HashSet<String>();
+    public static final HashSet<String> DEFAULT_EXCEPT = new HashSet<>();
     private static final String[] LEFT_HAND_PART = new String[]{
             "leftArmModel", "leftArmLayerModel"
     };
@@ -102,16 +102,14 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     private static float theata90 = (float) Math.toRadians(90);
 
     static {
-        for (String str : ModConfig.INSTANCE.guns.anim_guns_show_default_objects) {
-            DEFAULT_EXCEPT.add(str);
-        }
+        DEFAULT_EXCEPT.addAll(ModConfig.INSTANCE.guns.anim_guns_show_default_objects);
         for (int i = 0; i < BULLET_MAX_RENDER; i++) {
             DEFAULT_EXCEPT.add("bulletModel_" + i);
         }
     }
 
     public AnimationController controller = new AnimationController(null, null);
-    public HashMap<String, AnimationController> otherControllers = new HashMap<String, AnimationController>();
+    public HashMap<String, AnimationController> otherControllers = new HashMap<>();
     public FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(16);
     private ShortBuffer pixelBuffer = null;
     private int lastWidth;
@@ -406,14 +404,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             GlStateManager.blendFunc(SourceFactor.ONE, DestFactor.ZERO);
         }
         float worldScale = 1;
-        float rotateXRendering = rotateX;
-        CROSS_ROTATE = rotateXRendering;
+        CROSS_ROTATE = rotateX;
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         color(1, 1, 1, 1f);
 
         boolean applySprint = controller.SPRINT > 0.1 && controller.INSPECT >= 1;
         boolean isRenderHand0 = ScopeUtils.isRenderHand0 || !OptifineHelper.isShadersEnabled();
-        HashSet<String> exceptParts = new HashSet<String>();
+        HashSet<String> exceptParts = new HashSet<>();
         if (isRenderHand0) {
             exceptParts.addAll(config.defaultHidePart);
             //exceptParts.addAll(DEFAULT_EXCEPT);
@@ -1394,7 +1391,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if (Minecraft.getMinecraft().world != null) {
             if (isAiming) {
                 GlStateManager.colorMask(mask, mask, mask, mask);
-                renderWorldOntoScope(attachmentType, modelAttachment, worldScale, false);
+                renderWorldOntoScope(attachmentType, modelAttachment, worldScale);
                 GlStateManager.colorMask(true, true, true, true);
             }
         }
@@ -1594,7 +1591,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 GlStateManager.colorMask(true, true, true, false);
                 GlStateManager.disableBlend();
                 //忘记这玩意有什么用了 好像和镜面的光照渲染有关系
-                renderWorldOntoScope(attachmentType, modelAttachment, worldScale, false);
+                renderWorldOntoScope(attachmentType, modelAttachment, worldScale);
                 GlStateManager.enableBlend();
                 GlStateManager.colorMask(true, true, true, true);
 
@@ -1636,10 +1633,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     }
 
     @SideOnly(Side.CLIENT)
-    private void renderWorldOntoScope(AttachmentType type, ModelAttachment modelAttachment, float worldScale, boolean isLightOn) {
+    private void renderWorldOntoScope(AttachmentType type, ModelAttachment modelAttachment, float worldScale) {
         GL11.glPushMatrix();
 
-        if (isLightOn) {
+        if (false) {
             renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/white.png"));
             GL11.glDisable(2896);
             Minecraft.getMinecraft().entityRenderer.disableLightmap();

@@ -25,13 +25,9 @@ public class GuiQuestButton extends GuiButton {
         boolean pressed = super.mousePressed(mc, mouseX - this.parentGui.getGuiLeft(), mouseY);
         if (pressed) {
             try {
-                Class classz = Class.forName("noppes.npcs.client.gui.player.GuiQuestLog");
+                Class<?> classz = Class.forName("noppes.npcs.client.gui.player.GuiQuestLog");
                 mc.displayGuiScreen((GuiScreen) classz.newInstance());
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 e.printStackTrace();
             }
         }

@@ -106,7 +106,7 @@ public class PacketGunTrail extends PacketBase {
         double dy = this.dirY * this.range;
         double dz = this.dirZ * this.range;
         final Vector3f vec = new Vector3f((float) posX, (float) posY, (float) posZ);
-        InstantBulletRenderer.AddTrail(new InstantBulletRenderer.InstantShotTrail(ModularWarfare.gunTypes.get(gunType).type, vec, new Vector3f((float) (vec.x + dx + motionX), (float) (vec.y + dy), (float) (vec.z + dz + motionZ)), this.bulletspeed, this.isPunched));
+        InstantBulletRenderer.addTrail(new InstantBulletRenderer.InstantShotTrail(ModularWarfare.gunTypes.get(gunType).type, vec, new Vector3f((float) (vec.x + dx + motionX), (float) (vec.y + dy), (float) (vec.z + dz + motionZ)), this.bulletspeed, this.isPunched));
     }
 
 }

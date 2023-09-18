@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 
 public class FlashSystem {
 
-    public static final int quality = 1024;
+    public static final int QUALITY = 1024;
     public static int FLASHED_TEX;
     public static boolean hasTookScreenshot = false;
     public static int flashValue;
@@ -29,7 +29,7 @@ public class FlashSystem {
 
         FLASHED_TEX = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, FLASHED_TEX);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, quality, quality, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, QUALITY, QUALITY, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
 

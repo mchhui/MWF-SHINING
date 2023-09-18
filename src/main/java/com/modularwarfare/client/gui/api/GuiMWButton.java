@@ -118,7 +118,7 @@ public class GuiMWButton extends GuiButton {
                 if (fade <= 0) {
                     fade = 0;
                 } else {
-                    fade -= .2;
+                    fade -= .2F;
                 }
 
                 if (xMovement < 3) {
@@ -144,14 +144,14 @@ public class GuiMWButton extends GuiButton {
                 } else {
                     GuiUtils.renderColor(0xFFFFFF);
                 }
-                GuiUtils.renderImage(x + width / 2 - 8, y + (height - 8) - 10, iconTexture, 16.0D, 16.0D);
+                GuiUtils.renderImage(x + (double) width / 2 - 8, y + (height - 8) - 10, iconTexture, 16.0D, 16.0D);
                 GL11.glColor3f(1.0F, 1.0F, 1.0F);
             }
             if (!enabled) {
                 displayText = ChatFormatting.GRAY + displayText;
             }
             if (!centeredText) {
-                GuiUtils.renderTextWithShadow(displayText, x + 2, y + (height - 8) / 2, isOver == 2 ? 0xFFFFFFFF : 0xFFFFFFFF);
+                GuiUtils.renderTextWithShadow(displayText, x + 2, y + (height - 8) / 2, 0xFFFFFFFF);
                 return;
             }
 
