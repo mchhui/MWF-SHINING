@@ -65,9 +65,9 @@ public class AnimationRevolver extends WeaponAnimation {
         states.add(new StateEntry(StateType.Tilt, 0.20f, 0.7f, MathType.Add));
         if (reloadCount >= 6) {
             states.add(new StateEntry(StateType.Load, 0.35f, 1f, MathType.Sub, reloadCount));
-        } else if (reloadCount >= 3 && reloadCount <= 5) {
+        } else if (reloadCount >= 3) {
             states.add(new StateEntry(StateType.Load, 0.15f, 1f, MathType.Sub, reloadCount));
-        } else if (reloadCount >= 0 && reloadCount <= 2) {
+        } else if (reloadCount >= 0) {
             states.add(new StateEntry(StateType.Load, 0.1f, 1f, MathType.Sub, reloadCount));
         }
         states.add(new StateEntry(StateType.Untilt, 0.20f, 1f, MathType.Sub));
