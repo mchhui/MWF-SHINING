@@ -71,7 +71,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -99,27 +99,27 @@ public class ModularWarfare {
     public static Logger LOGGER;
     // Network Handler
     public static NetworkHandler NETWORK;
-    public static PlayerDataHandler PLAYERHANDLER = new PlayerDataHandler();
+    public static PlayerDataHandler PLAYER_HANDLER = new PlayerDataHandler();
     public static Gson gson = new GsonBuilder().setPrettyPrinting().create();
     public static HashMap<String, ZipContentPack> zipContentsPack = new HashMap<>();
     // The ModularWarfare directory
     public static File MOD_DIR;
-    public static List<File> contentPacks = new ArrayList<File>();
+    public static List<File> contentPacks = new ArrayList<>();
     // Arrays for the varied types
-    public static HashMap<String, ItemGun> gunTypes = new HashMap<String, ItemGun>();
-    public static HashMap<String, ItemAmmo> ammoTypes = new HashMap<String, ItemAmmo>();
-    public static HashMap<String, ItemAttachment> attachmentTypes = new HashMap<String, ItemAttachment>();
-    public static LinkedHashMap<String, ItemMWArmor> armorTypes = new LinkedHashMap<String, ItemMWArmor>();
-    public static LinkedHashMap<String, ItemSpecialArmor> specialArmorTypes = new LinkedHashMap<String, ItemSpecialArmor>();
-    public static HashMap<String, ItemBullet> bulletTypes = new HashMap<String, ItemBullet>();
-    public static HashMap<String, ItemSpray> sprayTypes = new HashMap<String, ItemSpray>();
-    public static HashMap<String, ItemBackpack> backpackTypes = new HashMap<String, ItemBackpack>();
-    public static HashMap<String, ItemGrenade> grenadeTypes = new HashMap<String, ItemGrenade>();
-    public static HashMap<String, TextureType> textureTypes = new HashMap<String, TextureType>();
-    public static ArrayList<BaseType> baseTypes = new ArrayList<BaseType>();
-    public static ArrayList<String> contentPackHashList = new ArrayList<String>();
+    public static HashMap<String, ItemGun> gunTypes = new HashMap<>();
+    public static HashMap<String, ItemAmmo> ammoTypes = new HashMap<>();
+    public static HashMap<String, ItemAttachment> attachmentTypes = new HashMap<>();
+    public static LinkedHashMap<String, ItemMWArmor> armorTypes = new LinkedHashMap<>();
+    public static LinkedHashMap<String, ItemSpecialArmor> specialArmorTypes = new LinkedHashMap<>();
+    public static HashMap<String, ItemBullet> bulletTypes = new HashMap<>();
+    public static HashMap<String, ItemSpray> sprayTypes = new HashMap<>();
+    public static HashMap<String, ItemBackpack> backpackTypes = new HashMap<>();
+    public static HashMap<String, ItemGrenade> grenadeTypes = new HashMap<>();
+    public static HashMap<String, TextureType> textureTypes = new HashMap<>();
+    public static ArrayList<BaseType> baseTypes = new ArrayList<>();
+    public static ArrayList<String> contentPackHashList = new ArrayList<>();
     public static boolean usingDirectoryContentPack = false;
-    public static HashMap<String, MWTab> MODS_TABS = new HashMap<String, MWTab>();
+    public static HashMap<String, MWTab> MODS_TABS = new HashMap<>();
     /**
      * ModularWarfare Addon System
      */
@@ -320,7 +320,7 @@ public class ModularWarfare {
                             if (typeFile.getName().endsWith(".js")) {
                                 String text = "";
                                 try {
-                                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")));
+                                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
                                     String temp;
                                     while ((temp = bufferedReader.readLine()) != null) {
                                         text += temp;
@@ -350,7 +350,7 @@ public class ModularWarfare {
                                         JsonReader jsonReader = new JsonReader(new InputStreamReader(stream));
 
                                         try {
-                                            BaseType parsedType = (BaseType) GSONUtils.fromJson(gson, jsonReader, type.typeClass, fileHeader.getFileName());
+                                            BaseType parsedType = GSONUtils.fromJson(gson, jsonReader, type.typeClass, fileHeader.getFileName());
                                             if (parsedType.internalName.equals("siz_bg.scope_win94_texture")) {
                                                 FMLLog.log.info("found - " + parsedType.internalName + " - " + file.getName() + " - " + fileHeader.getFileName() + " - " + fileHeader.getHandle());
                                             }
@@ -379,7 +379,7 @@ public class ModularWarfare {
                                 String text = "";
                                 try {
                                     InputStream inputStream = fileHeader.getInputStream();
-                                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName("UTF-8")));
+                                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                                     String temp;
                                     while ((temp = bufferedReader.readLine()) != null) {
                                         text += temp;
@@ -545,7 +545,7 @@ public class ModularWarfare {
     @SubscribeEvent
     public void registerItems(RegistryEvent.Register<Item> event) {
         for (File file : contentPacks) {
-            List<Item> tabOrder = new ArrayList<Item>();
+            List<Item> tabOrder = new ArrayList<>();
             for (ItemGun itemGun : gunTypes.values()) {
                 if (itemGun.type.contentPack.equals(file.getName())) {
                     event.getRegistry().register(itemGun);
