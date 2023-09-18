@@ -452,7 +452,7 @@ public class ModularWarfare {
         }
 
         registerRayCasting(new DefaultRayCasting());
-        this.loaderManager.preInitAddons(event);
+        loaderManager.preInitAddons(event);
 
         // Loads Content Packs
         ContentTypes.registerTypes();
@@ -482,7 +482,7 @@ public class ModularWarfare {
         NETWORK = new NetworkHandler();
         NETWORK.initialise();
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularWarfare.INSTANCE, new GuiHandler());
-        this.loaderManager.initAddons(event);
+        loaderManager.initAddons(event);
     }
 
     /**
@@ -494,7 +494,7 @@ public class ModularWarfare {
     public void onPostInitialization(FMLPostInitializationEvent event) {
         NETWORK.postInitialise();
         PROXY.init();
-        this.loaderManager.postInitAddons(event);
+        loaderManager.postInitAddons(event);
     }
 
     /**
@@ -522,12 +522,12 @@ public class ModularWarfare {
          * Create & Check Addon System
          */
 
-        this.addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
+        addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
 
-        if (!this.addonDir.exists())
-            this.addonDir.mkdirs();
-        this.loaderManager = new AddonLoaderManager();
-        this.loaderManager.constructAddons(this.addonDir, event.getSide());
+        if (!addonDir.exists())
+            addonDir.mkdirs();
+        loaderManager = new AddonLoaderManager();
+        loaderManager.constructAddons(addonDir, event.getSide());
 
         /**
          * Load the addon from the gradle project compilation (.class folder) instead of final .jar
@@ -536,7 +536,7 @@ public class ModularWarfare {
         if (ModUtil.isIDE()) {
             File file = new File(ModUtil.getGameFolder()).getParentFile().getParentFile();
             String folder = file.toString().replace("\\", "/");
-            this.loaderManager.constructDevAddons(new File(folder + "/melee-addon/build/classes/java/main"), "com.modularwarfare.melee.ModularWarfareMelee", event.getSide());
+            loaderManager.constructDevAddons(new File(folder + "/melee-addon/build/classes/java/main"), "com.modularwarfare.melee.ModularWarfareMelee", event.getSide());
         }
 
         PROXY.construction(event);
@@ -611,20 +611,20 @@ public class ModularWarfare {
             itemRegisterEvent.tabOrder.forEach((item) -> {
                 if (item instanceof ItemGun) {
                     for (SkinType skin : ((ItemGun) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemGun) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemGun) item).type);
                     }
-                    PROXY.preloadFlashTex.add(((ItemGun) item).type.flashType);
+                    CommonProxy.preloadFlashTex.add(((ItemGun) item).type.flashType);
                 }
 
                 if (item instanceof ItemBullet) {
                     for (SkinType skin : ((ItemBullet) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
                     }
                 }
 
                 if (item instanceof ItemMWArmor) {
                     for (SkinType skin : ((ItemMWArmor) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
                     }
                 }
 
