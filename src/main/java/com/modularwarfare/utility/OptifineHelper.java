@@ -161,4 +161,8 @@ public class OptifineHelper {
         }
         return false;
     }
+    
+    public static int getProgram() {
+        return Shaders.activeProgramID;
+    }
 }

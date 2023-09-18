@@ -7,7 +7,9 @@ import com.modularwarfare.loader.part.Face;
 import com.modularwarfare.loader.part.ModelObject;
 import com.modularwarfare.loader.part.TextureCoordinate;
 import com.modularwarfare.loader.part.Vertex;
-import net.lingala.zip4j.io.inputstream.ZipInputStream;
+import moe.komi.mwprotect.IZipEntry;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.io.ZipInputStream;
 import net.lingala.zip4j.model.FileHeader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResource;
@@ -192,13 +194,13 @@ public class ObjModelBuilder {
                 return ModularWarfare.zipContentsPack.get(baseType.contentPack).models_cache.get(fileLocation);
             }
 
-            FileHeader foundFile = ModularWarfare.zipContentsPack.get(baseType.contentPack).fileHeaders.stream().filter(fileHeader -> fileHeader.getFileName().equalsIgnoreCase(fileLocation)).findFirst().orElse(null);
+            IZipEntry foundFile = ModularWarfare.zipContentsPack.get(baseType.contentPack).fileHeaders.stream().filter(fileHeader -> fileHeader.getFileName().equalsIgnoreCase(fileLocation)).findFirst().orElse(null);
 
             if (foundFile != null) {
                 found = true;
-                ZipInputStream stream = null;
+                InputStream stream = null;
                 try {
-                    stream = ModularWarfare.zipContentsPack.get(baseType.contentPack).getZipFile().getInputStream(foundFile);
+                    stream = foundFile.getInputStream();
 
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
                         String currentLine;

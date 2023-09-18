@@ -35,3 +35,5 @@ mwf:gui.tooltip.accuracy=Accuracy
 mwf:gui.tooltip.seemore=Press [L-SHIFT] to learn more
 mwf:gui.tooltip.help=Press [L-CTRL] to get help
 mwf:gui.tooltip.reload=Press [R] Reload
+
+mwf:gui.modify.none=None

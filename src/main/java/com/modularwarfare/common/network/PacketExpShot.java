@@ -1,9 +1,11 @@
 package com.modularwarfare.common.network;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.network.PacketOtherPlayerAnimation.AnimationType;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import mchhui.easyeffect.EasyEffect;
@@ -75,26 +77,29 @@ public class PacketExpShot extends PacketBase {
                                 } else {
                                     itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
                                 }
-
+                                
                                 //Hands upwards when shooting
                                 if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
                                     ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
                                 }
                                 ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
-
+                                
                                 //Animation
                                 ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
-                                Vec3d posSmoke = ServerListener.onGetPositionEyes(entityPlayer, 0, entityPlayer.getPositionEyes(0)).add(entityPlayer.getLookVec().scale(0.8f));
-                                Vec3d crossVec = new Vec3d(1, 0, 0).rotateYaw(-(float) Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float) Math.toRadians(entityPlayer.rotationPitch));
-                                posSmoke.add(crossVec.scale(-0.3f));
+                                Vec3d posSmoke =entityPlayer.getPositionEyes(0);
+                                if(ModularWarfare.isLoadedModularMovements) {
+                                    posSmoke=ServerListener.onGetPositionEyes(entityPlayer, 0, posSmoke);
+                                }
+                                posSmoke=posSmoke.add(entityPlayer.getLookVec().scale(0.8f));
+                                Vec3d crossVec=new Vec3d(1, 0, 0).rotateYaw(-(float)Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float)Math.toRadians(entityPlayer.rotationPitch));
                                 Vec3d offsetVec;
-                                for (int i = 0; i < 5; i++) {
-                                    double rand = Math.random() - 0.5f;
-                                    offsetVec = crossVec.scale((rand / Math.abs(rand) * 0.5f)).add(entityPlayer.getLookVec().scale(0.9f));
+                                for(int i=0;i<5;i++) {
+                                    double rand=Math.random()-0.5f;
+                                    offsetVec=crossVec.scale((rand/Math.abs(rand)* 0.5f)).add(entityPlayer.getLookVec().scale(0.9f));
                                     EasyEffect.sendEffect(entityPlayer, posSmoke.x,
                                             posSmoke.y - 0.1f, posSmoke.z,
-                                            offsetVec.x / (i + 1), 1.2f, offsetVec.z / (i + 1), 0.5f, -1f, 0.5f, 200 / (i + 1), (int) (10 + 20 * Math.random()), 20, 5,
-                                            (Math.random() * 0.3f + 0.2f), "modularwarfare:textures/particles/fire_smoke.png");
+                                            offsetVec.x/(i+1), 1.2f, offsetVec.z/(i+1), 0.5f, -1f, 0.5f, 200/(i+1), (int)(10+20*Math.random()), 20, 5,
+                                            (Math.random()*0.3f+0.2f), "modularwarfare:textures/particles/fire_smoke.png");    
                                 }
                             }
                         }

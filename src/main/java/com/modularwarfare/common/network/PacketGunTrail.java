@@ -1,11 +1,14 @@
 package com.modularwarfare.common.network;
 
+import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.model.InstantBulletRenderer;
+import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.vector.Vector3f;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.PacketBuffer;
 
 public class PacketGunTrail extends PacketBase {
 
@@ -22,11 +25,17 @@ public class PacketGunTrail extends PacketBase {
     float bulletspeed;
 
     boolean isPunched;
+    
+    String gunType;
 
     public PacketGunTrail() {
     }
 
-    public PacketGunTrail(double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
+    public PacketGunTrail(GunType gunType,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
+        this(gunType.internalName, X, Y, Z, motionX, motionZ, x, y, z, range, bulletspeed, isPunched);
+    }
+    
+    public PacketGunTrail(String gunType,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
         this.posX = X;
         this.posY = Y;
         this.posZ = Z;
@@ -40,42 +49,49 @@ public class PacketGunTrail extends PacketBase {
         this.range = range;
         this.bulletspeed = bulletspeed;
         this.isPunched = isPunched;
+        this.gunType=gunType;
     }
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        data.writeDouble(posX);
-        data.writeDouble(posY);
-        data.writeDouble(posZ);
+        PacketBuffer buf=new PacketBuffer(data);
+        buf.writeDouble(posX);
+        buf.writeDouble(posY);
+        buf.writeDouble(posZ);
 
-        data.writeDouble(motionX);
-        data.writeDouble(motionZ);
+        buf.writeDouble(motionX);
+        buf.writeDouble(motionZ);
 
-        data.writeDouble(dirX);
-        data.writeDouble(dirY);
-        data.writeDouble(dirZ);
+        buf.writeDouble(dirX);
+        buf.writeDouble(dirY);
+        buf.writeDouble(dirZ);
 
-        data.writeDouble(range);
-        data.writeFloat(bulletspeed);
-        data.writeBoolean(isPunched);
+        buf.writeDouble(range);
+        buf.writeFloat(bulletspeed);
+        buf.writeBoolean(isPunched);
+        
+        buf.writeString(gunType);
     }
 
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        posX = data.readDouble();
-        posY = data.readDouble();
-        posZ = data.readDouble();
+        PacketBuffer buf=new PacketBuffer(data);
+        posX = buf.readDouble();
+        posY = buf.readDouble();
+        posZ = buf.readDouble();
 
-        motionX = data.readDouble();
-        motionZ = data.readDouble();
+        motionX = buf.readDouble();
+        motionZ = buf.readDouble();
 
-        dirX = data.readDouble();
-        dirY = data.readDouble();
-        dirZ = data.readDouble();
+        dirX = buf.readDouble();
+        dirY = buf.readDouble();
+        dirZ = buf.readDouble();
 
-        range = data.readDouble();
-        bulletspeed = data.readFloat();
-        isPunched = data.readBoolean();
+        range = buf.readDouble();
+        bulletspeed = buf.readFloat();
+        isPunched = buf.readBoolean();
+        
+        gunType = buf.readString(Short.MAX_VALUE);
     }
 
     @Override
@@ -89,9 +105,8 @@ public class PacketGunTrail extends PacketBase {
         double dx = this.dirX * this.range;
         double dy = this.dirY * this.range;
         double dz = this.dirZ * this.range;
-
         final Vector3f vec = new Vector3f((float) posX, (float) posY, (float) posZ);
-        InstantBulletRenderer.AddTrail(new InstantBulletRenderer.InstantShotTrail(vec, new Vector3f((float) (vec.x + dx + motionX), (float) (vec.y + dy), (float) (vec.z + dz + motionZ)), this.bulletspeed, this.isPunched));
+        InstantBulletRenderer.AddTrail(new InstantBulletRenderer.InstantShotTrail(ModularWarfare.gunTypes.get(gunType).type,vec, new Vector3f((float) (vec.x + dx + motionX), (float) (vec.y + dy), (float) (vec.z + dz + motionZ)), this.bulletspeed, this.isPunched));
     }
 
 }

@@ -4,15 +4,31 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
+import net.minecraft.util.math.Vec3d;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.vecmath.Vector3f;
+
 public class ModConfig {
 
-    public static ModConfig INSTANCE;
+    public transient static ModConfig INSTANCE;
 
+    public ModConfig() {
+        this.general = new General();
+        this.client = new Client();
+        this.shots = new Shots();
+        this.guns = new Guns();
+        this.drops = new Drops();
+        this.hud = new Hud();
+        this.walks_sounds = new Walk();
+        this.casings_drops = new Casings();
+        this.killFeed = new KillFeed();
+    }
+    
     //general
     public General general = new General();
     public static class General {
@@ -22,9 +38,17 @@ public class ModConfig {
 
         public boolean modified_pack_server_kick = true;
         public boolean directory_pack_server_kick = true;
-        public ArrayList<String> content_pack_hash_list = new ArrayList<String>();
-
+        public ArrayList<String> content_pack_hash_list=new ArrayList<String>();
+        
         public boolean drop_extra_slots_on_death = true;
+        
+        public float playerShadowOffset = 1f;
+    }
+    
+    //client
+    public Client client = new Client();
+    public static class Client {
+        public boolean hideSecondSkinWhenDressed=true;
     }
 
     //shots
@@ -44,8 +68,8 @@ public class ModConfig {
                 "leftArmSlimModel", "leftArmLayerSlimModel",
                 "rightArmModel", "rightArmLayerModel",
                 "rightArmSlimModel", "rightArmLayerSlimModel",
-                "flashModel", "sprint_righthand", "sprint_lefthand",
-                "selector_semi", "selector_full", "selector_brust",
+                "flashModel","smokeModel","sprint_righthand","sprint_lefthand",
+                "selector_semi","selector_full","selector_brust",
                 "bulletModel");
     }
 
@@ -66,10 +90,13 @@ public class ModConfig {
         public boolean ammo_count = true;
         public boolean snap_fade_hit = true;
         public boolean isDynamicFov = false;
-        public boolean ads_blur = false;
-        public float handDepthRange = 0.6f;
-        public float eraseScopeDepth = 1f;
-        public int shadersColorTexID = 0;
+        public boolean ads_blur=false;
+        public float handDepthRangeMax = 0.6f;
+        public float handDepthRangeMin = 0f;
+        public Vector3f projectionScale = new Vector3f(0.125f, 0.125f, 0.125f);
+        public float eraseScopeDepth=1f;
+        public int shadersColorTexID=0;
+        public boolean alwaysRenderPIPWorld=false;
     }
 
     //walk sounds
@@ -105,15 +132,17 @@ public class ModConfig {
             if (configFile.exists()) {
                 JsonReader jsonReader = new JsonReader(new FileReader(configFile));
                 ModConfig config = gson.fromJson(jsonReader, ModConfig.class);
-                System.out.println("Comparing version " + config.version + " to " + ModularWarfare.MOD_VERSION);
-                if (config.version == null || !config.version.matches(ModularWarfare.MOD_VERSION)) {
-                    try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
-                        gson.toJson(this, writer);
-                    }
-                    INSTANCE = this;
-                } else {
-                    INSTANCE = config;
-                }
+//                System.out.println("Comparing version " + config.version + " to " + ModularWarfare.MOD_VERSION);
+//                if (config.version == null || !config.version.matches(ModularWarfare.MOD_VERSION)) {
+//                    try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
+//                        gson.toJson(this, writer);
+//                    }
+//                    INSTANCE = this;
+//                } else {
+//                    INSTANCE = config;
+//                }
+            INSTANCE = config;
+            System.out.println("test:"+config.client);
             } else {
                 try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
                     gson.toJson(this, writer);

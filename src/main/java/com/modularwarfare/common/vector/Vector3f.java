@@ -50,7 +50,7 @@ public class Vector3f extends Vector implements Serializable, ReadableVector3f, 
     private static final long serialVersionUID = 1L;
 
     public float x, y, z;
-    public float[] array = new float[3];
+    public transient float[] array = new float[3];
 
     /**
      * Constructor for Vector3f.

@@ -19,6 +19,7 @@ public class CustomItemRenderer {
     protected static TextureManager renderEngine = Minecraft.getMinecraft().renderEngine;
     /**
      * Specific to Enhanced Models
+     * 2023 08 20 接入hegltf后已不再需要 也不再保证实际有效
      */
     public ResourceLocation bindingTexture;
     public float r = 1;

@@ -1,52 +1,64 @@
 package com.modularwarfare.script;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.lwjgl.input.Keyboard;
+
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.guns.AmmoType;
+import com.modularwarfare.common.guns.AttachmentPresetEnum;
+import com.modularwarfare.common.guns.AttachmentType;
+import com.modularwarfare.common.guns.BulletType;
+import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemAmmo;
+import com.modularwarfare.common.guns.ItemAttachment;
+import com.modularwarfare.common.guns.ItemBullet;
+import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.WeaponFireMode;
+
+import it.unimi.dsi.fastutil.Hash;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import org.lwjgl.input.Keyboard;
+import net.minecraft.util.text.TextComponentTranslation;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-@SuppressWarnings("unused")
 public class ScriptAPI {
     public Lang Lang = new Lang();
     public Stack Stack = new Stack();
     public Gun Gun = new Gun();
     public Ammo Ammo = new Ammo();
-    public Input Input = new Input();
-    public Bullet Bullet = new Bullet();
+    public Input Input =new Input();
+    public Bullet Bullet =new Bullet();
 
     public static class Lang {
-        public String format(String key, Object... params) {
-            return I18n.format(key, params);
+        public String format(String key, Object... parms) {
+            return I18n.format(key, parms);
         }
     }
-
+    
     public static class Stack {
         public boolean hasNbt(ItemStack stack) {
             return stack.hasTagCompound();
         }
 
         public NBTTagCompound getNbt(ItemStack stack) {
-            if (stack.getTagCompound() == null) {
+            if(stack.getTagCompound()==null) {
                 return new NBTTagCompound();
             }
             return stack.getTagCompound().copy();
         }
-
-        public ItemStack getStack(int itemId) {
-            return new ItemStack(Item.getItemById(itemId));
+        
+        public ItemStack getStack(int itemid) {
+            return new ItemStack(Item.getItemById(itemid));
         }
-
+        
         public String getDisplayName(ItemStack stack) {
             return stack.getDisplayName();
         }
-
+        
         public boolean isEmpty(ItemStack stack) {
             return stack.isEmpty();
         }
@@ -63,35 +75,32 @@ public class ScriptAPI {
 
         public ItemStack getAmmoStack(ItemStack gunStack) {
             if (hasAmmoLoaded(gunStack)) {
-                NBTTagCompound tagCompound = gunStack.getTagCompound();
-                if (tagCompound == null) {
-                    ModularWarfare.LOGGER.error("Gun stack has no NBT tag compound");
-                    return ItemStack.EMPTY;
-                }
-
-                NBTTagCompound ammoTag = tagCompound.getCompoundTag("ammo");
-                return new ItemStack(ammoTag);
+                ItemStack ammoStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
+                return ammoStack;
             }
             return ItemStack.EMPTY;
         }
-
+        
         public boolean isBulletGun(ItemStack itemStack) {
             if (!isGun(itemStack)) {
                 return false;
             }
-            return ((ItemGun) itemStack.getItem()).type.acceptedBullets != null
-                    && ((ItemGun) itemStack.getItem()).type.acceptedBullets.length > 0;
+            if (((ItemGun) itemStack.getItem()).type.acceptedBullets != null
+                    && ((ItemGun) itemStack.getItem()).type.acceptedBullets.length > 0) {
+                return true;
+            }
+            return false;
         }
-
+        
         public String getGunExtraLore(ItemStack stack) {
             if (!isGun(stack)) {
                 return "";
             }
-            return ((ItemGun) stack.getItem()).type.extraLore;
+            return ((ItemGun)stack.getItem()).type.extraLore;
         }
-
-        public ArrayList<String> getInstalledAttachments(ItemStack stack) {
-            ArrayList<String> list = new ArrayList<>();
+        
+        public ArrayList<String> getInstalledAttachments(ItemStack stack){
+            ArrayList<String> list=new ArrayList<>();
             if (!isGun(stack)) {
                 return list;
             }
@@ -104,77 +113,80 @@ public class ScriptAPI {
             }
             return list;
         }
-
+        
         public int getAmmoStorage(ItemStack itemStack) {
-            if (!isBulletGun(itemStack)) {
+            if(!isBulletGun(itemStack)) {
                 return 0;
             }
-            return ((ItemGun) itemStack.getItem()).type.internalAmmoStorage;
+            return ((ItemGun)itemStack.getItem()).type.internalAmmoStorage;
         }
-
+        
         public int getUsedBulletItem(ItemStack stack) {
             if (!isGun(stack)) {
                 return Item.getIdFromItem(Items.AIR);
             }
-            if (ItemGun.getUsedBullet(stack, ((ItemGun) stack.getItem()).type) != null) {
-                return Item.getIdFromItem(ItemGun.getUsedBullet(stack, ((ItemGun) stack.getItem()).type));
+            if(ItemGun.getUsedBullet(stack, ((ItemGun)stack.getItem()).type)!=null) {
+                return Item.getIdFromItem(ItemGun.getUsedBullet(stack, ((ItemGun)stack.getItem()).type));
             }
             return Item.getIdFromItem(Items.AIR);
         }
-
+        
         public float getGunBulletSpread(ItemStack itemStack) {
             if (!isGun(itemStack)) {
                 return 0;
             }
-            return ((ItemGun) itemStack.getItem()).type.bulletSpread;
+            return ((ItemGun)itemStack.getItem()).type.bulletSpread;
         }
-
+        
         public float getGunDamage(ItemStack itemStack) {
             if (!isGun(itemStack)) {
                 return 0;
             }
-            return ((ItemGun) itemStack.getItem()).type.gunDamage;
+            return ((ItemGun)itemStack.getItem()).type.gunDamage;
         }
-
+        
         public float getGunNumBullets(ItemStack itemStack) {
             if (!isGun(itemStack)) {
                 return 0;
             }
-            return ((ItemGun) itemStack.getItem()).type.numBullets;
+            return ((ItemGun)itemStack.getItem()).type.numBullets;
         }
 
         public WeaponFireMode getFireMode(ItemStack stack) {
             return GunType.getFireMode(stack);
         }
-
-        public HashMap<String, ArrayList<String>> getAcceptedAttachment(ItemStack stack) {
-            HashMap<String, ArrayList<String>> map = new HashMap<>();
+        
+        public HashMap<String,ArrayList<String>> getAcceptedAttachment(ItemStack stack){
+            HashMap<String,ArrayList<String>> map=new HashMap<>();
             if (!isGun(stack)) {
                 return map;
             }
-            ((ItemGun) stack.getItem()).type.acceptedAttachments.forEach((k, v) -> {
-                if (!map.containsKey(k.typeName)) {
-                    map.put(k.typeName, new ArrayList<>());
+            if(((ItemGun)stack.getItem()).type.acceptedAttachments==null) {
+                return map;
+            }
+            ((ItemGun)stack.getItem()).type.acceptedAttachments.forEach((k,v)->{
+                if(!map.containsKey(k.typeName)) {
+                    map.put(k.typeName, new ArrayList<String>());
                 }
-                v.forEach((name) -> {
+                v.forEach((name)->{
                     map.get(k.typeName).add(ModularWarfare.attachmentTypes.get(name).type.displayName);
                 });
             });
             return map;
         }
-
-        public ArrayList<String> getAcceptedAmmoOrBullet(ItemStack stack) {
-            ArrayList<String> list = new ArrayList<>();
+        
+        public ArrayList<String> getAcceptedAmmoOrBullet(ItemStack stack){
+            ArrayList<String> list=new ArrayList<String>();
             if (!isGun(stack)) {
                 return list;
             }
-            if (((ItemGun) stack.getItem()).type.acceptedAmmo != null) {
-                for (String name : ((ItemGun) stack.getItem()).type.acceptedAmmo) {
+            if(((ItemGun)stack.getItem()).type.acceptedAmmo!=null) {
+                for(String name:((ItemGun)stack.getItem()).type.acceptedAmmo) {
                     list.add(ModularWarfare.ammoTypes.get(name).type.displayName);
-                }
+                }  
             }
-            if (((ItemGun) stack.getItem()).type.acceptedBullets != null) {
-                for (String name : ((ItemGun) stack.getItem()).type.acceptedBullets) {
+            if(((ItemGun)stack.getItem()).type.acceptedBullets!=null) {
+                for(String name:((ItemGun)stack.getItem()).type.acceptedBullets) {
                     list.add(ModularWarfare.bulletTypes.get(name).type.displayName);
                 }
             }
@@ -183,13 +195,13 @@ public class ScriptAPI {
     }
 
     public static class Ammo {
-
+        
         public boolean isAmmo(ItemStack stack) {
             return stack.getItem() instanceof ItemAmmo;
         }
-
+        
         public int getUsedBulletItem(ItemStack stack) {
-            if (!isAmmo(stack)) {
+            if(!isAmmo(stack)) {
                 return Item.getIdFromItem(Items.AIR);
             }
             if (stack.getTagCompound() != null) {
@@ -200,14 +212,14 @@ public class ScriptAPI {
             }
             return Item.getIdFromItem(Items.AIR);
         }
-
-        public ArrayList<String> getAcceptedBullet(ItemStack stack) {
-            ArrayList<String> list = new ArrayList<String>();
+        
+        public ArrayList<String> getAcceptedBullet(ItemStack stack){
+            ArrayList<String> list=new ArrayList<String>();
             if (!isAmmo(stack)) {
                 return list;
             }
-            if (((ItemAmmo) stack.getItem()).type.subAmmo != null) {
-                for (String name : ((ItemAmmo) stack.getItem()).type.subAmmo) {
+            if(((ItemAmmo)stack.getItem()).type.subAmmo!=null) {
+                for(String name:((ItemAmmo)stack.getItem()).type.subAmmo) {
                     list.add(ModularWarfare.bulletTypes.get(name).type.displayName);
                 }
             }
@@ -217,37 +229,37 @@ public class ScriptAPI {
         public int getAmmoCapacity(ItemStack stack) {
             return ((ItemAmmo) stack.getItem()).type.ammoCapacity;
         }
-
+        
         public int getMagazineCount(ItemStack stack) {
             return ((ItemAmmo) stack.getItem()).type.magazineCount;
         }
-
+        
     }
-
-    public static class Bullet {
+    
+    public static class Bullet{
         public boolean isBullet(ItemStack stack) {
             return stack.getItem() instanceof ItemBullet;
         }
-
+        
         public float getDamageFactor(ItemStack itemStack) {
-            if (itemStack.getItem() instanceof ItemBullet) {
-                return ((ItemBullet) itemStack.getItem()).type.bulletDamageFactor;
+            if(itemStack.getItem() instanceof ItemBullet) {
+                return ((ItemBullet)itemStack.getItem()).type.bulletDamageFactor;
             }
             return 1;
         }
-
+        
         public float getAccuracyFactor(ItemStack itemStack) {
-            if (itemStack.getItem() instanceof ItemBullet) {
-                return ((ItemBullet) itemStack.getItem()).type.bulletAccuracyFactor;
+            if(itemStack.getItem() instanceof ItemBullet) {
+                return ((ItemBullet)itemStack.getItem()).type.bulletAccuracyFactor;
             }
             return 1;
         }
     }
 
-    public static class Input {
+    public static class Input{
         public boolean isKeyHolding(int key) {
             return Keyboard.isKeyDown(key);
         }
     }
-
+    
 }

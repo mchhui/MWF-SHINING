@@ -6,7 +6,10 @@ import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.loader.ObjModel;
 import com.modularwarfare.loader.part.ModelObject;
 import com.modularwarfare.loader.part.Vertex;
+
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.BufferUtils;
@@ -19,10 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ObjModelRenderer {
+    public static CustomItemRenderer customItemRenderer = new CustomItemRenderer();
     public static boolean glowTxtureMode = false;
     public static String glowType;
     public static String glowPath;
-    private static CustomItemRenderer customItemRenderer = new CustomItemRenderer();
     public float rotationPointX;
     public float rotationPointY;
     public float rotationPointZ;
@@ -90,7 +93,7 @@ public class ObjModelRenderer {
         }
         if (!this.isHidden) {
             if (!this.compiled) {
-                if (ModConfig.INSTANCE.model_optimization) {
+                if(ModConfig.INSTANCE.model_optimization){
                     this.compileVAO(scale);
                 } else {
                     this.compileDisplayList(scale);
@@ -98,7 +101,7 @@ public class ObjModelRenderer {
             }
 
             if (this.rotateAngleX == 0.0F && this.rotateAngleY == 0.0F && this.rotateAngleZ == 0.0F) {
-                if (ModConfig.INSTANCE.model_optimization) {
+                if(ModConfig.INSTANCE.model_optimization) {
                     callVAO();
                 } else {
                     GlStateManager.callList(this.displayList);
@@ -130,7 +133,7 @@ public class ObjModelRenderer {
                 GlStateManager.translate(-this.rotationPointX * scale, -this.rotationPointY * scale,
                         -this.rotationPointZ * scale);
 
-                if (ModConfig.INSTANCE.model_optimization) {
+                if(ModConfig.INSTANCE.model_optimization) {
                     callVAO();
                 } else {
                     GlStateManager.callList(this.displayList);
@@ -149,13 +152,13 @@ public class ObjModelRenderer {
             GlStateManager.disableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x, y);
         }
-        if (glowTxtureMode) {
-            if (!customItemRenderer.bindTextureGlow(glowType, glowPath)) {
+        if(glowTxtureMode) {
+            if(!customItemRenderer.bindTextureGlow(glowType, glowPath)) {
                 return;
             }
-            glowTxtureMode = false;
+            glowTxtureMode=false;
             GlStateManager.depthMask(false);
-            GlStateManager.enableBlend();
+            //GlStateManager.enableBlend();
             GlStateManager.depthFunc(GL11.GL_EQUAL);
             GlStateManager.disableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
@@ -163,9 +166,9 @@ public class ObjModelRenderer {
             GlStateManager.enableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x, y);
             GlStateManager.depthFunc(GL11.GL_LEQUAL);
-            GlStateManager.disableBlend();
+            //GlStateManager.disableBlend();
             GlStateManager.depthMask(true);
-            glowTxtureMode = true;
+            glowTxtureMode=true;
             customItemRenderer.bindTexture(glowType, glowPath);
         }
     }
@@ -179,7 +182,7 @@ public class ObjModelRenderer {
     public void renderWithRotation(float scale) {
         if (!this.isHidden) {
             if (!this.compiled) {
-                if (ModConfig.INSTANCE.model_optimization) {
+                if(ModConfig.INSTANCE.model_optimization){
                     this.compileVAO(scale);
                 } else {
                     this.compileDisplayList(scale);
@@ -205,7 +208,7 @@ public class ObjModelRenderer {
             GlStateManager.translate(-this.rotationPointX * scale, -this.rotationPointY * scale,
                     -this.rotationPointZ * scale);
 
-            if (ModConfig.INSTANCE.model_optimization) {
+            if(ModConfig.INSTANCE.model_optimization) {
                 callVAO();
             } else {
                 GlStateManager.callList(this.displayList);
@@ -227,7 +230,7 @@ public class ObjModelRenderer {
     public void postRender(float scale) {
         if (!this.isHidden) {
             if (!this.compiled) {
-                if (ModConfig.INSTANCE.model_optimization) {
+                if(ModConfig.INSTANCE.model_optimization){
                     this.compileVAO(scale);
                 } else {
                     this.compileDisplayList(scale);

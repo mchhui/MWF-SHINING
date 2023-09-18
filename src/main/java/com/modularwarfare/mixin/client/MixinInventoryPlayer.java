@@ -1,5 +1,6 @@
 package com.modularwarfare.mixin.client;
 
+import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientRenderHooks;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -29,28 +30,32 @@ public abstract class MixinInventoryPlayer {
     public abstract ItemStack getStackInSlot(int index);
 
     /**
-     * @author Protoxy
-     * @reason Fix for reloading while scrolling
+     * @author
+     * @reason
      */
     @Overwrite
     @SideOnly(Side.CLIENT)
     public void changeCurrentItem(int direction) {
-        if (ClientRenderHooks.getAnimMachine(player).reloading) {
+        if(ClientRenderHooks.getAnimMachine(player).reloading){
             return;
         }
-        if (direction > 0) {
+        if (direction > 0)
+        {
             direction = 1;
         }
 
-        if (direction < 0) {
+        if (direction < 0)
+        {
             direction = -1;
         }
 
-        for (this.currentItem -= direction; this.currentItem < 0; this.currentItem += 9) {
+        for (this.currentItem -= direction; this.currentItem < 0; this.currentItem += 9)
+        {
             ;
         }
 
-        while (this.currentItem >= 9) {
+        while (this.currentItem >= 9)
+        {
             this.currentItem -= 9;
         }
     }

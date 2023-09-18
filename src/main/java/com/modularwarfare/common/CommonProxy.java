@@ -1,28 +1,33 @@
 package com.modularwarfare.common;
 
-import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.SkinType;
 import com.modularwarfare.common.network.PacketParticle;
+import com.modularwarfare.common.network.PacketPlayerHit;
+import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.network.PacketParticle.ParticleType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
-import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
+
+import com.modularwarfare.ModConfig;
 import net.minecraftforge.fml.relauncher.FMLInjectionData;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -35,19 +40,15 @@ public class CommonProxy extends ForgeEvent {
 
     public static File modularWarfareDir;
 
-    public static HashMap<SkinType, BaseType> preloadSkinTypes = new HashMap<>();
-
-    @Nonnull
-    public static String getGameFolder() {
-        return ((File) (FMLInjectionData.data()[6])).getAbsolutePath();
-    }
+    public static HashMap<SkinType,BaseType> preloadSkinTypes = new HashMap<SkinType,BaseType>();
+    public static HashSet<TextureType> preloadFlashTex = new HashSet<TextureType>();
 
     public void construction(FMLConstructionEvent event) {
         //Production-environment
-        modularWarfareDir = new File(getGameFolder(), "ModularWarfare");
+        this.modularWarfareDir = new File(getGameFolder(),"ModularWarfare");
         File modFile = null;
 
-        // Creates directory if it doesn't exist
+        // Creates directory if doesn't exist
         ModularWarfare.MOD_DIR = modularWarfareDir;
         if (!ModularWarfare.MOD_DIR.exists()) {
             ModularWarfare.MOD_DIR.mkdir();
@@ -57,48 +58,50 @@ public class CommonProxy extends ForgeEvent {
         ModularWarfare.DEV_ENV = ModConfig.INSTANCE.dev_mode;
 
         for (File source : new File(modularWarfareDir.getParentFile(), "mods").listFiles()) {
-            if (source.getName().contains("modularwarfare")) {
+            if(source.getName().contains("modularwarfare")){
                 modFile = source;
             }
         }
 
-        /**
-         * Prototype pack extraction
-         */
-        boolean needPrototypeExtract = ModConfig.INSTANCE.general.prototype_pack_extraction;
-        for (File file : modularWarfareDir.listFiles()) {
-            if (file.getName().matches("prototype-" + MOD_VERSION + "-contentpack.zip")) {
-                needPrototypeExtract = false;
-            } else if (file.getName().contains("prototype") && !file.getName().contains(MOD_VERSION) && file.getName().contains(".zip") && !file.getName().endsWith(".bak")) {
-                file.renameTo(new File(file.getAbsolutePath() + ".bak"));
-            }
-        }
-        if (needPrototypeExtract) {
-            try (ZipFile zipFile = new ZipFile(modFile)) {
-                zipFile.extractFile("prototype-" + MOD_VERSION + "-contentpack.zip", modularWarfareDir.getAbsolutePath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        /**
-         * Animated pack extraction
-         */
-        boolean needAnimatedExtract = ModConfig.INSTANCE.general.animated_pack_extraction;
-        for (File file : modularWarfareDir.listFiles()) {
-            if (file.getName().matches("animated-" + MOD_VERSION + "-contentpack.zip")) {
-                needAnimatedExtract = false;
-            } else if (file.getName().contains("animated") && !file.getName().contains(MOD_VERSION) && file.getName().contains(".zip") && !file.getName().endsWith(".bak")) {
-                file.renameTo(new File(file.getAbsolutePath() + ".bak"));
-            }
-        }
-        if (needAnimatedExtract) {
-            try (ZipFile zipFile = new ZipFile(modFile)) {
-                zipFile.extractFile("animated-" + MOD_VERSION + "-contentpack.zip", modularWarfareDir.getAbsolutePath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+//        /**
+//         * Prototype pack extraction
+//         */
+//        boolean needPrototypeExtract = ModConfig.INSTANCE.general.prototype_pack_extraction;
+//        for (File file : modularWarfareDir.listFiles()) {
+//            if (file.getName().matches("prototype-" + MOD_VERSION + "-contentpack.zip")) {
+//                needPrototypeExtract = false;
+//            } else if (file.getName().contains("prototype") && !file.getName().contains(MOD_VERSION) && file.getName().contains(".zip") && !file.getName().endsWith(".bak")) {
+//                file.renameTo(new File(file.getAbsolutePath() + ".bak"));
+//            }
+//        }
+//        if (needPrototypeExtract) {
+//            try {
+//                ZipFile zipFile = new ZipFile(modFile);
+//                zipFile.extractFile("prototype-" + MOD_VERSION + "-contentpack.zip", modularWarfareDir.getAbsolutePath());
+//            } catch (ZipException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        /**
+//         * Animated pack extraction
+//         */
+//        boolean needAnimatedExtract = ModConfig.INSTANCE.general.animated_pack_extraction;
+//        for (File file : modularWarfareDir.listFiles()) {
+//            if (file.getName().matches("animated-" + MOD_VERSION + "-contentpack.zip")) {
+//                needAnimatedExtract = false;
+//            } else if (file.getName().contains("animated") && !file.getName().contains(MOD_VERSION) && file.getName().contains(".zip") && !file.getName().endsWith(".bak")) {
+//                file.renameTo(new File(file.getAbsolutePath() + ".bak"));
+//            }
+//        }
+//        if (needAnimatedExtract) {
+//            try {
+//                ZipFile zipFile = new ZipFile(modFile);
+//                zipFile.extractFile("animated-" + MOD_VERSION + "-contentpack.zip", modularWarfareDir.getAbsolutePath());
+//            } catch (ZipException e) {
+//                e.printStackTrace();
+//            }
+//        }
     }
 
     public void preload() {
@@ -115,20 +118,26 @@ public class CommonProxy extends ForgeEvent {
     public void forceReload() {
     }
 
+    @Nonnull
+    public static String getGameFolder() {
+        return ((File) (FMLInjectionData.data()[6])).getAbsolutePath();
+    }
+
     public List<File> getContentList() {
-        List<File> contentPacks = new ArrayList<>();
+        List<File> contentPacks = new ArrayList<File>();
         for (File file : ModularWarfare.MOD_DIR.listFiles()) {
             if (!file.getName().contains("cache") && !file.getName().contains("officialmw") && !file.getName().contains("highres")) {
                 if (file.isDirectory()) {
                     contentPacks.add(file);
                 } else if (zipJar.matcher(file.getName()).matches()) {
-                    try (ZipFile zipFile = new ZipFile(file)) {
+                    try {
+                        ZipFile zipFile = new ZipFile(file);
                         if (!zipFile.isEncrypted()) {
                             contentPacks.add(file);
                         } else {
                             ModularWarfare.LOGGER.info("[WARNING] ModularWarfare can't load encrypted content-packs in server-side (" + file.getName() + ") !");
                         }
-                    } catch (IOException e) {
+                    } catch (ZipException e) {
                         e.printStackTrace();
                     }
                 }
@@ -143,14 +152,14 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public void spawnExplosionParticle(World world, double x, double y, double z) {
-        if (!world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION, x, y, z), new TargetPoint(world.provider.getDimension(), x, y, z, 64));
+        if(!world.isRemote) {
+            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
         }
     }
-
+    
     public void spawnRocketParticle(World world, double x, double y, double z) {
-        if (!world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET, x, y, z), new TargetPoint(world.provider.getDimension(), x, y, z, 64));
+        if(!world.isRemote) {
+            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
         }
     }
 
@@ -184,7 +193,7 @@ public class CommonProxy extends ForgeEvent {
 
     public void onShootFailedAnimation(EntityPlayer player, String wepType) {
     }
-
+    
     public void onModeChangeAnimation(EntityPlayer player, String wepType) {
     }
 

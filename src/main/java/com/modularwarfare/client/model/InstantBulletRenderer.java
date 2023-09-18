@@ -2,7 +2,13 @@ package com.modularwarfare.client.model;
 
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.BulletType;
+import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.vector.Vector3f;
+import com.modularwarfare.loader.ObjModel;
+import com.modularwarfare.loader.ObjModelBuilder;
+import com.modularwarfare.loader.api.ObjModelLoader;
+import com.modularwarfare.utility.RayUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -13,9 +19,12 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
+
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 public class InstantBulletRenderer {
@@ -41,6 +50,7 @@ public class InstantBulletRenderer {
     }
 
     public static class InstantShotTrail {
+        private HashMap<String, ObjModel> modelCache=new HashMap<String, ObjModel>();
         private Vector3f origin;
         private Vector3f hitPos;
         private float width;
@@ -50,8 +60,10 @@ public class InstantBulletRenderer {
         private int ticksExisted;
 
         private ResourceLocation texture;
+        private String model;
+        private boolean glow=false;
 
-        public InstantShotTrail(Vector3f origin, Vector3f hitPos, float bulletSpeed, boolean isPunched) {
+        public InstantShotTrail(GunType gunType,Vector3f origin, Vector3f hitPos, float bulletSpeed, boolean isPunched) {
             this.ticksExisted = 0;
             this.bulletSpeed = bulletSpeed;
             this.origin = origin;
@@ -63,6 +75,14 @@ public class InstantBulletRenderer {
             } else {
                 this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/" + "punchedbullettrail.png");
                 this.width = 0.1f;
+            }
+            if(gunType.customTrailTexture!=null) {
+                this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/" + gunType.customTrailTexture);
+                glow=gunType.customTrailGlow;
+            }
+            if(gunType.customTrailModel!=null) {
+                this.model=gunType.customTrailModel;
+                glow=gunType.customTrailGlow;
             }
 
             Vector3f dPos = Vector3f.sub(hitPos, origin, null);
@@ -143,15 +163,50 @@ public class InstantBulletRenderer {
             GL11.glEnable(2832);
             GL11.glHint(3153, 4353);
 
-            Tessellator tessellator = Tessellator.getInstance();
-            tessellator.getBuffer().begin(7, DefaultVertexFormats.POSITION_TEX);
+            if(model==null) {
+                Tessellator tessellator = Tessellator.getInstance();
+                tessellator.getBuffer().begin(7, DefaultVertexFormats.POSITION_TEX);
 
-            tessellator.getBuffer().pos(startPos.x + trailTangent.x, startPos.y + trailTangent.y, startPos.z + trailTangent.z).tex(0.0f, 0.0f).endVertex();
-            tessellator.getBuffer().pos(startPos.x - trailTangent.x, startPos.y - trailTangent.y, startPos.z - trailTangent.z).tex(0.0f, 1.0f).endVertex();
-            tessellator.getBuffer().pos(endPos.x - trailTangent.x, endPos.y - trailTangent.y, endPos.z - trailTangent.z).tex(1.0f, 1.0f).endVertex();
-            tessellator.getBuffer().pos(endPos.x + trailTangent.x, endPos.y + trailTangent.y, endPos.z + trailTangent.z).tex(1.0f, 0.0f).endVertex();
+                tessellator.getBuffer().pos(startPos.x + trailTangent.x, startPos.y + trailTangent.y, startPos.z + trailTangent.z).tex(0.0f, 0.0f).endVertex();
+                tessellator.getBuffer().pos(startPos.x - trailTangent.x, startPos.y - trailTangent.y, startPos.z - trailTangent.z).tex(0.0f, 1.0f).endVertex();
+                tessellator.getBuffer().pos(endPos.x - trailTangent.x, endPos.y - trailTangent.y, endPos.z - trailTangent.z).tex(1.0f, 1.0f).endVertex();
+                tessellator.getBuffer().pos(endPos.x + trailTangent.x, endPos.y + trailTangent.y, endPos.z + trailTangent.z).tex(1.0f, 0.0f).endVertex();
 
-            tessellator.draw();
+                tessellator.draw();
+            }else {
+                if(glow) {
+                    GlStateManager.disableLighting();
+                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+                }
+                GlStateManager.pushMatrix();
+                
+                Vector3f dVec =new Vector3f(hitPos.x-origin.x,0,hitPos.z-origin.z);
+                dVec=(Vector3f)dVec.normalise();
+                
+                GlStateManager.translate(endPos.x, endPos.y, endPos.z);
+                float yaw=(float)Math.acos(dVec.z)/3.1415f*180;
+                if(dVec.x<0) {
+                    yaw=-yaw;
+                }
+                dVec =new Vector3f(hitPos.x-origin.x,hitPos.y-origin.y,hitPos.z-origin.z);
+                dVec=(Vector3f)dVec.normalise();
+                float pitch=(float)Math.asin(dVec.y)/3.1415f*180;
+                
+                GlStateManager.rotate(yaw, 0, 1, 0);
+                GlStateManager.rotate(pitch, -1, 0, 0);
+                
+                ObjModel obj=modelCache.get(model);
+                if(obj==null) {
+                    modelCache.put(model, ObjModelLoader.load(new ResourceLocation(model)));
+                    obj=modelCache.get(model);
+                }
+                obj.renderAll(1);
+                GlStateManager.popMatrix();
+                if(glow) {
+                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x_, y_);
+                    GlStateManager.enableLighting();
+                }
+            }
 
 
             GL11.glDisable(3042);

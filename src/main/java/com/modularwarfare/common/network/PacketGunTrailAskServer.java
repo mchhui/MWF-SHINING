@@ -1,10 +1,13 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.GunType;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.network.PacketBuffer;
 
 public class PacketGunTrailAskServer extends PacketBase {
 
@@ -21,11 +24,13 @@ public class PacketGunTrailAskServer extends PacketBase {
     float bulletspeed;
 
     boolean isPunched;
+    
+    String gunType;
 
     public PacketGunTrailAskServer() {
     }
 
-    public PacketGunTrailAskServer(double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
+    public PacketGunTrailAskServer(GunType gunType,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
         this.posX = X;
         this.posY = Y;
         this.posZ = Z;
@@ -39,47 +44,57 @@ public class PacketGunTrailAskServer extends PacketBase {
         this.range = range;
         this.bulletspeed = bulletspeed;
         this.isPunched = isPunched;
+        
+        this.gunType=gunType.internalName;
     }
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        data.writeDouble(posX);
-        data.writeDouble(posY);
-        data.writeDouble(posZ);
+        PacketBuffer buf=new PacketBuffer(data);
+        
+        buf.writeDouble(posX);
+        buf.writeDouble(posY);
+        buf.writeDouble(posZ);
 
-        data.writeDouble(motionX);
-        data.writeDouble(motionZ);
+        buf.writeDouble(motionX);
+        buf.writeDouble(motionZ);
 
-        data.writeDouble(dirX);
-        data.writeDouble(dirY);
-        data.writeDouble(dirZ);
+        buf.writeDouble(dirX);
+        buf.writeDouble(dirY);
+        buf.writeDouble(dirZ);
 
-        data.writeDouble(range);
-        data.writeFloat(bulletspeed);
-        data.writeBoolean(isPunched);
+        buf.writeDouble(range);
+        buf.writeFloat(bulletspeed);
+        buf.writeBoolean(isPunched);
+        
+        buf.writeString(gunType);
     }
 
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        posX = data.readDouble();
-        posY = data.readDouble();
-        posZ = data.readDouble();
+        PacketBuffer buf=new PacketBuffer(data);
+        
+        posX = buf.readDouble();
+        posY = buf.readDouble();
+        posZ = buf.readDouble();
 
-        motionX = data.readDouble();
-        motionZ = data.readDouble();
+        motionX = buf.readDouble();
+        motionZ = buf.readDouble();
 
-        dirX = data.readDouble();
-        dirY = data.readDouble();
-        dirZ = data.readDouble();
+        dirX = buf.readDouble();
+        dirY = buf.readDouble();
+        dirZ = buf.readDouble();
 
-        range = data.readDouble();
-        bulletspeed = data.readFloat();
-        isPunched = data.readBoolean();
+        range = buf.readDouble();
+        bulletspeed = buf.readFloat();
+        isPunched = buf.readBoolean();
+        
+        gunType=buf.readString(Short.MAX_VALUE);
     }
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(posX, posY, posZ, motionX, motionZ, dirX, dirY, dirZ, range, 10, isPunched), entityPlayer.world.provider.getDimension());
+        ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(gunType,posX, posY, posZ, motionX, motionZ, dirX, dirY, dirZ, range, 10, isPunched), entityPlayer.world.provider.getDimension());
     }
 
     @Override

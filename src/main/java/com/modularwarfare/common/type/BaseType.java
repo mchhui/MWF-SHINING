@@ -18,6 +18,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -164,6 +165,23 @@ public class BaseType {
                 }
             }
         }
+    }
+    
+    public SoundEvent getSound(EntityPlayer player, WeaponSoundType weaponSoundType) {
+        if (weaponSoundType != null) {
+            if(weaponSoundMap != null) {
+                if (weaponSoundMap.containsKey(weaponSoundType)) {
+                    for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
+                        return ClientProxy.modSounds.get(soundEntry.soundName);
+                    }
+                }else {
+                    if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
+                        return ClientProxy.modSounds.get(weaponSoundType.defaultSound);
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public void playSoundPos(BlockPos pos, World world, WeaponSoundType weaponSoundType) {

@@ -35,3 +35,5 @@ mwf:gui.tooltip.accuracy=精准度
 mwf:gui.tooltip.seemore=按下[L-SHIFT]查看更多
 mwf:gui.tooltip.help=按下[L-CTRL]查看帮助
 mwf:gui.tooltip.reload=按下[R]重新装填
+
+mwf:gui.modify.none=无
