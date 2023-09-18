@@ -72,6 +72,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -152,20 +153,18 @@ public class ModularWarfare {
         usingDirectoryContentPack = false;
         for (File file : contentPacks) {
             if (!file.isDirectory()) {
-                FileInputStream inputStream;
-                try {
-                    inputStream = new FileInputStream(file);
+                try (FileInputStream inputStream = new FileInputStream(file)) {
                     MessageDigest md = MessageDigest.getInstance("MD5");
                     byte[] buffer = new byte[1024];
-                    int length = -1;
+                    int length;
                     while ((length = inputStream.read(buffer, 0, 1024)) != -1) {
                         md.update(buffer, 0, length);
                     }
-                    String md5 = "";
+                    StringBuilder md5 = new StringBuilder();
                     for (byte b : md.digest()) {
-                        md5 += b;
+                        md5.append(b);
                     }
-                    contentPackHashList.add(md5);
+                    contentPackHashList.add(md5.toString());
                     inputStream.close();
                 } catch (IOException | NoSuchAlgorithmException e) {
                     // TODO Auto-generated catch block
@@ -211,18 +210,17 @@ public class ModularWarfare {
             PROXY.generateJsonModels(baseTypes);
         }
 
-        for (TextureType type : textureTypes.values()) {
-            type.loadExtraValues();
-        }
+        textureTypes.values().forEach(TextureType::loadExtraValues);
 
-        for (BaseType baseType : baseTypes) {
-            baseType.loadExtraValues();
-            ContentTypes.values.get(baseType.id).typeAssignFunction.accept(baseType, reload);
-        }
+        baseTypes.forEach(type -> {
+            type.loadExtraValues();
+            ContentTypes.values.get(type.id).typeAssignFunction.accept(type, reload);
+        });
 
         if (DEV_ENV) {
-            if (reload)
+            if (reload) {
                 return;
+            }
             //PROXY.generateJsonSounds(gunTypes.values(), DEV_ENV);
             PROXY.generateLangFiles(baseTypes, DEV_ENV);
         }
@@ -241,9 +239,7 @@ public class ModularWarfare {
                     JsonReader jsonReader = new JsonReader(new FileReader(typeRender));
                     return GSONUtils.fromJson(gson, jsonReader, typeClass, baseType.internalName + ".render.json");
                 }
-            } catch (JsonParseException e) {
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
+            } catch (JsonParseException | FileNotFoundException e) {
                 e.printStackTrace();
             } catch (AnimationTypeException err) {
                 ModularWarfare.LOGGER.info(baseType.internalName + " was loaded. But something was wrong.");
@@ -276,21 +272,27 @@ public class ModularWarfare {
     /**
      * Gets all type files from the content packs
      *
-     * @param contentPacks
+     * @param contentPacks The content packs to get the files from
      */
     private static void getTypeFiles(List<File> contentPacks) {
         ScriptHost.INSTANCE.reset();
 
-        for (File file : contentPacks) {
-            if (!file.getName().contains("cache")) {
-                if (file.isDirectory()) {
-                    for (TypeEntry type : ContentTypes.values) {
-                        File subFolder = new File(file, "/" + type.name + "/");
-                        if (subFolder.exists()) {
-                            for (File typeFile : subFolder.listFiles()) {
-                                try {
-                                    if (typeFile.isFile()) {
-                                        JsonReader jsonReader = new JsonReader(new FileReader(typeFile));
+        contentPacks.stream()
+                .filter(file -> !file.getName().contains("cache"))
+                .forEach(file -> {
+                    if (file.isDirectory()) {
+                        ContentTypes.values.forEach(type -> {
+                            File subFolder = new File(file, "/" + type.name + "/");
+                            if (subFolder.exists()) {
+                                File[] typeFiles = subFolder.listFiles(File::isFile);
+                                if (typeFiles != null) {
+                                    Arrays.stream(typeFiles).forEach(typeFile -> {
+                                        JsonReader jsonReader = null;
+                                        try {
+                                            jsonReader = new JsonReader(new FileReader(typeFile));
+                                        } catch (FileNotFoundException e) {
+                                            throw new RuntimeException(e);
+                                        }
                                         BaseType parsedType = GSONUtils.fromJson(gson, jsonReader, type.typeClass, typeFile.getName());
 
                                         parsedType.id = type.id;
@@ -301,57 +303,56 @@ public class ModularWarfare {
                                         if (parsedType instanceof TextureType) {
                                             textureTypes.put(parsedType.internalName, (TextureType) parsedType);
                                         }
-                                    }
-                                } catch (com.google.gson.JsonParseException ex) {
-                                    ex.printStackTrace();
-                                    continue;
-                                } catch (FileNotFoundException exception) {
-                                    exception.printStackTrace();
+                                    });
+
                                 }
                             }
-                        }
-                    }
-                    /**
-                     * LOAD SCRIPT STATR
-                     * */
-                    File scriptFolder = new File(file, "/sciprt/");
-                    if (scriptFolder.exists()) {
-                        for (File typeFile : scriptFolder.listFiles()) {
-                            if (typeFile.getName().endsWith(".js")) {
-                                String text = "";
-                                try {
-                                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
-                                    String temp;
-                                    while ((temp = bufferedReader.readLine()) != null) {
-                                        text += temp;
+                        });
+                        /**
+                         * LOAD SCRIPT START
+                         * */
+                        File scriptFolder = new File(file, "/sciprt/");
+                        if (scriptFolder.exists()) {
+                            File[] scriptFiles = scriptFolder.listFiles(scriptFile -> scriptFile.getName().endsWith(".js"));
+                            if (scriptFiles != null) {
+                                Arrays.stream(scriptFiles).forEach(typeFile -> {
+                                    StringBuilder text = new StringBuilder();
+                                    try {
+                                        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8));
+                                        String temp;
+                                        while ((temp = bufferedReader.readLine()) != null) {
+                                            text.append(temp);
+                                        }
+                                        bufferedReader.close();
+                                        ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID, "script/" + typeFile.getName() + ".js"), text.toString());
+                                    } catch (IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
                                     }
-                                    bufferedReader.close();
-                                    ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID, "script/" + typeFile.getName() + ".js"), text);
-                                } catch (IOException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }
+                                });
                             }
                         }
-                    }
-                    /**
-                     * LOAD SCRIPT END
-                     * */
-                } else {
-                    if (zipContentsPack.containsKey(file.getName())) {
+                        /**
+                         * LOAD SCRIPT END
+                         * */
+                    } else {
+                        if (!zipContentsPack.containsKey(file.getName())) {
+                            return;
+                        }
+
                         for (IZipEntry fileHeader : zipContentsPack.get(file.getName()).fileHeaders) {
                             for (TypeEntry type : ContentTypes.values) {
                                 final String zipName = fileHeader.getFileName();
                                 final String typeName = type.toString();
-                                if (zipName.startsWith(typeName + "/") && zipName.split(typeName + "/").length > 1 && zipName.split(typeName + "/")[1].length() > 0 && !zipName.contains("render")) {
-                                    InputStream stream = null;
+                                if (zipName.startsWith(typeName + "/") && zipName.split(typeName + "/").length > 1 && !zipName.split(typeName + "/")[1].isEmpty() && !zipName.contains("render")) {
+                                    InputStream stream;
                                     try {
                                         stream = fileHeader.getInputStream();
                                         JsonReader jsonReader = new JsonReader(new InputStreamReader(stream));
 
                                         try {
                                             BaseType parsedType = GSONUtils.fromJson(gson, jsonReader, type.typeClass, fileHeader.getFileName());
-                                            if (parsedType.internalName.equals("siz_bg.scope_win94_texture")) {
+                                            if ("siz_bg.scope_win94_texture".equals(parsedType.internalName)) {
                                                 FMLLog.log.info("found - " + parsedType.internalName + " - " + file.getName() + " - " + fileHeader.getFileName() + " - " + fileHeader.getHandle());
                                             }
                                             parsedType.id = type.id;
@@ -362,9 +363,7 @@ public class ModularWarfare {
                                             if (parsedType instanceof TextureType) {
                                                 textureTypes.put(parsedType.internalName, (TextureType) parsedType);
                                             }
-                                        } catch (com.google.gson.JsonParseException ex) {
-                                            continue;
-                                        }
+                                        } catch (com.google.gson.JsonParseException ignored) {}
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                     }
@@ -376,16 +375,16 @@ public class ModularWarfare {
                             String zipName = fileHeader.getFileName();
                             if (zipName.startsWith("script/") && zipName.endsWith(".js")) {
                                 String typeFile = zipName.replaceFirst("script/", "").replace(".js", "");
-                                String text = "";
+                                StringBuilder text = new StringBuilder();
                                 try {
                                     InputStream inputStream = fileHeader.getInputStream();
                                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                                     String temp;
                                     while ((temp = bufferedReader.readLine()) != null) {
-                                        text += temp;
+                                        text.append(temp);
                                     }
                                     bufferedReader.close();
-                                    ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID, "script/" + typeFile + ".js"), text);
+                                    ScriptHost.INSTANCE.initScript(new ResourceLocation(ModularWarfare.MOD_ID, "script/" + typeFile + ".js"), text.toString());
                                 } catch (IOException e) {
                                     // TODO Auto-generated catch block
                                     e.printStackTrace();
@@ -396,9 +395,7 @@ public class ModularWarfare {
                              * */
                         }
                     }
-                }
-            }
-        }
+                });
     }
 
     public static void loadConfig() {
@@ -412,7 +409,7 @@ public class ModularWarfare {
     /**
      * Registers items, blocks, renders, etc
      *
-     * @param event
+     * @param event The event
      */
     @EventHandler
     public void onPreInitialization(FMLPreInitializationEvent event) {
@@ -546,64 +543,68 @@ public class ModularWarfare {
     public void registerItems(RegistryEvent.Register<Item> event) {
         for (File file : contentPacks) {
             List<Item> tabOrder = new ArrayList<>();
-            for (ItemGun itemGun : gunTypes.values()) {
-                if (itemGun.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemGun);
-                    tabOrder.add(itemGun);
-                }
-            }
-            for (ItemAmmo itemAmmo : ammoTypes.values()) {
-                if (itemAmmo.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemAmmo);
-                    tabOrder.add(itemAmmo);
-                }
-            }
-            for (ItemBullet itemBullet : bulletTypes.values()) {
-                if (itemBullet.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemBullet);
-                    tabOrder.add(itemBullet);
-                }
-            }
-            for (ItemMWArmor itemArmor : armorTypes.values()) {
-                if (itemArmor.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemArmor);
-                    tabOrder.add(itemArmor);
-                }
-            }
-            for (ItemAttachment itemAttachment : attachmentTypes.values()) {
-                if (itemAttachment.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemAttachment);
-                    tabOrder.add(itemAttachment);
-                }
-            }
+            gunTypes.values().stream()
+                    .filter(itemGun -> itemGun.type.contentPack.equals(file.getName()))
+                    .forEach(itemGun -> {
+                        event.getRegistry().register(itemGun);
+                        tabOrder.add(itemGun);
+                    });
 
-            for (ItemSpecialArmor itemSpecialArmor : specialArmorTypes.values()) {
-                if (itemSpecialArmor.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemSpecialArmor);
-                    tabOrder.add(itemSpecialArmor);
-                }
-            }
+            ammoTypes.values().stream()
+                    .filter(itemAmmo -> itemAmmo.type.contentPack.equals(file.getName()))
+                    .forEach(itemAmmo -> {
+                        event.getRegistry().register(itemAmmo);
+                        tabOrder.add(itemAmmo);
+                    });
 
-            for (ItemSpray itemSpray : sprayTypes.values()) {
-                if (itemSpray.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemSpray);
-                    tabOrder.add(itemSpray);
-                }
-            }
+            bulletTypes.values().stream()
+                    .filter(itemBullet -> itemBullet.type.contentPack.equals(file.getName()))
+                    .forEach(itemBullet -> {
+                        event.getRegistry().register(itemBullet);
+                        tabOrder.add(itemBullet);
+                    });
 
-            for (ItemBackpack itemBackpack : backpackTypes.values()) {
-                if (itemBackpack.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemBackpack);
-                    tabOrder.add(itemBackpack);
-                }
-            }
+            armorTypes.values().stream()
+                    .filter(itemArmor -> itemArmor.type.contentPack.equals(file.getName()))
+                    .forEach(itemArmor -> {
+                        event.getRegistry().register(itemArmor);
+                        tabOrder.add(itemArmor);
+                    });
 
-            for (ItemGrenade itemGrenade : grenadeTypes.values()) {
-                if (itemGrenade.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemGrenade);
-                    tabOrder.add(itemGrenade);
-                }
-            }
+            attachmentTypes.values().stream()
+                    .filter(itemAttachment -> itemAttachment.type.contentPack.equals(file.getName()))
+                    .forEach(itemAttachment -> {
+                        event.getRegistry().register(itemAttachment);
+                        tabOrder.add(itemAttachment);
+                    });
+
+            specialArmorTypes.values().stream()
+                    .filter(itemSpecialArmor -> itemSpecialArmor.type.contentPack.equals(file.getName()))
+                    .forEach(itemSpecialArmor -> {
+                        event.getRegistry().register(itemSpecialArmor);
+                        tabOrder.add(itemSpecialArmor);
+                    });
+
+            sprayTypes.values().stream()
+                    .filter(itemSpray -> itemSpray.type.contentPack.equals(file.getName()))
+                    .forEach(itemSpray -> {
+                        event.getRegistry().register(itemSpray);
+                        tabOrder.add(itemSpray);
+                    });
+
+            backpackTypes.values().stream()
+                    .filter(itemBackpack -> itemBackpack.type.contentPack.equals(file.getName()))
+                    .forEach(itemBackpack -> {
+                        event.getRegistry().register(itemBackpack);
+                        tabOrder.add(itemBackpack);
+                    });
+
+            grenadeTypes.values().stream()
+                    .filter(itemGrenade -> itemGrenade.type.contentPack.equals(file.getName()))
+                    .forEach(itemGrenade -> {
+                        event.getRegistry().register(itemGrenade);
+                        tabOrder.add(itemGrenade);
+                    });
 
             ItemRegisterEvent itemRegisterEvent = new ItemRegisterEvent(event.getRegistry(), tabOrder);
             MinecraftForge.EVENT_BUS.post(itemRegisterEvent);
@@ -613,7 +614,6 @@ public class ModularWarfare {
                     for (SkinType skin : ((ItemGun) item).type.modelSkins) {
                         CommonProxy.preloadSkinTypes.put(skin, ((ItemGun) item).type);
                     }
-                    CommonProxy.preloadFlashTex.add(((ItemGun) item).type.flashType);
                 }
 
                 if (item instanceof ItemBullet) {
