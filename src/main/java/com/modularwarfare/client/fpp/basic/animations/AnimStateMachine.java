@@ -102,10 +102,9 @@ public class AnimStateMachine {
 
     public void onTickUpdate() {
         ItemGun gun = null;
-        if (Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null) {
-            if (Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
-                gun = (ItemGun) Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem();
-            }
+        Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+        if (Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
+            gun = (ItemGun) Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem();
         }
         if (reloading) {
             disableSprinting(true);
@@ -233,20 +232,19 @@ public class AnimStateMachine {
         hammerRotation = model.hammerAngle;
 
         if (gunType.weaponType == WeaponType.Revolver && gunType.internalAmmoStorage != null) {
-            revolverBarrelRotationPerShoot = 360 / gunType.internalAmmoStorage;
+            revolverBarrelRotationPerShoot = (float) 360 / gunType.internalAmmoStorage;
             revolverBarrelRotation += revolverBarrelRotationPerShoot;
         }
 
         timeUntilPullback = model.hammerDelay;
         muzzleFlashTime = 2;
 
-        int Low = 0;
-        int High = gunType.flashType.resourceLocations.size() - 1;
-        int result = r.nextInt(High - Low) + Low;
-        flashInt = result;
+        int low = 0;
+        int high = gunType.flashType.resourceLocations.size() - 1;
+        flashInt = r.nextInt(high - low) + low;
 
         ArrayList<StateEntry> animEntries = WeaponAnimations.getAnimation(model.config.extra.reloadAnimation).getShootStates(model, gunType);
-        if (animEntries.size() > 0) {
+        if (!animEntries.isEmpty()) {
             shootStateEntries = adjustTiming(animEntries);
             shooting = true;
             shootTime = fireTickDelay;
@@ -279,7 +277,7 @@ public class AnimStateMachine {
     }
 
     public boolean isReloadState(StateType stateType) {
-        return currentReloadState != null ? currentReloadState.stateType == stateType : false;
+        return currentReloadState != null && currentReloadState.stateType == stateType;
     }
 
     public Optional<StateEntry> getShootState() {
@@ -287,7 +285,7 @@ public class AnimStateMachine {
     }
 
     public boolean isShootState(StateType stateType) {
-        return currentShootState != null ? currentShootState.stateType == stateType : false;
+        return currentShootState != null && currentShootState.stateType == stateType;
     }
 
     public boolean shouldRenderAmmo() {
@@ -295,11 +293,11 @@ public class AnimStateMachine {
             switch (reloadType) {
                 case Load: {
                     Optional<StateEntry> state = getState(StateType.Load);
-                    return state.isPresent() ? state.get().currentValue < 1f : false;
+                    return state.filter(stateEntry -> stateEntry.currentValue < 1f).isPresent();
                 }
                 case Unload: {
                     Optional<StateEntry> state = getState(StateType.Unload);
-                    return state.isPresent() ? state.get().currentValue < 1f : false;
+                    return state.filter(stateEntry -> stateEntry.currentValue < 1f).isPresent();
                 }
 
                 default:
@@ -342,7 +340,7 @@ public class AnimStateMachine {
         StateEntry stateEntry = null;
 
         if (reloadStateEntries == null)
-            return Optional.ofNullable(stateEntry);
+            return Optional.empty();
 
         for (StateEntry entry : reloadStateEntries) {
             if (entry.stateType == stateType) {
