@@ -45,7 +45,7 @@ public class WeaponHitEvent extends WeaponEvent {
             this.damage = damage;
         }
 
-        public boolean isHeadhot() {
+        public boolean isHeadshot() {
             return this.isHeadshot;
         }
 
