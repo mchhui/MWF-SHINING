@@ -18,10 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -71,16 +68,19 @@ public class AddonLoaderManager {
     }
 
     public void constructAddons(File dirAddon, Side side) {
-        for (File file : dirAddon.listFiles()) {
-            if (file.getName().endsWith(".jar")) {
-                try {
-                    ModularWarfare.LOGGER.info("ModularWarfare >> Trying to load addon: " + file.getName());
-                    this.loadAddon(file, side);
-                } catch (AddonLoadingException e) {
-                    e.printStackTrace();
-                }
-            }
+        File[] jars = dirAddon.listFiles(file -> file.getName().endsWith(".jar"));
+        if (jars == null) {
+            return;
         }
+
+        Arrays.stream(jars).forEach(jar -> {
+            try {
+                ModularWarfare.LOGGER.info("ModularWarfare >> Trying to load addon: " + jar.getName());
+                loadAddon(jar, side);
+            } catch (AddonLoadingException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public void constructDevAddons(File dirDevAddon, String mainClass, Side side) {
@@ -127,7 +127,7 @@ public class AddonLoaderManager {
                 throw new AddonLoadingException("Jar does not contain main.mwf");
             }
             inputStream = jar.getInputStream(entry);
-            mainClass = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
+            mainClass = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         } catch (IOException ex) {
             ModularWarfare.LOGGER.warn("Could not load main class from main.mwf file in '" + file.getName() + "'\n More info: " + ExceptionUtils.getStackTrace(ex));
             throw new AddonLoadingException("Could not load main class from main.mwf file in '" + file.getName() + "'\n More info in console");
@@ -136,14 +136,12 @@ public class AddonLoaderManager {
                 try {
                     jar.close();
                     ModularWarfare.LOGGER.warn("[Addon] Closed file !");
-                } catch (IOException e) {
-                }
+                } catch (IOException ignored) {}
             }
             if (inputStream != null) {
                 try {
                     inputStream.close();
-                } catch (IOException e) {
-                }
+                } catch (IOException ignored) {}
             }
         }
         try {

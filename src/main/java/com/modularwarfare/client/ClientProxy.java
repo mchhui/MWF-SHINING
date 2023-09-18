@@ -414,13 +414,12 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void reloadModels(boolean reloadSkins) {
-        for (BaseType baseType : ModularWarfare.baseTypes) {
-            if (baseType.hasModel()) {
-                baseType.reloadModel();
-            }
-        }
-        if (reloadSkins)
+        ModularWarfare.baseTypes.stream()
+                .filter(BaseType::hasModel)
+                .forEach(BaseType::reloadModel);
+        if (reloadSkins) {
             forceReload();
+        }
     }
 
     @Override

@@ -47,9 +47,9 @@ public class AnimationShotgun extends WeaponAnimation {
         //Translate Z - Left/Right
         GL11.glTranslatef(0F, 0F, bulletProgress * (-1F / 16F) / gunModel.config.extra.modelScale);
         //Rotate X axis - Rolls Left/Right
-        GL11.glRotatef(1F * bulletProgress, 1F, 0F, 0F);
+        GL11.glRotatef(bulletProgress, 1F, 0F, 0F);
         //Rotate Y axis - Angle Left/Right
-        GL11.glRotatef(1F * bulletProgress, 0F, 1F, 0F);
+        GL11.glRotatef(bulletProgress, 0F, 1F, 0F);
         //Rotate Z axis - Angle Up/Down
         GL11.glRotatef(20F * bulletProgress, 0F, 0F, 1F);
     }
@@ -61,9 +61,9 @@ public class AnimationShotgun extends WeaponAnimation {
 
         if (reloadCount >= 6) {
             states.add(new StateEntry(StateType.Load, 0.35f, 1f, MathType.Sub, reloadCount));
-        } else if (reloadCount >= 3 && reloadCount <= 5) {
+        } else if (reloadCount >= 3) {
             states.add(new StateEntry(StateType.Load, 0.15f, 1f, MathType.Sub, reloadCount));
-        } else if (reloadCount >= 0 && reloadCount <= 2) {
+        } else if (reloadCount >= 0) {
             states.add(new StateEntry(StateType.Load, 0.1f, 1f, MathType.Sub, reloadCount));
         }
 

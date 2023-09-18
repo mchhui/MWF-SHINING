@@ -49,14 +49,7 @@ public class AnimationSideClip extends WeaponAnimation {
 
     @Override
     public ArrayList<StateEntry> getReloadStates(ReloadType reloadType, int reloadCount) {
-        ArrayList<StateEntry> states = new ArrayList<StateEntry>();
-        states.add(new StateEntry(StateType.Tilt, 0.15f, 0f, MathType.Add));
-        if (reloadType == ReloadType.Unload || reloadType == ReloadType.Full)
-            states.add(new StateEntry(StateType.Unload, 0.35f, 0f, MathType.Add));
-        if (reloadType == ReloadType.Load || reloadType == ReloadType.Full)
-            states.add(new StateEntry(StateType.Load, 0.35f, 1f, MathType.Sub, reloadCount));
-        states.add(new StateEntry(StateType.Untilt, 0.15f, 1f, MathType.Sub));
-        return states;
+        return super.getReloadStates(reloadType, reloadCount);
     }
 
 }

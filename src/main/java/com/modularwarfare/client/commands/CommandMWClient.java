@@ -28,11 +28,11 @@ public class CommandMWClient extends CommandBase {
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (args.length == 1) {
-            if (args[0].equals("md5")) {
+            if ("md5".equals(args[0])) {
                 for (int i = 0; i < ModularWarfare.contentPackHashList.size(); i++) {
                     sender.sendMessage(new TextComponentString(ModularWarfare.contentPackHashList.get(i)));
                 }
-                if (ModularWarfare.contentPackHashList.size() == 0) {
+                if (ModularWarfare.contentPackHashList.isEmpty()) {
                     sender.sendMessage(new TextComponentString("There is not any content pack."));
                 }
                 return;

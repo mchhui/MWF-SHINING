@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 public class ContentTypes {
 
-    public static ArrayList<TypeEntry> values = new ArrayList<TypeEntry>();
+    public static ArrayList<TypeEntry> values = new ArrayList<>();
     private static int typeId = 0;
 
     public static void registerTypes() {

@@ -50,7 +50,7 @@ public class AnimationTopRifle extends WeaponAnimation {
 
     @Override
     public ArrayList<StateEntry> getReloadStates(ReloadType reloadType, int reloadCount) {
-        ArrayList<StateEntry> states = new ArrayList<StateEntry>();
+        ArrayList<StateEntry> states = new ArrayList<>();
         states.add(new StateEntry(StateType.Tilt, 0.15f, 0f, MathType.Add));
         if (reloadType == ReloadType.Unload || reloadType == ReloadType.Full)
             states.add(new StateEntry(StateType.Unload, 0.35f, 0f, MathType.Add));
