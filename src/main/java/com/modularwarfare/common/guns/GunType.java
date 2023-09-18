@@ -138,7 +138,7 @@ public class GunType extends BaseType {
      * Attachment Types
      */
     public HashMap<AttachmentPresetEnum, ArrayList<String>> acceptedAttachments;
-    
+
     public HashMap<AttachmentPresetEnum, String> defaultAttachments;
 
     // Reload Variables
@@ -214,7 +214,7 @@ public class GunType extends BaseType {
      */
     public String customHandsTexture;
     public transient TextureType handsTextureType;
-    
+
     public String customTrailTexture;
     public String customTrailModel;
     public boolean customTrailGlow;
@@ -325,9 +325,9 @@ public class GunType extends BaseType {
                 model = new ModelGun(ModularWarfare.getRenderConfig(this, GunRenderConfig.class), this);
             } else {
                 enhancedModel = new ModelEnhancedGun(ModularWarfare.getRenderConfig(this, GunEnhancedRenderConfig.class), this);
-            }  
-        }catch(Throwable t) {
-            ModularWarfare.LOGGER.warn("Something is going wrong when reloading model:"+internalName);
+            }
+        } catch (Throwable t) {
+            ModularWarfare.LOGGER.warn("Something is going wrong when reloading model:" + internalName);
             t.printStackTrace();
             FMLCommonHandler.instance().exitJava(0, false);
         }

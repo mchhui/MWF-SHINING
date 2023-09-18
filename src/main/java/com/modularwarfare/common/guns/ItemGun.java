@@ -1,7 +1,6 @@
 package com.modularwarfare.common.guns;
 
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset.Entry;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -257,7 +256,7 @@ public class ItemGun extends BaseItem {
                     if (gunType.defaultAttachments != null) {
                         for (Map.Entry<AttachmentPresetEnum, String> e : gunType.defaultAttachments.entrySet()) {
                             GunType.addAttachment(heldStack, e.getKey(),
-                                new ItemStack(ModularWarfare.attachmentTypes.get(e.getValue())));
+                                    new ItemStack(ModularWarfare.attachmentTypes.get(e.getValue())));
                         }
                     }
                 }

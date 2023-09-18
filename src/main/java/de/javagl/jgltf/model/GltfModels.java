@@ -35,37 +35,32 @@ import de.javagl.jgltf.model.v2.GltfModelCreatorV2;
 /**
  * Methods to create {@link GltfModel} instances from a {@link GltfAsset}
  */
-public class GltfModels
-{
-    /**
-     * Creates a {@link GltfModel} instance from the given {@link GltfAsset}
-     * 
-     * @param gltfAsset The {@link GltfAsset}
-     * @return The {@link GltfModel}
-     * @throws IllegalArgumentException If the given asset has an 
-     * unknown version
-     */
-    public static GltfModel create(GltfAsset gltfAsset)
-    {
-        if (gltfAsset instanceof GltfAssetV1)
-        {
-            GltfAssetV1 gltfAssetV1 = (GltfAssetV1)gltfAsset;
-            return new GltfModelV1(gltfAssetV1);
-        }
-        if (gltfAsset instanceof GltfAssetV2)
-        {
-            GltfAssetV2 gltfAssetV2 = (GltfAssetV2)gltfAsset;
-            return GltfModelCreatorV2.create(gltfAssetV2);
-        }
-        throw new IllegalArgumentException(
-            "The glTF asset has an unknown version: " + gltfAsset);
-    }
-    
+public class GltfModels {
     /**
      * Private constructor to prevent instantiation
      */
-    private GltfModels()
-    {
+    private GltfModels() {
         // Private constructor to prevent instantiation
+    }
+
+    /**
+     * Creates a {@link GltfModel} instance from the given {@link GltfAsset}
+     *
+     * @param gltfAsset The {@link GltfAsset}
+     * @return The {@link GltfModel}
+     * @throws IllegalArgumentException If the given asset has an
+     *                                  unknown version
+     */
+    public static GltfModel create(GltfAsset gltfAsset) {
+        if (gltfAsset instanceof GltfAssetV1) {
+            GltfAssetV1 gltfAssetV1 = (GltfAssetV1) gltfAsset;
+            return new GltfModelV1(gltfAssetV1);
+        }
+        if (gltfAsset instanceof GltfAssetV2) {
+            GltfAssetV2 gltfAssetV2 = (GltfAssetV2) gltfAsset;
+            return GltfModelCreatorV2.create(gltfAssetV2);
+        }
+        throw new IllegalArgumentException(
+                "The glTF asset has an unknown version: " + gltfAsset);
     }
 }

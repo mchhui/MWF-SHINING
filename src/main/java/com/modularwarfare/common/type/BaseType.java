@@ -166,15 +166,15 @@ public class BaseType {
             }
         }
     }
-    
+
     public SoundEvent getSound(EntityPlayer player, WeaponSoundType weaponSoundType) {
         if (weaponSoundType != null) {
-            if(weaponSoundMap != null) {
+            if (weaponSoundMap != null) {
                 if (weaponSoundMap.containsKey(weaponSoundType)) {
                     for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
                         return ClientProxy.modSounds.get(soundEntry.soundName);
                     }
-                }else {
+                } else {
                     if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
                         return ClientProxy.modSounds.get(weaponSoundType.defaultSound);
                     }

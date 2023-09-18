@@ -6,11 +6,11 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GenerateJsonModelsEvent;
 import com.modularwarfare.api.WeaponAnimations;
-import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.commands.CommandMWClient;
 import com.modularwarfare.client.export.ItemModelExport;
+import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.anims.*;
-import com.modularwarfare.client.fpp.basic.configs.*;
+import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
@@ -91,7 +91,10 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
-import net.minecraftforge.fml.common.*;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.FMLModContainer;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.MetadataCollection;
 import net.minecraftforge.fml.common.discovery.ContainerType;
 import net.minecraftforge.fml.common.discovery.ModCandidate;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
@@ -103,9 +106,6 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -145,8 +145,8 @@ public class ClientProxy extends CommonProxy {
      **/
     public static GCCompatInterop galacticraftInterop;
     public static ObfuscateCompatInterop obfuscateInterop;
-    
-    private static int lastBobbingParm=1;
+
+    private static int lastBobbingParm = 1;
 
     public KillFeedManager getKillChatManager() {
         return this.killFeedManager;
@@ -297,7 +297,7 @@ public class ClientProxy extends CommonProxy {
         loadTextures();
 
         ClientCommandHandler.instance.registerCommand(new CommandMWClient());
-        
+
         Programs.init();
     }
 
@@ -317,7 +317,7 @@ public class ClientProxy extends CommonProxy {
             }
         });
         preloadFlashTex.forEach((type) -> {
-            type.resourceLocations.forEach((loc)->{
+            type.resourceLocations.forEach((loc) -> {
                 Minecraft.getMinecraft().getTextureManager().bindTexture(loc);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
@@ -710,10 +710,10 @@ public class ClientProxy extends CommonProxy {
                 //registry.register(modSounds.get(weaponSoundType.defaultSound));
             }
         }
-        
+
         for (SoundEvent soundEvent : modSounds.values()) {
-            if(!registry.containsKey(soundEvent.getRegistryName())) {
-                registry.register(soundEvent);  
+            if (!registry.containsKey(soundEvent.getRegistryName())) {
+                registry.register(soundEvent);
             }
         }
     }
@@ -737,7 +737,7 @@ public class ClientProxy extends CommonProxy {
             RenderingRegistry.registerEntityRenderingHandler(EntityItemLoot.class, RenderItemLoot.FACTORY);
 
             RenderingRegistry.registerEntityRenderingHandler(EntityBulletClient.class, RenderBullet.FACTORY);
-            
+
             //RENDER PROJECTILES
             RenderingRegistry.registerEntityRenderingHandler(EntityExplosiveProjectile.class, RenderProjectile.FACTORY);
         }
@@ -751,11 +751,11 @@ public class ClientProxy extends CommonProxy {
             if (gunType.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
             } else {
-                float rand=(float) Math.random();
-                ClientEventHandler.cemeraBobbing=lastBobbingParm*(0.3f+0.4f*Math.abs(rand));
-                lastBobbingParm=-lastBobbingParm;
-                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
-                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
+                float rand = (float) Math.random();
+                ClientEventHandler.cemeraBobbing = lastBobbingParm * (0.3f + 0.4f * Math.abs(rand));
+                lastBobbingParm = -lastBobbingParm;
+                AnimationController controller = gunEnhancedRenderer.getController(player, (GunEnhancedRenderConfig) gunType.enhancedModel.config);
+                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller, (ModelEnhancedGun) gunType.enhancedModel,
                         gunType, fireTickDelay);
             }
 
@@ -766,7 +766,7 @@ public class ClientProxy extends CommonProxy {
 
             float recoilPitchBarrelFactor = 1.0f;
             float recoilYawBarrelFactor = 1.0f;
-            
+
             float recoilPitchStockFactor = 1.0f;
             float recoilYawStockFactor = 1.0f;
 
@@ -781,7 +781,7 @@ public class ClientProxy extends CommonProxy {
                 recoilPitchBarrelFactor = barrelAttachment.type.barrel.recoilPitchFactor;
                 recoilYawBarrelFactor = barrelAttachment.type.barrel.recoilYawFactor;
             }
-            
+
             if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Stock) != null) {
                 ItemAttachment stockAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Stock).getItem();
                 recoilPitchStockFactor = stockAttachment.type.stock.recoilPitchFactor;
@@ -789,8 +789,8 @@ public class ClientProxy extends CommonProxy {
             }
 
             boolean isCrawling = false;
-            if(ModularWarfare.isLoadedModularMovements){
-                if(ClientLitener.clientPlayerState.isCrawling){
+            if (ModularWarfare.isLoadedModularMovements) {
+                if (ClientLitener.clientPlayerState.isCrawling) {
                     isCrawling = true;
                 }
             }
@@ -821,10 +821,10 @@ public class ClientProxy extends CommonProxy {
                 offsetYaw *= gunType.recoilAimReducer;
                 offsetYaw *= RenderParameters.phase ? 1 : -1;
             }
-            if(ModularWarfare.isLoadedModularMovements) {
-                if(ClientLitener.clientPlayerState.isCrawling) {
-                    offsetPitch*=gunType.recoilCrawlPitchFactor;
-                    offsetYaw*=gunType.recoilCrawlYawFactor;
+            if (ModularWarfare.isLoadedModularMovements) {
+                if (ClientLitener.clientPlayerState.isCrawling) {
+                    offsetPitch *= gunType.recoilCrawlPitchFactor;
+                    offsetYaw *= gunType.recoilCrawlYawFactor;
                 }
             }
             RenderParameters.playerRecoilPitch += offsetPitch;
@@ -845,30 +845,30 @@ public class ClientProxy extends CommonProxy {
             if (gunType.type.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerReload(reloadTime, reloadCount, (ModelGun) gunType.type.model, ReloadType.getTypeFromInt(reloadType), player.isSprinting());
             } else {
-                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
-                ClientRenderHooks.getEnhancedAnimMachine(player).triggerReload(controller,player,reloadTime, reloadCount, (ModelEnhancedGun) gunType.type.enhancedModel, ReloadType.getTypeFromInt(reloadType));
+                AnimationController controller = gunEnhancedRenderer.getController(player, (GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
+                ClientRenderHooks.getEnhancedAnimMachine(player).triggerReload(controller, player, reloadTime, reloadCount, (ModelEnhancedGun) gunType.type.enhancedModel, ReloadType.getTypeFromInt(reloadType));
             }
         }
     }
-    
+
     @Override
     public void onShootFailedAnimation(EntityPlayer player, String wepType) {
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
             if (gunType.type.animationType == WeaponAnimationType.ENHANCED) {
-                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
-                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun)gunType.type.enhancedModel, gunType.type, 0,true);
+                AnimationController controller = gunEnhancedRenderer.getController(player, (GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
+                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller, (ModelEnhancedGun) gunType.type.enhancedModel, gunType.type, 0, true);
             }
         }
     }
-    
+
     @Override
     public void onModeChangeAnimation(EntityPlayer player, String wepType) {
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
             if (gunType.type.animationType == WeaponAnimationType.ENHANCED) {
-                if(gunEnhancedRenderer.controller!=null) {
-                    gunEnhancedRenderer.controller.MODE_CHANGE=0;
+                if (gunEnhancedRenderer.controller != null) {
+                    gunEnhancedRenderer.controller.MODE_CHANGE = 0;
                 }
             }
         }
@@ -928,7 +928,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void spawnExplosionParticle(World world, double x, double y, double z) {
-        if(!world.isRemote) {
+        if (!world.isRemote) {
             super.spawnExplosionParticle(world, x, y, z);
             return;
         }
@@ -937,14 +937,14 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void spawnRocketParticle(World world, double x, double y, double z) {
-        if(!world.isRemote) {
+        if (!world.isRemote) {
             super.spawnRocketParticle(world, x, y, z);
             return;
         }
         final Particle rocketParticle = new ParticleRocket(world, x, y, z);
         Minecraft.getMinecraft().effectRenderer.addEffect(rocketParticle);
     }
-    
+
     @Override
     public void playFlashSound(EntityPlayer entityPlayer) {
         Minecraft.getMinecraft().getSoundHandler().playSound(new PositionedSoundRecord(ModSounds.FLASHED, SoundCategory.PLAYERS, (float) FlashSystem.flashValue / 1000, 1, (float) entityPlayer.posX, (float) entityPlayer.posY, (float) entityPlayer.posZ));

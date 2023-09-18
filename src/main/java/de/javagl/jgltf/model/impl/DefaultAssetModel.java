@@ -32,8 +32,7 @@ import de.javagl.jgltf.model.AssetModel;
  * Default implementation of an {@link AssetModel}
  */
 public class DefaultAssetModel extends AbstractNamedModelElement
-    implements AssetModel
-{
+        implements AssetModel {
     /**
      * The copyright
      */
@@ -44,35 +43,31 @@ public class DefaultAssetModel extends AbstractNamedModelElement
      */
     private String generator;
 
-    /**
-     * Set the copyright
-     * 
-     * @param copyright The copyright
-     */
-    public void setCopyright(String copyright)
-    {
-        this.copyright = copyright;
-    }
-
     @Override
-    public String getCopyright()
-    {
+    public String getCopyright() {
         return copyright;
     }
 
     /**
-     * Set the generator
-     * 
-     * @param generator The generator
+     * Set the copyright
+     *
+     * @param copyright The copyright
      */
-    public void setGenerator(String generator)
-    {
-        this.generator = generator;
+    public void setCopyright(String copyright) {
+        this.copyright = copyright;
     }
 
     @Override
-    public String getGenerator()
-    {
+    public String getGenerator() {
         return generator;
+    }
+
+    /**
+     * Set the generator
+     *
+     * @param generator The generator
+     */
+    public void setGenerator(String generator) {
+        this.generator = generator;
     }
 }

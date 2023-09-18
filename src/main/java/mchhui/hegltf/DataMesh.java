@@ -1,47 +1,31 @@
 package mchhui.hegltf;
 
+import com.modularwarfare.client.gui.GuiGunModify;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
+
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL45;
-
-import com.modularwarfare.client.gui.GuiGunModify;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
-
-import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
 
 public class DataMesh {
     private static final int SIZE_OF_FLOAT = 4;
     private static final int SIZE_OF_INT = 4;
     public String material;
     public boolean skin;
-
+    public int unit;
+    public int glDrawingMode = GL11.GL_TRIANGLES;
     protected List<Float> geoList = new ArrayList<Float>();
     protected int geoCount;
     protected ByteBuffer geoBuffer;
     protected IntBuffer elementBuffer;
     protected int elementCount;
-    public int unit;
-    public int glDrawingMode = GL11.GL_TRIANGLES;
     private int displayList = -1;
     private int ssboVao = -1;
     private int vertexCount = 0;
@@ -69,16 +53,16 @@ public class DataMesh {
         /*
          * 如果需要 可加入纹理处理内容
          * */
-        
+
         callVAO();
-        
-        if(ObjModelRenderer.glowTxtureMode) {
-            if(!ObjModelRenderer.customItemRenderer.bindTextureGlow(ObjModelRenderer.glowType, ObjModelRenderer.glowPath)) {
+
+        if (ObjModelRenderer.glowTxtureMode) {
+            if (!ObjModelRenderer.customItemRenderer.bindTextureGlow(ObjModelRenderer.glowType, ObjModelRenderer.glowPath)) {
                 return;
             }
             float x = OpenGlHelper.lastBrightnessX;
             float y = OpenGlHelper.lastBrightnessY;
-            ObjModelRenderer.glowTxtureMode=false;
+            ObjModelRenderer.glowTxtureMode = false;
             GlStateManager.depthMask(false);
             //GlStateManager.enableBlend();
             GlStateManager.depthFunc(GL11.GL_EQUAL);
@@ -90,11 +74,11 @@ public class DataMesh {
             GlStateManager.depthFunc(GL11.GL_LEQUAL);
             //GlStateManager.disableBlend();
             GlStateManager.depthMask(true);
-            ObjModelRenderer.glowTxtureMode=true;
+            ObjModelRenderer.glowTxtureMode = true;
             ObjModelRenderer.customItemRenderer.bindTexture(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
-            
+
             //垃圾bug 迟早把这改装界面扬了
-            if(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
+            if (Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
                 GlStateManager.disableLighting();
             }
         }
@@ -195,7 +179,7 @@ public class DataMesh {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, ssbo);
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, geoBuffer, GL15.GL_DYNAMIC_COPY);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-            
+
             GL30.glBindVertexArray(ssboVao);
 
             GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
@@ -206,7 +190,7 @@ public class DataMesh {
             GL11.glVertexPointer(3, GL11.GL_FLOAT, 8 * SIZE_OF_FLOAT, 0);
             GL11.glNormalPointer(GL11.GL_FLOAT, 8 * SIZE_OF_FLOAT, 3 * SIZE_OF_FLOAT);
             GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 8 * SIZE_OF_FLOAT, 6 * SIZE_OF_FLOAT);
-            
+
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
 
             GL30.glBindVertexArray(0);

@@ -31,8 +31,7 @@ import de.javagl.jgltf.model.CameraPerspectiveModel;
 /**
  * Default implementation of a {@link CameraPerspectiveModel}
  */
-public class DefaultCameraPerspectiveModel implements CameraPerspectiveModel
-{
+public class DefaultCameraPerspectiveModel implements CameraPerspectiveModel {
     /**
      * The aspect ratio
      */
@@ -53,68 +52,60 @@ public class DefaultCameraPerspectiveModel implements CameraPerspectiveModel
      */
     private Float znear;
 
+    @Override
+    public Float getAspectRatio() {
+        return aspectRatio;
+    }
+
     /**
      * Set the aspect ratio
-     * 
+     *
      * @param aspectRatio The aspect ratio
      */
-    public void setAspectRatio(Float aspectRatio)
-    {
+    public void setAspectRatio(Float aspectRatio) {
         this.aspectRatio = aspectRatio;
+    }
+
+    @Override
+    public Float getYfov() {
+        return yfov;
     }
 
     /**
      * Set the FOV
-     * 
+     *
      * @param yfov The FOV
      */
-    public void setYfov(Float yfov)
-    {
+    public void setYfov(Float yfov) {
         this.yfov = yfov;
+    }
+
+    @Override
+    public Float getZfar() {
+        return zfar;
     }
 
     /**
      * Set the far clipping plane distance
-     * 
+     *
      * @param zfar The distance
      */
-    public void setZfar(Float zfar)
-    {
+    public void setZfar(Float zfar) {
         this.zfar = zfar;
+    }
+
+    @Override
+    public Float getZnear() {
+        return znear;
     }
 
     /**
      * Set the near clipping plane distance
-     * 
+     *
      * @param znear The distance
      */
-    public void setZnear(Float znear)
-    {
+    public void setZnear(Float znear) {
         this.znear = znear;
-    }
-    
-    @Override
-    public Float getAspectRatio()
-    {
-        return aspectRatio;
-    }
-    
-    @Override
-    public Float getYfov()
-    {
-        return yfov;
-    }
-
-    @Override
-    public Float getZfar()
-    {
-        return zfar;
-    }
-
-    @Override
-    public Float getZnear()
-    {
-        return znear;
     }
 
 }

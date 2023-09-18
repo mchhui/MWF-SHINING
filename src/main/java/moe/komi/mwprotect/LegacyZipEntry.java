@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 
-public class LegacyZipEntry implements IZipEntry{
+public class LegacyZipEntry implements IZipEntry {
     private final ZipFile zipFile;
     private final FileHeader fileHeader;
 

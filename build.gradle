@@ -7,7 +7,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:5.+'
         classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
         classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
     }
@@ -113,7 +113,7 @@ mixin {
 }
 sourceSets {
     main {
-        output.resourcesDir = output.classesDir
+//        output.resourcesDir = output.classesDir
         ext.refMap = "mixins.modularwarfare.refmap.json"
     }
 }

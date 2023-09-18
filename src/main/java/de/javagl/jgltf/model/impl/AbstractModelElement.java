@@ -26,51 +26,38 @@
  */
 package de.javagl.jgltf.model.impl;
 
+import de.javagl.jgltf.model.ModelElement;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import de.javagl.jgltf.model.ModelElement;
-
 /**
  * Abstract base implementation of the {@link ModelElement} interface.
  */
-public class AbstractModelElement implements ModelElement
-{
+public class AbstractModelElement implements ModelElement {
     /**
      * The extensions
      */
     private Map<String, Object> extensions;
-    
+
     /**
      * The extras
      */
     private Object extras;
-    
-    /**
-     * Set the extensions to be a reference to the given map.
-     * 
-     * @param extensions The extensions
-     */
-    public void setExtensions(Map<String, Object> extensions)
-    {
-        this.extensions = extensions;
-    }
-    
+
     /**
      * Add the given extension to this object.
-     * 
+     * <p>
      * This will add the given key-value pair to the extensions map,
      * creating it if it was <code>null</code>.
-     *  
-     * @param name The name of the extension
+     *
+     * @param name      The name of the extension
      * @param extension The extension object
      */
-    public void addExtension(String name, Object extension)
-    {
+    public void addExtension(String name, Object extension) {
         Objects.requireNonNull(name, "The name may not be null");
-        if (this.extensions == null)
-        {
+        if (this.extensions == null) {
             this.extensions = new LinkedHashMap<String, Object>();
         }
         this.extensions.put(name, extension);
@@ -78,44 +65,46 @@ public class AbstractModelElement implements ModelElement
 
     /**
      * Remove the specified extension from this object.
-     * 
+     * <p>
      * If the extension map is empty after this call, then it will be
      * set to <code>null</code>.
-     * 
+     *
      * @param name The name of the extension
      */
-    public void removeExtension(String name)
-    {
-        if (this.extensions != null)
-        {
+    public void removeExtension(String name) {
+        if (this.extensions != null) {
             this.extensions.remove(name);
-            if (this.extensions.isEmpty())
-            {
+            if (this.extensions.isEmpty()) {
                 this.extensions = null;
             }
         }
     }
-    
+
+    @Override
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
+
+    /**
+     * Set the extensions to be a reference to the given map.
+     *
+     * @param extensions The extensions
+     */
+    public void setExtensions(Map<String, Object> extensions) {
+        this.extensions = extensions;
+    }
+
+    @Override
+    public Object getExtras() {
+        return extras;
+    }
 
     /**
      * Set the extras
-     * 
+     *
      * @param extras The extras
      */
-    public void setExtras(Object extras)
-    {
+    public void setExtras(Object extras) {
         this.extras = extras;
-    }
-    
-    @Override
-    public Map<String, Object> getExtensions()
-    {
-        return extensions;
-    }
-    
-    @Override
-    public Object getExtras()
-    {
-        return extras;
     }
 }

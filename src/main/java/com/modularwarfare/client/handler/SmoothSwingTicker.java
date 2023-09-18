@@ -11,20 +11,20 @@ public class SmoothSwingTicker extends TimerTask {
     private long lastTime = System.nanoTime();
     private double frameDelta = 0;
 
+    public static void startSmoothSwingTimer() {
+        Timer timer = new Timer("SmoothSwingThread");
+        TimerTask task = new SmoothSwingTicker();
+        timer.schedule(task, 0, (int) (1000 / amountOfTicks));
+    }
+
     @Override
     public void run() {
         long nowNano = System.nanoTime();
         double nanoPerFrame = 1000000000.0 / amountOfTicks;
         frameDelta += (nowNano - lastTime) / nanoPerFrame;
         lastTime = nowNano;
-        int frameDeltaCount = (int)frameDelta;
+        int frameDeltaCount = (int) frameDelta;
         RenderParameters.SMOOTH_SWING += frameDeltaCount;
         frameDelta -= frameDeltaCount;
-    }
-
-    public static void startSmoothSwingTimer() {
-        Timer timer = new Timer("SmoothSwingThread");
-        TimerTask task = new SmoothSwingTicker();
-        timer.schedule(task, 0, (int)(1000 / amountOfTicks));
     }
 }
