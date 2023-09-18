@@ -58,7 +58,7 @@ public class BackWeaponsManager implements INBTSerializable<NBTTagCompound> {
     private ItemStack getItemInBack(EntityPlayerMP mp) {
         ItemStack stack = ItemStack.EMPTY;
         ArrayList<ItemStack> stacks = getItemsInBack(mp);
-        if (stacks.size() > 0) {
+        if (!stacks.isEmpty()) {
             stack = stacks.get(0);
         }
         return stack;

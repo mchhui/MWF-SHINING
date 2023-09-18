@@ -9,8 +9,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.IThreadListener;
 
 public class PacketBulletSnap extends PacketBase {
-
-
     public PacketBulletSnap() {
     }
 

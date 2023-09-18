@@ -51,57 +51,66 @@ public class PacketExpShot extends PacketBase {
                     entityPlayer.sendMessage(new TextComponentString(TextFormatting.GRAY + "[" + TextFormatting.RED + "ModularWarfare" + TextFormatting.GRAY + "] Your ping is too high, shot not registered."));
                     return;
                 }
-                if (entityPlayer != null) {
-                    if (entityPlayer.getHeldItemMainhand() != null) {
-                        if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                            if (ModularWarfare.gunTypes.get(internalname) != null) {
-                                ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
-                                WeaponFireMode fireMode = itemGun.type.getFireMode(entityPlayer.getHeldItemMainhand());
-                                int shotCount = fireMode == WeaponFireMode.BURST ? entityPlayer.getHeldItemMainhand().getTagCompound().getInteger("shotsremaining") > 0 ? entityPlayer.getHeldItemMainhand().getTagCompound().getInteger("shotsremaining") : itemGun.type.numBurstRounds : 1;
 
-                                // Burst Stuff
-                                if (fireMode == WeaponFireMode.BURST) {
-                                    shotCount = shotCount - 1;
-                                    entityPlayer.getHeldItemMainhand().getTagCompound().setInteger("shotsremaining", shotCount);
-                                }
+                if (entityPlayer == null) {
+                    return;
+                }
 
-                                itemGun.consumeShot(entityPlayer.getHeldItemMainhand());
-                                entityPlayer.sendSlotContents(entityPlayer.inventoryContainer,
-                                        entityPlayer.inventoryContainer.inventorySlots.size() - 1 - 9 + entityPlayer.inventory.currentItem, entityPlayer.getHeldItemMainhand());
+                if (entityPlayer.getHeldItemMainhand() == null) {
+                    return;
+                }
 
-                                // Sound
-                                if (GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel) != null) {
-                                    itemGun.type.playSound(entityPlayer, WeaponSoundType.FireSuppressed, entityPlayer.getHeldItemMainhand(), entityPlayer);
-                                } else {
-                                    itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
-                                }
+                if (!(entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun)) {
+                    return;
+                }
 
-                                //Hands upwards when shooting
-                                if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
-                                    ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
-                                }
-                                ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
+                if (ModularWarfare.gunTypes.get(internalname) == null) {
+                    return;
+                }
 
-                                //Animation
-                                ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
-                                Vec3d posSmoke = entityPlayer.getPositionEyes(0);
-                                if (ModularWarfare.isLoadedModularMovements) {
-                                    posSmoke = ServerListener.onGetPositionEyes(entityPlayer, 0, posSmoke);
-                                }
-                                posSmoke = posSmoke.add(entityPlayer.getLookVec().scale(0.8f));
-                                Vec3d crossVec = new Vec3d(1, 0, 0).rotateYaw(-(float) Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float) Math.toRadians(entityPlayer.rotationPitch));
-                                Vec3d offsetVec;
-                                for (int i = 0; i < 5; i++) {
-                                    double rand = Math.random() - 0.5f;
-                                    offsetVec = crossVec.scale((rand / Math.abs(rand) * 0.5f)).add(entityPlayer.getLookVec().scale(0.9f));
-                                    EasyEffect.sendEffect(entityPlayer, posSmoke.x,
-                                            posSmoke.y - 0.1f, posSmoke.z,
-                                            offsetVec.x / (i + 1), 1.2f, offsetVec.z / (i + 1), 0.5f, -1f, 0.5f, 200 / (i + 1), (int) (10 + 20 * Math.random()), 20, 5,
-                                            (Math.random() * 0.3f + 0.2f), "modularwarfare:textures/particles/fire_smoke.png");
-                                }
-                            }
-                        }
-                    }
+                ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
+                WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
+                int shotCount = fireMode == WeaponFireMode.BURST ? entityPlayer.getHeldItemMainhand().getTagCompound().getInteger("shotsremaining") > 0 ? entityPlayer.getHeldItemMainhand().getTagCompound().getInteger("shotsremaining") : itemGun.type.numBurstRounds : 1;
+
+                // Burst Stuff
+                if (fireMode == WeaponFireMode.BURST) {
+                    shotCount = shotCount - 1;
+                    entityPlayer.getHeldItemMainhand().getTagCompound().setInteger("shotsremaining", shotCount);
+                }
+
+                ItemGun.consumeShot(entityPlayer.getHeldItemMainhand());
+                entityPlayer.sendSlotContents(entityPlayer.inventoryContainer,
+                        entityPlayer.inventoryContainer.inventorySlots.size() - 1 - 9 + entityPlayer.inventory.currentItem, entityPlayer.getHeldItemMainhand());
+
+                // Sound
+                if (GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel) != null) {
+                    itemGun.type.playSound(entityPlayer, WeaponSoundType.FireSuppressed, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                } else {
+                    itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                }
+
+                //Hands upwards when shooting
+                if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
+                    ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
+                }
+                ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
+
+                //Animation
+                ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
+                Vec3d posSmoke = entityPlayer.getPositionEyes(0);
+                if (ModularWarfare.isLoadedModularMovements) {
+                    posSmoke = ServerListener.onGetPositionEyes(entityPlayer, 0, posSmoke);
+                }
+                posSmoke = posSmoke.add(entityPlayer.getLookVec().scale(0.8f));
+                Vec3d crossVec = new Vec3d(1, 0, 0).rotateYaw(-(float) Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float) Math.toRadians(entityPlayer.rotationPitch));
+                Vec3d offsetVec;
+                for (int i = 0; i < 5; i++) {
+                    double rand = Math.random() - 0.5f;
+                    offsetVec = crossVec.scale((rand / Math.abs(rand) * 0.5f)).add(entityPlayer.getLookVec().scale(0.9f));
+                    EasyEffect.sendEffect(entityPlayer, posSmoke.x,
+                            posSmoke.y - 0.1f, posSmoke.z,
+                            offsetVec.x / (i + 1), 1.2f, offsetVec.z / (i + 1), 0.5f, -1f, 0.5f, 200 / (i + 1), (int) (10 + 20 * Math.random()), 20, 5,
+                            (Math.random() * 0.3f + 0.2f), "modularwarfare:textures/particles/fire_smoke.png");
                 }
             }
         });

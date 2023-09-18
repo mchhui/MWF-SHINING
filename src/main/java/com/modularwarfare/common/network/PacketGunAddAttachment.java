@@ -34,62 +34,74 @@ public class PacketGunAddAttachment extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        if (entityPlayer.getHeldItemMainhand() != null) {
-            if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                ItemStack gunStack = entityPlayer.getHeldItemMainhand();
-                ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
-                GunType gunType = itemGun.type;
-                InventoryPlayer inventory = entityPlayer.inventory;
+        if (entityPlayer.getHeldItemMainhand() == null) {
+            return;
+        }
 
-                if (inventory.getStackInSlot(slot) != ItemStack.EMPTY) {
-                    ItemStack attachStack = inventory.getStackInSlot(slot);
-                    if (attachStack.getItem() instanceof ItemAttachment) {
-                        ItemAttachment itemAttachment = (ItemAttachment) attachStack.getItem();
-                        AttachmentType attachType = itemAttachment.type;
-                        if (gunType.acceptedAttachments.get(attachType.attachmentType) != null && gunType.acceptedAttachments.get(attachType.attachmentType).size() >= 1) {
-                            if (gunType.acceptedAttachments.containsKey(attachType.attachmentType)) {
-                                if (gunType.acceptedAttachments.get(attachType.attachmentType) != null) {
-                                    if (gunType.acceptedAttachments.get(attachType.attachmentType).size() >= 1) {
-                                        if (gunType.acceptedAttachments.get(attachType.attachmentType).contains(attachType.internalName)) {
-                                            ItemStack itemStack = GunType.getAttachment(gunStack, attachType.attachmentType);
-                                            if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                                                ItemAttachment localItemAttachment = (ItemAttachment) itemStack.getItem();
-                                                AttachmentType localAttachType = localItemAttachment.type;
-                                                GunType.removeAttachment(gunStack, localAttachType.attachmentType);
-                                                inventory.addItemStackToInventory(itemStack);
-                                            }
-                                        }
-                                    }
-                                    ItemStack attachmentStack = new ItemStack(itemAttachment);
-                                    NBTTagCompound tag = new NBTTagCompound();
-                                    tag.setInteger("skinId", 0);
-                                    attachmentStack.setTagCompound(tag);
-                                    GunType.addAttachment(gunStack, attachType.attachmentType, attachmentStack);
-                                    inventory.getStackInSlot(this.slot).shrink(1);
-                                    ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
+        if (!(entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun)) {
+            return;
+        }
+
+        ItemStack gunStack = entityPlayer.getHeldItemMainhand();
+        ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
+        GunType gunType = itemGun.type;
+        InventoryPlayer inventory = entityPlayer.inventory;
+
+        if (inventory.getStackInSlot(slot) == ItemStack.EMPTY) {
+            return;
+        }
+
+        ItemStack attachStack = inventory.getStackInSlot(slot);
+        if (attachStack.getItem() instanceof ItemAttachment) {
+            ItemAttachment itemAttachment = (ItemAttachment) attachStack.getItem();
+            AttachmentType attachType = itemAttachment.type;
+            if (gunType.acceptedAttachments.get(attachType.attachmentType) != null && !gunType.acceptedAttachments.get(attachType.attachmentType).isEmpty()) {
+                if (gunType.acceptedAttachments.containsKey(attachType.attachmentType)) {
+                    if (gunType.acceptedAttachments.get(attachType.attachmentType) != null) {
+                        if (!gunType.acceptedAttachments.get(attachType.attachmentType).isEmpty()) {
+                            if (gunType.acceptedAttachments.get(attachType.attachmentType).contains(attachType.internalName)) {
+                                ItemStack itemStack = GunType.getAttachment(gunStack, attachType.attachmentType);
+                                if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                                    ItemAttachment localItemAttachment = (ItemAttachment) itemStack.getItem();
+                                    AttachmentType localAttachType = localItemAttachment.type;
+                                    GunType.removeAttachment(gunStack, localAttachType.attachmentType);
+                                    inventory.addItemStackToInventory(itemStack);
                                 }
                             }
                         }
-                    }
-                    if (attachStack.getItem() instanceof ItemSpray) {
-                        ItemSpray spray = (ItemSpray) attachStack.getItem();
-                        if (gunStack.getTagCompound() != null) {
-                            for (int i = 0; i < gunType.modelSkins.length; i++) {
-                                if (gunType.modelSkins[i].internalName.equalsIgnoreCase(spray.type.skinName)) {
-                                    NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
-                                    nbtTagCompound.setInteger("skinId", i);
-                                    gunStack.setTagCompound(nbtTagCompound);
-                                    inventory.getStackInSlot(slot).damageItem(1, entityPlayer);
-                                    if (inventory.getStackInSlot(slot).getMaxDamage() != 0 && inventory.getStackInSlot(slot).getItemDamage() == inventory.getStackInSlot(slot).getMaxDamage()) {
-                                        inventory.removeStackFromSlot(slot);
-                                    }
-                                    ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "spray", 1f, 1f), entityPlayer);
-                                }
-                            }
-                        }
+                        ItemStack attachmentStack = new ItemStack(itemAttachment);
+                        NBTTagCompound tag = new NBTTagCompound();
+                        tag.setInteger("skinId", 0);
+                        attachmentStack.setTagCompound(tag);
+                        GunType.addAttachment(gunStack, attachType.attachmentType, attachmentStack);
+                        inventory.getStackInSlot(this.slot).shrink(1);
+                        ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
                     }
                 }
             }
+        }
+        if (!(attachStack.getItem() instanceof ItemSpray)) {
+            return;
+        }
+
+        ItemSpray spray = (ItemSpray) attachStack.getItem();
+        if (gunStack.getTagCompound() == null) {
+            return;
+        }
+
+        for (int i = 0; i < gunType.modelSkins.length; i++) {
+            if (!gunType.modelSkins[i].internalName.equalsIgnoreCase(spray.type.skinName)) {
+                continue;
+            }
+
+            NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
+            nbtTagCompound.setInteger("skinId", i);
+            gunStack.setTagCompound(nbtTagCompound);
+            inventory.getStackInSlot(slot).damageItem(1, entityPlayer);
+            if (inventory.getStackInSlot(slot).getMaxDamage() != 0 && inventory.getStackInSlot(slot).getItemDamage() == inventory.getStackInSlot(slot).getMaxDamage()) {
+                inventory.removeStackFromSlot(slot);
+            }
+            ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "spray", 1f, 1f), entityPlayer);
         }
     }
 

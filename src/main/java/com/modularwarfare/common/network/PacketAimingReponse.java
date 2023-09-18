@@ -8,8 +8,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class PacketAimingReponse extends PacketBase {
-
-
     public String playername;
     public boolean aiming;
 
