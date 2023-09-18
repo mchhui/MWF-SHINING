@@ -18,6 +18,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class GunType extends BaseType {
@@ -222,7 +223,7 @@ public class GunType extends BaseType {
     public static boolean isPackAPunched(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {
             NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
-            return nbtTagCompound.hasKey("punched") ? nbtTagCompound.getBoolean("punched") : false;
+            return nbtTagCompound.hasKey("punched") && nbtTagCompound.getBoolean("punched");
         }
         return false;
     }
@@ -335,11 +336,7 @@ public class GunType extends BaseType {
 
     public boolean hasFireMode(WeaponFireMode fireMode) {
         if (fireModes != null) {
-            for (int i = 0; i < fireModes.length; i++) {
-                if (fireModes[i] == fireMode) {
-                    return true;
-                }
-            }
+            return Arrays.stream(fireModes).anyMatch(mode -> mode == fireMode);
         }
         return false;
     }

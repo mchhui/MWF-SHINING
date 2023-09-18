@@ -3,6 +3,8 @@ package com.modularwarfare.common.guns;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Arrays;
+
 public enum WeaponSoundType {
 
     /**
@@ -207,12 +209,10 @@ public enum WeaponSoundType {
     }
 
     public static WeaponSoundType fromString(String input) {
-        for (WeaponSoundType soundType : values()) {
-            if (soundType.toString().equalsIgnoreCase(input)) {
-                return soundType;
-            }
-        }
-        return null;
+        return Arrays.stream(values())
+                .filter(soundType -> soundType.name().equalsIgnoreCase(input))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override

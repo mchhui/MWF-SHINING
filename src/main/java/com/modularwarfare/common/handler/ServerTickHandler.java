@@ -32,11 +32,8 @@ public class ServerTickHandler extends ForgeEvent {
         if (event.side != Side.SERVER || event.phase != Phase.END) {
             return;
         }
-        boolean flag = false;
-        if (playerAimShootCooldown.containsKey(event.player.getName())) {
-            flag = true;
-        }
-        if (playerAimInstant.get(event.player.getName()) == Boolean.TRUE) {
+        boolean flag = playerAimShootCooldown.containsKey(event.player.getName());
+        if (playerAimInstant.get(event.player.getName()).booleanValue() == Boolean.TRUE) {
             flag = true;
         }
         ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(event.player.getName(), flag));

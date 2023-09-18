@@ -2,6 +2,8 @@ package com.modularwarfare.common.guns;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Arrays;
+
 public enum WeaponAnimationType {
     /**
      * Basic animation type, used for default guns.
@@ -14,12 +16,10 @@ public enum WeaponAnimationType {
     @SerializedName("enhanced") ENHANCED;
 
     public static WeaponAnimationType fromString(String modeName) {
-        for (WeaponAnimationType animationType : values()) {
-            if (animationType.name().equalsIgnoreCase(modeName)) {
-                return animationType;
-            }
-        }
-        return null;
+        return Arrays.stream(values())
+                .filter(animationType -> animationType.name().equalsIgnoreCase(modeName))
+                .findFirst()
+                .orElse(null);
     }
 
 }

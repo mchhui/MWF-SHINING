@@ -2,6 +2,8 @@ package com.modularwarfare.common.guns;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Arrays;
+
 public enum WeaponType {
 
     /**
@@ -31,11 +33,10 @@ public enum WeaponType {
 
     public static WeaponType fromEventName(String typeName) {
         if (typeName != null) {
-            for (WeaponType soundType : values()) {
-                if (soundType.typeName.equalsIgnoreCase(typeName)) {
-                    return soundType;
-                }
-            }
+            return Arrays.stream(values())
+                    .filter(weaponType -> weaponType.typeName.equalsIgnoreCase(typeName))
+                    .findFirst()
+                    .orElse(null);
         }
         return null;
     }

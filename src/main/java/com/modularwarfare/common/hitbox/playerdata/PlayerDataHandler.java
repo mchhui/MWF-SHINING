@@ -52,8 +52,8 @@ public class PlayerDataHandler {
 
     public void clientTick() {
         if (Minecraft.getMinecraft().world != null) {
-            for (Object player : Minecraft.getMinecraft().world.playerEntities) {
-                getPlayerData((EntityPlayer) player).tick((EntityPlayer) player);
+            for (EntityPlayer player : Minecraft.getMinecraft().world.playerEntities) {
+                getPlayerData(player).tick(player);
             }
         }
     }
@@ -64,8 +64,8 @@ public class PlayerDataHandler {
             return;
         }
         for (WorldServer world : FMLCommonHandler.instance().getMinecraftServerInstance().worlds) {
-            for (Object player : world.playerEntities) {
-                getPlayerData((EntityPlayer) player).tick((EntityPlayer) player);
+            for (EntityPlayer player : world.playerEntities) {
+                getPlayerData(player).tick(player);
             }
         }
     }

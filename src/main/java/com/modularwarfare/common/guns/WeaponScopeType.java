@@ -2,6 +2,8 @@ package com.modularwarfare.common.guns;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Arrays;
+
 /**
  * WTF???
  * R.I.P
@@ -22,12 +24,10 @@ public enum WeaponScopeType {
     @SerializedName("15x") FIFTEEN;
 
     public static WeaponScopeType fromString(String modeName) {
-        for (WeaponScopeType scopeType : values()) {
-            if (scopeType.name().equalsIgnoreCase(modeName)) {
-                return scopeType;
-            }
-        }
-        return null;
+        return Arrays.stream(values())
+                .filter(scopeType -> scopeType.name().equalsIgnoreCase(modeName))
+                .findFirst()
+                .orElse(null);
     }
 
 }

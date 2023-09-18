@@ -3,6 +3,8 @@ package com.modularwarfare.common.guns;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Arrays;
+
 public enum AttachmentPresetEnum {
 
     @SerializedName("sight") Sight("sight"),
@@ -21,12 +23,10 @@ public enum AttachmentPresetEnum {
     }
 
     public static AttachmentPresetEnum getAttachment(String typeName) {
-        for (AttachmentPresetEnum attachmentEnum : values()) {
-            if (attachmentEnum.typeName.equalsIgnoreCase(typeName)) {
-                return attachmentEnum;
-            }
-        }
-        return AttachmentPresetEnum.Sight;
+        return Arrays.stream(values())
+                .filter(attachmentEnum -> attachmentEnum.typeName.equalsIgnoreCase(typeName))
+                .findFirst()
+                .orElse(AttachmentPresetEnum.Sight);
     }
 
     public String getName() {

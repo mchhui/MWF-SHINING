@@ -3,6 +3,8 @@ package com.modularwarfare.common.guns;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Arrays;
+
 public enum WeaponFireMode {
 
     /**
@@ -21,12 +23,10 @@ public enum WeaponFireMode {
     @SerializedName("burst") BURST;
 
     public static WeaponFireMode fromString(String modeName) {
-        for (WeaponFireMode fireMode : values()) {
-            if (fireMode.name().equalsIgnoreCase(modeName)) {
-                return fireMode;
-            }
-        }
-        return null;
+        return Arrays.stream(values())
+                .filter(fireMode -> fireMode.name().equalsIgnoreCase(modeName))
+                .findFirst()
+                .orElse(null);
     }
 
 }

@@ -2,6 +2,8 @@ package com.modularwarfare.common.guns;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Arrays;
+
 public enum WeaponDotColorType {
 
     @SerializedName("red") RED,
@@ -12,12 +14,10 @@ public enum WeaponDotColorType {
 
 
     public static WeaponDotColorType fromString(String modeName) {
-        for (WeaponDotColorType dotColorType : values()) {
-            if (dotColorType.name().equalsIgnoreCase(modeName)) {
-                return dotColorType;
-            }
-        }
-        return null;
+        return Arrays.stream(values())
+                .filter(dotColorType -> dotColorType.name().equalsIgnoreCase(modeName))
+                .findFirst()
+                .orElse(null);
     }
 
 }
