@@ -25,8 +25,6 @@ import java.util.Set;
  */
 @SideOnly(Side.CLIENT)
 public class MWResourcePack extends AbstractResourcePack implements FMLContainerHolder {
-
-
     private ModContainer container;
 
     public MWResourcePack(ModContainer container) {

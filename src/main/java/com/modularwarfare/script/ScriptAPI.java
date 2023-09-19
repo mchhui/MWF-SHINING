@@ -12,6 +12,7 @@ import org.lwjgl.input.Keyboard;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+@SuppressWarnings("unused")
 public class ScriptAPI {
     public Lang Lang = new Lang();
     public Stack Stack = new Stack();
@@ -72,11 +73,8 @@ public class ScriptAPI {
             if (!isGun(itemStack)) {
                 return false;
             }
-            if (((ItemGun) itemStack.getItem()).type.acceptedBullets != null
-                    && ((ItemGun) itemStack.getItem()).type.acceptedBullets.length > 0) {
-                return true;
-            }
-            return false;
+            return ((ItemGun) itemStack.getItem()).type.acceptedBullets != null
+                    && ((ItemGun) itemStack.getItem()).type.acceptedBullets.length > 0;
         }
 
         public String getGunExtraLore(ItemStack stack) {

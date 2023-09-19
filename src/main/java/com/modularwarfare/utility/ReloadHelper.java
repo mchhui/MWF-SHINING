@@ -151,76 +151,76 @@ public class ReloadHelper {
         NBTTagCompound nbtTagCompound = targetStack.getTagCompound();
         //boolean isAmmo = targetStack.getItem() instanceof ItemAmmo;
 
-        if (nbtTagCompound.hasKey("bullet")) {
-            ItemStack returningBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
-            int bulletsToUnload = 0;
-            int bulletsReturnCount = 0;
-            boolean removeFlag = true;
+        if (!nbtTagCompound.hasKey("bullet")) {
+            return null;
+        }
 
+        ItemStack returningBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
+        int bulletsToUnload = 0;
+        int bulletsReturnCount = 0;
+        boolean removeFlag = true;
 
-            if (expectBulletsToUnload != null) {
-                bulletsToUnload = expectBulletsToUnload;
-                bulletsReturnCount = bulletsToUnload;
-                if (!nbtTagCompound.hasKey("magcount")) {
-                    int count = nbtTagCompound.getInteger("ammocount") - expectBulletsToUnload;
-                    if (count < 0) {
-                        bulletsReturnCount += count;
-                        count = 0;
-                    }
-                    nbtTagCompound.setInteger("ammocount", count);
-                    if (count > 0) {
-                        removeFlag = false;
-                    }
-                } else {
-                    int maxCount = expectBulletsToUnload;
-                    AmmoType ammoType = ((ItemAmmo) targetStack.getItem()).type;
-                    for (int i = 1; i < ammoType.magazineCount + 1 && maxCount > 0; i++) {
-                        int count = nbtTagCompound.getInteger("ammocount" + i);
-                        if (maxCount >= count) {
-                            nbtTagCompound.setInteger("ammocount" + i, 0);
-                            maxCount -= count;
-                        } else {
-                            nbtTagCompound.setInteger("ammocount" + i, count - maxCount);
-                            maxCount = 0;
-                            removeFlag = false;
-                        }
-                    }
-                    bulletsReturnCount -= maxCount;
+        if (expectBulletsToUnload != null) {
+            bulletsToUnload = expectBulletsToUnload;
+            bulletsReturnCount = bulletsToUnload;
+            if (!nbtTagCompound.hasKey("magcount")) {
+                int count = nbtTagCompound.getInteger("ammocount") - expectBulletsToUnload;
+                if (count < 0) {
+                    bulletsReturnCount += count;
+                    count = 0;
+                }
+                nbtTagCompound.setInteger("ammocount", count);
+                if (count > 0) {
+                    removeFlag = false;
                 }
             } else {
-                if (!nbtTagCompound.hasKey("magcount")) {
-                    bulletsReturnCount = targetStack.getTagCompound().getInteger("ammocount");
-                    nbtTagCompound.setInteger("ammocount", 0);
-                } else {
-                    AmmoType ammoType = ((ItemAmmo) targetStack.getItem()).type;
-                    for (int i = 1; i < ammoType.magazineCount + 1; i++) {
-                        bulletsReturnCount += nbtTagCompound.getInteger("ammocount" + i);
+                int maxCount = expectBulletsToUnload;
+                AmmoType ammoType = ((ItemAmmo) targetStack.getItem()).type;
+                for (int i = 1; i < ammoType.magazineCount + 1 && maxCount > 0; i++) {
+                    int count = nbtTagCompound.getInteger("ammocount" + i);
+                    if (maxCount >= count) {
                         nbtTagCompound.setInteger("ammocount" + i, 0);
+                        maxCount -= count;
+                    } else {
+                        nbtTagCompound.setInteger("ammocount" + i, count - maxCount);
+                        maxCount = 0;
+                        removeFlag = false;
                     }
                 }
+                bulletsReturnCount -= maxCount;
             }
-
-            int animBulletsToReload = bulletsReturnCount;
-            while (bulletsReturnCount > 0) {
-                if (bulletsReturnCount <= 64) {
-                    ItemStack clonedBullet = returningBullet.copy();
-                    clonedBullet.setCount(bulletsReturnCount);
-                    entityPlayer.inventory.addItemStackToInventory(clonedBullet);
-                    bulletsReturnCount -= bulletsReturnCount;
-                } else {
-                    ItemStack clonedBullet = returningBullet.copy();
-                    clonedBullet.setCount(64);
-                    entityPlayer.inventory.addItemStackToInventory(clonedBullet);
-                    bulletsReturnCount -= 64;
+        } else {
+            if (!nbtTagCompound.hasKey("magcount")) {
+                bulletsReturnCount = targetStack.getTagCompound().getInteger("ammocount");
+                nbtTagCompound.setInteger("ammocount", 0);
+            } else {
+                AmmoType ammoType = ((ItemAmmo) targetStack.getItem()).type;
+                for (int i = 1; i < ammoType.magazineCount + 1; i++) {
+                    bulletsReturnCount += nbtTagCompound.getInteger("ammocount" + i);
+                    nbtTagCompound.setInteger("ammocount" + i, 0);
                 }
             }
-            if (removeFlag) {
-                nbtTagCompound.removeTag("bullet");
-                nbtTagCompound.removeTag("ammo");
-            }
-            return animBulletsToReload;
         }
-        return null;
+
+        int animBulletsToReload = bulletsReturnCount;
+        while (bulletsReturnCount > 0) {
+            if (bulletsReturnCount <= 64) {
+                ItemStack clonedBullet = returningBullet.copy();
+                clonedBullet.setCount(bulletsReturnCount);
+                entityPlayer.inventory.addItemStackToInventory(clonedBullet);
+                bulletsReturnCount -= bulletsReturnCount;
+            } else {
+                ItemStack clonedBullet = returningBullet.copy();
+                clonedBullet.setCount(64);
+                entityPlayer.inventory.addItemStackToInventory(clonedBullet);
+                bulletsReturnCount -= 64;
+            }
+        }
+        if (removeFlag) {
+            nbtTagCompound.removeTag("bullet");
+            nbtTagCompound.removeTag("ammo");
+        }
+        return animBulletsToReload;
     }
 
     public static int inventoryItemCount(EntityPlayer player, ItemStack stack) {

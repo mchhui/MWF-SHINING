@@ -18,19 +18,19 @@ public class ShadersRender implements IClassTransformer {
 
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
-        if (name.equals("net.optifine.shaders.ShadersRender")) {
+        if ("net.optifine.shaders.ShadersRender".equals(name)) {
             FMLLog.getLogger().warn("[Transforming:net.optifine.shaders.ShadersRender]");
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
             ClassReader classReader = new ClassReader(basicClass);
             classReader.accept(classNode, 0);
             for (MethodNode method : classNode.methods) {
-                if (method.name.equals("renderHand0")) {
+                if ("renderHand0".equals(method.name)) {
                     InsnList list = new InsnList();
                     list.add(new LabelNode());
                     list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "com/modularwarfare/core/MWFCoreHooks", "onRender0", "()V", false));
                     method.instructions.insertBefore(method.instructions.getFirst(), list);
                 }
-                if (method.name.equals("renderHand1")) {
+                if ("renderHand1".equals(method.name)) {
                     InsnList list = new InsnList();
                     list.add(new LabelNode());
                     list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "com/modularwarfare/core/MWFCoreHooks", "onRender1", "()V", false));

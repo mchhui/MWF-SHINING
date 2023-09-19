@@ -1,7 +1,7 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModConfig;
-import com.modularwarfare.client.ClientProxy;
+import com.modularwarfare.client.hud.GunUI;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
@@ -31,24 +31,23 @@ public class PacketPlayerHit extends PacketBase {
     @Override
     public void handleClientSide(EntityPlayer entityPlayer) {
         IThreadListener mainThread = Minecraft.getMinecraft();
-        mainThread.addScheduledTask(new Runnable() {
-            public void run() {
-                if (ModConfig.INSTANCE.hud.snap_fade_hit) {
-                    if (Minecraft.getMinecraft().player.getHealth() > 0.0f) {
-
-                        /**
-                         * playerRecoilPitch RECOIL DAMAGE
-                         */
-                        //RenderParameters.playerRecoilPitch += 5F;
-                        //RenderParameters.playerRecoilYaw += new Random().nextFloat();
-
-                        ClientProxy.gunUI.bulletSnapFade += .25f;
-                        if (ClientProxy.gunUI.bulletSnapFade > 0.9F) {
-                            ClientProxy.gunUI.bulletSnapFade = 0.9F;
-                        }
-                    }
-                }
+        mainThread.addScheduledTask(() -> {
+            if (!ModConfig.INSTANCE.hud.snap_fade_hit) {
+                return;
             }
+
+            if (!(Minecraft.getMinecraft().player.getHealth() > 0.0f)) {
+                return;
+            }
+
+            /**
+             * playerRecoilPitch RECOIL DAMAGE
+             */
+            //RenderParameters.playerRecoilPitch += 5F;
+            //RenderParameters.playerRecoilYaw += new Random().nextFloat();
+
+            GunUI.bulletSnapFade += .25f;
+            GunUI.bulletSnapFade = Math.min(GunUI.bulletSnapFade, 0.9F);
         });
     }
 

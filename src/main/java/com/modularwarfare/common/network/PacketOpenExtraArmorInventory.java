@@ -19,12 +19,9 @@ public class PacketOpenExtraArmorInventory extends PacketBase {
     @Override
     public void handleServerSide(final EntityPlayerMP entityPlayer) {
         final IThreadListener mainThread = (IThreadListener) entityPlayer.world;
-        mainThread.addScheduledTask(new Runnable() {
-            @Override
-            public void run() {
-                entityPlayer.openContainer.onContainerClosed((EntityPlayer) entityPlayer);
-                entityPlayer.openGui(ModularWarfare.INSTANCE, 0, entityPlayer.world, 0, 0, 0);
-            }
+        mainThread.addScheduledTask(() -> {
+            entityPlayer.openContainer.onContainerClosed((EntityPlayer) entityPlayer);
+            entityPlayer.openGui(ModularWarfare.INSTANCE, 0, entityPlayer.world, 0, 0, 0);
         });
     }
 

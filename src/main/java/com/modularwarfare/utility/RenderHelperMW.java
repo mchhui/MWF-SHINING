@@ -35,17 +35,7 @@ public class RenderHelperMW {
         GL11.glEnable(GL12.GL_RESCALE_NORMAL);
         RenderHelper.enableGUIStandardItemLighting();
         if (stack != null) {
-            float f1 = (float) stack.getAnimationsToGo() - partialTicks;
-            f1 = 0;
-            if (f1 > 0.0F) {
-                GL11.glPushMatrix();
-                float f2 = 1.0F + f1 / 5.0F;
-                GL11.glTranslatef((float) (x + 8), (float) (y + 12), 0.0F);
-                GL11.glScalef(1.0F / f2, (f2 + 1.0F) / 2.0F, 1.0F);
-                GL11.glTranslatef((float) (-(x + 8)), (float) (-(y + 12)), 0.0F);
-            }
             Minecraft.getMinecraft().getRenderItem().renderItemAndEffectIntoGUI(stack, x, y);
-            if (f1 > 0.0F) GL11.glPopMatrix();
             ItemStack fits = new ItemStack(stack.getItem(), 1);
             if (isJustOne)
                 Minecraft.getMinecraft().getRenderItem().renderItemOverlayIntoGUI(Minecraft.getMinecraft().fontRenderer, fits, x, y, null);
@@ -403,17 +393,12 @@ public class RenderHelperMW {
         GL11.glEnable(2832);
         GL11.glHint(3153, 4353);
 
-        double w = i;
-        double h = j;
-        double we = k;
-        double he = l;
-
         bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX);
 
-        bufferbuilder.pos(x + w, y + he, -90.0D).tex(0.0D, 1.0D).endVertex();
-        bufferbuilder.pos(x + we, y + he, -90.0D).tex(1.0D, 1.0D).endVertex();
-        bufferbuilder.pos(x + we, y + h, -90.0D).tex(1.0D, 0.0D).endVertex();
-        bufferbuilder.pos(x + w, y + h, -90.0D).tex(0.0D, 0.0D).endVertex();
+        bufferbuilder.pos(x + i, y + l, -90.0D).tex(0.0D, 1.0D).endVertex();
+        bufferbuilder.pos(x + k, y + l, -90.0D).tex(1.0D, 1.0D).endVertex();
+        bufferbuilder.pos(x + k, y + j, -90.0D).tex(1.0D, 0.0D).endVertex();
+        bufferbuilder.pos(x + i, y + j, -90.0D).tex(0.0D, 0.0D).endVertex();
 
         tessellator.draw();
 

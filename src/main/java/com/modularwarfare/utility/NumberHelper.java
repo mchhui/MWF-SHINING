@@ -47,14 +47,14 @@ public class NumberHelper {
 
     public static Vector3f addVector(Vector3f left, Vector3f right) {
         Vector3f resultVector = new Vector3f();
-        resultVector = resultVector.add(left, right, resultVector);
+        resultVector = Vector3f.add(left, right, resultVector);
         return resultVector;
     }
 
     public static Vector3f subtractVector(Vector3f left, Vector3f right) {
         Vector3f resultVector = new Vector3f();
         if (right != null && left != null) {
-            resultVector = resultVector.sub(left, right, resultVector);
+            resultVector = Vector3f.sub(left, right, resultVector);
         }
         return resultVector;
     }

@@ -69,21 +69,24 @@ public class PacketOtherPlayerAnimation extends PacketBase {
         if (player == null) {
             return;
         }
-        if (animationType == AnimationType.FIRE) {
-            if (player != null) {
-                GunType gunType = ModularWarfare.gunTypes.get(internalname).type;
-                if (gunType != null) {
-                    if (gunType.animationType == WeaponAnimationType.BASIC) {
-                        ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType,
-                                fireTickDelay);
-                    } else {
-                        ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(
-                                ClientProxy.gunEnhancedRenderer.getController(player,
-                                        (GunEnhancedRenderConfig) gunType.enhancedModel.config),
-                                (ModelEnhancedGun) gunType.enhancedModel, gunType, fireTickDelay, isFailed);
-                    }
-                }
-            }
+
+        if (animationType != AnimationType.FIRE) {
+            return;
+        }
+
+        GunType gunType = ModularWarfare.gunTypes.get(internalname).type;
+        if (gunType == null) {
+            return;
+        }
+
+        if (gunType.animationType == WeaponAnimationType.BASIC) {
+            ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType,
+                    fireTickDelay);
+        } else {
+            ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(
+                    ClientProxy.gunEnhancedRenderer.getController(player,
+                            (GunEnhancedRenderConfig) gunType.enhancedModel.config),
+                    (ModelEnhancedGun) gunType.enhancedModel, gunType, fireTickDelay, isFailed);
         }
     }
 

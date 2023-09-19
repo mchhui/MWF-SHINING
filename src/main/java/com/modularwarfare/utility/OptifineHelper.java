@@ -45,22 +45,8 @@ public class OptifineHelper {
                     Method m = clazz.getDeclaredMethod("checkBufferFlip", Program.class);
                     m.setAccessible(true);
                     m.invoke(null, program);
-                } catch (ClassNotFoundException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (SecurityException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IllegalArgumentException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (NoSuchMethodException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
+                } catch (ClassNotFoundException | SecurityException | IllegalArgumentException | NoSuchMethodException |
+                         IllegalAccessException | InvocationTargetException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -77,22 +63,8 @@ public class OptifineHelper {
                     Method m = clazz.getDeclaredMethod("bindGbuffersTextures");
                     m.setAccessible(true);
                     m.invoke(null);
-                } catch (ClassNotFoundException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (SecurityException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IllegalArgumentException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (NoSuchMethodException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
+                } catch (ClassNotFoundException | SecurityException | IllegalArgumentException | NoSuchMethodException |
+                         IllegalAccessException | InvocationTargetException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
@@ -101,12 +73,16 @@ public class OptifineHelper {
     }
 
     public static int getDrawFrameBuffer() {
-        if (isLoaded()) {
-            if (isShadersEnabled()) {
-                if (Shaders.isRenderingDfb) {
-                    return MWFOptifineShadesHelper.getDFB();
-                }
-            }
+        if (!isLoaded()) {
+            return Minecraft.getMinecraft().getFramebuffer().framebufferObject;
+        }
+
+        if (!isShadersEnabled()) {
+            return Minecraft.getMinecraft().getFramebuffer().framebufferObject;
+        }
+
+        if (Shaders.isRenderingDfb) {
+            return MWFOptifineShadesHelper.getDFB();
         }
         return Minecraft.getMinecraft().getFramebuffer().framebufferObject;
     }
@@ -135,8 +111,7 @@ public class OptifineHelper {
                     gbuffersFormat.setAccessible(true);
                 }
                 if (gbuffersFormat != null) {
-                    int[] format = (int[]) gbuffersFormat.get(null);
-                    return format;
+                    return (int[]) gbuffersFormat.get(null);
                 }
             } catch (Exception err) {
                 err.printStackTrace();
@@ -153,8 +128,7 @@ public class OptifineHelper {
                     shaderName = clazz.getDeclaredField("shaderPackLoaded");
                 }
                 if (shaderName != null) {
-                    boolean name = (Boolean) shaderName.get(null);
-                    return name;
+                    return (boolean) (Boolean) shaderName.get(null);
                 }
             } catch (Exception ignored) {
             }

@@ -41,11 +41,11 @@ public class OBBPlayerManager {
     private static final ObjModel debugBoxModel = ObjModelLoader
             .load(new ResourceLocation("modularwarfare:obb/model.obj"));
     private static final ResourceLocation debugBoxTex = new ResourceLocation("modularwarfare:obb/debugbox_red.png");
-    public static HashMap<String, PlayerOBBModelObject> playerOBBObjectMap = new HashMap<String, PlayerOBBModelObject>();
+    public static HashMap<String, PlayerOBBModelObject> playerOBBObjectMap = new HashMap<>();
     public static EntityPlayer entityPlayer;
     public static ModelPlayer modelPlayer = new ModelPlayer();
     public static boolean debug = false;
-    public static ArrayList<OBBDebugObject> lines = new ArrayList<OBBPlayerManager.OBBDebugObject>();
+    public static ArrayList<OBBDebugObject> lines = new ArrayList<>();
 
     public static PlayerOBBModelObject getPlayerOBBObject(String name) {
         PlayerOBBModelObject playerOBBObject = playerOBBObjectMap.get(name);
@@ -220,11 +220,11 @@ public class OBBPlayerManager {
                             }
                         }
                     }
-                    if (entityPlayer != (Minecraft.getMinecraft()).player && entityPlayer instanceof EntityPlayer
+                    if (entityPlayer != (Minecraft.getMinecraft()).player && entityPlayer != null
                             && entityPlayer.isEntityAlive() && ClientLitener.ohterPlayerStateMap
-                            .containsKey(Integer.valueOf(entityPlayer.getEntityId()))) {
+                            .containsKey(entityPlayer.getEntityId())) {
                         PlayerState state = ClientLitener.ohterPlayerStateMap
-                                .get(Integer.valueOf(entityPlayer.getEntityId()));
+                                .get(entityPlayer.getEntityId());
                         if (state.isSitting)
                             syncOBBObejct.scene.translate(0.0D, -0.5D, 0.0D);
                         if (state.isCrawling) {
@@ -349,7 +349,7 @@ public class OBBPlayerManager {
 
         public PlayerOBBModelObject() {
             boneUpdatePoseListeners.add((bone) -> {
-                if (bone.name.equals("head")) {
+                if ("head".equals(bone.name)) {
                     bone.translation.set(0, 0, 0);
                     if (entityPlayer.isSneaking()) {
                         bone.translation.add(0, -5, 0);
@@ -357,7 +357,7 @@ public class OBBPlayerManager {
                     bone.rotation.set(modelPlayer.bipedHead.rotateAngleX, modelPlayer.bipedHead.rotateAngleY,
                             modelPlayer.bipedHead.rotateAngleZ);
                 }
-                if (bone.name.equals("body")) {
+                if ("body".equals(bone.name)) {
                     bone.translation.set(0, 0, 0);
                     if (entityPlayer.isSneaking()) {
                         bone.translation.add(0, -5, 0);
@@ -365,7 +365,7 @@ public class OBBPlayerManager {
                     bone.rotation.set(modelPlayer.bipedBody.rotateAngleX, modelPlayer.bipedBody.rotateAngleY,
                             modelPlayer.bipedBody.rotateAngleZ);
                 }
-                if (bone.name.equals("rightArm")) {
+                if ("rightArm".equals(bone.name)) {
                     bone.translation.set(0, 0, 0);
                     if (entityPlayer.isSneaking()) {
                         bone.translation.add(0, -5, 0);
@@ -373,7 +373,7 @@ public class OBBPlayerManager {
                     bone.rotation.set(modelPlayer.bipedRightArm.rotateAngleX, modelPlayer.bipedRightArm.rotateAngleY,
                             modelPlayer.bipedRightArm.rotateAngleZ);
                 }
-                if (bone.name.equals("leftArm")) {
+                if ("leftArm".equals(bone.name)) {
                     bone.translation.set(0, 0, 0);
                     if (entityPlayer.isSneaking()) {
                         bone.translation.add(0, -5, 0);
@@ -381,7 +381,7 @@ public class OBBPlayerManager {
                     bone.rotation.set(modelPlayer.bipedLeftArm.rotateAngleX, modelPlayer.bipedLeftArm.rotateAngleY,
                             modelPlayer.bipedLeftArm.rotateAngleZ);
                 }
-                if (bone.name.equals("rightLeg")) {
+                if ("rightLeg".equals(bone.name)) {
                     bone.translation.set(0, 0, 0);
                     if (entityPlayer.isSneaking()) {
                         bone.translation.add(0, 0, -4);
@@ -389,7 +389,7 @@ public class OBBPlayerManager {
                     bone.rotation.set(modelPlayer.bipedRightLeg.rotateAngleX, modelPlayer.bipedRightLeg.rotateAngleY,
                             modelPlayer.bipedRightLeg.rotateAngleZ);
                 }
-                if (bone.name.equals("leftLeg")) {
+                if ("leftLeg".equals(bone.name)) {
                     bone.translation.set(0, 0, 0);
                     if (entityPlayer.isSneaking()) {
                         bone.translation.add(0, 0, -4);
@@ -401,13 +401,10 @@ public class OBBPlayerManager {
         }
 
         public List<OBBModelBox> calculateIntercept(OBBModelBox testBox) {
-            List list = new ArrayList<OBBModelBox>();
-            for (int i = 0; i < boxes.size(); i++) {
-                OBBModelBox box = boxes.get(i);
-                if (OBBModelBox.testCollisionOBBAndOBB(box, testBox)) {
-                    list.add(box.copy());
-                }
-            }
+            List<OBBModelBox> list = new ArrayList<>();
+            boxes.stream()
+                    .filter(box -> OBBModelBox.testCollisionOBBAndOBB(box, testBox))
+                    .forEach(box -> list.add(box.copy()));
             return list;
         }
     }

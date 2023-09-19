@@ -17,27 +17,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 public class ScriptHost {
-    private static final ScriptAPI ScriptAPI = new ScriptAPI();
-    private static final NBTSearcher NBTSearcher = new NBTSearcher();
-    private static final String[] allowList = new String[]{
+    private static final ScriptAPI SCRIPT_API = new ScriptAPI();
+    private static final NBTSearcher NBT_SEARCHER = new NBTSearcher();
+    private static final String[] ALLOW_LIST = new String[]{
             //"java.lang.","mchhui.he.","net.minecraft."
             ArrayList.class.getName(), HashMap.class.getName(), WeaponFireMode.class.getName()};
-    private static final ClassFilter classFilter = new ClassFilter() {
+    private static final ClassFilter CLASS_FILTER = new ClassFilter() {
 
         @Override
         public boolean exposeToScripts(String tar) {
-            for (String str : allowList) {
-                if (tar.startsWith(str)) {
-                    return true;
-                }
-            }
-            // TODO Auto-generated method stub
-            return false;
+            return Arrays.stream(ALLOW_LIST).anyMatch(tar::startsWith);
         }
 
     };
@@ -45,7 +41,7 @@ public class ScriptHost {
     public static HashMap<ResourceLocation, ScriptClient> clients = new HashMap<ResourceLocation, ScriptClient>();
 
     public static String genHash(String text) {
-        return Hashing.sha1().hashString(text, Charset.forName("UTF-8")).toString();
+        return Hashing.sha1().hashString(text, StandardCharsets.UTF_8).toString();
     }
 
     public boolean callScript(ResourceLocation scriptLoc, ItemStack stack, List<String> tooltip, String function) {
@@ -66,46 +62,50 @@ public class ScriptHost {
     public void initScript(ResourceLocation scriptLoc, String text) {
         ScriptEngineManager engineManager = new ScriptEngineManager();
         NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ScriptEngine scriptEngine = factory.getScriptEngine(classFilter);
-        if (scriptEngine != null) {
-            try {
-                scriptEngine.eval("var WeaponFireMode=Java.type('" + WeaponFireMode.class.getName() + "');");
-                scriptEngine.eval(text);
-                scriptEngine.put("NBTSearcher", NBTSearcher);
-                scriptEngine.put("ScriptAPI", ScriptAPI);
-            } catch (ScriptException e) {
-                e.printStackTrace();
-            }
-            if (scriptEngine instanceof Invocable) {
-                clients.put(scriptLoc, new ScriptClient((Invocable) scriptEngine, genHash(text)));
-            }
+        ScriptEngine scriptEngine = factory.getScriptEngine(CLASS_FILTER);
+        if (scriptEngine == null) {
+            return;
+        }
+
+        try {
+            scriptEngine.eval("var WeaponFireMode=Java.type('" + WeaponFireMode.class.getName() + "');");
+            scriptEngine.eval(text);
+            scriptEngine.put("NBTSearcher", NBT_SEARCHER);
+            scriptEngine.put("ScriptAPI", SCRIPT_API);
+        } catch (ScriptException e) {
+            e.printStackTrace();
+        }
+        if (scriptEngine instanceof Invocable) {
+            clients.put(scriptLoc, new ScriptClient((Invocable) scriptEngine, genHash(text)));
         }
     }
 
     public void initScriptFromResource(String scriptLoc) {
         ScriptEngineManager engineManager = new ScriptEngineManager();
         NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ScriptEngine scriptEngine = factory.getScriptEngine(classFilter);
-        String text = "";
-        if (scriptEngine != null) {
-            try {
-                InputStream inputStream = ScriptHost.class.getClassLoader().getResourceAsStream("assets/modularwarfare/script/" + scriptLoc + ".js");
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName("UTF-8")));
-                String temp;
-                while ((temp = bufferedReader.readLine()) != null) {
-                    text += temp + "\n";
-                }
-                bufferedReader.close();
-                scriptEngine.eval("var WeaponFireMode=Java.type('" + WeaponFireMode.class.getName() + "');");
-                scriptEngine.eval(text);
-                scriptEngine.put("NBTSearcher", NBTSearcher);
-                scriptEngine.put("ScriptAPI", ScriptAPI);
-            } catch (ScriptException | IOException e) {
-                e.printStackTrace();
+        ScriptEngine scriptEngine = factory.getScriptEngine(CLASS_FILTER);
+        StringBuilder text = new StringBuilder();
+        if (scriptEngine == null) {
+            return;
+        }
+
+        try {
+            InputStream inputStream = ScriptHost.class.getClassLoader().getResourceAsStream("assets/modularwarfare/script/" + scriptLoc + ".js");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName("UTF-8")));
+            String temp;
+            while ((temp = bufferedReader.readLine()) != null) {
+                text.append(temp).append("\n");
             }
-            if (scriptEngine instanceof Invocable) {
-                clients.put(new ResourceLocation(ModularWarfare.MOD_ID, "script/" + scriptLoc + ".js"), new ScriptClient((Invocable) scriptEngine, genHash(text)));
-            }
+            bufferedReader.close();
+            scriptEngine.eval("var WeaponFireMode=Java.type('" + WeaponFireMode.class.getName() + "');");
+            scriptEngine.eval(text.toString());
+            scriptEngine.put("NBTSearcher", NBT_SEARCHER);
+            scriptEngine.put("ScriptAPI", SCRIPT_API);
+        } catch (ScriptException | IOException e) {
+            e.printStackTrace();
+        }
+        if (scriptEngine instanceof Invocable) {
+            clients.put(new ResourceLocation(ModularWarfare.MOD_ID, "script/" + scriptLoc + ".js"), new ScriptClient((Invocable) scriptEngine, genHash(text.toString())));
         }
     }
 

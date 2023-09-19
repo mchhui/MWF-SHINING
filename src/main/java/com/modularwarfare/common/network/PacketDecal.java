@@ -75,7 +75,7 @@ public class PacketDecal extends PacketBase {
             Minecraft.getMinecraft().world.spawnEntity(decal);
 
             for (int i = 0; i < 5; i++) {
-                Particle smoke = new EntityShotFX(Minecraft.getMinecraft().world, decalX, decalY, decalZ, 1.0f * new Random().nextFloat(), 1.0f * new Random().nextFloat(), 1.0f * new Random().nextFloat(), 2.0f * new Random().nextFloat());
+                Particle smoke = new EntityShotFX(Minecraft.getMinecraft().world, decalX, decalY, decalZ, new Random().nextFloat(), new Random().nextFloat(), 1.0f * new Random().nextFloat(), 2.0f * new Random().nextFloat());
                 Minecraft.getMinecraft().effectRenderer.addEffect(smoke);
             }
         }

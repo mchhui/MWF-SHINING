@@ -20,7 +20,7 @@ public class MatrixUtils {
     /**
      * Float array for transferring data from FloatBuffer to the matrix
      */
-    public static final float[] floats = new float[16];
+    public static final float[] FLOATS = new float[16];
 
     /**
      * Model view matrix captured here
@@ -33,9 +33,9 @@ public class MatrixUtils {
     public static Matrix4f readModelView(Matrix4f matrix4f) {
         buffer.clear();
         GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, buffer);
-        buffer.get(floats);
+        buffer.get(FLOATS);
 
-        matrix4f.set(floats);
+        matrix4f.set(FLOATS);
         matrix4f.transpose();
 
         return matrix4f;
@@ -49,10 +49,10 @@ public class MatrixUtils {
      * Replace model view matrix with given matrix
      */
     public static void loadModelView(Matrix4f matrix4f) {
-        matrixToFloat(floats, matrix4f);
+        matrixToFloat(FLOATS, matrix4f);
 
         buffer.clear();
-        buffer.put(floats);
+        buffer.put(FLOATS);
         buffer.rewind();
         GL11.glLoadMatrix(buffer);
     }
@@ -151,11 +151,9 @@ public class MatrixUtils {
 
         angularVelocity.sub(step);
 
-        Vector3f angularV = new Vector3f(angularVelocity.m21,
+        return new Vector3f(angularVelocity.m21,
                 -angularVelocity.m20,
                 angularVelocity.m10);
-
-        return angularV;
     }
 
     public static Matrix3f getZYXrotationMatrix(float x, float y, float z) {

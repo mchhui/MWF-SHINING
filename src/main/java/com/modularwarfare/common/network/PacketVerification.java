@@ -31,8 +31,8 @@ public class PacketVerification extends PacketBase {
         PacketBuffer buffer = new PacketBuffer(data);
         buffer.writeBoolean(usingDirectoryContentPack);
         buffer.writeInt(md5List.size());
-        for (int i = 0; i < md5List.size(); i++) {
-            buffer.writeString(md5List.get(i));
+        for (String s : md5List) {
+            buffer.writeString(s);
         }
     }
 

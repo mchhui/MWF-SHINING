@@ -16,7 +16,7 @@ import java.util.HashMap;
 public class OBBModelObject {
     public static final FloatBuffer FLOAT_BUFFER = BufferUtils.createFloatBuffer(16);
     public OBBModelScene scene;
-    public ArrayList<OBBModelBox> boxes = new ArrayList<OBBModelBox>();
+    public ArrayList<OBBModelBox> boxes = new ArrayList<>();
     public HashMap<OBBModelBox, OBBModelBone> boneBinding = new HashMap<>();
     public ArrayList<IBoneUpdatePoseListener> boneUpdatePoseListeners = new ArrayList<OBBModelObject.IBoneUpdatePoseListener>();
 

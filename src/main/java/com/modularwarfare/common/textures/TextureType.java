@@ -45,6 +45,7 @@ public class TextureType extends BaseType {
 
     @Override
     public void reloadModel() {
+        super.reloadModel();
     }
 
     @Override

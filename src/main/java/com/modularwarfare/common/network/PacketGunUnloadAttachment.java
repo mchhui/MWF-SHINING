@@ -38,31 +38,35 @@ public class PacketGunUnloadAttachment extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        if (entityPlayer.getHeldItemMainhand() != null) {
-            if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                ItemStack gunStack = entityPlayer.getHeldItemMainhand();
-                InventoryPlayer inventory = entityPlayer.inventory;
-                if (unloadAll) {
-                    for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
-                        ItemStack itemStack = GunType.getAttachment(gunStack, attachment);
-                        if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                            ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
-                            AttachmentType attachType = itemAttachment.type;
-                            GunType.removeAttachment(gunStack, attachType.attachmentType);
-                            inventory.addItemStackToInventory(itemStack);
-                            ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
-                        }
-                    }
-                } else {
-                    ItemStack itemStack = GunType.getAttachment(gunStack, AttachmentPresetEnum.getAttachment(attachmentType));
-                    if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                        ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
-                        AttachmentType attachType = itemAttachment.type;
-                        GunType.removeAttachment(gunStack, attachType.attachmentType);
-                        inventory.addItemStackToInventory(itemStack);
-                        ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
-                    }
+        if (entityPlayer.getHeldItemMainhand() == null) {
+            return;
+        }
+
+        if (!(entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun)) {
+            return;
+        }
+
+        ItemStack gunStack = entityPlayer.getHeldItemMainhand();
+        InventoryPlayer inventory = entityPlayer.inventory;
+        if (unloadAll) {
+            for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+                ItemStack itemStack = GunType.getAttachment(gunStack, attachment);
+                if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                    ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
+                    AttachmentType attachType = itemAttachment.type;
+                    GunType.removeAttachment(gunStack, attachType.attachmentType);
+                    inventory.addItemStackToInventory(itemStack);
+                    ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
                 }
+            }
+        } else {
+            ItemStack itemStack = GunType.getAttachment(gunStack, AttachmentPresetEnum.getAttachment(attachmentType));
+            if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
+                AttachmentType attachType = itemAttachment.type;
+                GunType.removeAttachment(gunStack, attachType.attachmentType);
+                inventory.addItemStackToInventory(itemStack);
+                ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
             }
         }
     }

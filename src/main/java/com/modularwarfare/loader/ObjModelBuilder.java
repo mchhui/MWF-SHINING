@@ -206,7 +206,7 @@ public class ObjModelBuilder {
                             lineCount++;
                             currentLine = currentLine.replaceAll("\\s+", " ").trim();
 
-                            if (currentLine.startsWith("#") || currentLine.length() == 0) {
+                            if (currentLine.startsWith("#") || currentLine.isEmpty()) {
                                 continue;
                             } else if (currentLine.startsWith("v ")) {
                                 Vertex vertex = parseVertex(currentLine, lineCount);
@@ -231,9 +231,7 @@ public class ObjModelBuilder {
 
                                 Face face = parseFace(currentLine, lineCount);
 
-                                if (face != null) {
-                                    currentModelObject.faces.add(face);
-                                }
+                                currentModelObject.faces.add(face);
                             } else if (currentLine.startsWith("g ") | currentLine.startsWith("o ")) {
                                 ModelObject group = parseGroupObject(currentLine, lineCount);
                                 if (group != null) {

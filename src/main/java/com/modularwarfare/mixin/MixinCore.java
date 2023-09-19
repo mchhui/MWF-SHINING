@@ -28,7 +28,7 @@ public class MixinCore implements IFMLLoadingPlugin {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return arrayList.toArray(new String[arrayList.size()]);
+        return arrayList.toArray(new String[0]);
     }
 
     @Override

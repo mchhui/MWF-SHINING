@@ -6,7 +6,7 @@ import com.modularwarfare.common.vector.Vector3f;
 import java.util.ArrayList;
 
 public class OBBModelScene {
-    public ArrayList<OBBModelBone> rootBones = new ArrayList<OBBModelBone>();
+    public ArrayList<OBBModelBone> rootBones = new ArrayList<>();
     private Matrix4f matrix = new Matrix4f();
 
     public void resetMatrix() {
@@ -34,14 +34,14 @@ public class OBBModelScene {
     }
 
     public void computePose(OBBModelObject obbModelObject) {
-        for (int i = 0; i < rootBones.size(); i++) {
-            rootBones.get(i).computePose(obbModelObject, new Matrix4f(matrix));
+        for (OBBModelBone rootBone : rootBones) {
+            rootBone.computePose(obbModelObject, new Matrix4f(matrix));
         }
     }
 
     public void updatePose(OBBModelObject obbModelObject) {
-        for (int i = 0; i < rootBones.size(); i++) {
-            rootBones.get(i).updatePose(obbModelObject);
+        for (OBBModelBone rootBone : rootBones) {
+            rootBone.updatePose(obbModelObject);
         }
     }
 }

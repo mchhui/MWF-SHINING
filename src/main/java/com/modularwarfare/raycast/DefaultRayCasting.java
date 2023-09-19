@@ -6,6 +6,7 @@ import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.hitbox.hits.OBBHit;
 import com.modularwarfare.common.hitbox.playerdata.PlayerData;
+import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.PacketPlaySound;
 import com.modularwarfare.common.vector.Matrix4f;
 import com.modularwarfare.common.vector.Vector3f;
@@ -42,12 +43,12 @@ public class DefaultRayCasting extends RayCasting {
         // Vec3d lookVec = new Vec3d(tx-x, ty-y, tz-z);
         Vec3d endVec = new Vec3d(tx, ty, tz);
 
-        float minX = x < tx ? x : tx;
-        float minY = y < ty ? y : ty;
-        float minZ = z < tz ? z : tz;
-        float maxX = x > tx ? x : tx;
-        float maxY = y > ty ? y : ty;
-        float maxZ = z > tz ? z : tz;
+        float minX = Math.min(x, tx);
+        float minY = Math.min(y, ty);
+        float minZ = Math.min(z, tz);
+        float maxX = Math.max(x, tx);
+        float maxY = Math.max(y, ty);
+        float maxZ = Math.max(z, tz);
         AxisAlignedBB bb = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ).grow(borderSize, borderSize, borderSize);
         List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb);
         RayTraceResult blockHit = rayTraceBlocks(world, startVec, endVec, true, true, false);
@@ -90,68 +91,75 @@ public class DefaultRayCasting extends RayCasting {
         for (int i = 0; i < world.loadedEntityList.size(); i++) {
             Entity obj = world.loadedEntityList.get(i);
 
-            if (((excluded != null && !excluded.contains(obj)) || excluded == null)) {
-                if (obj instanceof EntityPlayer) {
-                    //to delete in the future
-                    
-                    /*
-                    PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
+            if (((excluded == null || excluded.contains(obj)) && excluded != null)) {
+                continue;
+            }
 
-                    int snapshotToTry = ping / 50;
-                    if (snapshotToTry >= data.snapshots.length)
-                        snapshotToTry = data.snapshots.length - 1;
+            if (!(obj instanceof EntityPlayer)) {
+                continue;
+            }
 
-                    PlayerSnapshot snapshot = data.snapshots[snapshotToTry];
+            //to delete in the future
 
-                    if (snapshot == null)
-                        snapshot = data.snapshots[0];
+                /*
+                PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
 
-                    if (snapshot != null && snapshot.hitboxes != null){
-                        for (PlayerHitbox hitbox : snapshot.hitboxes) {
-                            RayTraceResult intercept = hitbox.getAxisAlignedBB(snapshot.pos).calculateIntercept(startVec, realVecEnd);
-                            if (intercept != null) {
-                                intercept.entityHit = hitbox.player;
+                int snapshotToTry = ping / 50;
+                if (snapshotToTry >= data.snapshots.length)
+                    snapshotToTry = data.snapshots.length - 1;
 
-                                if (ModConfig.INSTANCE.debug_hits_message) {
-                                    long currentTime = System.nanoTime();
-                                    ModularWarfare.LOGGER.info("Shooter's ping: " + ping / 20 + "ms | " + ping + "ticks");
-                                    ModularWarfare.LOGGER.info("Took the snapshot " + snapshotToTry + " Part: " + hitbox.type.toString());
-                                    ModularWarfare.LOGGER.info("Delta (currentTime - snapshotTime) = " + (currentTime - snapshot.time) * 1e-6 + "ms");
-                                }
+                PlayerSnapshot snapshot = data.snapshots[snapshotToTry];
 
-                                return new PlayerHit(hitbox, intercept);
+                if (snapshot == null)
+                    snapshot = data.snapshots[0];
+
+                if (snapshot != null && snapshot.hitboxes != null){
+                    for (PlayerHitbox hitbox : snapshot.hitboxes) {
+                        RayTraceResult intercept = hitbox.getAxisAlignedBB(snapshot.pos).calculateIntercept(startVec, realVecEnd);
+                        if (intercept != null) {
+                            intercept.entityHit = hitbox.player;
+
+                            if (ModConfig.INSTANCE.debug_hits_message) {
+                                long currentTime = System.nanoTime();
+                                ModularWarfare.LOGGER.info("Shooter's ping: " + ping / 20 + "ms | " + ping + "ticks");
+                                ModularWarfare.LOGGER.info("Took the snapshot " + snapshotToTry + " Part: " + hitbox.type.toString());
+                                ModularWarfare.LOGGER.info("Delta (currentTime - snapshotTime) = " + (currentTime - snapshot.time) * 1e-6 + "ms");
                             }
-                        }
-                    }
-                    */
-                    //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+startVec+" "+endVec));
-                    PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
-                    OBBModelBox finalBox = null;
-                    List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
-                    if (boxes.size() > 0) {
-                        double t = Double.MAX_VALUE;
-                        Vector3f hitFaceNormal = null;
-                        RayCastResult temp;
-                        Vector3f startVector = new Vector3f(startVec);
-                        for (OBBModelBox obb : boxes) {
-                            temp = OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
-                            if (temp.t < t) {
-                                t = temp.t;
-                                hitFaceNormal = temp.normal;
-                                finalBox = obb;
-                            }
-                        }
 
-                        if (OBBPlayerManager.debug) {
-                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x + rayVec.x * t, startVec.y + rayVec.y * t, startVec.z + rayVec.z * t)));
-                        }
-                        if (finalBox != null) {
-                            PlayerData data = ModularWarfare.PLAYER_HANDLER.getPlayerData((EntityPlayer) obj);
-                            RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
-                            return new OBBHit((EntityPlayer) obj, finalBox.copy(), intercept);
+                            return new PlayerHit(hitbox, intercept);
                         }
                     }
                 }
+                */
+            //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+startVec+" "+endVec));
+            PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
+            OBBModelBox finalBox = null;
+            List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
+            if (boxes.isEmpty()) {
+                continue;
+            }
+
+            double t = Double.MAX_VALUE;
+            Vector3f hitFaceNormal = null;
+            RayCastResult temp;
+            Vector3f startVector = new Vector3f(startVec);
+            for (OBBModelBox obb : boxes) {
+                temp = OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
+                if (temp.t < t) {
+                    t = temp.t;
+                    hitFaceNormal = temp.normal;
+                    finalBox = obb;
+                }
+            }
+
+            if (OBBPlayerManager.debug) {
+                OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x + rayVec.x * t, startVec.y + rayVec.y * t, startVec.z + rayVec.z * t)));
+            }
+
+            if (finalBox != null) {
+                PlayerData data = PlayerDataHandler.getPlayerData((EntityPlayer) obj);
+                RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
+                return new OBBHit((EntityPlayer) obj, finalBox.copy(), intercept);
             }
         }
 
@@ -162,40 +170,50 @@ public class DefaultRayCasting extends RayCasting {
         AxisAlignedBB entityBb;// = ent.getBoundingBox();
         RayTraceResult intercept;
         for (Entity ent : allEntities) {
-            if ((ent.canBeCollidedWith() || !collideablesOnly) && ((excluded != null && !excluded.contains(ent)) || excluded == null)) {
-                if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
-                    EntityLivingBase entityLivingBase = (EntityLivingBase) ent;
-                    if (!ent.isDead && entityLivingBase.getHealth() > 0.0F) {
-                        float entBorder = ent.getCollisionBorderSize();
-                        entityBb = ent.getEntityBoundingBox();
-                        if (entityBb != null) {
-                            entityBb = entityBb.grow(entBorder, entBorder, entBorder);
-                            intercept = entityBb.calculateIntercept(startVec, endVec);
-                            if (intercept != null) {
-                                currentHit = (float) intercept.hitVec.distanceTo(startVec);
-                                hit = intercept.hitVec;
-                                if (currentHit < closestHit || currentHit == 0) {
-                                    closestHit = currentHit;
-                                    closestHitEntity = ent;
-                                }
-                            }
-                        }
-                    }
-                } else if (ent instanceof EntityGrenade) {
+            if ((!ent.canBeCollidedWith() && collideablesOnly) || ((excluded == null || excluded.contains(ent)) && excluded != null)) {
+                continue;
+            }
+
+            if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
+                EntityLivingBase entityLivingBase = (EntityLivingBase) ent;
+                if (!ent.isDead && entityLivingBase.getHealth() > 0.0F) {
                     float entBorder = ent.getCollisionBorderSize();
                     entityBb = ent.getEntityBoundingBox();
-                    if (entityBb != null) {
-                        entityBb = entityBb.grow(entBorder, entBorder, entBorder);
-                        intercept = entityBb.calculateIntercept(startVec, endVec);
-                        if (intercept != null) {
-                            currentHit = (float) intercept.hitVec.distanceTo(startVec);
-                            hit = intercept.hitVec;
-                            if (currentHit < closestHit || currentHit == 0) {
-                                closestHit = currentHit;
-                                closestHitEntity = ent;
-                            }
-                        }
+                    if (entityBb == null) {
+                        continue;
                     }
+
+                    entityBb = entityBb.grow(entBorder, entBorder, entBorder);
+                    intercept = entityBb.calculateIntercept(startVec, endVec);
+                    if (intercept == null) {
+                        continue;
+                    }
+
+                    currentHit = (float) intercept.hitVec.distanceTo(startVec);
+                    hit = intercept.hitVec;
+                    if (currentHit < closestHit || currentHit == 0) {
+                        closestHit = currentHit;
+                        closestHitEntity = ent;
+                    }
+                }
+            } else if (ent instanceof EntityGrenade) {
+                float entBorder = ent.getCollisionBorderSize();
+                entityBb = ent.getEntityBoundingBox();
+                if (entityBb == null) {
+                    continue;
+                }
+
+                entityBb = entityBb.grow(entBorder, entBorder, entBorder);
+                intercept = entityBb.calculateIntercept(startVec, endVec);
+                if (intercept == null) {
+                    continue;
+                }
+
+                currentHit = (float) intercept.hitVec.distanceTo(startVec);
+                hit = intercept.hitVec;
+                if (currentHit < closestHit || currentHit == 0) {
+                    closestHit = currentHit;
+                    closestHitEntity = ent;
                 }
             }
         }

@@ -14,27 +14,29 @@ public class PacketGunSwitchMode extends PacketBase {
     }
 
     public static void switchClient(EntityPlayer entityPlayer) {
-        if (entityPlayer.getHeldItemMainhand() != null
-                && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-            ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
-            GunType gunType = itemGun.type;
-            WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
-
-            if (fireMode == null || gunType.fireModes.length <= 1)
-                return;
-
-            int spot = 0;
-            int length = gunType.fireModes.length;
-            for (int i = 0; i < length; i++) {
-                WeaponFireMode foundFireMode = gunType.fireModes[i];
-                if (foundFireMode == fireMode) {
-                    spot = i;
-                }
-            }
-            spot = spot + 1 >= length ? 0 : spot + 1;
-            itemGun.onGunSwitchMode(entityPlayer, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun,
-                    gunType.fireModes[spot]);
+        if (entityPlayer.getHeldItemMainhand() == null
+                || !(entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun)) {
+            return;
         }
+
+        ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
+        GunType gunType = itemGun.type;
+        WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
+
+        if (fireMode == null || gunType.fireModes.length <= 1)
+            return;
+
+        int spot = 0;
+        int length = gunType.fireModes.length;
+        for (int i = 0; i < length; i++) {
+            WeaponFireMode foundFireMode = gunType.fireModes[i];
+            if (foundFireMode == fireMode) {
+                spot = i;
+            }
+        }
+        spot = spot + 1 >= length ? 0 : spot + 1;
+        itemGun.onGunSwitchMode(entityPlayer, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun,
+                gunType.fireModes[spot]);
     }
 
     @Override
@@ -49,25 +51,27 @@ public class PacketGunSwitchMode extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-            ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
-            GunType gunType = itemGun.type;
-            WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
-
-            if (fireMode == null || gunType.fireModes.length <= 1)
-                return;
-
-            int spot = 0;
-            int length = gunType.fireModes.length;
-            for (int i = 0; i < length; i++) {
-                WeaponFireMode foundFireMode = gunType.fireModes[i];
-                if (foundFireMode == fireMode) {
-                    spot = i;
-                }
-            }
-            spot = spot + 1 >= length ? 0 : spot + 1;
-            itemGun.onGunSwitchMode(entityPlayer, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun, gunType.fireModes[spot]);
+        if (entityPlayer.getHeldItemMainhand() == null || !(entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun)) {
+            return;
         }
+
+        ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
+        GunType gunType = itemGun.type;
+        WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
+
+        if (fireMode == null || gunType.fireModes.length <= 1)
+            return;
+
+        int spot = 0;
+        int length = gunType.fireModes.length;
+        for (int i = 0; i < length; i++) {
+            WeaponFireMode foundFireMode = gunType.fireModes[i];
+            if (foundFireMode == fireMode) {
+                spot = i;
+            }
+        }
+        spot = spot + 1 >= length ? 0 : spot + 1;
+        itemGun.onGunSwitchMode(entityPlayer, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun, gunType.fireModes[spot]);
     }
 
     @Override

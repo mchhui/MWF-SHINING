@@ -1,6 +1,7 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.client.ClientProxy;
+import com.modularwarfare.client.hud.GunUI;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
@@ -30,9 +31,9 @@ public class PacketBulletSnap extends PacketBase {
         IThreadListener mainThread = Minecraft.getMinecraft();
         mainThread.addScheduledTask(new Runnable() {
             public void run() {
-                ClientProxy.gunUI.bulletSnapFade += .25f;
-                if (ClientProxy.gunUI.bulletSnapFade > 0.8F) {
-                    ClientProxy.gunUI.bulletSnapFade = 0.8F;
+                GunUI.bulletSnapFade += .25f;
+                if (GunUI.bulletSnapFade > 0.8F) {
+                    GunUI.bulletSnapFade = 0.8F;
                 }
             }
         });

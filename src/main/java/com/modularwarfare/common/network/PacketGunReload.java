@@ -91,115 +91,117 @@ public class PacketGunReload extends PacketBase {
             return;
         }
 
-        if (ammoType.subAmmo != null) {
-            if (!unload) {
-                NBTTagCompound nbtTagCompound = ammoStack.getTagCompound();
-                boolean offhandedReload = false;
-                int highestBulletCount = 0;
-                ItemStack bulletStackToLoad = null;
-                Integer bulletStackSlotToLoad = null;
+        if (ammoType.subAmmo == null) {
+            return;
+        }
 
-                /** Offhand Reload */
-                if (inventory.offHandInventory.get(0) != ItemStack.EMPTY) {
-                    ItemStack itemStack = inventory.offHandInventory.get(0);
-                    if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
-                        ItemBullet itemBullet = (ItemBullet) itemStack.getItem();
-                        for (String ammoName : ammoType.subAmmo) {
-                            if (ammoName.equalsIgnoreCase(itemBullet.baseType.internalName)) {
-                                offhandedReload = true;
-                                bulletStackToLoad = itemStack;
-                                break;
-                            }
+        if (!unload) {
+            NBTTagCompound nbtTagCompound = ammoStack.getTagCompound();
+            boolean offhandedReload = false;
+            int highestBulletCount = 0;
+            ItemStack bulletStackToLoad = null;
+            Integer bulletStackSlotToLoad = null;
+
+            /** Offhand Reload */
+            if (inventory.offHandInventory.get(0) != ItemStack.EMPTY) {
+                ItemStack itemStack = inventory.offHandInventory.get(0);
+                if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
+                    ItemBullet itemBullet = (ItemBullet) itemStack.getItem();
+                    for (String ammoName : ammoType.subAmmo) {
+                        if (ammoName.equalsIgnoreCase(itemBullet.baseType.internalName)) {
+                            offhandedReload = true;
+                            bulletStackToLoad = itemStack;
+                            break;
                         }
                     }
                 }
+            }
 
-                /** Search for bullets */
-                if (!offhandedReload) {
-                    for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                        ItemStack itemStack = inventory.getStackInSlot(i);
-                        if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
-                            ItemBullet itemBullet = (ItemBullet) itemStack.getItem();
-                            for (String bulletName : ammoType.subAmmo) {
-                                if (bulletName.equalsIgnoreCase(itemBullet.baseType.internalName)) {
-                                    int count = itemStack.getCount();
-                                    if (count > highestBulletCount) {
-                                        bulletStackToLoad = itemStack;
-                                        highestBulletCount = count;
-                                        bulletStackSlotToLoad = i;
-                                    }
+            /** Search for bullets */
+            if (!offhandedReload) {
+                for (int i = 0; i < inventory.getSizeInventory(); i++) {
+                    ItemStack itemStack = inventory.getStackInSlot(i);
+                    if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
+                        ItemBullet itemBullet = (ItemBullet) itemStack.getItem();
+                        for (String bulletName : ammoType.subAmmo) {
+                            if (bulletName.equalsIgnoreCase(itemBullet.baseType.internalName)) {
+                                int count = itemStack.getCount();
+                                if (count > highestBulletCount) {
+                                    bulletStackToLoad = itemStack;
+                                    highestBulletCount = count;
+                                    bulletStackSlotToLoad = i;
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                /** End of search, start to reload */
-                if (bulletStackToLoad == null)
-                    return;
+            /** End of search, start to reload */
+            if (bulletStackToLoad == null)
+                return;
 
-                ItemBullet bulletItemToLoad = (ItemBullet) bulletStackToLoad.getItem();
+            ItemBullet bulletItemToLoad = (ItemBullet) bulletStackToLoad.getItem();
 
-                if (nbtTagCompound.hasKey("bullet")) {
-                    ItemStack currentBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
-                    if (!ReloadHelper.isSameTypeAmmo(currentBullet, bulletStackToLoad))
-                        ReloadHelper.unloadBullets(entityPlayer, ammoStack);
-                }
+            if (nbtTagCompound.hasKey("bullet")) {
+                ItemStack currentBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
+                if (!ReloadHelper.isSameTypeAmmo(currentBullet, bulletStackToLoad))
+                    ReloadHelper.unloadBullets(entityPlayer, ammoStack);
+            }
 
-                ItemStack loadingItemStack = bulletStackToLoad.copy();
-                int reserve = bulletStackToLoad.getCount();
+            ItemStack loadingItemStack = bulletStackToLoad.copy();
+            int reserve = bulletStackToLoad.getCount();
 
-                if (!nbtTagCompound.hasKey("magcount")) {
-                    int ammoCount = ammoStack.getTagCompound().getInteger("ammocount");
-                    int amountToLoad = ammoType.ammoCapacity - ammoCount;
-                    int loadingCount;
-                    if (amountToLoad >= loadingItemStack.getCount()) {
-                        loadingCount = loadingItemStack.getCount();
-                        reserve = 0;
-                    } else {
-                        loadingCount = amountToLoad;
-                        reserve = loadingItemStack.getCount() - loadingCount;
-                    }
-                    ammoStack.getTagCompound().setInteger("ammocount", ammoCount + loadingCount);
+            if (!nbtTagCompound.hasKey("magcount")) {
+                int ammoCount = ammoStack.getTagCompound().getInteger("ammocount");
+                int amountToLoad = ammoType.ammoCapacity - ammoCount;
+                int loadingCount;
+                if (amountToLoad >= loadingItemStack.getCount()) {
+                    loadingCount = loadingItemStack.getCount();
+                    reserve = 0;
                 } else {
-                    for (int i = 1; i < ammoType.magazineCount + 1; i++) {
-                        int ammoCount = ammoStack.getTagCompound().getInteger("ammocount" + i);
-                        if (ammoCount < ammoType.ammoCapacity) {
-                            int amountToLoad = ammoType.ammoCapacity - ammoCount;
-                            int loadingCount;
-                            if (amountToLoad >= reserve) {
-                                loadingCount = reserve;
-                                reserve = 0;
-                            } else {
-                                loadingCount = amountToLoad;
-                                reserve = reserve - loadingCount;
-                            }
-                            ammoStack.getTagCompound().setInteger("ammocount" + i, ammoCount + loadingCount);
-                            if (reserve == 0) {
-                                break;
-                            }
+                    loadingCount = amountToLoad;
+                    reserve = loadingItemStack.getCount() - loadingCount;
+                }
+                ammoStack.getTagCompound().setInteger("ammocount", ammoCount + loadingCount);
+            } else {
+                for (int i = 1; i < ammoType.magazineCount + 1; i++) {
+                    int ammoCount = ammoStack.getTagCompound().getInteger("ammocount" + i);
+                    if (ammoCount < ammoType.ammoCapacity) {
+                        int amountToLoad = ammoType.ammoCapacity - ammoCount;
+                        int loadingCount;
+                        if (amountToLoad >= reserve) {
+                            loadingCount = reserve;
+                            reserve = 0;
+                        } else {
+                            loadingCount = amountToLoad;
+                            reserve = reserve - loadingCount;
+                        }
+                        ammoStack.getTagCompound().setInteger("ammocount" + i, ammoCount + loadingCount);
+                        if (reserve == 0) {
+                            break;
                         }
                     }
                 }
-                loadingItemStack.setCount(1);
-                loadingItemStack.setItemDamage(0);
-                ammoStack.getTagCompound().setTag("bullet", loadingItemStack.writeToNBT(new NBTTagCompound()));
-                bulletStackToLoad.setCount(reserve);
-
-                if (!entityPlayer.capabilities.isCreativeMode) {
-                    if (offhandedReload)
-                        inventory.offHandInventory.set(0, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
-                    else
-                        inventory.setInventorySlotContents(bulletStackSlotToLoad, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
-                }
-            } else {
-                ReloadHelper.unloadBullets(entityPlayer, ammoStack);
             }
+            loadingItemStack.setCount(1);
+            loadingItemStack.setItemDamage(0);
+            ammoStack.getTagCompound().setTag("bullet", loadingItemStack.writeToNBT(new NBTTagCompound()));
+            bulletStackToLoad.setCount(reserve);
 
-            String key = itemAmmo.type.magazineCount > 1 ? "ammocount" + ammoStack.getTagCompound().getInteger("magcount") : "ammocount";
-            int ammoCount = ammoStack.getTagCompound().getInteger(key);
-            ammoStack.setItemDamage(ammoStack.getMaxDamage() - ammoCount);
+            if (!entityPlayer.capabilities.isCreativeMode) {
+                if (offhandedReload)
+                    inventory.offHandInventory.set(0, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
+                else
+                    inventory.setInventorySlotContents(bulletStackSlotToLoad, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
+            }
+        } else {
+            ReloadHelper.unloadBullets(entityPlayer, ammoStack);
         }
+
+        String key = itemAmmo.type.magazineCount > 1 ? "ammocount" + ammoStack.getTagCompound().getInteger("magcount") : "ammocount";
+        int ammoCount = ammoStack.getTagCompound().getInteger(key);
+        ammoStack.setItemDamage(ammoStack.getMaxDamage() - ammoCount);
     }
 
     public void handleBulletGunReload(EntityPlayerMP entityPlayer, ItemStack gunStack, ItemGun itemGun, GunType gunType, InventoryPlayer inventory) {
@@ -521,176 +523,178 @@ public class PacketGunReload extends PacketBase {
         if (ServerTickHandler.playerReloadCooldown.containsKey(entityPlayer.getUniqueID()))
             return;
 
-        if (gunType.acceptedBullets != null) {
-            if (!unload) {
-                ItemStack bulletStackToLoad = null;
-                Integer bulletStackSlotToLoad = null;
+        if (gunType.acceptedBullets == null) {
+            return;
+        }
+        
+        if (!unload) {
+            ItemStack bulletStackToLoad = null;
+            Integer bulletStackSlotToLoad = null;
 
-                if (gunStack.getTagCompound() != null) {
-                    if (gunType.internalAmmoStorage != null) {
-                        if (gunStack.getTagCompound().getCompoundTag("bullet") != null) {
-                            /**
-                             * 2023.4.4 因不符合“结束动画后结算”的原则 撤销下文unloadBullets
-                             * */
-                            if (gunStack.getTagCompound().getInteger("ammocount") <= 0) {
-                                //ReloadHelper.unloadBullets(entityPlayer, gunStack);
-                            }
+            if (gunStack.getTagCompound() != null) {
+                if (gunType.internalAmmoStorage != null) {
+                    if (gunStack.getTagCompound().getCompoundTag("bullet") != null) {
+                        /**
+                         * 2023.4.4 因不符合“结束动画后结算”的原则 撤销下文unloadBullets
+                         * */
+                        if (gunStack.getTagCompound().getInteger("ammocount") <= 0) {
+                            //ReloadHelper.unloadBullets(entityPlayer, gunStack);
+                        }
 
-                            bulletStackToLoad = new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
-                            if (gunStack.getTagCompound().getInteger("ammocount") >= gunType.internalAmmoStorage) {
-                                return;
+                        bulletStackToLoad = new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
+                        if (gunStack.getTagCompound().getInteger("ammocount") >= gunType.internalAmmoStorage) {
+                            return;
+                        }
+                    }
+                }
+            }
+
+            NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
+            boolean offhandedReload = false;
+            int highestBulletCount = 0;
+
+            if (bulletStackToLoad == null || bulletStackToLoad.isEmpty()) {
+                /** Offhand Reload */
+
+                if (inventory.offHandInventory.get(0) != ItemStack.EMPTY) {
+                    ItemStack itemStack = inventory.offHandInventory.get(0);
+                    if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
+                        ItemBullet itemBullet = (ItemBullet) itemStack.getItem();
+                        for (String bulletName : gunType.acceptedBullets) {
+                            if (bulletName.equalsIgnoreCase(itemBullet.baseType.internalName)) {
+                                offhandedReload = true;
+                                bulletStackToLoad = itemStack;
+                                break;
                             }
                         }
                     }
                 }
 
-                NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
-                boolean offhandedReload = false;
-                int highestBulletCount = 0;
 
-                if (bulletStackToLoad == null || bulletStackToLoad.isEmpty()) {
-                    /** Offhand Reload */
+                /** Search for bullets */
 
-                    if (inventory.offHandInventory.get(0) != ItemStack.EMPTY) {
-                        ItemStack itemStack = inventory.offHandInventory.get(0);
+                if (!offhandedReload) {
+                    for (int i = 0; i < inventory.getSizeInventory(); i++) {
+                        ItemStack itemStack = inventory.getStackInSlot(i);
                         if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
                             ItemBullet itemBullet = (ItemBullet) itemStack.getItem();
                             for (String bulletName : gunType.acceptedBullets) {
                                 if (bulletName.equalsIgnoreCase(itemBullet.baseType.internalName)) {
-                                    offhandedReload = true;
-                                    bulletStackToLoad = itemStack;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-
-                    /** Search for bullets */
-
-                    if (!offhandedReload) {
-                        for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                            ItemStack itemStack = inventory.getStackInSlot(i);
-                            if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
-                                ItemBullet itemBullet = (ItemBullet) itemStack.getItem();
-                                for (String bulletName : gunType.acceptedBullets) {
-                                    if (bulletName.equalsIgnoreCase(itemBullet.baseType.internalName)) {
-                                        int count = itemStack.getCount();
-                                        if (count > highestBulletCount) {
-                                            bulletStackToLoad = itemStack;
-                                            highestBulletCount = count;
-                                            bulletStackSlotToLoad = i;
-                                        }
+                                    int count = itemStack.getCount();
+                                    if (count > highestBulletCount) {
+                                        bulletStackToLoad = itemStack;
+                                        highestBulletCount = count;
+                                        bulletStackSlotToLoad = i;
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                /** End of search, start to reload */
-                if (bulletStackToLoad == null)
-                    return;
+            /** End of search, start to reload */
+            if (bulletStackToLoad == null)
+                return;
 
-                ItemStack loadingItemStack = bulletStackToLoad.copy();
-                loadingItemStack.setCount(1);
-                int loadingCount = ReloadHelper.inventoryItemCount(entityPlayer, loadingItemStack);
-                int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
-                int amountToLoad = gunType.internalAmmoStorage - ammoCount;
-                if (loadingCount > amountToLoad) {
-                    loadingCount = amountToLoad;
-                }
+            ItemStack loadingItemStack = bulletStackToLoad.copy();
+            loadingItemStack.setCount(1);
+            int loadingCount = ReloadHelper.inventoryItemCount(entityPlayer, loadingItemStack);
+            int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
+            int amountToLoad = gunType.internalAmmoStorage - ammoCount;
+            if (loadingCount > amountToLoad) {
+                loadingCount = amountToLoad;
+            }
 
-                SearchBullet searchBulletEvent = new SearchBullet(entityPlayer, gunStack, bulletStackToLoad, loadingCount);
-                MinecraftForge.EVENT_BUS.post(searchBulletEvent);
-                bulletStackToLoad = searchBulletEvent.bullet;
-                loadingCount = searchBulletEvent.count;
+            SearchBullet searchBulletEvent = new SearchBullet(entityPlayer, gunStack, bulletStackToLoad, loadingCount);
+            MinecraftForge.EVENT_BUS.post(searchBulletEvent);
+            bulletStackToLoad = searchBulletEvent.bullet;
+            loadingCount = searchBulletEvent.count;
 
-                if (loadingCount <= 0) {
-                    return;
-                }
+            if (loadingCount <= 0) {
+                return;
+            }
 
-                boolean loadOnly = false;
-                WeaponReloadEvent.Pre preReloadEvent = new WeaponReloadEvent.Pre(entityPlayer, gunStack, itemGun, offhandedReload, false);
-                MinecraftForge.EVENT_BUS.post(preReloadEvent);
-                if (preReloadEvent.isCanceled())
-                    return;
+            boolean loadOnly = false;
+            WeaponReloadEvent.Pre preReloadEvent = new WeaponReloadEvent.Pre(entityPlayer, gunStack, itemGun, offhandedReload, false);
+            MinecraftForge.EVENT_BUS.post(preReloadEvent);
+            if (preReloadEvent.isCanceled())
+                return;
 
-                ItemBullet bulletItemToLoad = (ItemBullet) bulletStackToLoad.getItem();
+            ItemBullet bulletItemToLoad = (ItemBullet) bulletStackToLoad.getItem();
+
+            /*
+            if (nbtTagCompound.hasKey("bullet")) {
+                ItemStack currentBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
+                ItemBullet currentBulletItem = (ItemBullet) currentBullet.getItem();
+                if (!currentBulletItem.baseType.internalName.equalsIgnoreCase(bulletItemToLoad.baseType.internalName))
+                    unloadBullets(entityPlayer, gunStack);
+            } else {
+                loadOnly = true;
+            }*/
+            if (!nbtTagCompound.hasKey("bullet")) {
+                loadOnly = true;
+            }
+
+
+            /*
+            int reserve = bulletStackToLoad.getCount();
+            int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
+            int amountToLoad = gunType.internalAmmoStorage - ammoCount;
+            int loadingCount;
+            if (amountToLoad >= loadingItemStack.getCount()) {
+                loadingCount = loadingItemStack.getCount();
+                reserve = 0;
+            } else {
+                loadingCount = amountToLoad;
+                reserve = loadingItemStack.getCount() - loadingCount;
+            }
+            gunStack.getTagCompound().setInteger("ammocount", ammoCount + loadingCount);
+            gunStack.getTagCompound().setTag("bullet", loadingItemStack.writeToNBT(new NBTTagCompound()));
+            bulletStackToLoad.setCount(reserve);
+
+            if (!entityPlayer.capabilities.isCreativeMode) {
+                if (offhandedReload)
+                    inventory.offHandInventory.set(0, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
+                else
+                    inventory.setInventorySlotContents(bulletStackSlotToLoad, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
+            }
+            */
+
+            WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, offhandedReload, loadOnly, false, preReloadEvent.getReloadTime(), loadingCount);
+            MinecraftForge.EVENT_BUS.post(postReloadEvent);
+            int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : (postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL)).i;
+            ServerTickHandler.playerReloadCooldown.put(entityPlayer.getUniqueID(), preReloadEvent.getReloadTime());
+            ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, loadingItemStack.copy(), postReloadEvent.getReloadCount()));
+            ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(loadingItemStack), entityPlayer);
+            ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, postReloadEvent.getReloadTime(), postReloadEvent.getReloadCount(), reloadType), entityPlayer);
+
+        } else {
+            WeaponReloadEvent.Pre preReloadEvent = new WeaponReloadEvent.Pre(entityPlayer, gunStack, itemGun, false, false);
+            MinecraftForge.EVENT_BUS.post(preReloadEvent);
+            if (preReloadEvent.isCanceled())
+                return;
+            Unload unloadEvent = new Unload(entityPlayer, gunStack);
+            MinecraftForge.EVENT_BUS.post(unloadEvent);
+            if (unloadEvent.isCanceled())
+                return;
+
+            Integer bulletCount = ReloadHelper.checkUnloadBullets(entityPlayer, gunStack);
+            if (bulletCount != null && bulletCount > 0) {
+                WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, false, false, true, preReloadEvent.getReloadTime(), bulletCount);
+                MinecraftForge.EVENT_BUS.post(postReloadEvent);
 
                 /*
-                if (nbtTagCompound.hasKey("bullet")) {
-                    ItemStack currentBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
-                    ItemBullet currentBulletItem = (ItemBullet) currentBullet.getItem();
-                    if (!currentBulletItem.baseType.internalName.equalsIgnoreCase(bulletItemToLoad.baseType.internalName))
-                        unloadBullets(entityPlayer, gunStack);
-                } else {
-                    loadOnly = true;
-                }*/
-                if (!nbtTagCompound.hasKey("bullet")) {
-                    loadOnly = true;
-                }
-
-                
-                /*
-                int reserve = bulletStackToLoad.getCount();
-                int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
-                int amountToLoad = gunType.internalAmmoStorage - ammoCount;
-                int loadingCount;
-                if (amountToLoad >= loadingItemStack.getCount()) {
-                    loadingCount = loadingItemStack.getCount();
-                    reserve = 0;
-                } else {
-                    loadingCount = amountToLoad;
-                    reserve = loadingItemStack.getCount() - loadingCount;
-                }
-                gunStack.getTagCompound().setInteger("ammocount", ammoCount + loadingCount);
-                gunStack.getTagCompound().setTag("bullet", loadingItemStack.writeToNBT(new NBTTagCompound()));
-                bulletStackToLoad.setCount(reserve);
-
-                if (!entityPlayer.capabilities.isCreativeMode) {
-                    if (offhandedReload)
-                        inventory.offHandInventory.set(0, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
-                    else
-                        inventory.setInventorySlotContents(bulletStackSlotToLoad, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
-                }
+                if (postReloadEvent.isUnload())
+                    gunType.playSound(entityPlayer, WeaponSoundType.Unload, gunStack);
                 */
 
-                WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, offhandedReload, loadOnly, false, preReloadEvent.getReloadTime(), loadingCount);
-                MinecraftForge.EVENT_BUS.post(postReloadEvent);
-                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : (postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL)).i;
-                ServerTickHandler.playerReloadCooldown.put(entityPlayer.getUniqueID(), preReloadEvent.getReloadTime());
-                ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, loadingItemStack.copy(), postReloadEvent.getReloadCount()));
-                ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(loadingItemStack), entityPlayer);
-                ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, postReloadEvent.getReloadTime(), postReloadEvent.getReloadCount(), reloadType), entityPlayer);
-
-            } else {
-                WeaponReloadEvent.Pre preReloadEvent = new WeaponReloadEvent.Pre(entityPlayer, gunStack, itemGun, false, false);
-                MinecraftForge.EVENT_BUS.post(preReloadEvent);
-                if (preReloadEvent.isCanceled())
-                    return;
-                Unload unloadEvent = new Unload(entityPlayer, gunStack);
-                MinecraftForge.EVENT_BUS.post(unloadEvent);
-                if (unloadEvent.isCanceled())
-                    return;
-
-                Integer bulletCount = ReloadHelper.checkUnloadBullets(entityPlayer, gunStack);
-                if (bulletCount != null && bulletCount > 0) {
-                    WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, false, false, true, preReloadEvent.getReloadTime(), bulletCount);
-                    MinecraftForge.EVENT_BUS.post(postReloadEvent);
-                    
-                    /*
-                    if (postReloadEvent.isUnload())
-                        gunType.playSound(entityPlayer, WeaponSoundType.Unload, gunStack);
-                    */
-
-                    int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL).i;
-                    ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, true, bulletCount));
-                    ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(UNLOAD_EMPTY), entityPlayer);
-                    ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, 0, bulletCount, reloadType), entityPlayer);
-                } else if (bulletCount != null) {
-                    handleBulletGunReload(entityPlayer, gunStack, itemGun, gunType, inventory);
-                }
+                int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.LOAD : postReloadEvent.isUnload() ? ReloadType.UNLOAD : ReloadType.FULL).i;
+                ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, true, bulletCount));
+                ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(UNLOAD_EMPTY), entityPlayer);
+                ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, 0, bulletCount, reloadType), entityPlayer);
+            } else if (bulletCount != null) {
+                handleBulletGunReload(entityPlayer, gunStack, itemGun, gunType, inventory);
             }
         }
     }

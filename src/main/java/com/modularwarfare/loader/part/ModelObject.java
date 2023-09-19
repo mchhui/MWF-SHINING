@@ -27,7 +27,7 @@ public class ModelObject {
 
     @SideOnly(Side.CLIENT)
     public void render(BufferBuilder renderer, float scale) {
-        if (faces.size() > 0) {
+        if (!faces.isEmpty()) {
             for (Face face : faces) {
                 face.render(glDrawingMode, renderer, scale);
             }
@@ -37,7 +37,7 @@ public class ModelObject {
     @SideOnly(Side.CLIENT)
     public int renderByVAO(List<Float> renderer, float scale) {
         int flag = 0;
-        if (faces.size() > 0) {
+        if (!faces.isEmpty()) {
             for (Face face : faces) {
                 flag = face.renderByVAO(glDrawingMode, renderer, scale);
             }

@@ -35,23 +35,27 @@ public class PacketGunReloadSound extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        if (entityPlayer.getHeldItemMainhand() != null) {
-            if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                ItemStack gunStack = entityPlayer.getHeldItemMainhand();
-                ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
-                GunType gunType = itemGun.type;
-                InventoryPlayer inventory = entityPlayer.inventory;
-
-                if (!ServerTickHandler.playerReloadCooldown.containsKey(entityPlayer.getUniqueID())) {
-                    //return;
-                }
-
-                if (soundType == null)
-                    return;
-                //System.out.println(soundType);
-                gunType.playSound(entityPlayer, soundType, gunStack);
-            }
+        if (entityPlayer.getHeldItemMainhand() == null) {
+            return;
         }
+
+        if (!(entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun)) {
+            return;
+        }
+
+        ItemStack gunStack = entityPlayer.getHeldItemMainhand();
+        ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
+        GunType gunType = itemGun.type;
+        InventoryPlayer inventory = entityPlayer.inventory;
+
+        if (!ServerTickHandler.playerReloadCooldown.containsKey(entityPlayer.getUniqueID())) {
+            //return;
+        }
+
+        if (soundType == null)
+            return;
+        //System.out.println(soundType);
+        gunType.playSound(entityPlayer, soundType, gunStack);
     }
 
 

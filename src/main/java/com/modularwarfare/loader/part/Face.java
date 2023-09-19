@@ -54,14 +54,14 @@ public class Face {
     }
 
     private void addFloatToList(List<Float> list, double... f) {
-        for (int i = 0; i < f.length; i++) {
-            list.add((float) f[i]);
+        for (double v : f) {
+            list.add((float) v);
         }
     }
 
     private void addFloatToList(List<Float> list, float... f) {
-        for (int i = 0; i < f.length; i++) {
-            list.add(f[i]);
+        for (float v : f) {
+            list.add(v);
         }
     }
 
@@ -75,9 +75,9 @@ public class Face {
 
         for (int i = 0; i < vertices.length; ++i) {
 
+            addFloatToList(list, vertices[i].x * (double) scale, vertices[i].y * (double) scale,
+                    vertices[i].z * (double) scale);
             if (hasTexture) {
-                addFloatToList(list, vertices[i].x * (double) scale, vertices[i].y * (double) scale,
-                        vertices[i].z * (double) scale);
                 addFloatToList(list, textureCoordinates[i].u, textureCoordinates[i].v);
                 if (this.vertexNormals != null && i < this.vertexNormals.length) {
                     addFloatToList(list, vertexNormals[i].x, vertexNormals[i].y, vertexNormals[i].z);
@@ -86,8 +86,6 @@ public class Face {
                 }
 
             } else {
-                addFloatToList(list, vertices[i].x * (double) scale, vertices[i].y * (double) scale,
-                        vertices[i].z * (double) scale);
                 addFloatToList(list, faceNormal.x, faceNormal.y, faceNormal.z);
             }
         }

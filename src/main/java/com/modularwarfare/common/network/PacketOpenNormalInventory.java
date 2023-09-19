@@ -18,12 +18,9 @@ public class PacketOpenNormalInventory extends PacketBase {
     @Override
     public void handleServerSide(final EntityPlayerMP entityPlayer) {
         final IThreadListener mainThread = (IThreadListener) entityPlayer.world;
-        mainThread.addScheduledTask((Runnable) new Runnable() {
-            @Override
-            public void run() {
-                entityPlayer.openContainer.onContainerClosed(entityPlayer);
-                entityPlayer.openContainer = entityPlayer.inventoryContainer;
-            }
+        mainThread.addScheduledTask(() -> {
+            entityPlayer.openContainer.onContainerClosed(entityPlayer);
+            entityPlayer.openContainer = entityPlayer.inventoryContainer;
         });
     }
 

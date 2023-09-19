@@ -12,6 +12,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Objects;
 
 public class OBBModelBox {
     private transient static final ObjModel debugBoxModel = ObjModelLoader
@@ -191,5 +192,33 @@ public class OBBModelBox {
             this.normal = normal;
         }
 
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OBBModelBox)) return false;
+
+        OBBModelBox that = (OBBModelBox) o;
+
+        if (!Objects.equals(name, that.name)) return false;
+        if (!Objects.equals(anchor, that.anchor)) return false;
+        if (!Objects.equals(rotation, that.rotation)) return false;
+        if (!Objects.equals(size, that.size)) return false;
+        if (!Objects.equals(center, that.center)) return false;
+        if (!Objects.equals(axis, that.axis)) return false;
+        return Objects.equals(axisNormal, that.axisNormal);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (anchor != null ? anchor.hashCode() : 0);
+        result = 31 * result + (rotation != null ? rotation.hashCode() : 0);
+        result = 31 * result + (size != null ? size.hashCode() : 0);
+        result = 31 * result + (center != null ? center.hashCode() : 0);
+        result = 31 * result + (axis != null ? axis.hashCode() : 0);
+        result = 31 * result + (axisNormal != null ? axisNormal.hashCode() : 0);
+        return result;
     }
 }

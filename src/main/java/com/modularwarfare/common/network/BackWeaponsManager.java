@@ -65,7 +65,7 @@ public class BackWeaponsManager implements INBTSerializable<NBTTagCompound> {
     }
 
     private ArrayList<ItemStack> getItemsInBack(EntityPlayerMP mp) {
-        ArrayList<ItemStack> guns = new ArrayList<ItemStack>();
+        ArrayList<ItemStack> guns = new ArrayList<>();
         for (int i = 0; i <= mp.inventory.getSizeInventory(); i++) {
             if (guns.size() < 2) {
                 if (mp.inventory.getStackInSlot(i) != null && mp.inventory.getStackInSlot(i).getItem() instanceof ItemGun && mp.inventory.getStackInSlot(i) != mp.getHeldItemMainhand()) {
