@@ -311,7 +311,7 @@ public class ModularWarfare {
                         /**
                          * LOAD SCRIPT START
                          * */
-                        File scriptFolder = new File(file, "/sciprt/");
+                        File scriptFolder = new File(file, "/script/");
                         if (scriptFolder.exists()) {
                             File[] scriptFiles = scriptFolder.listFiles(scriptFile -> scriptFile.getName().endsWith(".js"));
                             if (scriptFiles != null) {
