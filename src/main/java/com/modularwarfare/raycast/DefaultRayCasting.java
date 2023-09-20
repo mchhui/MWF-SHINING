@@ -340,7 +340,7 @@ public class DefaultRayCasting extends RayCasting {
                     IBlockState iblockstate1 = world.getBlockState(blockpos);
                     Block block1 = iblockstate1.getBlock();
 
-                    if (ModConfig.INSTANCE.shots.shot_break_glass) {
+                    if (ModConfig.INSTANCE.shots.shotBreakGlass) {
                         if (block1 instanceof BlockGlass || block1 instanceof BlockStainedGlassPane || block1 instanceof BlockStainedGlass) {
                             world.setBlockToAir(blockpos);
                             ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.glass", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));

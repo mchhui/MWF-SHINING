@@ -311,7 +311,7 @@ public class ShotManager {
                                     }
                                 }
 
-                                if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
+                                if (!ModConfig.INSTANCE.shots.knockbackEntityDamage) {
                                     RayUtil.attackEntityWithoutKnockback(target, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
                                 } else {
                                     target.attackEntityFrom(DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
@@ -346,7 +346,7 @@ public class ShotManager {
             }
             ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
         } else {
-            if (ModConfig.INSTANCE.general.modified_pack_server_kick) {
+            if (ModConfig.INSTANCE.general.modifiedPackServerKick) {
                 ((EntityPlayerMP) entityPlayer).connection.disconnect(new TextComponentString("[ModularWarfare] Kicked for client-side modified content-pack. (Bad RPM/Recoil for the gun: " + itemGun.type.internalName + ") [RPM should be: " + itemGun.type.roundsPerMin + "]"));
             }
         }

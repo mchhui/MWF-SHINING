@@ -65,7 +65,7 @@ public class CapabilityExtra {
         if (event.getEntity() instanceof EntityPlayer) {
             final EntityPlayer player = (EntityPlayer) event.getEntity();
             final World world = player.world;
-            if (world.isRemote || world.getGameRules().getBoolean("keepInventory") || !ModConfig.INSTANCE.general.drop_extra_slots_on_death) {
+            if (world.isRemote || world.getGameRules().getBoolean("keepInventory") || !ModConfig.INSTANCE.general.dropExtraSlotsOnDeath) {
                 return;
             }
 

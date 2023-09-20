@@ -48,16 +48,16 @@ public class PacketVerification extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP playerEntity) {
-        if (ModConfig.INSTANCE.general.directory_pack_server_kick && usingDirectoryContentPack) {
+        if (ModConfig.INSTANCE.general.directoryPackServerKick && usingDirectoryContentPack) {
             playerEntity.connection.disconnect(new TextComponentString(
                     "[ModularWarfare] Kicked for client-side is using directory content-pack."));
         }
-        if (!ModConfig.INSTANCE.general.modified_pack_server_kick) {
+        if (!ModConfig.INSTANCE.general.modifiedPackServerKick) {
             return;
         }
         ArrayList<String> serverList = ModularWarfare.contentPackHashList;
-        if (!ModConfig.INSTANCE.general.content_pack_hash_list.isEmpty()) {
-            serverList = ModConfig.INSTANCE.general.content_pack_hash_list;
+        if (!ModConfig.INSTANCE.general.contentPackHashList.isEmpty()) {
+            serverList = ModConfig.INSTANCE.general.contentPackHashList;
         }
         if (serverList.size() == md5List.size()) {
             boolean flag = false;

@@ -54,7 +54,7 @@ public class CommonEventHandler {
 
     @SubscribeEvent
     public void onPlayerJoin(PlayerLoggedInEvent event) {
-        if (ModConfig.INSTANCE.general.modified_pack_server_kick || ModConfig.INSTANCE.general.directory_pack_server_kick) {
+        if (ModConfig.INSTANCE.general.modifiedPackServerKick || ModConfig.INSTANCE.general.directoryPackServerKick) {
             playerTimeoutMap.put(event.player.getName(), System.currentTimeMillis());
         }
     }

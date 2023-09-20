@@ -207,7 +207,7 @@ public class PacketExpGunFire extends PacketBase {
                                             if (bulletItem.type.isMagicDamage) {
                                                 damageSource.setMagicDamage();
                                             }
-                                            if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
+                                            if (!ModConfig.INSTANCE.shots.knockbackEntityDamage) {
                                                 flag = RayUtil.attackEntityWithoutKnockback(target, damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
                                             } else {
                                                 flag = target.attackEntityFrom(damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
