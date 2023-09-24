@@ -2,6 +2,7 @@ package com.modularwarfare.raycast;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.ballistics.GetLivingAABBEvent;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.hitbox.PlayerHitbox;
 import com.modularwarfare.common.hitbox.PlayerSnapshot;
@@ -30,6 +31,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 import javax.annotation.Nullable;
@@ -177,6 +179,9 @@ public class DefaultRayCasting extends RayCasting {
                         entityBb = ent.getEntityBoundingBox();
                         if (entityBb != null) {
                             entityBb = entityBb.grow(entBorder, entBorder, entBorder);
+                            GetLivingAABBEvent aabbEvent=new GetLivingAABBEvent(entityLivingBase, entityBb) ;
+                            MinecraftForge.EVENT_BUS.post(aabbEvent);
+                            entityBb=aabbEvent.box;
                             intercept = entityBb.calculateIntercept(startVec, endVec);
                             if (intercept != null) {
                                 currentHit = (float) intercept.hitVec.distanceTo(startVec);
