@@ -58,7 +58,7 @@ public class DefaultRayCasting extends RayCasting {
         float maxY = y > ty ? y : ty;
         float maxZ = z > tz ? z : tz;
         AxisAlignedBB bb = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ).grow(borderSize, borderSize, borderSize);
-        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb);
+        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.offset(0,-1.62f,0));
         RayTraceResult blockHit = rayTraceBlocks(world, startVec, endVec, true, true, false);
 
         startVec = new Vec3d(x, y, z);
