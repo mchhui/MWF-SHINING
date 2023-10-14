@@ -52,10 +52,13 @@ public class GltfDataModel {
     public String skeleton = "";
 
     public boolean loaded = false;
+    
+    public static int count=0;
 
     public static GltfDataModel load(ResourceLocation loc) {
+        count++;
+        System.out.println("test a:"+count+" - "+loc);
         GltfDataModel gltfDataModel = new GltfDataModel();
-
         try {
             InputStream inputStream = Minecraft.getMinecraft().getResourceManager().getResource(loc).getInputStream();
             if (inputStream == null) {
@@ -330,21 +333,33 @@ public class GltfDataModel {
             } else if (type == 3) {
                 list.add(new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat()));
             } else if (type == 4) {
-                if (mode == GL11.GL_UNSIGNED_BYTE) {
-                    list.add(
-                        new Vector4i(buf.get() & 0xffff, buf.get() & 0xffff, buf.get() & 0xffff, buf.get() & 0xffff));
-                } else if (mode == GL11.GL_UNSIGNED_SHORT) {
+                if (mode == GL11.GL_UNSIGNED_BYTE || mode == GL11.GL_BYTE) {
+                    // 按理讲只需用0xff(1111 1111)但用多也无妨 哈哈哈
+                    list.add(new Vector4i(buf.get() & 0xff, buf.get() & 0xff, buf.get() & 0xff, buf.get() & 0xff));
+                } else if (mode == GL11.GL_UNSIGNED_SHORT || mode == GL11.GL_SHORT) {
                     list.add(new Vector4i(buf.getShort() & 0xffff, buf.getShort() & 0xffff, buf.getShort() & 0xffff,
                         buf.getShort() & 0xffff));
-                } else if (mode == GL11.GL_UNSIGNED_INT) {
-                    list.add(new Vector4i(buf.getInt() & 0xffff, buf.getInt() & 0xffff, buf.getInt() & 0xffff,
-                        buf.getInt() & 0xffff));
-                } else {
+                } else if (mode == GL11.GL_UNSIGNED_INT || mode == GL11.GL_INT) {
+                    // 其实没啥用 根本存不了 哈哈哈
+                    list.add(new Vector4i(buf.getInt(), buf.getInt(), buf.getInt(), buf.getInt()));
+                } else if (mode == GL11.GL_FLOAT) {
                     list.add(new Vector4f(buf.getFloat(), buf.getFloat(), buf.getFloat(), buf.getFloat()));
+                } else {
+                    throw new Error("意料之外的type:" + mode);
                 }
             } else {
                 throw new Error("意料之外的unit");
             }
+        }
+    }
+    
+    public void delete() {
+        if(this.loaded) {
+            this.nodes.forEach((k,v)->{
+                v.meshes.forEach((n,m)->{
+                    m.delete();
+                });
+            });
         }
     }
 }

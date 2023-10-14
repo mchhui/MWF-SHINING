@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.MemoryUtil;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -258,6 +259,12 @@ public class DataMesh {
     }
 
     public void delete() {
+        if(geoBuffer!=null) {
+            ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner()).clean();
+        }
+        if(elementBuffer!=null) {
+            ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner()).clean();
+        }
         GL30.glDeleteVertexArrays(displayList);
         GL30.glDeleteVertexArrays(ssboVao);
         if (pos_vbo != -1) {
