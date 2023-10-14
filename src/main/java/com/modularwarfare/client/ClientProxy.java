@@ -14,6 +14,7 @@ import com.modularwarfare.client.fpp.basic.configs.*;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.*;
@@ -414,6 +415,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void reloadModels(boolean reloadSkins) {
+        EnhancedModel.clearCache();
         for (BaseType baseType : ModularWarfare.baseTypes) {
             if (baseType.hasModel()) {
                 baseType.reloadModel();
@@ -752,7 +754,7 @@ public class ClientProxy extends CommonProxy {
                 ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
             } else {
                 float rand=(float) Math.random();
-                ClientEventHandler.cemeraBobbing=lastBobbingParm*(0.3f+0.4f*Math.abs(rand));
+                ClientEventHandler.cemeraBobbing=lastBobbingParm*(0.3f+0.4f*Math.abs(rand))*((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
                 lastBobbingParm=-lastBobbingParm;
                 AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
