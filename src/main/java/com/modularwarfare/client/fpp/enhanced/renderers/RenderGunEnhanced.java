@@ -1058,8 +1058,17 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
         }
     }
+
+    public void drawThirdGun(RenderPlayer renderPlayer, RenderType renderType, EntityPlayer player,
+        ItemStack demoStack) {
+        boolean sneakFlag = false;
+        if (player != null && player.isSneaking()) {
+            sneakFlag = true;
+        }
+        drawThirdGun(renderPlayer, renderType, player, demoStack, sneakFlag);
+    }
     
-    public void drawThirdGun(RenderPlayer renderPlayer,RenderType renderType,EntityPlayer player, ItemStack demoStack) {
+    public void drawThirdGun(RenderPlayer renderPlayer,RenderType renderType,EntityPlayer player, ItemStack demoStack,boolean sneakFlag) {
         if (!(demoStack.getItem() instanceof ItemGun))
             return;
         GunType gunType = ((ItemGun) demoStack.getItem()).type;
@@ -1138,7 +1147,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         ClientProxy.gunEnhancedRenderer.color(1, 1, 1, 1f);
 
-        if (player!=null&&player.isSneaking()) {
+        if (player!=null&&sneakFlag) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
         }
 

@@ -226,7 +226,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void load() {
-
+        super.load();
         new KeyInputHandler();
         new ClientTickHandler();
         new ClientGunHandler();

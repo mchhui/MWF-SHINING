@@ -10,6 +10,8 @@ import com.modularwarfare.common.network.PacketParticle.ParticleType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
+
+import mchhui.hebridge.HEBridge;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
@@ -109,7 +111,7 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public void load() {
-
+        HEBridge.init();
     }
 
     public void init() {

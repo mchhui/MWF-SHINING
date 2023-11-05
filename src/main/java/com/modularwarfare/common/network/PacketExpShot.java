@@ -2,6 +2,7 @@ package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.WeaponExpShotEvent;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.network.PacketOtherPlayerAnimation.AnimationType;
@@ -17,6 +18,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class PacketExpShot extends PacketBase {
@@ -85,6 +87,7 @@ public class PacketExpShot extends PacketBase {
                                 ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
                                 
                                 //Animation
+                                MinecraftForge.EVENT_BUS.post(new WeaponExpShotEvent(entityPlayer));
                                 ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
                                 Vec3d posSmoke =entityPlayer.getPositionEyes(0);
                                 if(ModularWarfare.isLoadedModularMovements) {
