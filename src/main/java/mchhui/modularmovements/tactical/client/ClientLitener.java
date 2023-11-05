@@ -522,8 +522,8 @@ public class ClientLitener {
         event.setPitch(0);
         event.setYaw(0);
         event.setRoll(0);
-        GlStateManager.translate(-0.6 * cameraProbeOffset, 0, 0);
         GlStateManager.rotate(10 * cameraProbeOffset, 0.0F, 0.0F, 1.0F);
+        GlStateManager.translate(-0.6 * cameraProbeOffset, 0, 0);
         GlStateManager.rotate(pitch, 1.0F, 0.0F, 0.0F);
         GlStateManager.translate(0, -cameraOffsetY, 0);
         GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
@@ -863,7 +863,10 @@ public class ClientLitener {
         event.player.setEntityBoundingBox(lastModAABB);
         
         if (clientPlayerSitMoveAmplifier > 0) {
+            clientPlayerState.isSliding=true;
             TacticalHandler.sendNoStep(100);
+        }else {
+            clientPlayerState.isSliding=false;
         }
         if (event.player.fallDistance > 1) {
             if (wannaSliding) {
@@ -873,6 +876,13 @@ public class ClientLitener {
         TacticalHandler.sendToServer(clientPlayerState.writeCode());
     }
 
+    public static boolean isSliding(Integer id) {
+        if (!ohterPlayerStateMap.containsKey(id)) {
+            return false;
+        }
+        return ohterPlayerStateMap.get(id).isSliding;
+    }
+    
     public static boolean isSitting(Integer id) {
         if (!ohterPlayerStateMap.containsKey(id)) {
             return false;

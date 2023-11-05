@@ -14,6 +14,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class PlayerState {
+    public boolean isSliding = false;
     public boolean isSitting = false;
     public boolean isCrawling = false;
     //0:middle -1:left 1:right
@@ -121,6 +122,8 @@ public class PlayerState {
         isCrawling = code % 10 != 0;
         code /= 10;
         isSitting = code % 10 != 0;
+        code /= 10;
+        isSliding = code % 10 != 0;
     }
 
     public void reset() {
@@ -128,7 +131,7 @@ public class PlayerState {
     }
 
     public int writeCode() {
-        return (isSitting ? 1 : 0) * 100 + (isCrawling ? 1 : 0) * 10 + probe + 1;
+        return (isSliding ? 1 : 0) * 1000 + (isSitting ? 1 : 0) * 100 + (isCrawling ? 1 : 0) * 10 + probe + 1;
     }
 
     @SideOnly(Side.CLIENT)
