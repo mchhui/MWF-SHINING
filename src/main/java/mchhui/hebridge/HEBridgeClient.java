@@ -94,26 +94,24 @@ public class HEBridgeClient {
         boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode = true;
         GlStateManager.pushMatrix();
-        if (event.entity.getPrimaryHand() == EnumHandSide.RIGHT) {
-            if (event.model != null && event.model.existNodeState("righthand_mwf_item")) {
-                event.model.applyNodeStateTransform("righthand_mwf_item", () -> {
-                    if (((GunType)type).animationType == WeaponAnimationType.ENHANCED) {
+        if (event.model != null && event.model.existNodeState("righthand_mwf_item")) {
+            event.model.applyNodeStateTransform("righthand_mwf_item", () -> {
+                if (((GunType)type).animationType == WeaponAnimationType.ENHANCED) {
 
-                        GunType gunType = (GunType)type;
-                        EnhancedModel model = type.enhancedModel;
+                    GunType gunType = (GunType)type;
+                    EnhancedModel model = type.enhancedModel;
 
-                        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)gunType.enhancedModel.config;
+                    GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)gunType.enhancedModel.config;
 
-                        if (event.entity instanceof EntityPlayer) {
-                            ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.PLAYER,
-                                (EntityPlayer)event.entity, itemstack, false);
-                        } else {
-                            ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.PLAYER, null, itemstack);
-                        }
-
+                    if (event.entity instanceof EntityPlayer) {
+                        ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.PLAYER,
+                            (EntityPlayer)event.entity, itemstack, false);
+                    } else {
+                        ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.PLAYER, null, itemstack);
                     }
-                });
-            }
+
+                }
+            });
         }
         GlStateManager.popMatrix();
         ObjModelRenderer.glowTxtureMode = glowTxtureMode;
