@@ -91,8 +91,8 @@ public class HEBridgeClient {
             return;
         }
 
-        boolean glowTxtureMode=ObjModelRenderer.glowTxtureMode;
-        ObjModelRenderer.glowTxtureMode=true;
+        boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode = true;
         GlStateManager.pushMatrix();
         if (event.entity.getPrimaryHand() == EnumHandSide.RIGHT) {
             if (event.model != null && event.model.existNodeState("righthand_mwf_item")) {
@@ -116,7 +116,7 @@ public class HEBridgeClient {
             }
         }
         GlStateManager.popMatrix();
-        ObjModelRenderer.glowTxtureMode=glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode = glowTxtureMode;
     }
 
     @SubscribeEvent
@@ -132,7 +132,7 @@ public class HEBridgeClient {
             return;
         }
         if (event.node.equals("mwf_core_head")) {
-            event.weight = 1 - state.p_gun_aim;
+            event.weight = 1 - state.w_gun_aim;
         }
     }
 
@@ -144,22 +144,33 @@ public class HEBridgeClient {
         EntityPlayer player = (EntityPlayer)event.entity;
         PlayerState state = getPlayerState(player.getUniqueID());
         float ptick = event.ptick;
+        if (ptick > 1) {
+            ptick = 1;
+        }
         boolean aim = AnimationUtils.isAiming.containsKey(player.getName());
         if (!aim) {
             return;
         }
         if (event.node.equals("body_mwf_blender")) {
             event.rot.rotateAxis(
-                (float)Math
-                    .toRadians((player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * ptick)*0.7f),
+                (float)Math.toRadians(
+                    (player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * ptick) * 0.5f),
                 1, 0, 0);
-            float head=player.prevRotationYawHead + (player.rotationYawHead - player.prevRotationYawHead) * ptick;
-            head-=player.prevRenderYawOffset + (player.renderYawOffset - player.prevRenderYawOffset) * ptick;
-            event.rot.rotateAxis(
-                (float)-Math
-                    .toRadians(head*0.5f),
-                0, 1, 0);
+            float head =
+                interpolateRotation(interpolateRotation(player.prevRenderYawOffset, player.renderYawOffset, ptick),
+                    interpolateRotation(player.prevRotationYawHead, player.rotationYawHead, ptick), 0.5f);
+            head -= interpolateRotation(player.prevRenderYawOffset, player.renderYawOffset, ptick);
+            event.rot.rotateAxis((float)-Math.toRadians(head), 0, 1, 0);
         }
+    }
+
+    public static float interpolateRotation(float prevYawOffset, float yawOffset, float partialTicks) {
+        float f;
+        for (f = yawOffset - prevYawOffset; f < -180.0F; f += 360.0F);
+        while (f >= 180.0F) {
+            f -= 360.0F;
+        }
+        return prevYawOffset + partialTicks * f;
     }
 
     @SubscribeEvent
@@ -307,9 +318,13 @@ public class HEBridgeClient {
         }
 
         // lean
-        float lean = ClientLitener.cameraProbeOffset;
+        float lean = 0;
         if (event.entity != Minecraft.getMinecraft().player) {
-            lean = ClientLitener.ohterPlayerStateMap.get(player.getEntityId()).probeOffset;
+            if (ClientLitener.ohterPlayerStateMap.containsKey(player.getEntityId())) {
+                lean = ClientLitener.ohterPlayerStateMap.get(player.getEntityId()).probeOffset;
+            }
+        } else {
+            lean = ClientLitener.cameraProbeOffset;
         }
         if (lean > 0) {
             state.p_lean_right = lean;
