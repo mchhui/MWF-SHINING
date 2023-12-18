@@ -33,10 +33,12 @@ public class EasyEffectRenderer {
 
         for (int i = 0; i < objects.size(); i++) {
             EEObject obj = objects.get(i);
-            obj.render(this, time, partialTicks);
-            if (obj.isShutdown(time)) {
+            if (obj !=null){
+                obj.render(this, time, partialTicks);
+                if (obj.isShutdown(time)) {
                 objects.remove(i);
                 i--;
+                }
             }
         }
     }
