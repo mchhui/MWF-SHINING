@@ -60,13 +60,13 @@ public class RayUtil {
         float acc = gun.bulletSpread * accuracyBarrelFactor;
             
         if (player.posX != player.lastTickPosX || player.posZ != player.lastTickPosZ) {
-            acc += 0.75f;
+            acc += gun.accuracyMoveOffset;
         }
         if (!player.onGround) {
-            acc += 1.5f;
+            acc += gun.accuracyHoverOffset;
         }
         if (player.isSprinting()) {
-            acc += 0.25f;
+            acc += gun.accuracySprintOffset;
         }
         if (player.isSneaking()) {
             acc *= gun.accuracySneakFactor;

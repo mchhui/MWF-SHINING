@@ -78,6 +78,8 @@ public class GunType extends BaseType {
      * The amount that bullets spread out when fired from this gun
      */
     public float bulletSpread;
+
+    
     /**
      * The fire rate of the gun in RPM, 1200 = MAX
      */
@@ -121,6 +123,11 @@ public class GunType extends BaseType {
      * Factor of accuracy when aimming
      */
     public float accuracyAimFactor = 0.75f;
+    
+    public float accuracyMoveOffset=0.75f;
+    public float accuracySprintOffset=0.25f;
+    public float accuracyHoverOffset=1.5f;
+    
 
     public float randomRecoilPitch = 0.5F;
 
