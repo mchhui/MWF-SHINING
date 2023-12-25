@@ -37,6 +37,7 @@ import com.modularwarfare.client.renderers.RenderProjectile;
 import com.modularwarfare.client.renderers.RenderShell;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.shader.Programs;
+import com.modularwarfare.client.view.AutoSwitchToFirstView;
 import com.modularwarfare.common.CommonProxy;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ArmorType.ArmorInfo;
@@ -141,6 +142,8 @@ public class ClientProxy extends CommonProxy {
     public static GunUI gunUI;
 
     public static KillFeedManager killFeedManager;
+
+    public static AutoSwitchToFirstView autoSwitchToFirstView;
     /**
      * Patches
      **/
@@ -249,6 +252,9 @@ public class ClientProxy extends CommonProxy {
 
         this.killFeedManager = new KillFeedManager();
         MinecraftForge.EVENT_BUS.register(new KillFeedRender(this.killFeedManager));
+
+        this.autoSwitchToFirstView = new AutoSwitchToFirstView();
+        MinecraftForge.EVENT_BUS.register(this.autoSwitchToFirstView);
 
         WeaponAnimations.registerAnimation("rifle", new AnimationRifle());
         WeaponAnimations.registerAnimation("rifle2", new AnimationRifle2());
