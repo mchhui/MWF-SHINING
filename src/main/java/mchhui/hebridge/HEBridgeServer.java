@@ -1,4 +1,4 @@
- package mchhui.hebridge;
+package mchhui.hebridge;
 
 import com.modularwarfare.api.WeaponEnhancedReloadEvent;
 import com.modularwarfare.api.WeaponExpShotEvent;
@@ -10,9 +10,9 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class HEBridgeServer {
     @SubscribeEvent
-     public void onReload(WeaponReloadEvent.Post event) {
-         ELMAPI.playAni(event.getWeaponUser().getUniqueID(), "gun_reload", 1);
-     }
+    public void onReload(WeaponReloadEvent.Post event) {
+        ELMAPI.playAni(event.getWeaponUser().getUniqueID(), "gun_reload", 1);
+    }
     
     @SubscribeEvent
     public void onReload(WeaponExpShotEvent event) {
