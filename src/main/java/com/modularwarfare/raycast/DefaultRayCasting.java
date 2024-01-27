@@ -58,7 +58,11 @@ public class DefaultRayCasting extends RayCasting {
         float maxY = y > ty ? y : ty;
         float maxZ = z > tz ? z : tz;
         AxisAlignedBB bb = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ).grow(borderSize, borderSize, borderSize);
-        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.offset(0,-1.62f,0));
+        /*
+         * 2023.12.31删除了这个莫名其妙的offset 因为他会导致平视射击时判定错误
+         * */
+//        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.offset(0,-1.62f,0));
+        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb);
         RayTraceResult blockHit = rayTraceBlocks(world, startVec, endVec, true, true, false);
 
         startVec = new Vec3d(x, y, z);
@@ -170,6 +174,7 @@ public class DefaultRayCasting extends RayCasting {
         float currentHit = 0.f;
         AxisAlignedBB entityBb;// = ent.getBoundingBox();
         RayTraceResult intercept;
+        System.out.println("test1:"+allEntities.size());
         for (Entity ent : allEntities) {
             if ((ent.canBeCollidedWith() || !collideablesOnly) && ((excluded != null && !excluded.contains(ent)) || excluded == null)) {
                 if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
@@ -183,6 +188,7 @@ public class DefaultRayCasting extends RayCasting {
                             MinecraftForge.EVENT_BUS.post(aabbEvent);
                             entityBb=aabbEvent.box;
                             intercept = entityBb.calculateIntercept(startVec, endVec);
+                            System.out.println("test:"+intercept);
                             if (intercept != null) {
                                 currentHit = (float) intercept.hitVec.distanceTo(startVec);
                                 hit = intercept.hitVec;

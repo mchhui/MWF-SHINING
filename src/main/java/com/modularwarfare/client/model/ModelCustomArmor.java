@@ -384,7 +384,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
                     }
                     break;
                 case LEFTLEG:
-                    GlStateManager.translate(-1.9F * scale, -12.0F * scale, 0.0F);
+                    GlStateManager.translate(-2.0F * scale, -12.0F * scale, 0.0F);
                     if (!this.isHidden) {
                         if (this.showModel) {
                             if (baseModel.armor.config.extra.slimSupported && baseModel.isSlim) {
@@ -398,7 +398,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
                     }
                     break;
                 case RIGHTLEG:
-                    GlStateManager.translate(1.9F * scale, -12.0F * scale, 0.0F);
+                    GlStateManager.translate(2.0F * scale, -12.0F * scale, 0.0F);
                     if (!this.isHidden) {
                         if (this.showModel) {
                             if (baseModel.armor.config.extra.slimSupported && baseModel.isSlim) {

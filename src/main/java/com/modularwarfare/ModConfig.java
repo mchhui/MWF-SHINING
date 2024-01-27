@@ -97,6 +97,7 @@ public class ModConfig {
         public float eraseScopeDepth=1f;
         public int shadersColorTexID=0;
         public boolean alwaysRenderPIPWorld=false;
+        public boolean autoSwitchToFirstView=true;
     }
 
     //walk sounds

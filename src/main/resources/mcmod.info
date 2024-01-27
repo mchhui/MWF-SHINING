@@ -5,6 +5,7 @@
   "description": "A Minecraft Gun Mod",
   "version": "${version}",
   "mcversion": "${mcversion}",
+  "S-version": "Shining"
   "url": "",
   "updateUrl": "",
   "authorList": ["Protoxy, Deltric"],
