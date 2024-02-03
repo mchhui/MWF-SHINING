@@ -62,10 +62,12 @@ import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.entity.Render;
+import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -144,7 +146,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
     }
 
-    public AnimationController getController(EntityPlayer player,GunEnhancedRenderConfig config) {
+    public AnimationController getController(EntityLivingBase player,GunEnhancedRenderConfig config) {
         if(player==Minecraft.getMinecraft().player) {
             if(controller.player!=player||controller.getConfig()!=config) {
                 controller=new AnimationController(player, config);
@@ -1059,7 +1061,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
     }
 
-    public void drawThirdGun(RenderPlayer renderPlayer, RenderType renderType, EntityPlayer player,
+    public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
         ItemStack demoStack) {
         boolean sneakFlag = false;
         if (player != null && player.isSneaking()) {
@@ -1068,7 +1070,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         drawThirdGun(renderPlayer, renderType, player, demoStack, sneakFlag);
     }
     
-    public void drawThirdGun(RenderPlayer renderPlayer,RenderType renderType,EntityPlayer player, ItemStack demoStack,boolean sneakFlag) {
+    public void drawThirdGun(RenderLivingBase renderPlayer,RenderType renderType,EntityLivingBase player, ItemStack demoStack,boolean sneakFlag) {
         if (!(demoStack.getItem() instanceof ItemGun))
             return;
         GunType gunType = ((ItemGun) demoStack.getItem()).type;
@@ -1173,8 +1175,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.rotate(renderConfigElement.rot[0], -1, 0, 0);
         GlStateManager.rotate(renderConfigElement.rot[2], 0, 0, -1);
          */
-        if(renderPlayer!=null) {
-            renderPlayer.getMainModel().bipedRightArm.postRender(0.0625F);  
+        if(renderPlayer!=null&&renderPlayer.getMainModel() instanceof ModelBiped) {
+            ((ModelBiped)renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);  
         }
         RenderElement renderConfigElement=config.thirdPerson.renderElements.get(renderType.serializedName);
         GlStateManager.translate(renderConfigElement.pos.x, renderConfigElement.pos.y, renderConfigElement.pos.z);

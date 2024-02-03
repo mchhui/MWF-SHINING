@@ -10,6 +10,8 @@ public enum WeaponSoundType {
      */
     @SerializedName("weaponIdle") Idle("weaponIdle", 8, null),
     
+    @SerializedName("weaponIdleEmpty") IdleEmpty("weaponIdleEmpty", 8, null),
+    
     /**
      * The sound played upon dry firing
      */
@@ -40,6 +42,16 @@ public enum WeaponSoundType {
     @SerializedName("weaponReloadSecond") ReloadSecond("weaponReloadSecond", 16, null),
     
     @SerializedName("weaponPostReload") PostReload("weaponPostReload", 16, null),
+    
+    @SerializedName("weaponPreReloadEmpty") PreReloadEmpty("weaponPreReloadEmpty", 16, null),
+    
+    /**
+     * The sound to play upon reloading when empty
+     */
+    
+    @SerializedName("weaponReloadEmpty") ReloadEmpty("weaponReloadEmpty", 16, "reload"),
+    
+    @SerializedName("weaponReloadSecondEmpty") ReloadSecondEmpty("weaponReloadSecondEmpty", 16, null),
     
     @SerializedName("weaponPostReloadEmpty") PostReloadEmpty("weaponPostReloadEmpty", 16, null),
 
@@ -94,10 +106,6 @@ public enum WeaponSoundType {
 
     @SerializedName("weaponPostUnload") PostUnload("weaponPostUnload", 12, null),
 
-    /**
-     * The sound to play upon reloading when empty
-     */
-    @SerializedName("weaponReloadEmpty") ReloadEmpty("weaponReloadEmpty", 12, null),
 
     /**
      * The sound to play upon charging

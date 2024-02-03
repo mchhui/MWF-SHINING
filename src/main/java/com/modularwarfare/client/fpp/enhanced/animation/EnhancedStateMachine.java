@@ -162,9 +162,17 @@ public class EnhancedStateMachine {
                 } else {
                     //使用子弹的枪械
                     if (reloadPhase == Phase.FIRST) {
-                        aniType = AnimationType.RELOAD_FIRST;
+                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_EMPTY)) {
+                            aniType = AnimationType.RELOAD_FIRST_EMPTY;
+                        } else {
+                            aniType = AnimationType.RELOAD_FIRST;
+                        }
                     } else if (reloadPhase == Phase.SECOND) {
-                        aniType = AnimationType.RELOAD_SECOND;
+                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_EMPTY)) {
+                            aniType = AnimationType.RELOAD_SECOND_EMPTY;
+                        } else {
+                            aniType = AnimationType.RELOAD_SECOND;
+                        }
                     } else if (reloadPhase == Phase.POST) {
                         if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
                             aniType = AnimationType.POST_RELOAD_EMPTY;
@@ -172,7 +180,11 @@ public class EnhancedStateMachine {
                             aniType = AnimationType.POST_RELOAD;
                         }
                     } else {
-                        aniType = AnimationType.PRE_RELOAD;
+                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.PRE_RELOAD_EMPTY)) {
+                            aniType = AnimationType.PRE_RELOAD_EMPTY;
+                        } else {
+                            aniType = AnimationType.PRE_RELOAD;
+                        }
                     }
                 }
             }
@@ -186,28 +198,29 @@ public class EnhancedStateMachine {
             }
         } else if (reloadType == ReloadType.Full) {
             if (reloadPhase == Phase.FIRST) {
-                if (ClientTickHandler.reloadEnhancedIsQuicklyRendering
-                        && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_QUICKLY)) {
-                    aniType = AnimationType.RELOAD_FIRST_QUICKLY;
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_EMPTY)) {
+                    aniType = AnimationType.RELOAD_FIRST_EMPTY;
                 } else {
                     aniType = AnimationType.RELOAD_FIRST;
                 }
             } else if (reloadPhase == Phase.SECOND) {
-                if (ClientTickHandler.reloadEnhancedIsQuicklyRendering
-                        && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_QUICKLY)) {
-                    aniType = AnimationType.RELOAD_SECOND_QUICKLY;
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_EMPTY)) {
+                    aniType = AnimationType.RELOAD_SECOND_EMPTY;
                 } else {
                     aniType = AnimationType.RELOAD_SECOND;
                 }
             } else if (reloadPhase == Phase.POST) {
-                if (!ItemGun.hasNextShot(heldItemstStack)
-                        && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
                     aniType = AnimationType.POST_RELOAD_EMPTY;
                 } else {
                     aniType = AnimationType.POST_RELOAD;
                 }
             } else {
-                aniType = AnimationType.PRE_RELOAD;
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.PRE_RELOAD_EMPTY)) {
+                    aniType = AnimationType.PRE_RELOAD_EMPTY;
+                } else {
+                    aniType = AnimationType.PRE_RELOAD;
+                }
             }
         }
         return aniType;
@@ -318,6 +331,9 @@ public class EnhancedStateMachine {
                     case PRE_RELOAD:
                         ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreReload));
                         break;
+                    case PRE_RELOAD_EMPTY:
+                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreReloadEmpty));
+                        break;
                     case RELOAD_FIRST:
                         ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
                         break;
@@ -329,6 +345,12 @@ public class EnhancedStateMachine {
                         break;
                     case RELOAD_SECOND_QUICKLY:
                         ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
+                        break;
+                    case RELOAD_FIRST_EMPTY:
+                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadEmpty));
+                        break;
+                    case RELOAD_SECOND_EMPTY:
+                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecondEmpty));
                         break;
                     case POST_RELOAD:
                         ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReload));
@@ -387,6 +409,7 @@ public class EnhancedStateMachine {
         if (aniType != null) {
             ani = ((GunEnhancedRenderConfig)currentModel.config).animations.get(aniType);
         }
+        System.out.println(aniType+":"+ani);
         if (ani != null) {
             double speed = ani.getSpeed(currentModel.config.FPS) * speedFactor * partialTick;
             double val = progress.get() + speed;
