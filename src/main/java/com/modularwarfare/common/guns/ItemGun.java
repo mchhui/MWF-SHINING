@@ -301,7 +301,7 @@ public class ItemGun extends BaseItem {
                     break;
             }
             if (shouldRender) {
-                ModularWarfare.NETWORK.sendToAll(new PacketDecal(0, side, hitX, hitY + 0.095D, hitZ, false));
+                ModularWarfare.NETWORK.sendToAll(new PacketDecal(0, side, hitX, hitY, hitZ, false));
             }
         }
     }
