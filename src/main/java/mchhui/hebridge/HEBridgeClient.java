@@ -39,7 +39,9 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumHandSide;
+import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class HEBridgeClient {
@@ -134,33 +136,34 @@ public class HEBridgeClient {
         }
     }
 
-    @SubscribeEvent
-    public void onNodeBlender(NodeBlender event) {
-        if (!(event.entity instanceof EntityPlayer)) {
-            return;
-        }
-        EntityPlayer player = (EntityPlayer)event.entity;
-        PlayerState state = getPlayerState(player.getUniqueID());
-        float ptick = event.ptick;
-        if (ptick > 1) {
-            ptick = 1;
-        }
-        boolean aim = AnimationUtils.isAiming.containsKey(player.getName());
-        if (!aim) {
-            return;
-        }
-        if (event.node.equals("body_mwf_blender")) {
-            event.rot.rotateAxis(
-                (float)Math.toRadians(
-                    (player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * ptick) * 0.5f),
-                1, 0, 0);
-            float head =
-                interpolateRotation(interpolateRotation(player.prevRenderYawOffset, player.renderYawOffset, ptick),
-                    interpolateRotation(player.prevRotationYawHead, player.rotationYawHead, ptick), 0.5f);
-            head -= interpolateRotation(player.prevRenderYawOffset, player.renderYawOffset, ptick);
-            event.rot.rotateAxis((float)-Math.toRadians(head), 0, 1, 0);
-        }
-    }
+//    @SubscribeEvent
+//    @Deprecated
+//    public void onNodeBlender(NodeBlender event) {
+//        if (!(event.entity instanceof EntityPlayer)) {
+//            return;
+//        }
+//        EntityPlayer player = (EntityPlayer)event.entity;
+//        PlayerState state = getPlayerState(player.getUniqueID());
+//        float ptick = event.ptick;
+//        if (ptick > 1) {
+//            ptick = 1;
+//        }
+//        boolean aim = AnimationUtils.isAiming.containsKey(player.getName());
+//        if (!aim) {
+//            return;
+//        }
+//        if (event.node.equals("body_mwf_blender")) {
+//            event.rot.rotateAxis(
+//                (float)Math.toRadians(
+//                    (player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * ptick) * 0.5f),
+//                1, 0, 0);
+//            float head =
+//                interpolateRotation(interpolateRotation(player.prevRenderYawOffset, player.renderYawOffset, ptick),
+//                    interpolateRotation(player.prevRotationYawHead, player.rotationYawHead, ptick), 0.5f);
+//            head -= interpolateRotation(player.prevRenderYawOffset, player.renderYawOffset, ptick);
+//            event.rot.rotateAxis((float)-Math.toRadians(head), 0, 1, 0);
+//        }
+//    }
 
     public static float interpolateRotation(float prevYawOffset, float yawOffset, float partialTicks) {
         float f;

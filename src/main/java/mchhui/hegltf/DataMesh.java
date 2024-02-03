@@ -260,10 +260,14 @@ public class DataMesh {
 
     public void delete() {
         if(geoBuffer!=null) {
-            ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner()).clean();
+            if(((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner())!=null) {
+                ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner()).clean();  
+            }
         }
         if(elementBuffer!=null) {
-            ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner()).clean();
+            if(((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner())!=null) {
+                ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner()).clean();  
+            }
         }
         GL30.glDeleteVertexArrays(displayList);
         GL30.glDeleteVertexArrays(ssboVao);
