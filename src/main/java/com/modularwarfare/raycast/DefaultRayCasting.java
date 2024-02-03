@@ -96,6 +96,7 @@ public class DefaultRayCasting extends RayCasting {
         ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
         
         if(OBBPlayerManager.debug) {
+            System.out.println("test0:"+startVec+"|"+Minecraft.getMinecraft().player.getPositionVector());
             OBBPlayerManager.lines.add(new OBBDebugObject(ray));
             OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec), new Vector3f(endVec)));  
         }
@@ -174,7 +175,7 @@ public class DefaultRayCasting extends RayCasting {
         float currentHit = 0.f;
         AxisAlignedBB entityBb;// = ent.getBoundingBox();
         RayTraceResult intercept;
-        System.out.println("test1:"+allEntities.size());
+//        System.out.println("test1:"+allEntities.size());
         for (Entity ent : allEntities) {
             if ((ent.canBeCollidedWith() || !collideablesOnly) && ((excluded != null && !excluded.contains(ent)) || excluded == null)) {
                 if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
@@ -188,7 +189,7 @@ public class DefaultRayCasting extends RayCasting {
                             MinecraftForge.EVENT_BUS.post(aabbEvent);
                             entityBb=aabbEvent.box;
                             intercept = entityBb.calculateIntercept(startVec, endVec);
-                            System.out.println("test:"+intercept);
+//                            System.out.println("test:"+intercept);
                             if (intercept != null) {
                                 currentHit = (float) intercept.hitVec.distanceTo(startVec);
                                 hit = intercept.hitVec;

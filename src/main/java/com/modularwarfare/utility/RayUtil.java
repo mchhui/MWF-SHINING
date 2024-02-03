@@ -44,8 +44,8 @@ public class RayUtil {
          * 修复万向轴死锁带来的bug
          * */
         Vec3d vec3d = new Vec3d(rand.nextBoolean() ? randAccYaw : (-randAccYaw), rand.nextBoolean() ? randAccPitch : (-randAccPitch), 100).normalize();
-        vec3d = vec3d.rotatePitch((float)(-pitch * 3.14 / 180));
-        vec3d = vec3d.rotateYaw((float)(-yaw * 3.14 / 180));
+        vec3d = vec3d.rotatePitch((float)(-pitch * Math.PI / 180));
+        vec3d = vec3d.rotateYaw((float)(-yaw * Math.PI / 180));
         return vec3d;
     }
 
