@@ -280,8 +280,6 @@ public class ClientProxy extends CommonProxy {
         helper.getLayerRenderers().add(0, new ResetHiddenModelLayer(renderer));
         renderer.addLayer(new RenderLayerBackpack(renderer, renderer.getMainModel().bipedBodyWear));
         renderer.addLayer(new RenderLayerBody(renderer, renderer.getMainModel().bipedBodyWear));
-        // Disabled for animation third person test
-        // renderer.addLayer(new RenderLayerHeldGun(renderer));
         renderer.addLayer(new RenderLayerHeldGun(renderer));
     }
 

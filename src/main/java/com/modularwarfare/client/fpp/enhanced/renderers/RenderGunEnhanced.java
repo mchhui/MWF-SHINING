@@ -1176,7 +1176,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.rotate(renderConfigElement.rot[2], 0, 0, -1);
          */
         if(renderPlayer!=null&&renderPlayer.getMainModel() instanceof ModelBiped) {
-            ((ModelBiped)renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);  
+            ((ModelBiped)renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
+//            System.out.println("a");
         }
         RenderElement renderConfigElement=config.thirdPerson.renderElements.get(renderType.serializedName);
         GlStateManager.translate(renderConfigElement.pos.x, renderConfigElement.pos.y, renderConfigElement.pos.z);
