@@ -57,7 +57,7 @@ public class GltfDataModel {
 
     public static GltfDataModel load(ResourceLocation loc) {
         count++;
-        System.out.println("test a:"+count+" - "+loc);
+//        System.out.println("test a:"+count+" - "+loc);
         GltfDataModel gltfDataModel = new GltfDataModel();
         try {
             InputStream inputStream = Minecraft.getMinecraft().getResourceManager().getResource(loc).getInputStream();

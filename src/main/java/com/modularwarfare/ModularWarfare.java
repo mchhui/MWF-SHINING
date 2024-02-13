@@ -10,6 +10,9 @@ import com.modularwarfare.addon.LibClassLoader;
 import com.modularwarfare.api.ItemRegisterEvent;
 import com.modularwarfare.api.TypeRegisterEvent;
 import com.modularwarfare.client.ClientProxy;
+import com.modularwarfare.client.customplayer.CPEventHandler;
+import com.modularwarfare.client.customplayer.CustomPlayer;
+import com.modularwarfare.client.customplayer.CustomPlayerConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
 import com.modularwarfare.common.CommonProxy;
 import com.modularwarfare.common.MWTab;
@@ -333,7 +336,7 @@ public class ModularWarfare {
                         }
                     }
                     /**
-                     * LOAD SCRIPT STATR
+                     * LOAD SCRIPT START
                      * */
                     File scriptFolder = new File(file, "/sciprt/");
                     if (scriptFolder.exists()) {
@@ -357,6 +360,35 @@ public class ModularWarfare {
                     }
                     /**
                      * LOAD SCRIPT END
+                     * */
+                    /**
+                     * LOAD CUSTOM PLAYER START
+                     * */
+                    CPEventHandler.cpConfig.clear();
+                    File cpFolder = new File(file, "/customplayer/");
+                    if (cpFolder.exists()) {
+                        for (File typeFile : cpFolder.listFiles()) {
+                            System.out.println("test1:"+typeFile.getName());
+                            if(typeFile.getName().endsWith(".json")) {
+                                String text="";
+                                try {
+                                    BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(new FileInputStream(file),Charset.forName("UTF-8")));
+                                    String temp;
+                                    while((temp=bufferedReader.readLine())!=null) {
+                                        text+=temp;
+                                    }
+                                    bufferedReader.close();
+                                    CustomPlayerConfig cp=gson.fromJson(text, CustomPlayerConfig.class);
+                                    CPEventHandler.cpConfig.put(cp.name, cp);
+                                } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                    /**
+                     * LOAD CUSTOM PLAYER END
                      * */
                 } else {
                     if (zipContentsPack.containsKey(file.getName())) {
@@ -392,7 +424,7 @@ public class ModularWarfare {
                                 }
                             }
                             /**
-                             * LOAD SCRIPT STATR
+                             * LOAD SCRIPT START
                              * */
                             String zipName = fileHeader.getFileName();
                             if(zipName.startsWith("script/")&&zipName.endsWith(".js")) {
@@ -414,6 +446,31 @@ public class ModularWarfare {
                             }
                             /**
                              * LOAD SCRIPT END
+                             * */
+                            /**
+                             * LOAD CUSTOM PLAYER START
+                             * */
+                            zipName = fileHeader.getFileName();
+                            if(zipName.startsWith("customplayer/")&&zipName.endsWith(".json")) {
+                                String typeFile=zipName.replaceFirst("customplayer/", "").replace(".json", "");
+                                String text="";
+                                try {
+                                    InputStream inputStream=fileHeader.getInputStream();
+                                    BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(inputStream,Charset.forName("UTF-8")));
+                                    String temp;
+                                    while((temp=bufferedReader.readLine())!=null) {
+                                        text+=temp;
+                                    }
+                                    bufferedReader.close();
+                                    CustomPlayerConfig cp=gson.fromJson(text, CustomPlayerConfig.class);
+                                    CPEventHandler.cpConfig.put(cp.name, cp);
+                                } catch (IOException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }
+                            /**
+                             * LOAD CUSTOM PLAYER END
                              * */
                         }
                     }

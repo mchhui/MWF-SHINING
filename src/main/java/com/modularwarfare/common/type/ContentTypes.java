@@ -4,6 +4,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.api.MWArmorType;
 import com.modularwarfare.api.TypeRegisterEvent;
+import com.modularwarfare.client.customplayer.CustomPlayer;
 import com.modularwarfare.client.fpp.basic.configs.*;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.model.*;
@@ -103,7 +104,6 @@ public class ContentTypes {
         registerType("sprays", SprayType.class, (type, reload) -> {
             ContentTypes.<SprayType, ItemSpray>assignType(ModularWarfare.sprayTypes, ItemSpray.factory, (SprayType) type, reload);
         });
-
         registerType("backpacks", BackpackType.class, (type, reload) -> {
             ContentTypes.<BackpackType, ItemBackpack>assignType(ModularWarfare.backpackTypes, ItemBackpack.factory, (BackpackType) type, reload);
 
@@ -117,6 +117,7 @@ public class ContentTypes {
             if (FMLCommonHandler.instance().getSide() == Side.CLIENT)
                 ((ModelGrenade) (type.model)).config = ModularWarfare.getRenderConfig(type, GrenadeRenderConfig.class);
         });
+
 
         /**
          * Send TypeRegisterEvent
