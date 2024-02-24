@@ -21,7 +21,7 @@ public class EntityLivingBase implements IClassTransformer {
 
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
-        if (name.equals("net.minecraft.entity.EntityLivingBase")) {
+        if (name.equals("net.minecraft.entity.EntityLivingBase")||name.equals("vp")) {
             FMLLog.getLogger().warn("[Transforming:net.minecraft.entity.EntityLivingBase]");
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
             ClassReader classReader = new ClassReader(basicClass);
@@ -30,15 +30,18 @@ public class EntityLivingBase implements IClassTransformer {
                 if (method.name.equals("updateElytra") || method.name.equals("func_184616_r")
                     || method.name.equals("r")) {
                     InsnList list = new InsnList();
+                    list.add(new LabelNode());
                     list.add(new VarInsnNode(Opcodes.ALOAD, 0));
                     list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "com/modularwarfare/core/MWFCoreHooks",
                         "updateElytra", "(Lnet/minecraft/entity/EntityLivingBase;)V", false));
                     list.add(new InsnNode(Opcodes.RETURN));
                     list.add(new LabelNode());
-                    method.instructions.insert(method.instructions.getFirst(), list);
+                    method.instructions.clear();
+                    method.instructions.insert(list);
+                    FMLLog.getLogger().warn("[Transformed:updateElytra]");
                 }
             });
-            ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            ClassWriter classWriter = new ClassWriter(0);
             classNode.accept(classWriter);
             FMLLog.getLogger().warn("[Transformed:net.minecraft.entity.EntityLivingBase]");
             return classWriter.toByteArray();
