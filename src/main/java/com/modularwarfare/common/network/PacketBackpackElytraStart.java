@@ -52,7 +52,6 @@ public class PacketBackpackElytraStart extends PacketBase {
                 if (!itemstackBackpack.isEmpty()) {
                     if (itemstackBackpack.getItem() instanceof ItemBackpack) {
                         BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
-                        backpack.isElytra = true;
                         if (backpack.isElytra) {
                             playerEntity.setElytraFlying();
                         }

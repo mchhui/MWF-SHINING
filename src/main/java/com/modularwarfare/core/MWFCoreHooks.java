@@ -44,7 +44,6 @@ public class MWFCoreHooks {
                         BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
                         if (entityLivingBase.isElytraFlying() && !entityLivingBase.onGround
                             && !entityLivingBase.isRiding()) {
-                            backpack.isElytra = true;
                             if (backpack.isElytra) {
                                 flag = true;
                             }
