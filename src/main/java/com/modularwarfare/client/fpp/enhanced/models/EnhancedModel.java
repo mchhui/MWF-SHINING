@@ -173,6 +173,9 @@ public class EnhancedModel implements IMWModel {
             return;
         }
         NodeState state = model.nodeStates.get(binding);
+        if(state==null) {
+            return;
+        }
         GlStateManager.pushMatrix();
         if (state != null) {
             GlStateManager.multMatrix(state.mat.get(MATRIX_BUFFER));
