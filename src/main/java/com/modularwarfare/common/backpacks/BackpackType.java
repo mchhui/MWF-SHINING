@@ -21,6 +21,7 @@ public class BackpackType extends BaseType {
 
     public boolean allowSmallerBackpackStorage = false;
     public Integer maxWeaponStorage = null;
+    public boolean isElytra=true;
 
     @Override
     public void loadExtraValues() {

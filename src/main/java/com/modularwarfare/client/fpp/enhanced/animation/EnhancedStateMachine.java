@@ -409,7 +409,7 @@ public class EnhancedStateMachine {
         if (aniType != null) {
             ani = ((GunEnhancedRenderConfig)currentModel.config).animations.get(aniType);
         }
-        System.out.println(aniType+":"+ani);
+//        System.out.println(aniType+":"+ani);
         if (ani != null) {
             double speed = ani.getSpeed(currentModel.config.FPS) * speedFactor * partialTick;
             double val = progress.get() + speed;

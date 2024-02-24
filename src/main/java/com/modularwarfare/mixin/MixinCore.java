@@ -1,6 +1,7 @@
 package com.modularwarfare.mixin;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.core.net.minecraft.entity.player.EntityLivingBase;
 import com.modularwarfare.core.net.optifine.shaders.ShadersRender;
 
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
@@ -23,6 +24,7 @@ public class MixinCore implements IFMLLoadingPlugin {
     public String[] getASMTransformerClass() {
         ArrayList<String> arrayList=new ArrayList<String>();
         arrayList.add(ShadersRender.class.getName());
+        arrayList.add(EntityLivingBase.class.getName());
         try {
             if(Class.forName("mchhui.modularmovements.coremod.ModularMovementsPlugin") != null) {
                 arrayList.add("mchhui.modularmovements.coremod.minecraft.EntityPlayerSP" );

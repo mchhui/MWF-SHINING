@@ -6,17 +6,25 @@ import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.init.ModSounds;
+import com.modularwarfare.common.network.PacketBackpackElytraStart;
 import com.modularwarfare.common.network.PacketOpenGui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.PositionedSoundRecord;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.ItemElytra;
+import net.minecraft.item.ItemStack;
+import net.minecraft.network.play.client.CPacketEntityAction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.fml.common.Loader;
@@ -29,6 +37,17 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public class ClientEventHandler {
 
     public static float cemeraBobbing=0f;
+    public boolean lastJump;
+    
+    @SubscribeEvent
+    public void onInput(InputUpdateEvent event) {
+        EntityPlayerSP player=Minecraft.getMinecraft().player;
+        if (event.getMovementInput().jump && !lastJump && !player.onGround && player.motionY < 0.0D && !player.isElytraFlying() && !player.capabilities.isFlying)
+        {
+            ModularWarfare.NETWORK.sendToServer(new PacketBackpackElytraStart());
+        }
+        lastJump=event.getMovementInput().jump;
+    }
     
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void cemeraSetup(CameraSetup event) {

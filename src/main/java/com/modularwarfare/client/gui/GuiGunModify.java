@@ -770,8 +770,10 @@ public class GuiGunModify extends GuiScreen {
 			GunType gunType = gun.type;
 			ModelGun model = (ModelGun) gunType.model;
 			float modelScale = (model != null) ? model.config.extra.modelScale : 1f;
-			GlStateManager.disableCull();
-			RenderHelper.enableStandardItemLighting();
+            GlStateManager.rotate(180, 1, 0, 0);
+            RenderHelper.enableStandardItemLighting();
+            GlStateManager.rotate(-180, 1, 0, 0);
+          GlStateManager.enableRescaleNormal();
 			GlStateManager.enableDepth();
 			GlStateManager.translate(0, 0, 600);
 			double centerOffsetY = 0;
@@ -1027,13 +1029,15 @@ public class GuiGunModify extends GuiScreen {
 //             }else {
 //                 model.renderPart(RIGHT_SLIM_HAND_PART);
 //             }
-			GlStateManager.disableCull();
 			GlStateManager.enableDepth();
 			// GlStateManager.disableDepth();
 			// GlStateManager.translate(130, 100, 130);
 			// GlStateManager.enableLighting();
 			// GlStateManager.disableLighting();
-			// RenderHelper.enableStandardItemLighting();
+			GlStateManager.rotate(180, 1, 0, 0);
+	          RenderHelper.enableStandardItemLighting();
+	          GlStateManager.rotate(-180, 1, 0, 0);
+			GlStateManager.enableRescaleNormal();
 			// RenderHelper.disableStandardItemLighting();
 			GlStateManager.translate(0, 0, 600);
 
@@ -1056,7 +1060,7 @@ public class GuiGunModify extends GuiScreen {
 			// GlStateManager.rotate((float) autoRotate, 0, 0, 1);
 			GlStateManager.rotate((float) rotateZ, 1, 0, 0);
 			GlStateManager.translate(centerOffsetY,centerOffsetX,0);
-			GlStateManager.disableCull();
+//			GlStateManager.disableCull();
 			final ItemAttachment sightRendering = sight;
 			float worldScale = 1F;
 			boolean applySprint = false;
@@ -1177,7 +1181,6 @@ public class GuiGunModify extends GuiScreen {
 
 							ItemStack[] ammoList = new ItemStack[] { stackAmmo, orignalAmmo, prognosisAmmo };
 							String[] binddings = new String[] { "ammoModel", "ammoModelPre", "ammoModelPost" };
-							if (false) {
 								for (int x = 0; x < 3; x++) {
 									ItemStack stackAmmoX = ammoList[x];
 									if (stackAmmoX == null || stackAmmoX.isEmpty()) {
@@ -1204,14 +1207,12 @@ public class GuiGunModify extends GuiScreen {
 											}
 											int baseAmmoCountRendering = baseAmmoCount;
 
-											if (ammoType.sameTextureAsGun) {
-												rge.bindTexture("guns", gunPath);
-											} else {
-												String pathAmmo = skinIdAmmo > 0
-														? ammoType.modelSkins[skinIdAmmo].getSkin()
-														: ammoType.modelSkins[0].getSkin();
-												rge.bindTexture("ammo", pathAmmo);
-											}
+				                            if (ammoType.sameTextureAsGun) {
+				                                rge.bindTexture("guns", gunPath);
+				                            } else {
+				                                String pathAmmo = skinIdAmmo > 0 ? ammoType.modelSkins[skinIdAmmo].getSkin() : ammoType.modelSkins[0].getSkin();
+				                                rge.bindTexture("ammo", pathAmmo);
+				                            }
 
 											if (rge.controller.shouldRenderAmmo()) {
 												model.applyGlobalTransformToOther("ammoModel", () -> {
@@ -1347,7 +1348,7 @@ public class GuiGunModify extends GuiScreen {
 										}
 									}
 								}
-							}
+							
 
 							/**
 							 * default bullet and ammo

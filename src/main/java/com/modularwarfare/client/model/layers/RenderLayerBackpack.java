@@ -59,11 +59,15 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                 Minecraft.getMinecraft().getRenderManager().renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "skins/backpacks/" + path + ".png"));
 
                 ModelBackpack model = (ModelBackpack) backpack.type.model;
-                model.render("backpackModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
 
                 GlStateManager.disableLighting();
                 GlStateManager.shadeModel(GL11.GL_SMOOTH);
                 model.render("backpackModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
+                if(player.isElytraFlying()) {
+                    model.render("elytraOnModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
+                }else {
+                    model.render("elytraOffModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
+                }
                 GlStateManager.shadeModel(GL11.GL_FLAT);
                 GlStateManager.popMatrix();
                 GlStateManager.enableLighting();

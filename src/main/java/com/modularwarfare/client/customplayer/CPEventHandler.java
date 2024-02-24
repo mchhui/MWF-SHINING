@@ -13,6 +13,9 @@ public class CPEventHandler {
 
     @SubscribeEvent
     public void onRenderPlayer(RenderPlayerEvent.Pre event) {
+        if(1==1) {
+            return;
+        }
         if (cpConfig.isEmpty()) {
             return;
         }
