@@ -1,5 +1,7 @@
 package com.modularwarfare.client.input;
 
+import org.lwjgl.input.Keyboard;
+
 public enum KeyType {
 
     GunReload("Reload Gun", 0x13), // R
@@ -11,6 +13,7 @@ public enum KeyType {
     AddAttachment("Attachment Mode", 0x32), // M
     Flashlight("Flashlight", 0x23), // H
     Backpack("Backpack Inventory", 0x30), // B
+    Jetpack("Jetpack fire", Keyboard.KEY_X), 
 
 
     Left("Left (Attach mode)", 203), // H

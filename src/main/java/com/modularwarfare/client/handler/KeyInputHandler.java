@@ -21,6 +21,7 @@ import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 public class KeyInputHandler extends ForgeEvent {
 
     private ArrayList<KeyEntry> keyBinds;
+    public static KeyBinding jetpackFire;
 
     public KeyInputHandler() {
         keyBinds = new ArrayList<KeyEntry>();
@@ -61,6 +63,8 @@ public class KeyInputHandler extends ForgeEvent {
         for (KeyEntry keyEntry : keyBinds) {
             ClientRegistry.registerKeyBinding(keyEntry.keyBinding);
         }
+        jetpackFire=new KeyBinding(KeyType.Jetpack.displayName, KeyType.Jetpack.keyCode, "ModularWarfare");
+        ClientRegistry.registerKeyBinding(jetpackFire);
     }
 
     @SubscribeEvent

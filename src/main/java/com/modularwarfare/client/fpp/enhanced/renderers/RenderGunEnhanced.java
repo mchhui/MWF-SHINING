@@ -238,6 +238,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
         float rotateX=0;
         float adsModifier = (float) (0.95f - controller.ADS);
+        if(player.isElytraFlying()) {
+            adsModifier=0f;
+        }
         
         /**
          *  global
@@ -267,7 +270,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float f2 = -(player.distanceWalkedModified + f1 * partialTicks);
         float f3 = (player.prevCameraYaw + (player.cameraYaw - player.prevCameraYaw) * partialTicks);
         float f4 = (player.prevCameraPitch + (player.cameraPitch - player.prevCameraPitch) * partialTicks);
-
         mat.translate(new Vector3f(0, adsModifier * Interpolation.SINE_IN.interpolate(0F, (-0.2f * (1F - (float)controller.ADS)), GUN_BALANCING_Y),0));
         mat.translate(new Vector3f(0, adsModifier * ((float) (0.05f * (Math.sin(SMOOTH_SWING/10) * GUN_BALANCING_Y))),0));
 

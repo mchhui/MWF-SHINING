@@ -123,6 +123,9 @@ public enum WeaponSoundType {
      * The sound of flyby
      */
     @SerializedName("bulletFlyBy") FlyBy("bulletFlyBy", 3, "flyby"),
+    
+    @SerializedName("jetWork") JetWork("jetWork", 12, null),
+    @SerializedName("jetFire") JetFire("jetFire", 12, null),
 
     /**
      * The sound of flyby

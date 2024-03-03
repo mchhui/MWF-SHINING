@@ -1,6 +1,8 @@
 package com.modularwarfare.client.model.layers;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.AnimationUtils;
+import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.model.ModelBackpack;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
@@ -62,11 +64,20 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
 
                 GlStateManager.disableLighting();
                 GlStateManager.shadeModel(GL11.GL_SMOOTH);
-                model.render("backpackModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
-                if(player.isElytraFlying()) {
-                    model.render("elytraOnModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
-                }else {
-                    model.render("elytraOffModel", 1f, ((ModelBackpack) backpack.type.model).config.extra.modelScale);
+                model.render("backpackModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
+                if (player.isElytraFlying()) {
+                    model.render("elytraOnModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
+                } else {
+                    model.render("elytraOffModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
+                }
+                if (AnimationUtils.isJet.getOrDefault(player.getName(), 0L) > System.currentTimeMillis()) {
+                    if(!player.isElytraFlying()) {
+                        model.render("jetOnModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
+                    }else {
+                        model.render("jetBoostModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
+                    }
+                } else {
+                    model.render("jetOffModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                 }
                 GlStateManager.shadeModel(GL11.GL_FLAT);
                 GlStateManager.popMatrix();

@@ -1,0 +1,110 @@
+package com.modularwarfare.common.network;
+
+import java.lang.reflect.Field;
+
+import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.AnimationUtils;
+import com.modularwarfare.common.backpacks.BackpackType;
+import com.modularwarfare.common.backpacks.ItemBackpack;
+import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
+import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
+import com.modularwarfare.common.guns.WeaponSoundType;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import net.minecraft.entity.MoverType;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.network.NetHandlerPlayServer;
+import net.minecraft.network.PacketBuffer;
+
+public class PacketBackpackJet extends PacketBase {
+    public String name="";
+    public boolean jetFire;
+    public int jetDuraton=100;
+    public static Field fieldFloatingTickCount;
+
+    public PacketBackpackJet() {
+        // TODO Auto-generated constructor stub
+    }
+
+    public PacketBackpackJet(boolean jetFire) {
+        this.jetFire = jetFire;
+    }
+    
+    public PacketBackpackJet(String name,int jetDuraton) {
+        this.name = name;
+        this.jetDuraton=jetDuraton;
+    }
+
+    @Override
+    public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
+        PacketBuffer buf=new PacketBuffer(data);
+        buf.writeString(name);
+        buf.writeBoolean(jetFire);
+        buf.writeInt(jetDuraton);
+    }
+
+    @Override
+    public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
+        PacketBuffer buf=new PacketBuffer(data);
+        name=buf.readString(Short.MAX_VALUE);
+        jetFire = buf.readBoolean();
+        jetDuraton=buf.readInt();
+    }
+
+    @Override
+    public void handleServerSide(EntityPlayerMP playerEntity) {
+        playerEntity.fallDistance = 0;
+        if (playerEntity.hasCapability(CapabilityExtra.CAPABILITY, null)) {
+            final IExtraItemHandler extraSlots = playerEntity.getCapability(CapabilityExtra.CAPABILITY, null);
+            final ItemStack itemstackBackpack = extraSlots.getStackInSlot(0);
+
+            if (!itemstackBackpack.isEmpty()) {
+                if (itemstackBackpack.getItem() instanceof ItemBackpack) {
+                    BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
+                    if(!jetFire) {
+                        ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getName(),100), playerEntity);  
+                    }else {
+                        ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getName(),backpack.jetElytraBoostDuration*50), playerEntity);
+                    }
+                    if (backpack.isJet && backpack.weaponSoundMap != null) {
+                        backpack.playSoundPos(playerEntity.getPosition(), playerEntity.world, WeaponSoundType.JetWork);
+                        if(jetFire) {
+                            backpack.playSoundPos(playerEntity.getPosition(), playerEntity.world, WeaponSoundType.JetFire);
+                        }
+                    }
+                }
+            }
+        }
+        if (fieldFloatingTickCount == null) {
+            Class clz = NetHandlerPlayServer.class;
+            try {
+                fieldFloatingTickCount = clz.getDeclaredField("field_147365_f");
+            } catch (NoSuchFieldException | SecurityException e) {
+                try {
+                    fieldFloatingTickCount = clz.getDeclaredField("floatingTickCount");
+                } catch (NoSuchFieldException | SecurityException e1) {
+                    e1.printStackTrace();
+                }
+            }
+            if (fieldFloatingTickCount != null) {
+                fieldFloatingTickCount.setAccessible(true);
+            }
+        }
+        try {
+            fieldFloatingTickCount.set(playerEntity.connection, 0);
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public void handleClientSide(EntityPlayer clientPlayer) {
+        AnimationUtils.isJet.put(name,System.currentTimeMillis()+jetDuraton);
+    }
+
+}

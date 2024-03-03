@@ -445,6 +445,7 @@ public class ClientLitener {
     public void onCameraUpdate(CameraSetup event) {
         float pitch = event.getPitch();
         float yaw = event.getYaw();
+        float roll = event.getRoll();
         double playerPosX=Minecraft.getMinecraft().player.posX+(Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)*event.getRenderPartialTicks();
         double playerPosY=Minecraft.getMinecraft().player.posY+(Minecraft.getMinecraft().player.posY-Minecraft.getMinecraft().player.lastTickPosY)*event.getRenderPartialTicks();
         double playerPosZ=Minecraft.getMinecraft().player.posZ+(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ)*event.getRenderPartialTicks();
@@ -522,7 +523,7 @@ public class ClientLitener {
         event.setPitch(0);
         event.setYaw(0);
         event.setRoll(0);
-        GlStateManager.rotate(10 * cameraProbeOffset, 0.0F, 0.0F, 1.0F);
+        GlStateManager.rotate(10 * cameraProbeOffset+roll, 0.0F, 0.0F, 1.0F);
         GlStateManager.translate(-0.6 * cameraProbeOffset, 0, 0);
         GlStateManager.rotate(pitch, 1.0F, 0.0F, 0.0F);
         GlStateManager.translate(0, -cameraOffsetY, 0);

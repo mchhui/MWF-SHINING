@@ -4,6 +4,8 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.BackpackRenderConfig;
 import com.modularwarfare.client.model.ModelBackpack;
 import com.modularwarfare.common.type.BaseType;
+import com.modularwarfare.objects.SoundEntry;
+
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.common.capabilities.Capability;
@@ -22,6 +24,16 @@ public class BackpackType extends BaseType {
     public boolean allowSmallerBackpackStorage = false;
     public Integer maxWeaponStorage = null;
     public boolean isElytra=false;
+    
+    public boolean isJet=false;
+    public boolean jetSneakHover=true;
+    public float jetWorkForce=0.05f;
+    //idle force is usually below zero
+    public float jetIdleForce=-0.2f;
+    public float jetMaxForce=0.4f;
+    public float jetElytraBoost=2f;
+    public int jetElytraBoostDuration=50;
+    public int jetElytraBoostCoolTime=40;
 
     @Override
     public void loadExtraValues() {
