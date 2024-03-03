@@ -43,25 +43,25 @@ public class PacketBackpackElytraStart extends PacketBase {
                 return;
             }
         }
-        if (!playerEntity.onGround && playerEntity.motionY < 0.0D && !playerEntity.isElytraFlying() && !playerEntity.isInWater())
-        {
-            if (playerEntity.hasCapability(CapabilityExtra.CAPABILITY, null)) {
-                final IExtraItemHandler extraSlots = playerEntity.getCapability(CapabilityExtra.CAPABILITY, null);
-                final ItemStack itemstackBackpack = extraSlots.getStackInSlot(0);
+        if (playerEntity.hasCapability(CapabilityExtra.CAPABILITY, null)) {
+            final IExtraItemHandler extraSlots = playerEntity.getCapability(CapabilityExtra.CAPABILITY, null);
+            final ItemStack itemstackBackpack = extraSlots.getStackInSlot(0);
 
-                if (!itemstackBackpack.isEmpty()) {
-                    if (itemstackBackpack.getItem() instanceof ItemBackpack) {
-                        BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
-                        if (backpack.isElytra) {
+            if (!itemstackBackpack.isEmpty()) {
+                if (itemstackBackpack.getItem() instanceof ItemBackpack) {
+                    BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
+                    if (backpack.isElytra) {
+                        if (!playerEntity.onGround && playerEntity.motionY < 0.0D && !playerEntity.isElytraFlying() && !playerEntity.isInWater())
+                        {
                             playerEntity.setElytraFlying();
+                        }
+                        else if(backpack.elytraStoppable)
+                        {
+                            playerEntity.clearElytraFlying();
                         }
                     }
                 }
             }
-        }
-        else
-        {
-            playerEntity.clearElytraFlying();
         }
     }
 

@@ -12,17 +12,20 @@ import com.modularwarfare.common.guns.WeaponSoundType;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.minecraft.block.Block;
 import net.minecraft.entity.MoverType;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.world.WorldServer;
 
 public class PacketBackpackJet extends PacketBase {
-    public String name="";
+    public String name = "";
     public boolean jetFire;
-    public int jetDuraton=100;
+    public int jetDuraton = 100;
     public static Field fieldFloatingTickCount;
 
     public PacketBackpackJet() {
@@ -32,15 +35,15 @@ public class PacketBackpackJet extends PacketBase {
     public PacketBackpackJet(boolean jetFire) {
         this.jetFire = jetFire;
     }
-    
-    public PacketBackpackJet(String name,int jetDuraton) {
+
+    public PacketBackpackJet(String name, int jetDuraton) {
         this.name = name;
-        this.jetDuraton=jetDuraton;
+        this.jetDuraton = jetDuraton;
     }
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        PacketBuffer buf=new PacketBuffer(data);
+        PacketBuffer buf = new PacketBuffer(data);
         buf.writeString(name);
         buf.writeBoolean(jetFire);
         buf.writeInt(jetDuraton);
@@ -48,15 +51,16 @@ public class PacketBackpackJet extends PacketBase {
 
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        PacketBuffer buf=new PacketBuffer(data);
-        name=buf.readString(Short.MAX_VALUE);
+        PacketBuffer buf = new PacketBuffer(data);
+        name = buf.readString(Short.MAX_VALUE);
         jetFire = buf.readBoolean();
-        jetDuraton=buf.readInt();
+        jetDuraton = buf.readInt();
     }
 
     @Override
     public void handleServerSide(EntityPlayerMP playerEntity) {
         playerEntity.fallDistance = 0;
+        playerEntity.handleFalling(jetDuraton, jetFire);
         if (playerEntity.hasCapability(CapabilityExtra.CAPABILITY, null)) {
             final IExtraItemHandler extraSlots = playerEntity.getCapability(CapabilityExtra.CAPABILITY, null);
             final ItemStack itemstackBackpack = extraSlots.getStackInSlot(0);
@@ -64,15 +68,26 @@ public class PacketBackpackJet extends PacketBase {
             if (!itemstackBackpack.isEmpty()) {
                 if (itemstackBackpack.getItem() instanceof ItemBackpack) {
                     BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
-                    if(!jetFire) {
-                        ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getName(),100), playerEntity);  
-                    }else {
-                        ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getName(),backpack.jetElytraBoostDuration*50), playerEntity);
+                    if (!jetFire) {
+                        ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getName(), 100),
+                            playerEntity);
+                    } else {
+                        ModularWarfare.NETWORK.sendToAllTracking(
+                            new PacketBackpackJet(playerEntity.getName(), backpack.jetElytraBoostDuration * 50),
+                            playerEntity);
                     }
                     if (backpack.isJet && backpack.weaponSoundMap != null) {
                         backpack.playSoundPos(playerEntity.getPosition(), playerEntity.world, WeaponSoundType.JetWork);
-                        if(jetFire) {
-                            backpack.playSoundPos(playerEntity.getPosition(), playerEntity.world, WeaponSoundType.JetFire);
+                        if (jetFire) {
+                            backpack.playSoundPos(playerEntity.getPosition(), playerEntity.world,
+                                WeaponSoundType.JetFire);
+                        } else {
+                            ((WorldServer)playerEntity.world).spawnParticle(EnumParticleTypes.BLOCK_DUST,
+                                playerEntity.posX, playerEntity.posY, playerEntity.posZ, 5, 0.0D, 0.0D, 0.0D,
+                                0.15000000596046448D, Block.getStateId(playerEntity.world.getBlockState(playerEntity.getPosition().down())));
+                            ((WorldServer)playerEntity.world).spawnParticle(EnumParticleTypes.BLOCK_DUST,
+                                playerEntity.posX, playerEntity.posY, playerEntity.posZ, 5, 0.0D, 0.0D, 0.0D,
+                                0.15000000596046448D, Block.getStateId(playerEntity.world.getBlockState(playerEntity.getPosition().down(2))));
                         }
                     }
                 }
@@ -104,7 +119,7 @@ public class PacketBackpackJet extends PacketBase {
 
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
-        AnimationUtils.isJet.put(name,System.currentTimeMillis()+jetDuraton);
+        AnimationUtils.isJet.put(name, System.currentTimeMillis() + jetDuraton);
     }
 
 }

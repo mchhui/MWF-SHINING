@@ -62,6 +62,10 @@ public class ClientEventHandler {
         {
             ModularWarfare.NETWORK.sendToServer(new PacketBackpackElytraStart());
         }
+        if (event.getMovementInput().jump && !lastJump && !player.onGround && player.isElytraFlying() && !player.capabilities.isFlying)
+        {
+            ModularWarfare.NETWORK.sendToServer(new PacketBackpackElytraStart());
+        }
         boolean isElytra=false;
         boolean sneakToHover=false;
         if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
@@ -120,8 +124,6 @@ public class ClientEventHandler {
                     if (!itemstackBackpack.isEmpty()) {
                         if (itemstackBackpack.getItem() instanceof ItemBackpack) {
                             backpack= ((ItemBackpack)itemstackBackpack.getItem()).type;
-                            backpack.isJet=true;
-                            backpack.isElytra=true;
                             if (backpack.isJet) {
                                 isJetFly=this.isJetFly||Keyboard.isKeyDown(KeyInputHandler.jetpackFire.getKeyCode());
                             }
@@ -132,14 +134,17 @@ public class ClientEventHandler {
                 if(jetCoolTime<0) {
                     jetCoolTime=0;
                 }
-                if (isJetFly && event.player.isElytraFlying()&&!event.player.isSneaking()) {
-                    double speed = event.player.motionX * event.player.motionX
-                        + event.player.motionY * event.player.motionY + event.player.motionZ * event.player.motionZ;
-                    speed = Math.sqrt(speed);
-                    if (jetFireTime == 0 && jetCoolTime == 0) {
-                        jetFireTime = 1;
-                        ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet(true));
-                    } else if(jetCoolTime==0){
+                if(backpack!=null) {
+                    if (isJetFly && event.player.isElytraFlying()&&!event.player.isSneaking()) {
+                        if (jetFireTime == 0 && jetCoolTime == 0) {
+                            jetFireTime = 1;
+                            ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet(true));
+                        }
+                    }
+                    if(jetFireTime>0&&jetCoolTime==0){
+                        double speed = event.player.motionX * event.player.motionX
+                            + event.player.motionY * event.player.motionY + event.player.motionZ * event.player.motionZ;
+                        speed = Math.sqrt(speed);
                         jetFireTime++;
                         if (jetFireTime > backpack.jetElytraBoostDuration) {
                             jetCoolTime = backpack.jetElytraBoostCoolTime;
@@ -152,22 +157,22 @@ public class ClientEventHandler {
                         event.player.motionZ = vec.z;
                         AnimationUtils.isJet.put(event.player.getName(), System.currentTimeMillis()+100);
                     }
-                }
-                if(isJetFly&&!event.player.isElytraFlying()) {
-                    jetPower+=backpack.jetWorkForce;
-                    if(jetPower>backpack.jetMaxForce) {
-                        jetPower=backpack.jetMaxForce;
-                    }
-                    if(event.player.isSneaking()) {
-                        jetPower=0;
-                    }
-                    if(event.player.motionY<jetPower) {
-                        event.player.motionY=jetPower;
-                    }
-                    ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet());
-                    AnimationUtils.isJet.put(event.player.getName(), System.currentTimeMillis()+100);
-                }else {
-                    jetPower=backpack.jetIdleForce;
+                    if(isJetFly&&!event.player.isElytraFlying()) {
+                        jetPower+=backpack.jetWorkForce;
+                        if(jetPower>backpack.jetMaxForce) {
+                            jetPower=backpack.jetMaxForce;
+                        }
+                        if(event.player.isSneaking()) {
+                            jetPower=0;
+                        }
+                        if(event.player.motionY<jetPower) {
+                            event.player.motionY=jetPower;
+                        }
+                        ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet());
+                        AnimationUtils.isJet.put(event.player.getName(), System.currentTimeMillis()+100);
+                    }else {
+                        jetPower=backpack.jetIdleForce;
+                    }   
                 }
             }
         }
