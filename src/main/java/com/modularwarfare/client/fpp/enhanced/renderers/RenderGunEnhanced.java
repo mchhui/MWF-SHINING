@@ -559,6 +559,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 
                 ItemStack bulletStack=ItemStack.EMPTY;
                 int currentAmmoCount=0;
+                int costAmmoCount=0;
                 
                 VarBoolean defaultBulletFlag=new VarBoolean();
                 defaultBulletFlag.b=true;
@@ -573,6 +574,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     if (anim.reloading) {
                         bulletStack = ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(bulletStack);
                     }
+                    costAmmoCount=gunType.internalAmmoStorage-currentAmmoCount;
                 }else {
                     Integer currentMagcount=null;
                     if(stackAmmo!=null&&!stackAmmo.isEmpty()&&stackAmmo.hasTagCompound()) {
@@ -582,8 +584,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                         currentAmmoCount=ReloadHelper.getBulletOnMag(stackAmmo, currentMagcount);
                         bulletStack= new ItemStack(stackAmmo.getTagCompound().getCompoundTag("bullet"));  
                     }
+                    if(stackAmmo.getItem() instanceof ItemAmmo) {
+                        costAmmoCount=((ItemAmmo)stackAmmo.getItem()).type.magazineCount-currentAmmoCount;
+                    }
                 }
                 int currentAmmoCountRendering=currentAmmoCount;
+                int costAmmoCountRendering=costAmmoCount;
                 
                 if (bulletStack != null) {
                     if (bulletStack.getItem() instanceof ItemBullet) {
@@ -603,10 +609,16 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                 bindTexture("bullets", pathAmmo);
                             }
                             for (int bullet = 0; bullet < currentAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
-                                int renderBullet=bullet;
                                 model.applyGlobalTransformToOther("bulletModel_" + bullet, () -> {
                                     renderAttachment(config, "bullet", bulletType.internalName, () -> {
                                         bulletType.model.renderPart("bulletModel", worldScale);
+                                    });
+                                });
+                            }
+                            for (int bullet = 0; bullet < costAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
+                                model.applyGlobalTransformToOther("shellModel_" + bullet, () -> {
+                                    renderAttachment(config, "shell", bulletType.internalName, () -> {
+                                        bulletType.model.renderPart("shellModel", worldScale);
                                     });
                                 });
                             }
@@ -756,6 +768,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     for (int bullet = 0; bullet < currentAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
                         model.renderPart("bulletModel_" + bullet);
                     }  
+                    for (int bullet = 0; bullet < costAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
+                        model.renderPart("shellModel_" + bullet);
+                    }
                     model.renderPart("bulletModel");
                 }
                 
@@ -1219,10 +1234,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         VarBoolean defaultBulletFlag=new VarBoolean();
         defaultBulletFlag.b=true;
         int currentAmmoCount=0;
+        int costAmmoCount=0;
         
         if (gunType.acceptedBullets != null && demoStack.hasTagCompound()) {
             currentAmmoCount= demoStack.getTagCompound().getInteger("ammocount");
             bulletStack = new ItemStack(demoStack.getTagCompound().getCompoundTag("bullet"));
+            costAmmoCount=gunType.internalAmmoStorage-currentAmmoCount;
         }
 
         if (bulletStack != null) {
@@ -1247,6 +1264,14 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                         model.applyGlobalTransformToOther("bulletModel_" + bullet, () -> {
                             ClientProxy.gunEnhancedRenderer.renderAttachment(config, "bullet", bulletType.internalName, () -> {
                                 bulletType.model.renderPart("bulletModel", worldScale);
+                            });
+                        });
+                    }
+                    for (int bullet = 0; bullet < costAmmoCount && bullet < RenderGunEnhanced.BULLET_MAX_RENDER; bullet++) {
+                        int renderBullet = bullet;
+                        model.applyGlobalTransformToOther("shellModel_" + bullet, () -> {
+                            ClientProxy.gunEnhancedRenderer.renderAttachment(config, "shell", bulletType.internalName, () -> {
+                                bulletType.model.renderPart("shellModel", worldScale);
                             });
                         });
                     }
@@ -1328,7 +1353,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if(defaultBulletFlag.b) {
             for (int bullet = 0; bullet < currentAmmoCount && bullet < RenderGunEnhanced.BULLET_MAX_RENDER; bullet++) {
                 model.renderPart("bulletModel_" + bullet);
-            }  
+            }
+            for (int bullet = 0; bullet < costAmmoCount && bullet < RenderGunEnhanced.BULLET_MAX_RENDER; bullet++) {
+                model.renderPart("shellModel_" + bullet);
+            }
         }
         
         if (!renderAmmo.isEmpty() && defaultAmmoFlag) {
