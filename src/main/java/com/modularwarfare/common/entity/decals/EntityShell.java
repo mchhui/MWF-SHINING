@@ -192,29 +192,31 @@ public class EntityShell extends Entity implements IProjectile {
 
     }
 
-    public void setHeadingFromThrower(Entity entityThrower, float rotationPitchIn, float rotationYawIn, float pitchOffset, float velocity, float inaccuracy) {
+    public void setHeadingFromThrower(Entity entityThrower, float rotationPitchIn, float rotationYawIn,
+        float pitchOffset, float velocity, float inaccuracy) {
+        setHeadingFromThrower(entityThrower, rotationPitchIn, rotationYawIn, pitchOffset, velocity, inaccuracy, 0.1f);
+    }
+
+    public void setHeadingFromThrower(Entity entityThrower, float rotationPitchIn, float rotationYawIn,
+        float pitchOffset, float velocity, float inaccuracy, float forwardOffset) {
 
         float sideOffset = 0f;
-        float forwardOffset = 0.1f;
 
-        this.posX -= (MathHelper.cos(this.rotationYaw / 180.0F * 3.1415927F) * sideOffset) + (
-                MathHelper.sin(this.rotationYaw / 180.0F * 3.1415927F) *
-                        MathHelper.cos(this.rotationPitch / 180.0F * 3.1415927F) * forwardOffset);
-
+        this.posX -= (MathHelper.cos(this.rotationYaw / 180.0F * 3.1415927F) * sideOffset)
+            + (MathHelper.sin(this.rotationYaw / 180.0F * 3.1415927F)
+                * MathHelper.cos(this.rotationPitch / 180.0F * 3.1415927F) * forwardOffset);
 
         this.posY += (-MathHelper.sin(this.rotationPitch / 180.0F * 3.1415927F) * forwardOffset);
 
-
-        this.posZ -= (MathHelper.sin(this.rotationYaw / 180.0F * 3.1415927F) * sideOffset) - (
-                MathHelper.cos(this.rotationYaw / 180.0F * 3.1415927F) *
-                        MathHelper.cos(this.rotationPitch / 180.0F * 3.1415927F) * forwardOffset);
+        this.posZ -= (MathHelper.sin(this.rotationYaw / 180.0F * 3.1415927F) * sideOffset)
+            - (MathHelper.cos(this.rotationYaw / 180.0F * 3.1415927F)
+                * MathHelper.cos(this.rotationPitch / 180.0F * 3.1415927F) * forwardOffset);
         setPosition(this.posX, this.posY, this.posZ);
-
 
         float f = -MathHelper.sin(rotationYawIn * 0.017453292F) * MathHelper.cos(rotationPitchIn * 0.017453292F);
         float f1 = -MathHelper.sin((rotationPitchIn + pitchOffset) * 0.017453292F);
         float f2 = MathHelper.cos(rotationYawIn * 0.017453292F) * MathHelper.cos(rotationPitchIn * 0.017453292F);
-        this.setThrowableHeading((double) f, (double) f1, (double) f2, velocity * this.rand.nextFloat(), inaccuracy);
+        this.setThrowableHeading((double)f, (double)f1, (double)f2, velocity * this.rand.nextFloat(), inaccuracy);
         this.motionX += entityThrower.motionX;
         this.motionZ += entityThrower.motionZ;
 

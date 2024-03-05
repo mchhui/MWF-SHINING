@@ -235,6 +235,15 @@ public class GunType extends BaseType {
     public String customTrailTexture;
     public String customTrailModel;
     public boolean customTrailGlow;
+    
+    /**
+     * shell offset
+     * */
+    public float shellYawOffset;
+    public float shellPitchOffset;
+    public float shellForwardOffset;
+    
+    
 
     public static boolean isPackAPunched(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {
