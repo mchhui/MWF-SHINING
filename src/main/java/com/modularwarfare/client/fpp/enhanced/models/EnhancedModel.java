@@ -24,6 +24,7 @@ import java.util.HashSet;
 
 public class EnhancedModel implements IMWModel {
     private static final FloatBuffer MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
+    private static final HashMap<ResourceLocation, GltfDataModel> modelCache=new HashMap<ResourceLocation, GltfDataModel>();
     public EnhancedRenderConfig config;
     public BaseType baseType;
     public GltfRenderModel model;
@@ -33,8 +34,17 @@ public class EnhancedModel implements IMWModel {
     public EnhancedModel(EnhancedRenderConfig config, BaseType baseType) {
         this.config = config;
         this.baseType = baseType;
-        // 这里可以考虑下 是否做点记忆化
-        model = new GltfRenderModel(GltfDataModel.load(getModelLocation()));
+        if(!modelCache.containsKey(getModelLocation())) {
+            modelCache.put(getModelLocation(), GltfDataModel.load(getModelLocation()));
+        }
+        model = new GltfRenderModel(modelCache.get(getModelLocation()));
+    }
+    
+    public static void clearCache() {
+        modelCache.values().forEach((model)->{
+            model.delete();
+        });
+        modelCache.clear();
     }
 
     public ResourceLocation getModelLocation() {
@@ -146,6 +156,9 @@ public class EnhancedModel implements IMWModel {
             return;
         }
         NodeState state = model.nodeStates.get(binding);
+        if(state==null) {
+            return;
+        }
         GlStateManager.pushMatrix();
         if (state != null) {
             GlStateManager.multMatrix(state.mat.get(MATRIX_BUFFER));

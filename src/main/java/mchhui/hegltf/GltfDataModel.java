@@ -1,18 +1,29 @@
 package mchhui.hegltf;
 
-import com.modularwarfare.ModularWarfare;
-import de.javagl.jgltf.model.GltfModel;
-import de.javagl.jgltf.model.io.GltfModelReader;
-import mchhui.hegltf.DataAnimation.DataKeyframe;
-import net.minecraft.client.Minecraft;
-import net.minecraft.util.ResourceLocation;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.rmi.UnexpectedException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.management.RuntimeErrorException;
 import org.joml.*;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.*;
+import com.modularwarfare.ModularWarfare;
+
+import de.javagl.jgltf.model.GltfModel;
+import de.javagl.jgltf.model.io.GltfModelReader;
+import io.netty.buffer.ByteBuf;
+import mchhui.hegltf.DataAnimation.DataKeyframe;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.ResourceLocation;
 
 public class GltfDataModel {
     private static final GltfModelReader READER = new GltfModelReader();
@@ -22,12 +33,16 @@ public class GltfDataModel {
         @Override
         public int compare(Object o1, Object o2) {
             // TODO Auto-generated method stub
-            return ((DataKeyframe) o1).time > ((DataKeyframe) o2).time ? 1 : -1;
+            return ((DataKeyframe)o1).time > ((DataKeyframe)o2).time ? 1 : -1;
         }
 
     };
+
+    private String lastPos = "unkown";
+
     // node名对动画
     public HashMap<String, DataAnimation> animations = new HashMap<String, DataAnimation>();
+
     // 其名对其对象
     public HashMap<String, DataMaterial> materials = new HashMap<String, DataMaterial>();
     public HashMap<String, DataNode> nodes = new HashMap<String, DataNode>();
@@ -35,12 +50,15 @@ public class GltfDataModel {
     public ArrayList<String> joints = new ArrayList<String>();
     public ArrayList<Matrix4f> inverseBindMatrices = new ArrayList<Matrix4f>();
     public String skeleton = "";
+
     public boolean loaded = false;
-    private String lastPos = "unkown";
+    
+    public static int count=0;
 
     public static GltfDataModel load(ResourceLocation loc) {
+        count++;
+//        System.out.println("test a:"+count+" - "+loc);
         GltfDataModel gltfDataModel = new GltfDataModel();
-
         try {
             InputStream inputStream = Minecraft.getMinecraft().getResourceManager().getResource(loc).getInputStream();
             if (inputStream == null) {
@@ -63,13 +81,13 @@ public class GltfDataModel {
                 }
                 gltfDataModel.materials.put(materialModel.getName(), mate);
                 mate.name = materialModel.getName();
-                Map map = (Map) materialModel.getExtras();
+                Map map = (Map)materialModel.getExtras();
                 if (map != null) {
                     if (map.containsKey("isGlow")) {
-                        mate.isGlow = (Boolean) map.get("isGlow");
+                        mate.isGlow = (Boolean)map.get("isGlow");
                     }
                     if (map.containsKey("isTranslucent")) {
-                        mate.isTranslucent = (Boolean) map.get("isTranslucent");
+                        mate.isTranslucent = (Boolean)map.get("isTranslucent");
                     }
                 }
             });
@@ -107,10 +125,10 @@ public class GltfDataModel {
                         time = input.getFloat();
                         if (channel.getPath().equals("rotation")) {
                             aniKeyframe = new DataKeyframe(time, new Vector4f(output.getFloat(), output.getFloat(),
-                                    output.getFloat(), output.getFloat()));
+                                output.getFloat(), output.getFloat()));
                         } else {
                             aniKeyframe = new DataKeyframe(time,
-                                    new Vector4f(output.getFloat(), output.getFloat(), output.getFloat(), 0));
+                                new Vector4f(output.getFloat(), output.getFloat(), output.getFloat(), 0));
                         }
                         aniChannel.add(aniKeyframe);
                     }
@@ -141,11 +159,11 @@ public class GltfDataModel {
                 ByteBuffer invMatsBuffer = skinModel.getInverseBindMatrices().getBufferViewModel().getBufferViewData();
                 while (invMatsBuffer.hasRemaining()) {
                     gltfDataModel.inverseBindMatrices.add(new Matrix4f(invMatsBuffer.getFloat(),
-                            invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
-                            invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
-                            invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
-                            invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
-                            invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat()));
+                        invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
+                        invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
+                        invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
+                        invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat(),
+                        invMatsBuffer.getFloat(), invMatsBuffer.getFloat(), invMatsBuffer.getFloat()));
                 }
             });
 
@@ -172,7 +190,7 @@ public class GltfDataModel {
                 }
                 if (nodeModel.getRotation() != null) {
                     node.rot = new Quaternionf(nodeModel.getRotation()[0], nodeModel.getRotation()[1],
-                            nodeModel.getRotation()[2], nodeModel.getRotation()[3]);
+                        nodeModel.getRotation()[2], nodeModel.getRotation()[3]);
                 }
                 if (nodeModel.getScale() != null) {
                     node.size = new Vector3f(nodeModel.getScale());
@@ -202,25 +220,25 @@ public class GltfDataModel {
                         ArrayList<Vector4i> jointList = new ArrayList<>();
                         ArrayList<Vector4f> weightList = new ArrayList<>();
                         readAccessorToList(
-                                meshModel.getAttributes().get("POSITION").getBufferViewModel().getBufferViewData(), posList,
-                                3);
+                            meshModel.getAttributes().get("POSITION").getBufferViewModel().getBufferViewData(), posList,
+                            3);
                         readAccessorToList(
-                                meshModel.getAttributes().get("NORMAL").getBufferViewModel().getBufferViewData(),
-                                normalList, 3);
+                            meshModel.getAttributes().get("NORMAL").getBufferViewModel().getBufferViewData(),
+                            normalList, 3);
                         readAccessorToList(
-                                meshModel.getAttributes().get("TEXCOORD_0").getBufferViewModel().getBufferViewData(),
-                                texList, 2);
+                            meshModel.getAttributes().get("TEXCOORD_0").getBufferViewModel().getBufferViewData(),
+                            texList, 2);
 
                         boolean isSkining = false;
 
                         if (meshModel.getAttributes().get("JOINTS_0") != null) {
                             isSkining = true;
                             readAccessorToList(
-                                    meshModel.getAttributes().get("JOINTS_0").getBufferViewModel().getBufferViewData(),
-                                    jointList, 4, meshModel.getAttributes().get("JOINTS_0").getComponentType());
+                                meshModel.getAttributes().get("JOINTS_0").getBufferViewModel().getBufferViewData(),
+                                jointList, 4, meshModel.getAttributes().get("JOINTS_0").getComponentType());
                             readAccessorToList(
-                                    meshModel.getAttributes().get("WEIGHTS_0").getBufferViewModel().getBufferViewData(),
-                                    weightList, 4);
+                                meshModel.getAttributes().get("WEIGHTS_0").getBufferViewModel().getBufferViewData(),
+                                weightList, 4);
                         }
 
                         ByteBuffer buffer = meshModel.getIndices().getBufferViewModel().getBufferViewData();
@@ -229,7 +247,7 @@ public class GltfDataModel {
                             dataMesh.unit = 5;
                             dataMesh.geoCount = posList.size();
                             dataMesh.geoBuffer = BufferUtils
-                                    .createByteBuffer(posList.size() * (3 * 4 + 2 * 4 + 3 * 4 + 4 * 4 + 4 * 4 + 1 * 4));
+                                .createByteBuffer(posList.size() * (3 * 4 + 2 * 4 + 3 * 4 + 4 * 4 + 4 * 4 + 1 * 4));
                             for (int i = 0; i < posList.size(); i++) {
                                 int point = i;
                                 dataMesh.geoBuffer.putFloat(posList.get(point).x);
@@ -315,21 +333,33 @@ public class GltfDataModel {
             } else if (type == 3) {
                 list.add(new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat()));
             } else if (type == 4) {
-                if (mode == GL11.GL_UNSIGNED_BYTE) {
-                    list.add(
-                            new Vector4i(buf.get() & 0xffff, buf.get() & 0xffff, buf.get() & 0xffff, buf.get() & 0xffff));
-                } else if (mode == GL11.GL_UNSIGNED_SHORT) {
+                if (mode == GL11.GL_UNSIGNED_BYTE || mode == GL11.GL_BYTE) {
+                    // 按理讲只需用0xff(1111 1111)但用多也无妨 哈哈哈
+                    list.add(new Vector4i(buf.get() & 0xff, buf.get() & 0xff, buf.get() & 0xff, buf.get() & 0xff));
+                } else if (mode == GL11.GL_UNSIGNED_SHORT || mode == GL11.GL_SHORT) {
                     list.add(new Vector4i(buf.getShort() & 0xffff, buf.getShort() & 0xffff, buf.getShort() & 0xffff,
-                            buf.getShort() & 0xffff));
-                } else if (mode == GL11.GL_UNSIGNED_INT) {
-                    list.add(new Vector4i(buf.getInt() & 0xffff, buf.getInt() & 0xffff, buf.getInt() & 0xffff,
-                            buf.getInt() & 0xffff));
-                } else {
+                        buf.getShort() & 0xffff));
+                } else if (mode == GL11.GL_UNSIGNED_INT || mode == GL11.GL_INT) {
+                    // 其实没啥用 根本存不了 哈哈哈
+                    list.add(new Vector4i(buf.getInt(), buf.getInt(), buf.getInt(), buf.getInt()));
+                } else if (mode == GL11.GL_FLOAT) {
                     list.add(new Vector4f(buf.getFloat(), buf.getFloat(), buf.getFloat(), buf.getFloat()));
+                } else {
+                    throw new Error("意料之外的type:" + mode);
                 }
             } else {
                 throw new Error("意料之外的unit");
             }
+        }
+    }
+    
+    public void delete() {
+        if(this.loaded) {
+            this.nodes.forEach((k,v)->{
+                v.meshes.forEach((n,m)->{
+                    m.delete();
+                });
+            });
         }
     }
 }

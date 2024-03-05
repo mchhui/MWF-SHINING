@@ -197,6 +197,8 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketExpShot.class);
 
         registerPacket(PacketOtherPlayerAnimation.class);
+        registerPacket(PacketBackpackElytraStart.class);
+        registerPacket(PacketBackpackJet.class);
 
     }
 

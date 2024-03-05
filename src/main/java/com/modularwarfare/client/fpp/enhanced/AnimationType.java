@@ -11,6 +11,7 @@ import java.io.IOException;
 @JsonAdapter(AnimationType.AnimationTypeJsonAdapter.class)
 public enum AnimationType {
     DEFAULT("default"),
+    DEFAULT_EMPTY("defaultEmpty"),
     DRAW("draw"),
     AIM("aim"),
     INSPECT("inspect"),
@@ -21,8 +22,11 @@ public enum AnimationType {
     UNLOAD("unload"),
     POST_UNLOAD("postUnload"),
     PRE_RELOAD("preReload"),
+    PRE_RELOAD_EMPTY("preReloadEmpty"),
     RELOAD_FIRST("reloadFirst"),
+    RELOAD_FIRST_EMPTY("reloadFirstEmpty"),
     RELOAD_SECOND("reloadSecond"),
+    RELOAD_SECOND_EMPTY("reloadSecondEmpty"),
     RELOAD_FIRST_QUICKLY("reloadFirstQuickly"),
     RELOAD_SECOND_QUICKLY("reloadSecondQuickly"),
     POST_RELOAD("postReload"),

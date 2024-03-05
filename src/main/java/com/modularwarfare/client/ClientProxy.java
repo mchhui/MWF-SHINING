@@ -7,6 +7,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GenerateJsonModelsEvent;
 import com.modularwarfare.api.WeaponAnimations;
 import com.modularwarfare.client.commands.CommandMWClient;
+import com.modularwarfare.client.customplayer.CPEventHandler;
 import com.modularwarfare.client.export.ItemModelExport;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.anims.*;
@@ -14,6 +15,7 @@ import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.*;
@@ -36,6 +38,7 @@ import com.modularwarfare.client.renderers.RenderProjectile;
 import com.modularwarfare.client.renderers.RenderShell;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.shader.Programs;
+import com.modularwarfare.client.view.AutoSwitchToFirstView;
 import com.modularwarfare.common.CommonProxy;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ArmorType.ArmorInfo;
@@ -141,6 +144,8 @@ public class ClientProxy extends CommonProxy {
     public static GunUI gunUI;
 
     public static KillFeedManager killFeedManager;
+
+    public static AutoSwitchToFirstView autoSwitchToFirstView;
     /**
      * Patches
      **/
@@ -201,6 +206,7 @@ public class ClientProxy extends CommonProxy {
         SmoothSwingTicker.startSmoothSwingTimer();
 
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(new CPEventHandler());
         startPatches();
         Minecraft.getMinecraft().gameSettings.useVbo = false;
     }
@@ -226,7 +232,7 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void load() {
-
+        super.load();
         new KeyInputHandler();
         new ClientTickHandler();
         new ClientGunHandler();
@@ -249,6 +255,9 @@ public class ClientProxy extends CommonProxy {
 
         killFeedManager = new KillFeedManager();
         MinecraftForge.EVENT_BUS.register(new KillFeedRender(killFeedManager));
+
+        this.autoSwitchToFirstView = new AutoSwitchToFirstView();
+        MinecraftForge.EVENT_BUS.register(this.autoSwitchToFirstView);
 
         WeaponAnimations.registerAnimation("rifle", new AnimationRifle());
         WeaponAnimations.registerAnimation("rifle2", new AnimationRifle2());
@@ -274,8 +283,6 @@ public class ClientProxy extends CommonProxy {
         helper.getLayerRenderers().add(0, new ResetHiddenModelLayer(renderer));
         renderer.addLayer(new RenderLayerBackpack(renderer, renderer.getMainModel().bipedBodyWear));
         renderer.addLayer(new RenderLayerBody(renderer, renderer.getMainModel().bipedBodyWear));
-        // Disabled for animation third person test
-        // renderer.addLayer(new RenderLayerHeldGun(renderer));
         renderer.addLayer(new RenderLayerHeldGun(renderer));
     }
 
@@ -415,10 +422,13 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void reloadModels(boolean reloadSkins) {
-        ModularWarfare.baseTypes.stream()
-                .filter(BaseType::hasModel)
-                .forEach(BaseType::reloadModel);
-        if (reloadSkins) {
+        EnhancedModel.clearCache();
+        for (BaseType baseType : ModularWarfare.baseTypes) {
+            if (baseType.hasModel()) {
+                baseType.reloadModel();
+            }
+        }
+        if (reloadSkins){
             forceReload();
         }
     }
@@ -751,11 +761,11 @@ public class ClientProxy extends CommonProxy {
             if (gunType.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
             } else {
-                float rand = (float) Math.random();
-                ClientEventHandler.cemeraBobbing = lastBobbingParm * (0.3f + 0.4f * Math.abs(rand));
-                lastBobbingParm = -lastBobbingParm;
-                AnimationController controller = gunEnhancedRenderer.getController(player, (GunEnhancedRenderConfig) gunType.enhancedModel.config);
-                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller, (ModelEnhancedGun) gunType.enhancedModel,
+                float rand=(float) Math.random();
+                ClientEventHandler.cemeraBobbing=lastBobbingParm*(0.3f+0.4f*Math.abs(rand))*((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
+                lastBobbingParm=-lastBobbingParm;
+                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
+                ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
                         gunType, fireTickDelay);
             }
 

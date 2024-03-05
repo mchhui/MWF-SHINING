@@ -2,11 +2,15 @@ package com.modularwarfare.raycast;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.ballistics.GetLivingAABBEvent;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
+import com.modularwarfare.common.hitbox.PlayerHitbox;
+import com.modularwarfare.common.hitbox.PlayerSnapshot;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.hitbox.hits.OBBHit;
+import com.modularwarfare.common.hitbox.hits.PlayerHit;
+import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.hitbox.playerdata.PlayerData;
-import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.PacketPlaySound;
 import com.modularwarfare.common.vector.Matrix4f;
 import com.modularwarfare.common.vector.Vector3f;
@@ -15,15 +19,19 @@ import com.modularwarfare.raycast.obb.OBBModelBox.RayCastResult;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.OBBDebugObject;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.PlayerOBBModelObject;
+
 import net.minecraft.block.*;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 import javax.annotation.Nullable;
@@ -43,13 +51,17 @@ public class DefaultRayCasting extends RayCasting {
         // Vec3d lookVec = new Vec3d(tx-x, ty-y, tz-z);
         Vec3d endVec = new Vec3d(tx, ty, tz);
 
-        float minX = Math.min(x, tx);
-        float minY = Math.min(y, ty);
-        float minZ = Math.min(z, tz);
-        float maxX = Math.max(x, tx);
-        float maxY = Math.max(y, ty);
-        float maxZ = Math.max(z, tz);
+        float minX = x < tx ? x : tx;
+        float minY = y < ty ? y : ty;
+        float minZ = z < tz ? z : tz;
+        float maxX = x > tx ? x : tx;
+        float maxY = y > ty ? y : ty;
+        float maxZ = z > tz ? z : tz;
         AxisAlignedBB bb = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ).grow(borderSize, borderSize, borderSize);
+        /*
+         * 2023.12.31删除了这个莫名其妙的offset 因为他会导致平视射击时判定错误
+         * */
+//        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.offset(0,-1.62f,0));
         List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb);
         RayTraceResult blockHit = rayTraceBlocks(world, startVec, endVec, true, true, false);
 
@@ -58,108 +70,102 @@ public class DefaultRayCasting extends RayCasting {
         float maxDistance = (float) endVec.distanceTo(startVec);
         if (blockHit != null) {
             maxDistance = (float) blockHit.hitVec.distanceTo(startVec);
-            endVec = blockHit.hitVec;
+        	endVec = blockHit.hitVec;
         }
-
-        Vector3f rayVec = new Vector3f(endVec.x - startVec.x, endVec.y - startVec.y, endVec.z - startVec.z);
-        float len = rayVec.length();
-        Vector3f normlVec = rayVec.normalise(null);
-        OBBModelBox ray = new OBBModelBox();
-        float pitch = (float) Math.asin(normlVec.y);
-        normlVec.y = 0;
-        normlVec = normlVec.normalise(null);
-        float yaw = (float) Math.asin(normlVec.x);
-        if (normlVec.z < 0) {
-            yaw = (float) (Math.PI - yaw);
+        
+        Vector3f rayVec=new Vector3f(endVec.x-startVec.x, endVec.y-startVec.y, endVec.z-startVec.z);
+        float len=rayVec.length();
+        Vector3f normlVec=rayVec.normalise(null);
+        OBBModelBox ray=new OBBModelBox();
+        float pitch=(float) Math.asin(normlVec.y);
+        normlVec.y=0;
+        normlVec=normlVec.normalise(null);
+        float yaw=(float)Math.asin(normlVec.x);
+        if(normlVec.z<0) {
+            yaw=(float) (Math.PI-yaw);
         }
-        Matrix4f matrix = new Matrix4f();
+        Matrix4f matrix=new Matrix4f();
         matrix.rotate(yaw, new Vector3f(0, 1, 0));
         matrix.rotate(pitch, new Vector3f(-1, 0, 0));
-        ray.center = new Vector3f((startVec.x + endVec.x) / 2, (startVec.y + endVec.y) / 2, (startVec.z + endVec.z) / 2);
-        ray.axis.x = new Vector3f(0, 0, 0);
-        ray.axis.y = new Vector3f(0, 0, 0);
-        ray.axis.z = Matrix4f.transform(matrix, new Vector3f(0, 0, len / 2), null);
-        ray.axisNormal.x = Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
-        ray.axisNormal.y = Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
-        ray.axisNormal.z = Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
-
-        if (OBBPlayerManager.debug) {
+        ray.center=new Vector3f((startVec.x+endVec.x)/2, (startVec.y+endVec.y)/2, (startVec.z+endVec.z)/2);
+        ray.axis.x=new Vector3f(0, 0, 0);
+        ray.axis.y=new Vector3f(0, 0, 0);
+        ray.axis.z=Matrix4f.transform(matrix, new Vector3f(0, 0, len/2), null);
+        ray.axisNormal.x=Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
+        ray.axisNormal.y=Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
+        ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
+        
+        if(OBBPlayerManager.debug) {
+            System.out.println("test0:"+startVec+"|"+Minecraft.getMinecraft().player.getPositionVector());
             OBBPlayerManager.lines.add(new OBBDebugObject(ray));
-            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec), new Vector3f(endVec)));
+            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec), new Vector3f(endVec)));  
         }
         //Iterate over all entities
         for (int i = 0; i < world.loadedEntityList.size(); i++) {
             Entity obj = world.loadedEntityList.get(i);
 
-            if (((excluded == null || excluded.contains(obj)) && excluded != null)) {
-                continue;
-            }
+            if (((excluded != null && !excluded.contains(obj)) || excluded == null)) {
+                if (obj instanceof EntityPlayer) {
+                    //to delete in the future
+                    
+                    /*
+                    PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
 
-            if (!(obj instanceof EntityPlayer)) {
-                continue;
-            }
+                    int snapshotToTry = ping / 50;
+                    if (snapshotToTry >= data.snapshots.length)
+                        snapshotToTry = data.snapshots.length - 1;
 
-            //to delete in the future
+                    PlayerSnapshot snapshot = data.snapshots[snapshotToTry];
 
-                /*
-                PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
+                    if (snapshot == null)
+                        snapshot = data.snapshots[0];
 
-                int snapshotToTry = ping / 50;
-                if (snapshotToTry >= data.snapshots.length)
-                    snapshotToTry = data.snapshots.length - 1;
+                    if (snapshot != null && snapshot.hitboxes != null){
+                        for (PlayerHitbox hitbox : snapshot.hitboxes) {
+                            RayTraceResult intercept = hitbox.getAxisAlignedBB(snapshot.pos).calculateIntercept(startVec, realVecEnd);
+                            if (intercept != null) {
+                                intercept.entityHit = hitbox.player;
 
-                PlayerSnapshot snapshot = data.snapshots[snapshotToTry];
+                                if (ModConfig.INSTANCE.debug_hits_message) {
+                                    long currentTime = System.nanoTime();
+                                    ModularWarfare.LOGGER.info("Shooter's ping: " + ping / 20 + "ms | " + ping + "ticks");
+                                    ModularWarfare.LOGGER.info("Took the snapshot " + snapshotToTry + " Part: " + hitbox.type.toString());
+                                    ModularWarfare.LOGGER.info("Delta (currentTime - snapshotTime) = " + (currentTime - snapshot.time) * 1e-6 + "ms");
+                                }
 
-                if (snapshot == null)
-                    snapshot = data.snapshots[0];
-
-                if (snapshot != null && snapshot.hitboxes != null){
-                    for (PlayerHitbox hitbox : snapshot.hitboxes) {
-                        RayTraceResult intercept = hitbox.getAxisAlignedBB(snapshot.pos).calculateIntercept(startVec, realVecEnd);
-                        if (intercept != null) {
-                            intercept.entityHit = hitbox.player;
-
-                            if (ModConfig.INSTANCE.debug_hits_message) {
-                                long currentTime = System.nanoTime();
-                                ModularWarfare.LOGGER.info("Shooter's ping: " + ping / 20 + "ms | " + ping + "ticks");
-                                ModularWarfare.LOGGER.info("Took the snapshot " + snapshotToTry + " Part: " + hitbox.type.toString());
-                                ModularWarfare.LOGGER.info("Delta (currentTime - snapshotTime) = " + (currentTime - snapshot.time) * 1e-6 + "ms");
+                                return new PlayerHit(hitbox, intercept);
                             }
-
-                            return new PlayerHit(hitbox, intercept);
+                        }
+                    }
+                    */
+                    //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+startVec+" "+endVec));
+                    PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
+                    OBBModelBox finalBox=null;
+                    List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
+                    if (boxes.size() > 0) {
+                        double t = Double.MAX_VALUE;
+                        Vector3f hitFaceNormal=null;
+                        RayCastResult temp;
+                        Vector3f startVector=new Vector3f(startVec);
+                        for (OBBModelBox obb : boxes) {
+                            temp=OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
+                            if(temp.t<t) {
+                                t=temp.t;
+                                hitFaceNormal=temp.normal;
+                                finalBox=obb;
+                            }
+                        }
+                        
+                        if(OBBPlayerManager.debug) {
+                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x+rayVec.x*t,startVec.y+rayVec.y*t,startVec.z+rayVec.z*t)));
+                        }
+                        if (finalBox != null) {
+                            PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
+                            RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
+                            return new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept);  
                         }
                     }
                 }
-                */
-            //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+startVec+" "+endVec));
-            PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
-            OBBModelBox finalBox = null;
-            List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
-            if (boxes.isEmpty()) {
-                continue;
-            }
-
-            double t = Double.MAX_VALUE;
-            Vector3f hitFaceNormal = null;
-            RayCastResult temp;
-            Vector3f startVector = new Vector3f(startVec);
-            for (OBBModelBox obb : boxes) {
-                temp = OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
-                if (temp.t < t) {
-                    t = temp.t;
-                    hitFaceNormal = temp.normal;
-                    finalBox = obb;
-                }
-            }
-
-            if (OBBPlayerManager.debug) {
-                OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x + rayVec.x * t, startVec.y + rayVec.y * t, startVec.z + rayVec.z * t)));
-            }
-
-            if (finalBox != null) {
-                PlayerData data = PlayerDataHandler.getPlayerData((EntityPlayer) obj);
-                RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
-                return new OBBHit((EntityPlayer) obj, finalBox.copy(), intercept);
             }
         }
 
@@ -169,51 +175,46 @@ public class DefaultRayCasting extends RayCasting {
         float currentHit = 0.f;
         AxisAlignedBB entityBb;// = ent.getBoundingBox();
         RayTraceResult intercept;
+//        System.out.println("test1:"+allEntities.size());
         for (Entity ent : allEntities) {
-            if ((!ent.canBeCollidedWith() && collideablesOnly) || ((excluded == null || excluded.contains(ent)) && excluded != null)) {
-                continue;
-            }
-
-            if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
-                EntityLivingBase entityLivingBase = (EntityLivingBase) ent;
-                if (!ent.isDead && entityLivingBase.getHealth() > 0.0F) {
+            if ((ent.canBeCollidedWith() || !collideablesOnly) && ((excluded != null && !excluded.contains(ent)) || excluded == null)) {
+                if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
+                    EntityLivingBase entityLivingBase = (EntityLivingBase) ent;
+                    if (!ent.isDead && entityLivingBase.getHealth() > 0.0F) {
+                        float entBorder = ent.getCollisionBorderSize();
+                        entityBb = ent.getEntityBoundingBox();
+                        if (entityBb != null) {
+                            entityBb = entityBb.grow(entBorder, entBorder, entBorder);
+                            GetLivingAABBEvent aabbEvent=new GetLivingAABBEvent(entityLivingBase, entityBb) ;
+                            MinecraftForge.EVENT_BUS.post(aabbEvent);
+                            entityBb=aabbEvent.box;
+                            intercept = entityBb.calculateIntercept(startVec, endVec);
+//                            System.out.println("test:"+intercept);
+                            if (intercept != null) {
+                                currentHit = (float) intercept.hitVec.distanceTo(startVec);
+                                hit = intercept.hitVec;
+                                if (currentHit < closestHit || currentHit == 0) {
+                                    closestHit = currentHit;
+                                    closestHitEntity = ent;
+                                }
+                            }
+                        }
+                    }
+                } else if (ent instanceof EntityGrenade) {
                     float entBorder = ent.getCollisionBorderSize();
                     entityBb = ent.getEntityBoundingBox();
-                    if (entityBb == null) {
-                        continue;
+                    if (entityBb != null) {
+                        entityBb = entityBb.grow(entBorder, entBorder, entBorder);
+                        intercept = entityBb.calculateIntercept(startVec, endVec);
+                        if (intercept != null) {
+                            currentHit = (float) intercept.hitVec.distanceTo(startVec);
+                            hit = intercept.hitVec;
+                            if (currentHit < closestHit || currentHit == 0) {
+                                closestHit = currentHit;
+                                closestHitEntity = ent;
+                            }
+                        }
                     }
-
-                    entityBb = entityBb.grow(entBorder, entBorder, entBorder);
-                    intercept = entityBb.calculateIntercept(startVec, endVec);
-                    if (intercept == null) {
-                        continue;
-                    }
-
-                    currentHit = (float) intercept.hitVec.distanceTo(startVec);
-                    hit = intercept.hitVec;
-                    if (currentHit < closestHit || currentHit == 0) {
-                        closestHit = currentHit;
-                        closestHitEntity = ent;
-                    }
-                }
-            } else if (ent instanceof EntityGrenade) {
-                float entBorder = ent.getCollisionBorderSize();
-                entityBb = ent.getEntityBoundingBox();
-                if (entityBb == null) {
-                    continue;
-                }
-
-                entityBb = entityBb.grow(entBorder, entBorder, entBorder);
-                intercept = entityBb.calculateIntercept(startVec, endVec);
-                if (intercept == null) {
-                    continue;
-                }
-
-                currentHit = (float) intercept.hitVec.distanceTo(startVec);
-                hit = intercept.hitVec;
-                if (currentHit < closestHit || currentHit == 0) {
-                    closestHit = currentHit;
-                    closestHitEntity = ent;
                 }
             }
         }
@@ -340,7 +341,7 @@ public class DefaultRayCasting extends RayCasting {
                     IBlockState iblockstate1 = world.getBlockState(blockpos);
                     Block block1 = iblockstate1.getBlock();
 
-                    if (ModConfig.INSTANCE.shots.shotBreakGlass) {
+                    if (ModConfig.INSTANCE.shots.shot_break_glass) {
                         if (block1 instanceof BlockGlass || block1 instanceof BlockStainedGlassPane || block1 instanceof BlockStainedGlass) {
                             world.setBlockToAir(blockpos);
                             ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.glass", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));

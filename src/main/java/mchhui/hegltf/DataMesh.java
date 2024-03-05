@@ -1,5 +1,27 @@
 package mchhui.hegltf;
 
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.MemoryUtil;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GL45;
+
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import net.minecraft.client.Minecraft;
@@ -242,6 +264,16 @@ public class DataMesh {
     }
 
     public void delete() {
+        if(geoBuffer!=null) {
+            if(((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner())!=null) {
+                ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner()).clean();  
+            }
+        }
+        if(elementBuffer!=null) {
+            if(((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner())!=null) {
+                ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner()).clean();  
+            }
+        }
         GL30.glDeleteVertexArrays(displayList);
         GL30.glDeleteVertexArrays(ssboVao);
         if (pos_vbo != -1) {

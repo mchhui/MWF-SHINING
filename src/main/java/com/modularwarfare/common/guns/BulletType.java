@@ -41,9 +41,17 @@ public class BulletType extends BaseType {
     public float projectileVelocity;
     public float explosionStrength = 4f;
     public boolean damageWorld = true;
-
-    public boolean isDynamicBullet = false;
-    public boolean sameTextureAsGun = false;
+    
+    public boolean isDynamicBullet=false;
+    public boolean sameTextureAsGun=false;
+    
+    /**
+     * Custom Bullet Trail
+     * */
+    public String trailModel;
+    public String trailTex;
+    //trailModel trailTex至少有一个不为null trailGlow才生效
+    public boolean trailGlow=false;
 
     @Override
     public void loadExtraValues() {

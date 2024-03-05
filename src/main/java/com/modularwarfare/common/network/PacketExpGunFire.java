@@ -11,6 +11,7 @@ import com.modularwarfare.common.guns.manager.ShotValidation;
 import com.modularwarfare.utility.RayUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -179,6 +180,29 @@ public class PacketExpGunFire extends PacketBase {
                                                                         targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
                                                                     }
                                                                 }
+                                                                if(bulletProperty.fireLevel>0) {
+                                                                    targetELB.setFire(bulletProperty.fireLevel);  
+                                                                }
+                                                                if(bulletProperty.explosionLevel>0) {
+                                                                    targetELB.world.createExplosion(null, targetELB.posX, targetELB.posY+1, targetELB.posZ, bulletProperty.explosionLevel, bulletProperty.explosionBroken);
+                                                                }
+                                                                if(bulletProperty.knockLevel>0) {
+                                                                    targetELB.knockBack(entityPlayer, bulletProperty.knockLevel, entityPlayer.posX-targetELB.posX, entityPlayer.posZ-targetELB.posZ);
+                                                                }
+                                                                if(bulletProperty.banShield) {
+                                                                    if (targetELB instanceof EntityPlayer)
+                                                                    {
+                                                                        EntityPlayer ep = (EntityPlayer)targetELB;
+                                                                        ItemStack itemstack1 = ep.isHandActive() ? ep.getActiveItemStack() : ItemStack.EMPTY;
+
+                                                                        if ((!itemstack1.isEmpty())&&itemstack1.getItem().isShield(itemstack1, ep))
+                                                                        {
+                                                                            ep.getCooldownTracker().setCooldown(itemstack1.getItem(), 100);
+                                                                            ep.world.setEntityState(ep, (byte)30);
+                                                                        }
+                                                                    }
+                                                                }
+                                                                
                                                             }
                                                         }
                                                     }

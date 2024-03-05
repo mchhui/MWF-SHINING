@@ -487,10 +487,11 @@ public class ClientLitener {
     public void onCameraUpdate(CameraSetup event) {
         float pitch = event.getPitch();
         float yaw = event.getYaw();
-        double playerPosX = Minecraft.getMinecraft().player.posX + (Minecraft.getMinecraft().player.posX - Minecraft.getMinecraft().player.lastTickPosX) * event.getRenderPartialTicks();
-        double playerPosY = Minecraft.getMinecraft().player.posY + (Minecraft.getMinecraft().player.posY - Minecraft.getMinecraft().player.lastTickPosY) * event.getRenderPartialTicks();
-        double playerPosZ = Minecraft.getMinecraft().player.posZ + (Minecraft.getMinecraft().player.posZ - Minecraft.getMinecraft().player.lastTickPosZ) * event.getRenderPartialTicks();
-
+        float roll = event.getRoll();
+        double playerPosX=Minecraft.getMinecraft().player.posX+(Minecraft.getMinecraft().player.posX-Minecraft.getMinecraft().player.lastTickPosX)*event.getRenderPartialTicks();
+        double playerPosY=Minecraft.getMinecraft().player.posY+(Minecraft.getMinecraft().player.posY-Minecraft.getMinecraft().player.lastTickPosY)*event.getRenderPartialTicks();
+        double playerPosZ=Minecraft.getMinecraft().player.posZ+(Minecraft.getMinecraft().player.posZ-Minecraft.getMinecraft().player.lastTickPosZ)*event.getRenderPartialTicks();
+        
         if (clientPlayerState.probe != 0) {
             float f = 0.22f;
             float f1 = 0.2f;
@@ -564,8 +565,8 @@ public class ClientLitener {
         event.setPitch(0);
         event.setYaw(0);
         event.setRoll(0);
+        GlStateManager.rotate(10 * cameraProbeOffset+roll, 0.0F, 0.0F, 1.0F);
         GlStateManager.translate(-0.6 * cameraProbeOffset, 0, 0);
-        GlStateManager.rotate(10 * cameraProbeOffset, 0.0F, 0.0F, 1.0F);
         GlStateManager.rotate(pitch, 1.0F, 0.0F, 0.0F);
         GlStateManager.translate(0, -cameraOffsetY, 0);
         GlStateManager.rotate(yaw, 0.0F, 1.0F, 0.0F);
@@ -871,7 +872,10 @@ public class ClientLitener {
         event.player.setEntityBoundingBox(lastModAABB);
 
         if (clientPlayerSitMoveAmplifier > 0) {
+            clientPlayerState.isSliding=true;
             TacticalHandler.sendNoStep(100);
+        }else {
+            clientPlayerState.isSliding=false;
         }
         if (event.player.fallDistance > 1) {
             if (wannaSliding) {
@@ -881,6 +885,27 @@ public class ClientLitener {
         TacticalHandler.sendToServer(clientPlayerState.writeCode());
     }
 
+    public static boolean isSliding(Integer id) {
+        if (!ohterPlayerStateMap.containsKey(id)) {
+            return false;
+        }
+        return ohterPlayerStateMap.get(id).isSliding;
+    }
+    
+    public static boolean isSitting(Integer id) {
+        if (!ohterPlayerStateMap.containsKey(id)) {
+            return false;
+        }
+        return ohterPlayerStateMap.get(id).isSitting;
+    }
+
+    public static boolean isCrawling(Integer id) {
+        if (!ohterPlayerStateMap.containsKey(id)) {
+            return false;
+        }
+        return ohterPlayerStateMap.get(id).isCrawling;
+    }
+  
     @SubscribeEvent
     public void onTickOtherPlayer(PlayerTickEvent event) {
         if (event.side == Side.CLIENT) {

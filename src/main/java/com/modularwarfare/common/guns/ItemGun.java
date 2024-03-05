@@ -302,6 +302,52 @@ public class ItemGun extends BaseItem {
         return multimap;
     }
 
+    public static void doHit(double posX, double posY, double posZ,EnumFacing facing, EntityPlayer shooter) {
+        doHit(new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, new BlockPos(posX, posY, posZ)), shooter);
+    }
+
+    public static void doHit(RayTraceResult raytraceResultIn, EntityPlayer shooter) {
+        if (raytraceResultIn.getBlockPos() != null) {
+            BlockPos pos = raytraceResultIn.getBlockPos();
+
+            EntityDecal.EnumDecalSide side = EntityDecal.EnumDecalSide.ALL;
+            boolean shouldRender = true;
+            double hitX = raytraceResultIn.hitVec.x;
+            double hitY = raytraceResultIn.hitVec.y;
+            double hitZ = raytraceResultIn.hitVec.z;
+            switch (raytraceResultIn.sideHit) {
+                case UP:
+                    side= EntityDecal.EnumDecalSide.FLOOR;
+                    break;
+                case DOWN:
+                    side= EntityDecal.EnumDecalSide.CEILING;
+                    break;
+                case EAST:
+                    side= EntityDecal.EnumDecalSide.WEST;
+                    break;
+                case WEST:
+                    side= EntityDecal.EnumDecalSide.EAST;
+                    break;
+                case SOUTH:
+                    side= EntityDecal.EnumDecalSide.NORTH;
+                    break;
+                case NORTH:
+                    side= EntityDecal.EnumDecalSide.SOUTH;
+                    break;
+                default:
+                    shouldRender=false;
+                    break;
+            }
+            if (shouldRender) {
+                ModularWarfare.NETWORK.sendToAll(new PacketDecal(0, side, hitX, hitY, hitZ, false));
+            }
+        }
+    }
+
+
+    public static boolean canEntityGetHeadshot(Entity e) {
+        return e instanceof EntityZombie || e instanceof EntitySkeleton || e instanceof EntityCreeper || e instanceof EntityWitch || e instanceof EntityPigZombie || e instanceof EntityEnderman || e instanceof EntityWitherSkeleton || e instanceof EntityPlayer || e instanceof EntityVillager || e instanceof EntityEvoker || e instanceof EntityStray || e instanceof EntityVindicator || e instanceof EntityIronGolem || e instanceof EntitySnowman || e.getName().contains("common");
+    }
     public void onGunSwitchMode(EntityPlayer entityPlayer, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode) {
         GunType.setFireMode(gunStack, fireMode);
 

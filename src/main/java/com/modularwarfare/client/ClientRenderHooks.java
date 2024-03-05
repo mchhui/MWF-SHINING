@@ -50,10 +50,8 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.client.event.RenderItemInFrameEvent;
-import net.minecraftforge.client.event.RenderLivingEvent;
-import net.minecraftforge.client.event.RenderSpecificHandEvent;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.event.*;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import org.lwjgl.opengl.GL11;
@@ -87,7 +85,7 @@ public class ClientRenderHooks extends ForgeEvent {
         customRenderers[8] = ClientProxy.grenadeRenderer = new RenderGrenade();
     }
 
-    public static AnimStateMachine getAnimMachine(EntityPlayer entityPlayer) {
+    public static AnimStateMachine getAnimMachine(EntityLivingBase entityPlayer) {
         AnimStateMachine animation = null;
         if (weaponBasicAnimations.containsKey(entityPlayer)) {
             animation = weaponBasicAnimations.get(entityPlayer);
@@ -98,7 +96,7 @@ public class ClientRenderHooks extends ForgeEvent {
         return animation;
     }
 
-    public static EnhancedStateMachine getEnhancedAnimMachine(EntityPlayer entityPlayer) {
+    public static EnhancedStateMachine getEnhancedAnimMachine(EntityLivingBase entityPlayer) {
         EnhancedStateMachine animation = null;
         if (weaponEnhancedAnimations.containsKey(entityPlayer)) {
             animation = weaponEnhancedAnimations.get(entityPlayer);
@@ -129,6 +127,15 @@ public class ClientRenderHooks extends ForgeEvent {
                 break;
             }
         }
+    }
+    
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public void onRender(RenderPlayerEvent.Pre event) {
+        boolean aim = AnimationUtils.isAiming.containsKey(event.getEntityPlayer().getName());
+        if (!aim) {
+            return;
+        }
+        event.getEntityPlayer().renderYawOffset=interpolateRotation(event.getEntityPlayer().renderYawOffset,event.getEntityPlayer().rotationYaw,0.1f);
     }
 
     @SubscribeEvent

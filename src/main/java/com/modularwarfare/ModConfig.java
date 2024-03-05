@@ -128,9 +128,10 @@ public class ModConfig {
         public float handDepthRangeMax = 0.6f;
         public float handDepthRangeMin = 0f;
         public Vector3f projectionScale = new Vector3f(0.125f, 0.125f, 0.125f);
-        public float eraseScopeDepth = 1f;
-        public int shadersColorTexID = 0;
-        public boolean alwaysRenderPIPWorld = false;
+        public float eraseScopeDepth=1f;
+        public int shadersColorTexID=0;
+        public boolean alwaysRenderPIPWorld=false;
+        public boolean autoSwitchToFirstView=true;
     }
 
     public static class Walk {
