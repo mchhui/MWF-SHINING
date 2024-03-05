@@ -63,7 +63,7 @@ public class InstantBulletRenderer {
         private String model;
         private boolean glow=false;
 
-        public InstantShotTrail(GunType gunType,Vector3f origin, Vector3f hitPos, float bulletSpeed, boolean isPunched) {
+        public InstantShotTrail(GunType gunType,String model,String tex,boolean glowArg,Vector3f origin, Vector3f hitPos, float bulletSpeed, boolean isPunched) {
             this.ticksExisted = 0;
             this.bulletSpeed = bulletSpeed;
             this.origin = origin;
@@ -84,6 +84,15 @@ public class InstantBulletRenderer {
                 this.model=gunType.customTrailModel;
                 glow=gunType.customTrailGlow;
             }
+            if(model!=null&&!model.isEmpty()) {
+                this.model=model;
+                glow=glowArg;
+            }
+            if(tex!=null&&!tex.isEmpty()) {
+                this.texture=new ResourceLocation(tex);
+                glow=glowArg;
+            }
+            
 
             Vector3f dPos = Vector3f.sub(hitPos, origin, null);
 

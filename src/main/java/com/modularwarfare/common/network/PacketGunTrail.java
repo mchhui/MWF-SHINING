@@ -27,15 +27,18 @@ public class PacketGunTrail extends PacketBase {
     boolean isPunched;
     
     String gunType;
+    String model;
+    String tex;
+    boolean glow;
 
     public PacketGunTrail() {
     }
 
-    public PacketGunTrail(GunType gunType,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
-        this(gunType.internalName, X, Y, Z, motionX, motionZ, x, y, z, range, bulletspeed, isPunched);
+    public PacketGunTrail(GunType gunType,String model,String tex,boolean glow,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
+        this(gunType.internalName,model,tex,glow, X, Y, Z, motionX, motionZ, x, y, z, range, bulletspeed, isPunched);
     }
     
-    public PacketGunTrail(String gunType,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
+    public PacketGunTrail(String gunType,String model,String tex,boolean glow,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
         this.posX = X;
         this.posY = Y;
         this.posZ = Z;
@@ -71,6 +74,9 @@ public class PacketGunTrail extends PacketBase {
         buf.writeBoolean(isPunched);
         
         buf.writeString(gunType);
+        buf.writeString(model);
+        buf.writeString(tex);
+        buf.writeBoolean(glow);
     }
 
     @Override
@@ -92,6 +98,9 @@ public class PacketGunTrail extends PacketBase {
         isPunched = buf.readBoolean();
         
         gunType = buf.readString(Short.MAX_VALUE);
+        model = buf.readString(Short.MAX_VALUE);
+        tex = buf.readString(Short.MAX_VALUE);
+        glow = buf.readBoolean();
     }
 
     @Override
@@ -106,7 +115,7 @@ public class PacketGunTrail extends PacketBase {
         double dy = this.dirY * this.range;
         double dz = this.dirZ * this.range;
         final Vector3f vec = new Vector3f((float) posX, (float) posY, (float) posZ);
-        InstantBulletRenderer.AddTrail(new InstantBulletRenderer.InstantShotTrail(ModularWarfare.gunTypes.get(gunType).type,vec, new Vector3f((float) (vec.x + dx + motionX), (float) (vec.y + dy), (float) (vec.z + dz + motionZ)), this.bulletspeed, this.isPunched));
+        InstantBulletRenderer.AddTrail(new InstantBulletRenderer.InstantShotTrail(ModularWarfare.gunTypes.get(gunType).type,model,tex,glow,vec, new Vector3f((float) (vec.x + dx + motionX), (float) (vec.y + dy), (float) (vec.z + dz + motionZ)), this.bulletspeed, this.isPunched));
     }
 
 }

@@ -3,6 +3,7 @@ package com.modularwarfare.utility;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.common.guns.AttachmentPresetEnum;
+import com.modularwarfare.common.guns.BulletType;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAttachment;
 import com.modularwarfare.common.guns.ItemBullet;
@@ -21,6 +22,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
@@ -271,9 +273,33 @@ public class RayUtil {
         double dz = dir.z * range;
 
         if(side.isServer()) {
-            ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(item.type,player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
+//            ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(item.type,player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
         } else {
-            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(item.type,player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
+            ItemStack gunStack=player.getHeldItemMainhand();
+            ItemStack bulletStack=null;
+            String model=null;
+            String tex=null;
+            boolean glow=false;
+            if(gunStack.getItem() instanceof ItemGun) {
+                GunType gunType=((ItemGun)gunStack.getItem()).type;
+                if (gunType.acceptedBullets != null) {
+                    bulletStack= new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
+                }else {
+                    ItemStack stackAmmo = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
+                    if(stackAmmo!=null&&!stackAmmo.isEmpty()&&stackAmmo.hasTagCompound()) {
+                        bulletStack= new ItemStack(stackAmmo.getTagCompound().getCompoundTag("bullet"));  
+                    }
+                }
+            }
+            if (bulletStack != null) {
+                if (bulletStack.getItem() instanceof ItemBullet) {
+                    BulletType bulletType = ((ItemBullet)bulletStack.getItem()).type;
+                    model = bulletType.trailModel;
+                    tex = bulletType.trailTex;
+                    glow = bulletType.trailGlow;
+                }
+            }
+            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(item.type,model,tex,glow,player.posX,player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
         }
 
         int ping = 0;

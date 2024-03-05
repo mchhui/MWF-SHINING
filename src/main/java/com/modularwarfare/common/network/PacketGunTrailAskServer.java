@@ -26,11 +26,14 @@ public class PacketGunTrailAskServer extends PacketBase {
     boolean isPunched;
     
     String gunType;
+    String model;
+    String tex;
+    boolean glow;
 
     public PacketGunTrailAskServer() {
     }
 
-    public PacketGunTrailAskServer(GunType gunType,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
+    public PacketGunTrailAskServer(GunType gunType,String model,String tex,boolean glow,double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed, boolean isPunched) {
         this.posX = X;
         this.posY = Y;
         this.posZ = Z;
@@ -46,6 +49,15 @@ public class PacketGunTrailAskServer extends PacketBase {
         this.isPunched = isPunched;
         
         this.gunType=gunType.internalName;
+        this.model=model;
+        this.tex=tex;
+        this.glow=glow;
+        if(this.model==null) {
+            this.model="";
+        }
+        if(this.tex==null) {
+            this.tex="";
+        }
     }
 
     @Override
@@ -68,6 +80,9 @@ public class PacketGunTrailAskServer extends PacketBase {
         buf.writeBoolean(isPunched);
         
         buf.writeString(gunType);
+        buf.writeString(model);
+        buf.writeString(tex);
+        buf.writeBoolean(glow);
     }
 
     @Override
@@ -90,11 +105,14 @@ public class PacketGunTrailAskServer extends PacketBase {
         isPunched = buf.readBoolean();
         
         gunType=buf.readString(Short.MAX_VALUE);
+        model=buf.readString(Short.MAX_VALUE);
+        tex=buf.readString(Short.MAX_VALUE);
+        glow=buf.readBoolean();
     }
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(gunType,posX, posY, posZ, motionX, motionZ, dirX, dirY, dirZ, range, 10, isPunched), entityPlayer.world.provider.getDimension());
+        ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(gunType,model,tex,glow,posX, posY, posZ, motionX, motionZ, dirX, dirY, dirZ, range, 10, isPunched), entityPlayer.world.provider.getDimension());
     }
 
     @Override
