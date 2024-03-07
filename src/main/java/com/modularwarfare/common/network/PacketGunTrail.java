@@ -53,6 +53,15 @@ public class PacketGunTrail extends PacketBase {
         this.bulletspeed = bulletspeed;
         this.isPunched = isPunched;
         this.gunType=gunType;
+        this.model=model;
+        this.tex=tex;
+        this.glow=glow;
+        if(this.model==null) {
+            this.model="";
+        }
+        if(this.tex==null) {
+            this.tex="";
+        }
     }
 
     @Override
