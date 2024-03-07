@@ -146,5 +146,12 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         
         public float bobbingFactor=1;
         
+        /**
+         * shell offset
+         * */
+        public float shellYawOffset;
+        public float shellPitchOffset;
+        public float shellForwardOffset;
+        
     }
 }

@@ -6,6 +6,7 @@ import com.modularwarfare.api.WeaponFireEvent;
 import com.modularwarfare.api.WeaponHitEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
@@ -122,10 +123,11 @@ public class ShotManager {
                     numBullets = 1;
                 }
             }
+            GunEnhancedRenderConfig cfg=ModularWarfare.getRenderConfig(gunType, GunEnhancedRenderConfig.class);
 
             EntityShell shell = new EntityShell(world, entityPlayer,gunStack, itemGun, bulletItem);
 
-            shell.setHeadingFromThrower(entityPlayer, entityPlayer.rotationPitch+gunType.shellPitchOffset, entityPlayer.rotationYaw + 110+gunType.shellYawOffset, 0.0F, 0.2F, 5,0.1f+gunType.shellForwardOffset);
+            shell.setHeadingFromThrower(entityPlayer, entityPlayer.rotationPitch+cfg.extra.shellPitchOffset, entityPlayer.rotationYaw + 110+cfg.extra.shellYawOffset, 0.0F, 0.2F, 5,0.1f+cfg.extra.shellForwardOffset);
             world.spawnEntity(shell);
         }
 
