@@ -77,19 +77,19 @@ public class InstantBulletRenderer {
                 this.width = 0.1f;
             }
             if(gunType.customTrailTexture!=null) {
-                this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/" + gunType.customTrailTexture);
+                this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "trail/textures/" + gunType.customTrailTexture);
                 glow=gunType.customTrailGlow;
             }
             if(gunType.customTrailModel!=null) {
-                this.model=gunType.customTrailModel;
+                this.model= "modularwarfare:trail/obj/" + gunType.customTrailModel;
                 glow=gunType.customTrailGlow;
             }
             if(model!=null&&!model.isEmpty()) {
-                this.model=model;
+                this.model="modularwarfare:trail/obj/" + model;
                 glow=glowArg;
             }
             if(tex!=null&&!tex.isEmpty()) {
-                this.texture=new ResourceLocation(tex);
+                this.texture=new ResourceLocation(ModularWarfare.MOD_ID, "trail/textures/" + tex);
                 glow=glowArg;
             }
             
