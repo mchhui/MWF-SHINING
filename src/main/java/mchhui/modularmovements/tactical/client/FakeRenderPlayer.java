@@ -8,6 +8,7 @@ import com.modularwarfare.client.model.layers.RenderLayerHeldGun;import com.modu
 
 import mchhui.modularmovements.ModularMovements;
 import net.minecraft.client.entity.AbstractClientPlayer;
+import net.minecraft.client.renderer.entity.MWFRenderHelper;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerBipedArmor;
@@ -30,8 +31,9 @@ public class FakeRenderPlayer extends RenderPlayer {
         }
         if (ModularMovements.mwfEnable) {
             //see com.modularwarfare.client.ClientProxy.setupLayers
+            MWFRenderHelper helper = new MWFRenderHelper(this);
             this.addLayer(new FakeLayerBipedArmor(this));
-            this.addLayer(new ResetHiddenModelLayer(this));
+            helper.getLayerRenderers().add(0, new ResetHiddenModelLayer(this));
             this.addLayer(new RenderLayerBackpack(this, this.getMainModel().bipedBodyWear));
             this.addLayer(new RenderLayerBody(this, this.getMainModel().bipedBodyWear));
             this.addLayer(new RenderLayerHeldGun(this));
