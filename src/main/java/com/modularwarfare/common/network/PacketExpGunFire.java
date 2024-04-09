@@ -2,6 +2,7 @@ package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.EntityHeadShotEvent;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
@@ -26,6 +27,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class PacketExpGunFire extends PacketBase {
@@ -163,6 +165,12 @@ public class PacketExpGunFire extends PacketBase {
                                                         }
                                                     }
                                                 }
+                                            }
+                                            if(target instanceof EntityLivingBase) {
+                                                if(hitboxType!=null&&hitboxType.contains("head")) {
+                                                    EntityHeadShotEvent headShot=new EntityHeadShotEvent((EntityLivingBase)target, entityPlayer);
+                                                    MinecraftForge.EVENT_BUS.post(headShot);
+                                                }  
                                             }
                                             
                                             //BULLET START
