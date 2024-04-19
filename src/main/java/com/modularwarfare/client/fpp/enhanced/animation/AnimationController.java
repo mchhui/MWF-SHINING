@@ -9,7 +9,9 @@ import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.common.guns.AttachmentPresetEnum;
 import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemAttachment;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.guns.WeaponSoundType;
@@ -174,6 +176,19 @@ public class AnimationController {
         /** ADS **/
         boolean aimChargeMisc = ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
         double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * stepTick;
+        if (player.getHeldItemMainhand().getItem() instanceof ItemGun && player instanceof EntityPlayer) {
+            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                AttachmentPresetEnum.Stock) != null) {
+                ItemAttachment stockAttachment =
+                    (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                        AttachmentPresetEnum.Stock).getItem();
+                adsSpeed*=stockAttachment.type.stock.aimSpeedFactor;
+            }
+        }
+        if (player.getHeldItemMainhand().getItem() instanceof ItemGun && player instanceof EntityPlayer) {
+            GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
+            
+        }
         double val = 0;
         if (RenderParameters.collideFrontDistance == 0 && Minecraft.getMinecraft().inGameHasFocus
             && Mouse.isButtonDown(1) && !aimChargeMisc && INSPECT == 1F) {

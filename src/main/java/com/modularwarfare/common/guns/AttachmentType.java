@@ -86,6 +86,7 @@ public class AttachmentType extends BaseType {
     public static class Stock{
     	public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f; 
+        public float aimSpeedFactor = 1.0f;
     }
 
 }
