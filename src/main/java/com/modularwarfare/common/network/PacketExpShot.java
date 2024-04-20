@@ -13,6 +13,7 @@ import mchhui.easyeffect.EasyEffect;
 import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.IThreadListener;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
@@ -75,7 +76,12 @@ public class PacketExpShot extends PacketBase {
 
                                 // Sound
                                 if (GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel) != null) {
-                                    itemGun.type.playSound(entityPlayer, WeaponSoundType.FireSuppressed, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                    ItemStack barrel=GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel);
+                                    if(((ItemAttachment)barrel.getItem()).type.barrel.isSuppressor) {
+                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.FireSuppressed, entityPlayer.getHeldItemMainhand(), entityPlayer);  
+                                    }else {
+                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                    }
                                 } else {
                                     itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
                                 }
