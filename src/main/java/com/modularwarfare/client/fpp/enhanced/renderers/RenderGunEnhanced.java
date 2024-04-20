@@ -114,9 +114,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
     private Timer timer;
 
-    public AnimationController controller=new AnimationController(null, null);
+    private AnimationController controller=new AnimationController(null, null);
     
-    public HashMap<String, AnimationController> otherControllers=new HashMap<String, AnimationController>();
+    private HashMap<String, AnimationController> otherControllers=new HashMap<String, AnimationController>();
 
     public FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(16);
 
@@ -146,9 +146,17 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
     }
 
+    public AnimationController getClientController() {
+        return controller;
+    }
+    
+    public HashMap<String, AnimationController> getOtherControllers() {
+        return otherControllers;
+    }
+    
     public AnimationController getController(EntityLivingBase player,GunEnhancedRenderConfig config) {
         if(player==Minecraft.getMinecraft().player) {
-            if(controller.player!=player||controller.getConfig()!=config) {
+            if(controller.player!=player||(config!=null&&controller.getConfig()!=config)) {
                 controller=new AnimationController(player, config);
             }
             return controller;
@@ -763,7 +771,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                  * */
                 
                 bindTexture("guns", gunPath);
-                
+//                System.out.println(model.existPart("shellModel_1"));
                 if(defaultBulletFlag.b) {
                     for (int bullet = 0; bullet < currentAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
                         model.renderPart("bulletModel_" + bullet);
@@ -866,6 +874,19 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 }
                 
                 if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType() == AnimationType.FIRE && !player.isInWater()) {
+                    GlStateManager.pushMatrix();
+                    ItemStack itemStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
+                    if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                        AttachmentType attachmentType = ((ItemAttachment)itemStack.getItem()).type;
+                        if (config.attachment.containsKey(attachmentType.internalName)) {
+                            if (config.attachment.get(attachmentType.internalName).flashModelOffset != null) {
+                                GlStateManager.translate(
+                                    config.attachment.get(attachmentType.internalName).flashModelOffset.x,
+                                    config.attachment.get(attachmentType.internalName).flashModelOffset.y,
+                                    config.attachment.get(attachmentType.internalName).flashModelOffset.z);
+                            }
+                        }
+                    }
                     GlStateManager.disableLighting();
                     OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
                     TextureType flashType = gunType.flashType;
@@ -873,6 +894,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     model.renderPart("flashModel");
                     OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
                     GlStateManager.enableLighting();
+                    GlStateManager.popMatrix();
                 }
                 
                 //model.renderPart("smokeModel");
@@ -1436,6 +1458,19 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float by=OpenGlHelper.lastBrightnessY;
         
         if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType() == AnimationType.FIRE && !player.isInWater()) {
+            GlStateManager.pushMatrix();
+            ItemStack itemStack = GunType.getAttachment(demoStack, AttachmentPresetEnum.Barrel);
+            if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                AttachmentType attachmentType = ((ItemAttachment)itemStack.getItem()).type;
+                if (config.attachment.containsKey(attachmentType.internalName)) {
+                    if (config.attachment.get(attachmentType.internalName).flashModelOffset != null) {
+                        GlStateManager.translate(
+                            config.attachment.get(attachmentType.internalName).flashModelOffset.x,
+                            config.attachment.get(attachmentType.internalName).flashModelOffset.y,
+                            config.attachment.get(attachmentType.internalName).flashModelOffset.z);
+                    }
+                }
+            }
             GlStateManager.disableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
             TextureType flashType = gunType.flashType;
@@ -1443,6 +1478,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             model.renderPart("flashModel");
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
             GlStateManager.enableLighting();
+            GlStateManager.popMatrix();
         }
 
         GlStateManager.shadeModel(GL11.GL_FLAT);

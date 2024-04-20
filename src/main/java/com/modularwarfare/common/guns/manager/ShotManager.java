@@ -158,8 +158,8 @@ public class ShotManager {
                 || !itemGun.type.hasFireMode(fireMode)) {
             return false;
         }
-        if (ClientProxy.gunEnhancedRenderer.controller != null) {
-            if(!ClientProxy.gunEnhancedRenderer.controller.isCouldShoot()) {
+        if (ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null) != null) {
+            if(!ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).isCouldShoot()) {
                 return false;
             }
         }

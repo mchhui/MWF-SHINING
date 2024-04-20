@@ -127,8 +127,8 @@ public class KeyInputHandler extends ForgeEvent {
                 case Inspect:
                     if(!entityPlayer.isSpectator()) {
                         if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                            if(ClientProxy.gunEnhancedRenderer.controller!=null) {
-                                ClientProxy.gunEnhancedRenderer.controller.INSPECT=0;
+                            if(ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null)!=null) {
+                                ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).INSPECT=0;
                             }
                         }  
                     }
@@ -136,8 +136,8 @@ public class KeyInputHandler extends ForgeEvent {
                 case GunReload:
                     ItemStack reloadStack = entityPlayer.getHeldItemMainhand();
                     if (reloadStack != null && (reloadStack.getItem() instanceof ItemGun || reloadStack.getItem() instanceof ItemAmmo)) {
-                        if (ClientProxy.gunEnhancedRenderer.controller == null
-                                || ClientProxy.gunEnhancedRenderer.controller.isCouldReload()) {
+                        if (ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null) == null
+                                || ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).isCouldReload()) {
                             ModularWarfare.NETWORK.sendToServer(new PacketGunReload());
                         }
                     }

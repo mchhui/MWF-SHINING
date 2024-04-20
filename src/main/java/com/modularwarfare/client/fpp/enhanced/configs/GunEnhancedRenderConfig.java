@@ -97,6 +97,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public boolean renderInsideSightModel=false;
         public float renderInsideGunOffset=5;
         public Vector3f attachmentGuiOffset = new Vector3f(0F, 0F, 0F);
+        public Vector3f flashModelOffset = new Vector3f(0F, 0F, 0F);
     }
     
     public static class AttachmentGroup extends Transform {

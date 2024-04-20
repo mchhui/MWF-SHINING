@@ -72,7 +72,7 @@ public class ClientTickHandler extends ForgeEvent {
                 if(lastWorld!=Minecraft.getMinecraft().world) {
                     ClientRenderHooks.weaponEnhancedAnimations.clear();
                     ClientRenderHooks.weaponBasicAnimations.clear();
-                    ClientProxy.gunEnhancedRenderer.otherControllers.clear();
+                    ClientProxy.gunEnhancedRenderer.getOtherControllers().clear();
                     lastWorld=Minecraft.getMinecraft().world;
                 }
                 //CLEARING OLD_DATA END
@@ -124,19 +124,19 @@ public class ClientTickHandler extends ForgeEvent {
                 if (time > lastSyncTime + 1000 / 144) {
                     if (lastSyncTime > 0) {
                         final float stepTick = (time - lastSyncTime) / (1000/(float)SPS);
-                        if (ClientProxy.gunEnhancedRenderer.controller != null) {
+                        if (ClientProxy.gunEnhancedRenderer.getClientController() != null) {
                             if (Minecraft.getMinecraft().player != null) {
                                 if (Minecraft.getMinecraft().player.getHeldItemMainhand()
                                         .getItem() instanceof ItemGun) {
                                     if (((ItemGun) Minecraft.getMinecraft().player.getHeldItemMainhand()
                                             .getItem()).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                                        ClientProxy.gunEnhancedRenderer.controller.onTickRender(stepTick);
+                                        ClientProxy.gunEnhancedRenderer.getClientController().onTickRender(stepTick);
                                     }
                                 }
                             }
                         }
 
-                        ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl) -> {
+                        ClientProxy.gunEnhancedRenderer.getOtherControllers().values().forEach((ctrl) -> {
                             if (ctrl.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                                 if (((ItemGun) ctrl.player.getHeldItemMainhand().getItem()).type.animationType
                                         .equals(WeaponAnimationType.ENHANCED)) {
@@ -181,13 +181,12 @@ public class ClientTickHandler extends ForgeEvent {
         /**
          *EnhancedGunRendered update currentItem 
          */
-        if (ClientProxy.gunEnhancedRenderer.controller != null) {
-            ClientProxy.gunEnhancedRenderer.controller.updateCurrentItem();
-            
-            ClientProxy.gunEnhancedRenderer.otherControllers.values().forEach((ctrl)->{
-                ctrl.updateCurrentItem();
-            });
+        if (ClientProxy.gunEnhancedRenderer.getClientController() != null) {
+            ClientProxy.gunEnhancedRenderer.getClientController().updateCurrentItem();
         }
+        ClientProxy.gunEnhancedRenderer.getOtherControllers().values().forEach((ctrl)->{
+            ctrl.updateCurrentItem();
+        });
         
         for (EntityLivingBase entity : ClientRenderHooks.weaponEnhancedAnimations.keySet()) {
             if(entity!=null) {

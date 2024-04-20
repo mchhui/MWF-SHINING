@@ -151,12 +151,12 @@ public class GunUI {
                             }
                         }
 
-                        boolean showCrosshair = ((adsSwitch < 0.6F) && (ClientProxy.gunEnhancedRenderer.controller.ADS < 0.5F));
+                        boolean showCrosshair = ((adsSwitch < 0.6F) && (ClientProxy.gunEnhancedRenderer.getClientController().ADS < 0.5F));
                         if(ClientRenderHooks.getEnhancedAnimMachine(mc.player) != null){
                             if(ClientRenderHooks.getEnhancedAnimMachine(mc.player).reloading) {
                                 showCrosshair = false;
                             }
-                            if(ClientProxy.gunEnhancedRenderer.controller.INSPECT != 1F){
+                            if(ClientProxy.gunEnhancedRenderer.getClientController().INSPECT != 1F){
                                 showCrosshair = false;
                             }
                         }
@@ -265,11 +265,11 @@ public class GunUI {
                         renderBullets(stack, null, i, j, 0,null);
                     }
                 }else {
-                    if(ClientProxy.gunEnhancedRenderer.controller!=null) {
+                    if(ClientProxy.gunEnhancedRenderer.getClientController()!=null) {
                         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(mc.player);
                         AnimationType reloadAni=anim.getReloadAnimationType();
                         if(type.acceptedAmmo!=null) {
-                            ammoStack=ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(ammoStack);
+                            ammoStack=ClientProxy.gunEnhancedRenderer.getClientController().getRenderAmmo(ammoStack);
                             ammoStack.setItemDamage(0);
                             if(reloadAni==AnimationType.RELOAD_FIRST||reloadAni==AnimationType.RELOAD_FIRST_QUICKLY||reloadAni==AnimationType.UNLOAD) {
                                 ammoStack=ItemStack.EMPTY;
@@ -279,8 +279,8 @@ public class GunUI {
                             boolean flag=true;
                             ItemStack bulletStack = new ItemStack(stack.getTagCompound().getCompoundTag("bullet"));
                             if(anim.reloading) {
-                                bulletStack=ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(bulletStack);
-                                if(ClientProxy.gunEnhancedRenderer.controller.getPlayingAnimation() ==AnimationType.POST_UNLOAD) {
+                                bulletStack=ClientProxy.gunEnhancedRenderer.getClientController().getRenderAmmo(bulletStack);
+                                if(ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() ==AnimationType.POST_UNLOAD) {
                                     //flag=false;
                                 }
                             }

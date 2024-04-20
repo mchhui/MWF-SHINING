@@ -196,7 +196,9 @@ public class AnimationController {
         } else {
             val = ADS - adsSpeed * (1 + ADS);
         }
-        RenderParameters.adsSwitch = (float)ADS;
+        if(player==Minecraft.getMinecraft().player) {
+            RenderParameters.adsSwitch = (float)ADS;  
+        }
         
         if(!isDrawing()) {
             ADS = Math.max(0, Math.min(1, val));

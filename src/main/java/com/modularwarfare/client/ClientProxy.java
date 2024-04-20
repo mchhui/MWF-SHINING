@@ -875,8 +875,8 @@ public class ClientProxy extends CommonProxy {
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
             if (gunType.type.animationType == WeaponAnimationType.ENHANCED) {
-                if(gunEnhancedRenderer.controller!=null) {
-                    gunEnhancedRenderer.controller.MODE_CHANGE=0;
+                if(gunEnhancedRenderer.getController(player, null)!=null) {
+                    gunEnhancedRenderer.getController(player, null).MODE_CHANGE=0;
                 }
             }
         }
