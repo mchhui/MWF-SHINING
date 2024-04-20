@@ -151,6 +151,11 @@ public class AnimationController {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun&&player instanceof EntityPlayer) {
                 GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
                 SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.Inspect);
+                if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
+                    && ((ItemGun)player.getHeldItemMainhand().getItem()).type.weaponSoundMap
+                        .containsKey(WeaponSoundType.InspectEmpty)) {
+                    se = type.getSound((EntityPlayer)player, WeaponSoundType.InspectEmpty);
+                }
                 if(se!=null) {
                     inspectSound=PositionedSoundRecord.getRecord(se, 1, 1);
                     Minecraft.getMinecraft().getSoundHandler().playSound(inspectSound);  
@@ -358,7 +363,11 @@ public class AnimationController {
                 Item item = player.getHeldItemMainhand().getItem();
                 if (item instanceof ItemGun) {
                     if((!(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify))&&player instanceof EntityPlayer) {
-                        ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.Draw);  
+                        if(!ItemGun.hasNextShot(player.getHeldItemMainhand())&&((ItemGun) item).type.weaponSoundMap.containsKey(WeaponSoundType.DrawEmpty)) {
+                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.DrawEmpty);  
+                        }else {
+                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.Draw);  
+                        }
                     }
                     hasPlayedDrawSound = true;
                 }

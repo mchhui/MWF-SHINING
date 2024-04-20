@@ -80,10 +80,18 @@ public class PacketExpShot extends PacketBase {
                                     if(((ItemAttachment)barrel.getItem()).type.barrel.isSuppressor) {
                                         itemGun.type.playSound(entityPlayer, WeaponSoundType.FireSuppressed, entityPlayer.getHeldItemMainhand(), entityPlayer);  
                                     }else {
-                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                        if(!itemGun.hasNextShot(entityPlayer.getHeldItemMainhand())&&itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                                            itemGun.type.playSound(entityPlayer, WeaponSoundType.FireLast, entityPlayer.getHeldItemMainhand(), entityPlayer);  
+                                        }else {
+                                            itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                        }
                                     }
                                 } else {
-                                    itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                    if(!itemGun.hasNextShot(entityPlayer.getHeldItemMainhand())&&itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.FireLast, entityPlayer.getHeldItemMainhand(), entityPlayer);  
+                                    }else {
+                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                    }
                                 }
                                 
                                 //Hands upwards when shooting

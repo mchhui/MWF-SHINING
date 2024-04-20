@@ -102,6 +102,8 @@ public enum WeaponSoundType {
     @SerializedName("weaponUnload") Unload("weaponUnload", 12, "unload"),
 
     @SerializedName("weaponDraw") Draw("weaponDraw", 12, "draw"),
+    
+    @SerializedName("weaponDrawEmpty") DrawEmpty("weaponDrawEmpty", 12, null),
 
 
     @SerializedName("weaponPostUnload") PostUnload("weaponPostUnload", 12, null),
@@ -118,6 +120,7 @@ public enum WeaponSoundType {
     @SerializedName("weaponModeSwitch") ModeSwitch("weaponModeSwitch", 8, "defweaponmodeswitch"),
     
     @SerializedName("inspect") Inspect("inspect",8,null),
+    @SerializedName("inspectEmpty") InspectEmpty("inspectEmpty",8,null),
 
     /**
      * The sound of flyby
