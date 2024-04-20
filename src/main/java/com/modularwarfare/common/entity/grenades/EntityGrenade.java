@@ -137,6 +137,7 @@ public class EntityGrenade extends Entity {
 
     public void explode() {
         if (!this.world.isRemote && !exploded) {
+            this.world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.EXPLOSIONS_CLOSE, SoundCategory.BLOCKS, 2.0f, 1.0f);
             if (grenadeType != null) {
 
                 Explosion explosion = new Explosion(this.world, grenadeType.throwerVulnerable ? null : thrower, posX,
