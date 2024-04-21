@@ -5,6 +5,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.SoftOverride;
 
 import com.modularwarfare.ModConfig;
+import com.modularwarfare.core.MWFCoreHooks;
 import com.modularwarfare.utility.OptifineHelper;
 
 import net.minecraft.client.Minecraft;
@@ -21,15 +22,6 @@ import net.optifine.shaders.ShadersRender;
 public class MixinRenderPlayer {
     @Overwrite
     protected void renderLivingAt(EntityLivingBase entityLivingBaseIn, double x, double y, double z) {
-        GlStateManager.translate((float)x, (float)y, (float)z);
-        if(OptifineHelper.isShadersEnabled()) {
-            if(Shaders.isShadowPass&&MWFOptifineShadesHelper.getPreShadowPassThirdPersonView()==0) {
-                if (entityLivingBaseIn == Minecraft.getMinecraft().player) {
-                    Vec3d vec = new Vec3d(0, 0, -ModConfig.INSTANCE.general.playerShadowOffset);
-                    vec = vec.rotateYaw((float)Math.toRadians(-Minecraft.getMinecraft().player.rotationYaw));
-                    GlStateManager.translate(vec.x, vec.y, vec.z);
-                }      
-            }
-        }
+        MWFCoreHooks.renderLivingAtForRenderPlayer(entityLivingBaseIn, x, y, z);
     }
 }

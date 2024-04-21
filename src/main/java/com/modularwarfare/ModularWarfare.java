@@ -552,6 +552,17 @@ public class ModularWarfare {
         new ServerTickHandler();
         
         PROXY.load();
+        
+        boolean bukkitOnline=false;
+        try {
+            Class.forName("org.bukkit.Bukkit");
+            bukkitOnline=true;
+        } catch (ClassNotFoundException e) {
+        }
+//        bukkitOnline=true;
+        if(bukkitOnline) {
+            MinecraftForge.EVENT_BUS.register(BukkitHelper.class);
+        }
 
         NETWORK = new NetworkHandler();
         NETWORK.initialise();

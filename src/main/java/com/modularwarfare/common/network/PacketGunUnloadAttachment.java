@@ -1,6 +1,7 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.WeaponAttachmentEvent;
 import com.modularwarfare.common.guns.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -9,6 +10,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class PacketGunUnloadAttachment extends PacketBase {
@@ -42,6 +44,10 @@ public class PacketGunUnloadAttachment extends PacketBase {
             if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 ItemStack gunStack = entityPlayer.getHeldItemMainhand();
                 InventoryPlayer inventory = entityPlayer.inventory;
+                WeaponAttachmentEvent.Unload event=new WeaponAttachmentEvent.Unload(entityPlayer, gunStack, AttachmentPresetEnum.getAttachment(attachmentType), unloadAll);
+                if(MinecraftForge.EVENT_BUS.post(event)) {
+                    return;
+                }
                 if (unloadAll) {
                     for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
                         ItemStack itemStack = GunType.getAttachment(gunStack, attachment);

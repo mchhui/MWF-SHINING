@@ -1,6 +1,7 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.WeaponAttachmentEvent;
 import com.modularwarfare.common.guns.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -10,6 +11,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.common.MinecraftForge;
 
 public class PacketGunAddAttachment extends PacketBase {
 
@@ -40,9 +42,13 @@ public class PacketGunAddAttachment extends PacketBase {
                 ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
                 GunType gunType = itemGun.type;
                 InventoryPlayer inventory = entityPlayer.inventory;
-
-                if (inventory.getStackInSlot(slot) != ItemStack.EMPTY) {
-                    ItemStack attachStack = inventory.getStackInSlot(slot);
+                ItemStack attachStack = inventory.getStackInSlot(slot);
+                WeaponAttachmentEvent.Load event=new WeaponAttachmentEvent.Load(entityPlayer,gunStack, attachStack);
+                if(MinecraftForge.EVENT_BUS.post(event)) {
+                    return;
+                }
+                attachStack=event.attach;
+                if (attachStack != null&&!attachStack.isEmpty()) {
                     if (attachStack.getItem() instanceof ItemAttachment) {
                         ItemAttachment itemAttachment = (ItemAttachment) attachStack.getItem();
                         AttachmentType attachType = itemAttachment.type;

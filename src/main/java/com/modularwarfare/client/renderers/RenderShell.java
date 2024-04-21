@@ -50,7 +50,7 @@ public class RenderShell extends Render<EntityShell> {
         GlStateManager.rotate(-entityIn.rotationPitch, 1.0F, 0.0F, 0.0F);
 
         GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-        final float worldScale = 1F / 16F;
+        GlStateManager.scale(1/16f, 1/16f, 1/16f);
 
 
         if (ModularWarfare.bulletTypes.containsKey(entityIn.getBulletName())) {
@@ -75,7 +75,7 @@ public class RenderShell extends Render<EntityShell> {
                     ClientRenderHooks.customRenderers[1].bindTexture("bullets",path);
                 }  
             }
-            shell.renderShell(worldScale);
+            shell.renderShell(1);
         }
 
         GlStateManager.enableLighting();

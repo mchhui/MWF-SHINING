@@ -14,8 +14,10 @@ public enum AnimationType {
     DEFAULT("default"),
     DEFAULT_EMPTY("defaultEmpty"),
     DRAW("draw"),
+    DRAW_EMPTY("drawEmpty"),
     AIM("aim"),
     INSPECT("inspect"),
+    INSPECT_EMPTY("inspectEmpty"),
     PRE_LOAD("preLoad"),
     LOAD("load"),
     POST_LOAD("postLoad"),
@@ -34,6 +36,7 @@ public enum AnimationType {
     POST_RELOAD_EMPTY("postReloadEmpty"),
     PRE_FIRE("preFire"),
     FIRE("fire"),
+    FIRE_LAST("fireLast"),
     POST_FIRE("postFire"),
     MODE_CHANGE("modeChange"),
     SPRINT("sprint");

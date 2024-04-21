@@ -229,7 +229,11 @@ public class EnhancedStateMachine {
     public AnimationType getShootingAnimationType() {
         AnimationType aniType = AnimationType.PRE_FIRE;
         if (shootingPhase == Phase.FIRST) {
-            aniType = AnimationType.FIRE;
+            if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST)) {
+                aniType = AnimationType.FIRE_LAST;
+            } else {
+                aniType = AnimationType.FIRE;
+            }
         } else if (shootingPhase == Phase.POST) {
             aniType = AnimationType.POST_FIRE;
         }

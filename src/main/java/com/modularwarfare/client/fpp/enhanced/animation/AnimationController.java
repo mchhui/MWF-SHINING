@@ -76,7 +76,7 @@ public class AnimationController {
             AnimationType.RELOAD_SECOND_QUICKLY, AnimationType.POST_RELOAD, AnimationType.POST_RELOAD_EMPTY,};
     
     private static AnimationType[] FIRE_TYPE=new AnimationType[] {
-            AnimationType.FIRE,
+            AnimationType.FIRE,AnimationType.FIRE_LAST,
             AnimationType.PRE_FIRE, AnimationType.POST_FIRE, 
     };
 
@@ -141,11 +141,14 @@ public class AnimationController {
         
         /** DRAW **/
         double drawSpeed = config.animations.get(AnimationType.DRAW).getSpeed(config.FPS) * stepTick;
+        if(playback.action==AnimationType.DRAW_EMPTY) {
+            drawSpeed = config.animations.get(AnimationType.DRAW_EMPTY).getSpeed(config.FPS) * stepTick;
+        }
         DRAW = Math.max(0, DRAW + drawSpeed);
         if(DRAW>1F) {
             DRAW=1F;
         }
-
+//        System.out.println(INSPECT);
         /** INSPECT **/
         if (INSPECT == 0) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun&&player instanceof EntityPlayer) {
@@ -172,6 +175,9 @@ public class AnimationController {
             INSPECT=1;
         }else {
             double modeChangeVal = config.animations.get(AnimationType.INSPECT).getSpeed(config.FPS) * stepTick;
+            if(playback.action==AnimationType.INSPECT_EMPTY) {
+                modeChangeVal = config.animations.get(AnimationType.INSPECT_EMPTY).getSpeed(config.FPS) * stepTick;
+            }
             INSPECT+=modeChangeVal;
             if(INSPECT>=1) {
                 INSPECT=1;
@@ -373,6 +379,11 @@ public class AnimationController {
                 }
             }
             this.playback.action = AnimationType.DRAW;
+            if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.DRAW_EMPTY)) {
+                    this.playback.action = AnimationType.DRAW_EMPTY;  
+                }
+            }
         }else if (RELOAD > 0F) {
             resetView();
             this.playback.action = anim.getReloadAnimationType();
@@ -381,6 +392,11 @@ public class AnimationController {
             this.playback.action = anim.getShootingAnimationType();
         } else if (INSPECT  < 1) {
             this.playback.action = AnimationType.INSPECT;
+            if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.INSPECT_EMPTY)) {
+                    this.playback.action = AnimationType.INSPECT_EMPTY;  
+                }
+            }
         } else if (MODE_CHANGE  < 1) {
             this.playback.action = AnimationType.MODE_CHANGE;
         } else if (this.playback.hasPlayed||(this.playback.action != AnimationType.DEFAULT&&this.playback.action !=AnimationType.DEFAULT_EMPTY)) {
@@ -412,7 +428,13 @@ public class AnimationController {
             case DRAW:
                 this.playback.updateTime(DRAW);
                 break;
+            case DRAW_EMPTY:
+                this.playback.updateTime(DRAW);
+                break;
             case INSPECT:
+                this.playback.updateTime(INSPECT);
+                break;
+            case INSPECT_EMPTY:
                 this.playback.updateTime(INSPECT);
                 break;
             case MODE_CHANGE:

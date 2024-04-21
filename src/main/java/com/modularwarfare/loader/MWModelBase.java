@@ -68,6 +68,7 @@ public class MWModelBase extends ModelBase implements IMWModel{
 
     @SideOnly(Side.CLIENT)
     public void renderPart(String part, float f) {
+//        System.out.println(part.equals("shellModel"));
         if (this.staticModel != null) {
             if (this.staticModel.getPart(part) != null) {
                 render(this.staticModel.getPart(part), f);
