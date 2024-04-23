@@ -222,9 +222,7 @@ public class PacketExpGunFire extends PacketBase {
 
                                             //BULLET END
                                             boolean flag=false;
-                                            DamageSource damageSource=DamageSource.causePlayerDamage(entityPlayer).setProjectile();
-                                           
-                                            
+                                            DamageSource damageSource = DamageSource.GENERIC;
                                             if(bulletItem.type.isFireDamage) {
                                                 damageSource.setFireDamage();
                                             }
