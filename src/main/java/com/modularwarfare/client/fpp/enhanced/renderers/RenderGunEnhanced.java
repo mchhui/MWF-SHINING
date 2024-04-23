@@ -556,7 +556,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 }else if(fireMode==WeaponFireMode.BURST){
                     model.renderPart("selector_burst");
                 }
-               
                 
                 /**
                  * ammo and bullet
