@@ -39,7 +39,9 @@ public enum AnimationType {
     FIRE_LAST("fireLast"),
     POST_FIRE("postFire"),
     MODE_CHANGE("modeChange"),
-    SPRINT("sprint");
+    SPRINT("sprint"),
+    PRIMARY_SKILL("primarySkill"),
+    SECONDARY_SKILL("secondarySkill");
 
     public String serializedName;
     private AnimationType(String name) {
