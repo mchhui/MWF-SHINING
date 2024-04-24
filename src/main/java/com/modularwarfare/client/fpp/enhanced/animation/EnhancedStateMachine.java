@@ -235,7 +235,11 @@ public class EnhancedStateMachine {
                 aniType = AnimationType.FIRE;
             }
         } else if (shootingPhase == Phase.POST) {
-            aniType = AnimationType.POST_FIRE;
+            if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_EMPTY)) {
+                aniType = AnimationType.POST_FIRE_EMPTY;
+            } else {
+                aniType = AnimationType.POST_FIRE;
+            }
         }
         if (isFailedShoot && shootingPhase != Phase.PRE) {
             return null;
