@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.modularwarfare.common.guns.ItemGun;
 import mchhui.modularmovements.ModularMovements;
+import mchhui.modularmovements.ModularMovementsConfig;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
 import mchhui.modularmovements.tactical.server.ServerListener;
@@ -228,8 +229,7 @@ public class ClientLitener {
                     if (Minecraft.getMinecraft().player.onGround) {
                         clientPlayerState.enableCrawling();
                         if (Minecraft.getMinecraft().player.isSprinting()) {
-                            Vec3d vec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,
-                                    clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
+                            Vec3d vec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
                             Minecraft.getMinecraft().player.motionX = vec3d.x * clientPlayerSitMoveAmplifierCharging;
                             Minecraft.getMinecraft().player.motionY = 0.35 * clientPlayerSitMoveAmplifierCharging;
                             Minecraft.getMinecraft().player.motionZ = vec3d.z * clientPlayerSitMoveAmplifierCharging;
@@ -627,6 +627,18 @@ public class ClientLitener {
                                 clientPlayer.posX + d0, clientPlayer.posY + 1.8, clientPlayer.posZ + d0))) {
                     clientPlayerState.disableCrawling();
                     clientPlayerState.disableSit();
+                }
+            };
+            if (event.getMovementInput().moveForward != 0) {
+                if (isButtonDown(Minecraft.getMinecraft().gameSettings.keyBindSprint.getKeyCode()) && clientPlayer.onGround && clientPlayer.motionY < 0 && ModularMovements.CONFIG.crawl.sprintCancel) {
+                    if (!Minecraft.getMinecraft().player.isSneaking()) {
+                        double d0 = 0.3;
+                        if (!clientPlayer.world.collidesWithAnyBlock(
+                                new AxisAlignedBB(clientPlayer.posX - d0, clientPlayer.posY, clientPlayer.posZ - d0,
+                                        clientPlayer.posX + d0, clientPlayer.posY + 1.8, clientPlayer.posZ + d0))) {
+                            clientPlayerState.disableCrawling();;
+                        }
+                    }
                 }
             }
         }
