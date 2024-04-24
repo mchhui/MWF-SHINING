@@ -38,6 +38,7 @@ public class ModularMovementsConfig {
     public static class Crawl {
         public boolean blockView = false;
         public float blockAngle = 190;
+        public boolean sprintCancel = true;
     }
 
     public static class Cooldown {

@@ -38,6 +38,7 @@ public enum AnimationType {
     FIRE("fire"),
     FIRE_LAST("fireLast"),
     POST_FIRE("postFire"),
+    POST_FIRE_EMPTY("postFireEmpty"),
     MODE_CHANGE("modeChange"),
     SPRINT("sprint"),
     PRIMARY_SKILL("primarySkill"),
