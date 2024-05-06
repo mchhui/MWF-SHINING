@@ -11,22 +11,35 @@ public class ActionPlayback {
     public double time;
 
     public boolean hasPlayed;
+    
+    private AnimationController animationController;
 
     private GunEnhancedRenderConfig config;
 
-    public ActionPlayback(GunEnhancedRenderConfig config){
+    public ActionPlayback(AnimationController animationController, GunEnhancedRenderConfig config){
+        this.animationController=animationController;
         this.config = config;
     }
 
     public void updateTime(double alpha){
-        if(config.animations.get(action)==null) {
-            return;
+        if (action == AnimationType.CUSTOM) {
+            double startTime = animationController.startTime * 1/config.FPS;
+            double endTime = animationController.endTime * 1/config.FPS;
+            this.time = Interpolation.LINEAR.interpolate(startTime, endTime, alpha);
+            if(alpha>=1) {
+                hasPlayed=true;
+            }else {
+                hasPlayed=false;
+            }
+        } else {
+            if (config.animations.get(action) == null) {
+                return;
+            }
+            double startTime = config.animations.get(action).getStartTime(config.FPS);
+            double endTime = config.animations.get(action).getEndTime(config.FPS);
+            this.time = Interpolation.LINEAR.interpolate(startTime, endTime, alpha);
+            checkPlayed();
         }
-        double startTime = config.animations.get(action).getStartTime(config.FPS);
-        double endTime = config.animations.get(action).getEndTime(config.FPS);
-        this.time = Interpolation.LINEAR.interpolate(startTime, endTime, alpha);
-        checkPlayed();
-        //System.out.println(this.time-endTime);
     }
     
     public boolean checkPlayed() {

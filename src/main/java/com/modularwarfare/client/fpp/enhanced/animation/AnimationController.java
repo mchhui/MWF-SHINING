@@ -55,6 +55,7 @@ public class AnimationController {
     public double INSPECT=1;
     public double FIRE;
     public double MODE_CHANGE;
+    public double CUSTOM;
     
     public long sprintCoolTime=0;
     public long sprintLoopCoolTime=0;
@@ -67,6 +68,11 @@ public class AnimationController {
 
     public boolean hasPlayedDrawSound = true;
     public ISound inspectSound=null;
+    public double startTime;
+    public double endTime;
+    public double customAnimationSpeed=1;
+    public boolean customAnimationReload=false;
+    public boolean customAnimationFire=false;
 
     private static AnimationType[] RELOAD_TYPE =
         new AnimationType[] {AnimationType.PRE_LOAD, AnimationType.LOAD, AnimationType.POST_LOAD,
@@ -78,12 +84,11 @@ public class AnimationController {
     private static AnimationType[] FIRE_TYPE=new AnimationType[] {
             AnimationType.FIRE,AnimationType.FIRE_LAST,
             AnimationType.PRE_FIRE, AnimationType.POST_FIRE, 
-            AnimationType.POST_FIRE_EMPTY,
     };
 
     public AnimationController(EntityLivingBase player,GunEnhancedRenderConfig config){
         this.config = config;
-        this.playback = new ActionPlayback(config);
+        this.playback = new ActionPlayback(this,config);
         this.playback.action = AnimationType.DEFAULT;
         this.player = player;
     }
@@ -184,7 +189,13 @@ public class AnimationController {
                 INSPECT=1;
             }
         }
-
+        if(CUSTOM<1) {
+            CUSTOM+=customAnimationSpeed;
+            if(CUSTOM>=1) {
+                CUSTOM=1;
+            }
+        }
+//        System.out.println(customAnimationSpeed);
         /** ADS **/
         boolean aimChargeMisc = ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
         double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * stepTick;
@@ -365,7 +376,10 @@ public class AnimationController {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         boolean flag=nextResetDefault;
         nextResetDefault=false;
-        if (DRAW < 1F) {
+        if (CUSTOM < 1F) {
+            resetView();
+            this.playback.action = AnimationType.CUSTOM;
+        } else if (DRAW < 1F) {
             if(!hasPlayedDrawSound){
                 Item item = player.getHeldItemMainhand().getItem();
                 if (item instanceof ItemGun) {
@@ -420,6 +434,9 @@ public class AnimationController {
             return;
         }
         switch (this.playback.action){
+            case CUSTOM:
+                this.playback.updateTime(CUSTOM);
+                break;
             case DEFAULT:
                 this.playback.updateTime(DEFAULT);
                 break;
@@ -515,7 +532,18 @@ public class AnimationController {
                 if(ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
                     return false;
                 }
+                if (((ItemGun)item).type.restrictingFireAnimation || ((ItemGun)item).type.firingReload
+                    || !ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+                    for (AnimationType fireType : FIRE_TYPE) {
+                        if (this.playback.action == fireType) {
+                            return false;
+                        }
+                    }
+                }
             }
+        }
+        if(!customAnimationReload&&CUSTOM<1) {
+            return false;
         }
         return true;
     }
@@ -533,7 +561,18 @@ public class AnimationController {
                 if(ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
                     return false;
                 }
+                if (((ItemGun)item).type.restrictingFireAnimation
+                    || !ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+                    for (AnimationType fireType : FIRE_TYPE) {
+                        if (this.playback.action == fireType) {
+                            return false;
+                        }
+                    }
+                }
             }
+        }
+        if(!customAnimationFire&&CUSTOM<1) {
+            return false;
         }
         return true;
     }

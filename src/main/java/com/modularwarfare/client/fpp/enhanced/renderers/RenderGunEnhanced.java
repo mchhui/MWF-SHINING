@@ -911,7 +911,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     }
                 }
                 
-                if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType() == AnimationType.FIRE && !player.isInWater()) {
+                if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType().showFlashModel() && !player.isInWater()) {
                     GlStateManager.pushMatrix();
                     ItemStack itemStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
                     if (itemStack != null && itemStack.getItem() != Items.AIR) {
@@ -1495,7 +1495,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float bx=OpenGlHelper.lastBrightnessX;
         float by=OpenGlHelper.lastBrightnessY;
         
-        if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType() == AnimationType.FIRE && !player.isInWater()) {
+        if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType().showFlashModel() && !player.isInWater()) {
             GlStateManager.pushMatrix();
             ItemStack itemStack = GunType.getAttachment(demoStack, AttachmentPresetEnum.Barrel);
             if (itemStack != null && itemStack.getItem() != Items.AIR) {

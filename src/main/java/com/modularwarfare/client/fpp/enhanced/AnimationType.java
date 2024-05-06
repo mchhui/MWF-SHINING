@@ -41,12 +41,31 @@ public enum AnimationType {
     POST_FIRE_EMPTY("postFireEmpty"),
     MODE_CHANGE("modeChange"),
     SPRINT("sprint"),
+    CUSTOM("custom"),
+    CUSTOM1("custom1"),
+    CUSTOM2("custom2"),
+    CUSTOM3("custom3"),
+    CUSTOM4("custom4"),
+    CUSTOM5("custom5"),
+    CUSTOM6("custom6"),
+    CUSTOM7("custom7"),
+    CUSTOM8("custom8"),
     PRIMARY_SKILL("primarySkill"),
     SECONDARY_SKILL("secondarySkill");
 
     public String serializedName;
     private AnimationType(String name) {
         serializedName=name;
+    }
+    
+    public boolean showFlashModel() {
+        if(this==FIRE) {
+            return true;
+        }
+        if(this==FIRE_LAST) {
+            return true;
+        }
+        return false;
     }
     
     public static class AnimationTypeJsonAdapter extends TypeAdapter<AnimationType>{

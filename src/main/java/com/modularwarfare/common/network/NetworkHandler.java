@@ -48,7 +48,10 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
      */
     private ConcurrentLinkedQueue<PacketBase> receivedPacketsClient = new ConcurrentLinkedQueue<PacketBase>();
     private ConcurrentHashMap<String, ConcurrentLinkedQueue<PacketBase>> receivedPacketsServer = new ConcurrentHashMap<String, ConcurrentLinkedQueue<PacketBase>>();
-
+    
+    //这种同步方法可能性能不是最好的 但还算够用
+    private Object lock=new Object();
+    
     /**
      * Registers a packet with the handler
      */
@@ -72,88 +75,96 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
 
     @Override
     protected void encode(ChannelHandlerContext ctx, PacketBase msg, List<Object> out) throws Exception {
-        try {
-            //Define a new buffer to store our data upon encoding
-            ByteBuf encodedData = Unpooled.buffer();
-            //Get the packet class
-            Class<? extends PacketBase> cl = msg.getClass();
+        synchronized(lock) {
+            try {
+                //Define a new buffer to store our data upon encoding
+                ByteBuf encodedData = Unpooled.buffer();
+                //Get the packet class
+                Class<? extends PacketBase> cl = msg.getClass();
 
-            //If this packet has not been registered by our handler, reject it
-            if (!packets.contains(cl))
-                throw new NullPointerException("Packet not registered : " + cl.getCanonicalName());
+                //If this packet has not been registered by our handler, reject it
+                if (!packets.contains(cl))
+                    throw new NullPointerException("Packet not registered : " + cl.getCanonicalName());
 
-            //Like a packet ID. Stored as the first entry in the packet code for recognition
-            byte discriminator = (byte) packets.indexOf(cl);
-            encodedData.writeByte(discriminator);
-            //Get the packet class to encode our packet
-            msg.encodeInto(ctx, encodedData);
+                //Like a packet ID. Stored as the first entry in the packet code for recognition
+                byte discriminator = (byte) packets.indexOf(cl);
+                encodedData.writeByte(discriminator);
+                //Get the packet class to encode our packet
+                msg.encodeInto(ctx, encodedData);
 
-            //Convert our packet into a Forge packet to get it through the Netty system
-            FMLProxyPacket proxyPacket = new FMLProxyPacket(new PacketBuffer(encodedData.copy()), ctx.channel().attr(NetworkRegistry.FML_CHANNEL).get());
-            //Add our packet to the outgoing packet queue
-            out.add(proxyPacket);
-        } catch (Exception e) {
-            ModularWarfare.LOGGER.error("ERROR encoding packet");
-            ModularWarfare.LOGGER.throwing(e);
+                //Convert our packet into a Forge packet to get it through the Netty system
+                FMLProxyPacket proxyPacket = new FMLProxyPacket(new PacketBuffer(encodedData.copy()), ctx.channel().attr(NetworkRegistry.FML_CHANNEL).get());
+                //Add our packet to the outgoing packet queue
+                out.add(proxyPacket);
+            } catch (Exception e) {
+                ModularWarfare.LOGGER.error("ERROR encoding packet");
+                ModularWarfare.LOGGER.throwing(e);
+            }  
         }
     }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, FMLProxyPacket msg, List<Object> out) throws Exception {
-        try {
-            //Get the encoded data from the incoming packet
-            ByteBuf encodedData = msg.payload();
-            //Get the class for interpreting this packet
-            byte discriminator = encodedData.readByte();
-            Class<? extends PacketBase> cl = packets.get(discriminator);
+        synchronized(lock) {
+            try {
+                //Get the encoded data from the incoming packet
+                ByteBuf encodedData = msg.payload();
+                //Get the class for interpreting this packet
+                byte discriminator = encodedData.readByte();
+                Class<? extends PacketBase> cl = packets.get(discriminator);
 
-            //If this discriminator returns no class, reject it
-            if (cl == null)
-                throw new NullPointerException("Packet not registered for discriminator : " + discriminator);
+                //If this discriminator returns no class, reject it
+                if (cl == null)
+                    throw new NullPointerException("Packet not registered for discriminator : " + discriminator);
 
-            //Create an empty packet and decode our packet data into it
-            PacketBase packet = cl.newInstance();
-            packet.decodeInto(ctx, encodedData.slice());
-            //Check the side and handle our packet accordingly
-            switch (FMLCommonHandler.instance().getEffectiveSide()) {
-                case CLIENT: {
-                    receivedPacketsClient.offer(packet);
-                    //packet.handleClientSide(getClientPlayer());
-                    break;
+                //Create an empty packet and decode our packet data into it
+                PacketBase packet = cl.newInstance();
+                packet.decodeInto(ctx, encodedData.slice());
+                //Check the side and handle our packet accordingly
+                switch (FMLCommonHandler.instance().getEffectiveSide()) {
+                    case CLIENT: {
+                        receivedPacketsClient.offer(packet);
+                        //packet.handleClientSide(getClientPlayer());
+                        break;
+                    }
+                    case SERVER: {
+                        INetHandler netHandler = ctx.channel().attr(NetworkRegistry.NET_HANDLER).get();
+                        EntityPlayer player = ((NetHandlerPlayServer) netHandler).player;
+                        if (!receivedPacketsServer.containsKey(player.getName()))
+                            receivedPacketsServer.put(player.getName(), new ConcurrentLinkedQueue<PacketBase>());
+                        receivedPacketsServer.get(player.getName()).offer(packet);
+                        //packet.handleServerSide();
+                        break;
+                    }
                 }
-                case SERVER: {
-                    INetHandler netHandler = ctx.channel().attr(NetworkRegistry.NET_HANDLER).get();
-                    EntityPlayer player = ((NetHandlerPlayServer) netHandler).player;
-                    if (!receivedPacketsServer.containsKey(player.getName()))
-                        receivedPacketsServer.put(player.getName(), new ConcurrentLinkedQueue<PacketBase>());
-                    receivedPacketsServer.get(player.getName()).offer(packet);
-                    //packet.handleServerSide();
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            ModularWarfare.LOGGER.error("ERROR decoding packet");
-            ModularWarfare.LOGGER.throwing(e);
+            } catch (Exception e) {
+                ModularWarfare.LOGGER.error("ERROR decoding packet");
+                ModularWarfare.LOGGER.throwing(e);
+            }  
         }
     }
 
     public void handleClientPackets() {
-        for (PacketBase packet = receivedPacketsClient.poll(); packet != null; packet = receivedPacketsClient.poll()) {
-            packet.handleClientSide(getClientPlayer());
+        synchronized(lock) {
+            for (PacketBase packet = receivedPacketsClient.poll(); packet != null; packet = receivedPacketsClient.poll()) {
+                packet.handleClientSide(getClientPlayer());
+            }  
         }
     }
 
     public void handleServerPackets() {
-        for (String playerName : receivedPacketsServer.keySet()) {
-            ConcurrentLinkedQueue<PacketBase> receivedPacketsFromPlayer = receivedPacketsServer.get(playerName);
-            EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(playerName);
-            if(player == null) {
-                receivedPacketsFromPlayer.clear();
-                continue;
-            }
-            for (PacketBase packet = receivedPacketsFromPlayer.poll(); packet != null; packet = receivedPacketsFromPlayer.poll()) {
-                packet.handleServerSide(player);
-            }
+        synchronized(lock) {
+            for (String playerName : receivedPacketsServer.keySet()) {
+                ConcurrentLinkedQueue<PacketBase> receivedPacketsFromPlayer = receivedPacketsServer.get(playerName);
+                EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(playerName);
+                if(player == null) {
+                    receivedPacketsFromPlayer.clear();
+                    continue;
+                }
+                for (PacketBase packet = receivedPacketsFromPlayer.poll(); packet != null; packet = receivedPacketsFromPlayer.poll()) {
+                    packet.handleServerSide(player);
+                }
+            }  
         }
     }
 
@@ -199,6 +210,8 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketOtherPlayerAnimation.class);
         registerPacket(PacketBackpackElytraStart.class);
         registerPacket(PacketBackpackJet.class);
+        
+        registerPacket(PacketCustomAnimation.class);
 
     }
 

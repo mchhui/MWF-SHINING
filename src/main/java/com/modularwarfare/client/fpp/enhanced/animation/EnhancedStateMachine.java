@@ -242,7 +242,7 @@ public class EnhancedStateMachine {
             }
         }
         if (isFailedShoot && shootingPhase != Phase.PRE) {
-            return null;
+            return AnimationType.DEFAULT;
         }
         return aniType;
     }

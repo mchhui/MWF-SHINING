@@ -23,6 +23,7 @@ import com.modularwarfare.common.commands.CommandClear;
 import com.modularwarfare.common.commands.CommandDebug;
 import com.modularwarfare.common.commands.kits.CommandKit;
 import com.modularwarfare.common.commands.CommandNBT;
+import com.modularwarfare.common.commands.CommandPlay;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
 import com.modularwarfare.common.entity.decals.EntityBulletHole;
 import com.modularwarfare.common.entity.decals.EntityShell;
@@ -593,6 +594,7 @@ public class ModularWarfare {
         event.registerServerCommand(new CommandNBT());
         event.registerServerCommand(new CommandDebug());
         event.registerServerCommand(new CommandKit());
+        event.registerServerCommand(new CommandPlay());
     }
 
     /**
