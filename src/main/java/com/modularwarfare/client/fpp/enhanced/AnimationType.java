@@ -42,6 +42,7 @@ public enum AnimationType {
     MODE_CHANGE("modeChange"),
     SPRINT("sprint"),
     CUSTOM("custom"),
+    //以下是内部机以外的动画 可用于自定义动画
     CUSTOM1("custom1"),
     CUSTOM2("custom2"),
     CUSTOM3("custom3"),

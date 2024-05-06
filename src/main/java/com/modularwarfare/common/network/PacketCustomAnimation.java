@@ -28,6 +28,7 @@ import java.util.UUID;
 public class PacketCustomAnimation extends PacketBase {
 
     public UUID living;
+    public String name;
     public double startTime;
     public double endTime;
     public float speedFactor;
@@ -39,9 +40,10 @@ public class PacketCustomAnimation extends PacketBase {
 
 
 
-    public PacketCustomAnimation(UUID living, double startTime,double endTime, float speedFactor, boolean allowReload,
+    public PacketCustomAnimation(UUID living,String name, double startTime,double endTime, float speedFactor, boolean allowReload,
         boolean allowFire) {
         this.living = living;
+        this.name=""+name;
         this.startTime=startTime;
         this.endTime=endTime;
         this.speedFactor = speedFactor;
@@ -55,6 +57,7 @@ public class PacketCustomAnimation extends PacketBase {
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buffer=new PacketBuffer(data);
         buffer.writeUniqueId(living);
+        buffer.writeString(name);
         buffer.writeDouble(startTime);
         buffer.writeDouble(endTime);
         buffer.writeFloat(speedFactor);
@@ -66,6 +69,7 @@ public class PacketCustomAnimation extends PacketBase {
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buffer=new PacketBuffer(data);
         living=buffer.readUniqueId();
+        name=buffer.readString(Short.MAX_VALUE);
         startTime=buffer.readDouble();
         endTime=buffer.readDouble();
         speedFactor=buffer.readFloat();
@@ -83,6 +87,7 @@ public class PacketCustomAnimation extends PacketBase {
     public void handleClientSide(EntityPlayer entityPlayer) {
         AnimationController controller=ClientProxy.gunEnhancedRenderer.getController(Minecraft.getMinecraft().world.getPlayerEntityByUUID(living), null);
         controller.CUSTOM=0;
+        controller.customAnimation=name;
         controller.startTime=startTime;
         controller.endTime=endTime;
         controller.customAnimationSpeed=speedFactor;

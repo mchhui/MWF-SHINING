@@ -1,6 +1,7 @@
 package com.modularwarfare.client.fpp.enhanced.animation;
 
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.utility.maths.Interpolation;
 
@@ -24,7 +25,13 @@ public class ActionPlayback {
     public void updateTime(double alpha){
         if (action == AnimationType.CUSTOM) {
             double startTime = animationController.startTime * 1/config.FPS;
-            double endTime = animationController.endTime * 1/config.FPS;
+            double endTime = animationController.endTime * 1/config.FPS; 
+            try {
+                AnimationType type=AnimationTypeJsonAdapter.fromString(animationController.customAnimation);  
+                startTime = config.animations.get(type).getStartTime(config.FPS);
+                endTime = config.animations.get(type).getEndTime(config.FPS);
+            }catch(Exception e) {
+            }
             this.time = Interpolation.LINEAR.interpolate(startTime, endTime, alpha);
             if(alpha>=1) {
                 hasPlayed=true;

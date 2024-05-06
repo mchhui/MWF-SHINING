@@ -26,13 +26,24 @@ public class CommandPlay extends CommandBase {
     }
 
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-        EntityPlayerMP player=getPlayer(server, sender, args[0]);
-        double s=Double.valueOf(args[1]);
-        double e=Double.valueOf(args[2]);
-        float speedFactor=Float.valueOf(args[3]);
-        boolean allowReload=Boolean.valueOf(args[4]);
-        boolean allowFire=Boolean.valueOf(args[5]);
-        ModularWarfare.NETWORK.sendTo(new PacketCustomAnimation(player.getUniqueID(), s,e, speedFactor, allowReload, allowFire), player);
+        EntityPlayerMP player = getPlayer(server, sender, args[0]);
+        if(args.length==6) {
+            double s = Double.valueOf(args[1]);
+            double e = Double.valueOf(args[2]);
+            float speedFactor = Float.valueOf(args[3]);
+            boolean allowReload = Boolean.valueOf(args[4]);
+            boolean allowFire = Boolean.valueOf(args[5]);
+            ModularWarfare.NETWORK.sendTo(
+                new PacketCustomAnimation(player.getUniqueID(), "", s, e, speedFactor, allowReload, allowFire), player);   
+        }
+        if(args.length==5) {
+            String name=args[1];
+            float speedFactor = Float.valueOf(args[2]);
+            boolean allowReload = Boolean.valueOf(args[3]);
+            boolean allowFire = Boolean.valueOf(args[4]);
+            ModularWarfare.NETWORK.sendTo(
+                new PacketCustomAnimation(player.getUniqueID(), ""+name, 0, 0, speedFactor, allowReload, allowFire), player);   
+        }
     }
 
 }

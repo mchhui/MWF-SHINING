@@ -6,6 +6,7 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -68,6 +69,7 @@ public class AnimationController {
 
     public boolean hasPlayedDrawSound = true;
     public ISound inspectSound=null;
+    public String customAnimation="null";
     public double startTime;
     public double endTime;
     public double customAnimationSpeed=1;
@@ -190,7 +192,16 @@ public class AnimationController {
             }
         }
         if(CUSTOM<1) {
-            CUSTOM+=customAnimationSpeed;
+            try {
+                AnimationType type=AnimationTypeJsonAdapter.fromString(customAnimation);  
+                CUSTOM+=customAnimationSpeed*config.animations.get(type).getSpeed(config.FPS) * stepTick;
+            }catch(Exception e) {
+                double a=(endTime/config.FPS)-(startTime/config.FPS);
+                if(a<=0) {
+                    a=1;
+                }
+                CUSTOM+=customAnimationSpeed/a*stepTick;
+            }
             if(CUSTOM>=1) {
                 CUSTOM=1;
             }
