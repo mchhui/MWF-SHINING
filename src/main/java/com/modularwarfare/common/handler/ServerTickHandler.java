@@ -1,11 +1,16 @@
 package com.modularwarfare.common.handler;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemAmmo;
+import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.handler.data.DataGunReloadEnhancedTask;
 import com.modularwarfare.common.network.BackWeaponsManager;
 import com.modularwarfare.common.network.PacketAimingReponse;
 import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumHand;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 import net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent;
@@ -33,6 +38,25 @@ public class ServerTickHandler extends ForgeEvent {
         if(event.side!=Side.SERVER||event.phase!=Phase.END) {
             return;
         }
+        ItemStack stack = event.player.getHeldItem(EnumHand.MAIN_HAND);
+        if (stack != null && stack.getItem() instanceof ItemGun) {
+            if(!stack.hasTagCompound()) {
+                stack.setTagCompound(new NBTTagCompound());
+            }
+            stack.getTagCompound().setInteger("maxammo", 0);
+            GunType gt=((ItemGun)stack.getItem()).type;
+            if(gt.acceptedBullets!=null) {
+                stack.getTagCompound().setInteger("maxammo", gt.internalAmmoStorage);
+            }else {
+                if (stack.getTagCompound() != null) {
+                    ItemStack ammoStack = new ItemStack(stack.getTagCompound().getCompoundTag("ammo"));
+                    if(ammoStack.getItem() instanceof ItemAmmo) {
+                        stack.getTagCompound().setInteger("maxammo", ((ItemAmmo)ammoStack.getItem()).type.ammoCapacity);    
+                    }
+                }
+            }
+        }
+        
         boolean flag=false;
         if(playerAimShootCooldown.containsKey(event.player.getName())) {
             flag=true;
