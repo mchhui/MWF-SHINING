@@ -42,11 +42,6 @@ public class GunType extends BaseType {
 
     public WeaponAnimationType animationType = WeaponAnimationType.BASIC;
 
-    // if this is true, you cant shoot until the all fire animation finishes,
-    public boolean restrictingFireAnimation = false;
-    // if this is true, you cant reload until the all fire animation finishes,
-    public boolean firingReload = true;
-    
     //Munition variables
     /**
      * Damage inflicted per bullet. Multiplied by the bullet damage value.
@@ -198,6 +193,7 @@ public class GunType extends BaseType {
     public Integer internalAmmoStorage;
     public String[] acceptedBullets;
     // Misc Settings
+    public boolean allowEquipSounds = true;
     // Misc Settings
     public boolean allowSprintFiring = true;
 
