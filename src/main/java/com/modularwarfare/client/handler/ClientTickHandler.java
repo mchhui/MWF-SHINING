@@ -427,7 +427,9 @@ public class ClientTickHandler extends ForgeEvent {
         if (player.inventory.currentItem != this.oldCurrentItem) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 GunType type=((ItemGun)player.getHeldItemMainhand().getItem()).type;
-                type.playClientSound(player, WeaponSoundType.Equip);
+                if (type.allowEquipSounds) {
+                    type.playClientSound(player, WeaponSoundType.Equip);
+                }
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemSpray) {
                 ModularWarfare.PROXY.playSound(new MWSound(player.getPosition(), "shake", 1f, 1f));
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemGrenade) {
