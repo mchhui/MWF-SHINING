@@ -85,7 +85,7 @@ public class AnimationController {
     
     private static AnimationType[] FIRE_TYPE=new AnimationType[] {
             AnimationType.FIRE,AnimationType.FIRE_LAST,
-            AnimationType.PRE_FIRE, AnimationType.POST_FIRE, 
+            AnimationType.PRE_FIRE, AnimationType.POST_FIRE,AnimationType.POST_FIRE_EMPTY, 
     };
 
     public AnimationController(EntityLivingBase player,GunEnhancedRenderConfig config){

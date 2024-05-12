@@ -10,7 +10,7 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.client.ClientRenderHooks;
 
-import com.teamderpy.shouldersurfing.client.ShoulderInstance;
+//import com.teamderpy.shouldersurfing.client.ShoulderInstance;
 
 public class AutoSwitchToFirstView {
 
@@ -31,7 +31,7 @@ public class AutoSwitchToFirstView {
                 } else if (!isMouseDown && !ClientRenderHooks.isAimingScope) {
                     if (Loader.isModLoaded("shouldersurfing")) {
                         Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
-                        ShoulderInstance.getInstance().setShoulderSurfing(true);
+//                        ShoulderInstance.getInstance().setShoulderSurfing(true);
                     } else {
                         Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
                     }

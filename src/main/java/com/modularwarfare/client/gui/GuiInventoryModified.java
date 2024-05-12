@@ -65,6 +65,7 @@ public class GuiInventoryModified extends InventoryEffectRenderer {
         this.oldMouseY = mouseY;
         super.drawScreen(mouseX, mouseY, partialTicks);
         this.renderHoveredToolTip(mouseX, mouseY);
+        
     }
 
     protected void drawGuiContainerBackgroundLayer(final float partialTicks, final int mouseX, final int mouseY) {
