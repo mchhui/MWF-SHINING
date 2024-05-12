@@ -145,6 +145,9 @@ public class ClientProxy extends CommonProxy {
     public static KillFeedManager killFeedManager;
 
     public static AutoSwitchToFirstView autoSwitchToFirstView;
+    
+    public static boolean shoulderSurfingLoaded=false;
+    
     /**
      * Patches
      **/
@@ -211,6 +214,9 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void startPatches() {
+        if (Loader.isModLoaded("shouldersurfing")) {
+            shoulderSurfingLoaded=true;
+        }
         if (Loader.isModLoaded("customnpcs")) {
             CustomNPCListener customNPCListener = new CustomNPCListener();
             MinecraftForge.EVENT_BUS.register(customNPCListener);

@@ -164,7 +164,7 @@ public class GunUI {
                         if(mc.getRenderViewEntity() != mc.player){
                             showCrosshair = false;
                         }
-                        if (ModConfig.INSTANCE.hud.enable_crosshair && !ClientRenderHooks.getAnimMachine(mc.player).attachmentMode && showCrosshair && mc.gameSettings.thirdPersonView == 0 && !mc.player.isSprinting() && !ClientRenderHooks.getAnimMachine(mc.player).reloading && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                        if (ModConfig.INSTANCE.hud.enable_crosshair && !ClientRenderHooks.getAnimMachine(mc.player).attachmentMode && showCrosshair && (ClientProxy.shoulderSurfingLoaded||mc.gameSettings.thirdPersonView == 0) && !mc.player.isSprinting() && !ClientRenderHooks.getAnimMachine(mc.player).reloading && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                             if(RenderParameters.collideFrontDistance <= 0.2f) {
                                 GlStateManager.pushMatrix();
 
