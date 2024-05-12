@@ -18,6 +18,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.math.Vec3d;
@@ -41,9 +42,12 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class CommonEventHandler {
-
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     public static HashMap<String, Long> playerTimeoutMap=new HashMap<>();
     
     private static int getRandomNumberInRange(int min, int max) {
@@ -202,13 +206,21 @@ public class CommonEventHandler {
                 final EntityItem item = (EntityItem) event.getEntity();
                 if (!item.getItem().isEmpty()) {
                     if (item.getItem().getItem() instanceof BaseItem || ModConfig.INSTANCE.drops.advanced_drops_models_everything) {
-                        final EntityItemLoot loot = new EntityItemLoot((EntityItem) event.getEntity());
-                        event.getEntity().setDead();
-                        loot.setInfinitePickupDelay();
-                        event.setResult(Event.Result.DENY);
-                        event.setCanceled(true);
-                        event.getWorld().spawnEntity(loot);
-                        return;
+                        executor.schedule(()->{
+                            item.getServer().addScheduledTask(()->{
+                                NBTTagCompound tag=new NBTTagCompound();
+                                item.writeEntityToNBT(tag);
+                                if(tag.getShort("PickupDelay")!=Short.MAX_VALUE) {
+                                    final EntityItemLoot loot = new EntityItemLoot((EntityItem) event.getEntity());
+                                    event.getEntity().setDead();
+                                    loot.setInfinitePickupDelay();
+                                    event.setResult(Event.Result.DENY);
+                                    event.setCanceled(true);
+                                    event.getWorld().spawnEntity(loot);
+                                    return;  
+                                }
+                            });
+                        }, 1, TimeUnit.MILLISECONDS);
                     }
                 }
             }
