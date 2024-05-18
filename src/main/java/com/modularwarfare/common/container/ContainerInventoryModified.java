@@ -189,6 +189,13 @@ public class ContainerInventoryModified extends Container {
         }
     }
 
+    @Override
+    public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player) {
+        if(clickTypeIn!=ClickType.PICKUP&&clickTypeIn!=ClickType.QUICK_CRAFT&&clickTypeIn!=ClickType.THROW) {
+            return ItemStack.EMPTY;
+        }
+         return super.slotClick(slotId, dragType, clickTypeIn, player);
+    }
 
     @Override
     public void onCraftMatrixChanged(final IInventory par1IInventory) {
