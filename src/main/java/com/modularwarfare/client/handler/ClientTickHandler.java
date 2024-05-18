@@ -18,6 +18,7 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.ItemSpray;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.guns.WeaponSoundType;
+import com.modularwarfare.common.network.PacketOpenGui;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.event.ForgeEvent;
@@ -34,6 +35,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import java.util.UUID;
@@ -112,6 +115,9 @@ public class ClientTickHandler extends ForgeEvent {
     public void renderTick(TickEvent.RenderTickEvent event) {
         switch (event.phase) {
             case START: {
+                if(Keyboard.isKeyDown(Keyboard.KEY_LMENU)){
+                    ModularWarfare.NETWORK.sendToServer(new PacketOpenGui(0));
+                }
                 //System.out.println(ClientTickHandler.reloadEnhancedPrognosisAmmoRendering);
                 float renderTick = event.renderTickTime;
                 renderTick *= 60d / (double) Minecraft.getDebugFPS();
@@ -427,7 +433,7 @@ public class ClientTickHandler extends ForgeEvent {
         if (player.inventory.currentItem != this.oldCurrentItem) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 GunType type=((ItemGun)player.getHeldItemMainhand().getItem()).type;
-                if (type.allowEquipSounds) {
+                if (type.animationType!=WeaponAnimationType.ENHANCED&&type.allowEquipSounds) {
                     type.playClientSound(player, WeaponSoundType.Equip);
                 }
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemSpray) {

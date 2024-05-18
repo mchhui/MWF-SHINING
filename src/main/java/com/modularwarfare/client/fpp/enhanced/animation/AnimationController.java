@@ -75,6 +75,8 @@ public class AnimationController {
     public double customAnimationSpeed=1;
     public boolean customAnimationReload=false;
     public boolean customAnimationFire=false;
+    
+    public static ISound drawSound=null;
 
     private static AnimationType[] RELOAD_TYPE =
         new AnimationType[] {AnimationType.PRE_LOAD, AnimationType.LOAD, AnimationType.POST_LOAD,
@@ -109,6 +111,10 @@ public class AnimationController {
         if(inspectSound!=null) {
             Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
             inspectSound=null;
+        }
+        if(drawSound!=null) {
+            Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
+            drawSound=null;
         }
         FIRE=0;
         MODE_CHANGE=1;
@@ -155,11 +161,21 @@ public class AnimationController {
         DRAW = Math.max(0, DRAW + drawSpeed);
         if(DRAW>1F) {
             DRAW=1F;
+            if(drawSound!=null) {
+                Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
+                drawSound=null;
+            }
         }
 //        System.out.println(INSPECT);
         /** INSPECT **/
         if (INSPECT == 0) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun&&player instanceof EntityPlayer) {
+                
+                if(inspectSound!=null) {
+                    Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
+                    inspectSound=null;
+                }
+                
                 GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
                 SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.Inspect);
                 if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
@@ -395,10 +411,27 @@ public class AnimationController {
                 Item item = player.getHeldItemMainhand().getItem();
                 if (item instanceof ItemGun) {
                     if((!(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify))&&player instanceof EntityPlayer) {
-                        if(!ItemGun.hasNextShot(player.getHeldItemMainhand())&&((ItemGun) item).type.weaponSoundMap.containsKey(WeaponSoundType.DrawEmpty)) {
-                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.DrawEmpty);  
-                        }else {
-                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.Draw);  
+//                        if(!ItemGun.hasNextShot(player.getHeldItemMainhand())&&((ItemGun) item).type.weaponSoundMap.containsKey(WeaponSoundType.DrawEmpty)) {
+//                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.DrawEmpty);  
+//                        }else {
+//                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.Draw);  
+//                        }
+                        if(drawSound!=null) {
+                            Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
+                            drawSound=null;
+                        }
+                        GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
+                        if(config==type.enhancedModel.config) {
+                            SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.Draw);
+                            if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
+                                && ((ItemGun)player.getHeldItemMainhand().getItem()).type.weaponSoundMap
+                                    .containsKey(WeaponSoundType.DrawEmpty)) {
+                                se = type.getSound((EntityPlayer)player, WeaponSoundType.DrawEmpty);
+                            }
+                            if(se!=null) {
+                                drawSound=PositionedSoundRecord.getRecord(se, 1, 1);
+                                Minecraft.getMinecraft().getSoundHandler().playSound(drawSound);  
+                            }  
                         }
                     }
                     hasPlayedDrawSound = true;
@@ -428,13 +461,15 @@ public class AnimationController {
         } else if (this.playback.hasPlayed||(this.playback.action != AnimationType.DEFAULT&&this.playback.action !=AnimationType.DEFAULT_EMPTY)) {
             if(flag) {
                 this.playback.action = AnimationType.DEFAULT;
-                if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
-                    if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.DEFAULT_EMPTY)) {
-                        this.playback.action = AnimationType.DEFAULT_EMPTY;  
-                    }
-                }
             }
             nextResetDefault=true;
+        }
+        if(this.playback.action==AnimationType.DEFAULT) {
+            if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.DEFAULT_EMPTY)) {
+                    this.playback.action = AnimationType.DEFAULT_EMPTY;  
+                }
+            }
         }
     }
 

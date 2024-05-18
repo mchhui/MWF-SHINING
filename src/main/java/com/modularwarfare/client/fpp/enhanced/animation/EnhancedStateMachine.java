@@ -16,12 +16,14 @@ import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponSoundType;
+import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.network.PacketGunReloadEnhancedStop;
 import com.modularwarfare.common.network.PacketGunReloadSound;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -63,6 +65,7 @@ public class EnhancedStateMachine {
     public Phase shootingPhase = Phase.PRE;
 
     public ItemStack heldItemstStack=ItemStack.EMPTY;
+    public int lastItemIndex=0;
 
     public static enum Phase {
         PRE, FIRST, SECOND, POST
@@ -267,7 +270,11 @@ public class EnhancedStateMachine {
     }
 
     public void updateCurrentItem(EntityLivingBase player) {
-        if (!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemstStack,player.getHeldItemMainhand())) {
+        int index=0;
+        if(player==Minecraft.getMinecraft().player) {
+            index=Minecraft.getMinecraft().player.inventory.currentItem;
+        }
+        if ((!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemstStack,player.getHeldItemMainhand()))||index!=lastItemIndex) {
             if (reloading) {
                 stopReload();
             }
@@ -277,6 +284,8 @@ public class EnhancedStateMachine {
             //ClientTickHandler.reloadEnhancedPrognosisAmmo=ItemStack.EMPTY;
         }
         heldItemstStack = player.getHeldItemMainhand();
+
+        lastItemIndex=index;
     }
 
     public void onRenderTickUpdate(float partialTick) {
@@ -319,52 +328,53 @@ public class EnhancedStateMachine {
                 if (reloadPhase != lastReloadPhase && aniType!=null) {
                     switch (aniType) {
                     case PRE_LOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreLoad));
+                        playReloadSound(WeaponSoundType.PreLoad);
                         break;
                     case LOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Load));
+                        playReloadSound(WeaponSoundType.Load);
                         break;
                     case POST_LOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostLoad));
+                        playReloadSound(WeaponSoundType.PostLoad);
                         break;
                     case PRE_UNLOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreUnload));
+                        playReloadSound(WeaponSoundType.PreUnload);
                         break;
                     case UNLOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Unload));
+                        playReloadSound(WeaponSoundType.Unload);
                         break;
                     case POST_UNLOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostUnload));
+                        playReloadSound(WeaponSoundType.PostUnload);
                         break;
                     case PRE_RELOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreReload));
+                        playReloadSound(WeaponSoundType.PreReload);
                         break;
                     case PRE_RELOAD_EMPTY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PreReloadEmpty));
+                        playReloadSound(WeaponSoundType.PreReloadEmpty);
                         break;
                     case RELOAD_FIRST:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
+                        playReloadSound(WeaponSoundType.Reload);
                         break;
                     case RELOAD_SECOND:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
+                        playReloadSound(WeaponSoundType.ReloadSecond);
                         break;
                     case RELOAD_FIRST_QUICKLY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.Reload));
+                        playReloadSound(WeaponSoundType.Reload);
                         break;
                     case RELOAD_SECOND_QUICKLY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecond));
+                        playReloadSound(WeaponSoundType.ReloadSecond);
                         break;
                     case RELOAD_FIRST_EMPTY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadEmpty));
+                        playReloadSound(WeaponSoundType.ReloadEmpty);
                         break;
                     case RELOAD_SECOND_EMPTY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.ReloadSecondEmpty));
+                        playReloadSound(WeaponSoundType.ReloadSecondEmpty);
                         break;
                     case POST_RELOAD:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReload));
+                        playReloadSound(WeaponSoundType.PostReload);
                         break;
                     case POST_RELOAD_EMPTY:
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReloadEmpty));
+//                        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(WeaponSoundType.PostReloadEmpty));
+                        playReloadSound(WeaponSoundType.PostReloadEmpty);
                         break;
                     default:
                         break;
@@ -408,6 +418,22 @@ public class EnhancedStateMachine {
                 }
             }
         }
+    }
+    
+    public void playReloadSound(WeaponSoundType soundType) {
+        EntityPlayer entityPlayer=Minecraft.getMinecraft().player;
+        if (entityPlayer.getHeldItemMainhand() != null) {
+            if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                ItemStack gunStack = entityPlayer.getHeldItemMainhand();
+                ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
+                GunType gunType = itemGun.type;
+
+                if (soundType != null) {
+                    gunType.playClientSound(entityPlayer, soundType);
+                }
+            }
+        }
+        ModularWarfare.NETWORK.sendToServer(new PacketGunReloadSound(soundType));
     }
 
     public boolean phaseUpdate(AnimationType aniType, float partialTick,float speedFactor, Passer<Phase> phase, Passer<Double> progress,
