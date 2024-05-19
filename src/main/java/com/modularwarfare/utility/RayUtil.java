@@ -74,20 +74,22 @@ public class RayUtil {
 //        if (player.isSneaking()) {
 //            acc *= gun.accuracySneakFactor;
 //        }
-        if(player.world.isRemote) {
-            if(player==Minecraft.getMinecraft().player) {
-                if(Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
-                    acc += gun.accuracyThirdOffset;
-                }
-            }
-        }
         
         //Client side
         if(player.world.isRemote) {
         	if(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
-                acc *= gun.accuracyAimFactor;
-            }else {
-                
+                boolean f1=true;
+                if(player.world.isRemote) {
+                    if(player==Minecraft.getMinecraft().player) {
+                        if(Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
+                            acc *= gun.accuracyThirdAimFactor;
+                            f1=false;
+                        }
+                    }
+                }
+                if(f1) {
+                    acc *= gun.accuracyAimFactor;
+                }
             }
         	if (ModularWarfare.isLoadedModularMovements) {
                 if (ClientLitener.clientPlayerState.isCrawling) {
@@ -104,7 +106,6 @@ public class RayUtil {
         	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
             if(bb!=null&&bb) {
                 acc *= gun.accuracyAimFactor;
-            }else {
             }
             if (ModularWarfare.isLoadedModularMovements) {
                 if (ServerListener.isCrawling(player.getEntityId())) {

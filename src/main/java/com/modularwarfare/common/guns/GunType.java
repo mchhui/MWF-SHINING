@@ -125,14 +125,26 @@ public class GunType extends BaseType {
     public float accuracyCrawlFactor = 0.75f;
     
     /**
-     * Factor of accuracy when aimming
+     * Factor of accuracy when aimming in first person
      */
     public float accuracyAimFactor = 0.75f;
     
+    /**
+     * Factor of accuracy when aimming in third person
+     */
+    public float accuracyThirdAimFactor=0.9f;
+    /**
+     * 移动时偏移
+     * */
     public float accuracyMoveOffset=0.75f;
+    /**
+     * 奔跑时偏移
+     * */
     public float accuracySprintOffset=0.25f;
+    /**
+     * 浮空时偏移
+     * */
     public float accuracyHoverOffset=1.5f;
-    public float accuracyThirdOffset=0.25f;
     
 
     public float randomRecoilPitch = 0.5F;
