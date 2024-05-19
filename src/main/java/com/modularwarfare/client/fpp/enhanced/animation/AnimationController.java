@@ -425,7 +425,7 @@ public class AnimationController {
                             drawSound=null;
                         }
                         GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
-                        if(config==type.enhancedModel.config) {
+                        if(type.animationType==WeaponAnimationType.ENHANCED&&config==type.enhancedModel.config) {
                             SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.Draw);
                             if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
                                 && ((ItemGun)player.getHeldItemMainhand().getItem()).type.weaponSoundMap

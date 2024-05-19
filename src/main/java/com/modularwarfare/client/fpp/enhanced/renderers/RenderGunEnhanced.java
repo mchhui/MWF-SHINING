@@ -1140,11 +1140,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
     public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
         ItemStack demoStack) {
-        boolean sneakFlag = false;
-        if (player != null && player.isSneaking()) {
-            sneakFlag = true;
-        }
-        drawThirdGun(renderPlayer, renderType, player, demoStack, sneakFlag);
+//        boolean sneakFlag = false;
+//        if (player != null && player.isSneaking()) {
+//            sneakFlag = true;
+//        }
+        drawThirdGun(renderPlayer, renderType, player, demoStack, false);
     }
     
     public void drawThirdGun(RenderLivingBase renderPlayer,RenderType renderType,EntityLivingBase player, ItemStack demoStack,boolean sneakFlag) {
