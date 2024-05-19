@@ -266,32 +266,50 @@ public class ScopeUtils {
     
     @SubscribeEvent
     public void onFovMod(FOVModifier event) {
-        if (mc.player.getHeldItemMainhand() != null && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun && RenderParameters.adsSwitch != 0 && mc.gameSettings.thirdPersonView == 0) {
+        if (mc.player.getHeldItemMainhand() != null && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun
+            && RenderParameters.adsSwitch != 0 && mc.gameSettings.thirdPersonView == 0) {
             if (GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight) != null) {
-                final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight).getItem();
+                final ItemAttachment itemAttachment = (ItemAttachment)GunType
+                    .getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight).getItem();
                 if (itemAttachment != null) {
                     if (itemAttachment.type != null) {
-                            if(!itemAttachment.type.sight.modeType.isPIP) {
-                                float dst=getFov(itemAttachment);
-                                if(ModConfig.INSTANCE.hud.isDynamicFov) {
-                                    dst+=event.getFOV()-mc.gameSettings.fovSetting;
-                                }
-                                float src=event.getFOV();
-                                event.setFOV(Math.max(1, src+(dst-src)*RenderParameters.adsSwitch));
-                                if(RenderParameters.adsSwitch!=0&&RenderParameters.adsSwitch!=1) {
-                                    //更新视角内的区块
-                                    mc.renderGlobal.setDisplayListEntitiesDirty();
-                                }
+                        if (!itemAttachment.type.sight.modeType.isPIP) {
+                            float dst = getFov(itemAttachment);
+                            if (ModConfig.INSTANCE.hud.isDynamicFov) {
+                                dst += event.getFOV() - mc.gameSettings.fovSetting;
+                            }
+                            float src = event.getFOV();
+                            event.setFOV(Math.max(1, src + (dst - src) * RenderParameters.adsSwitch));
+                            if (RenderParameters.adsSwitch != 0 && RenderParameters.adsSwitch != 1) {
+                                // 更新视角内的区块
+                                mc.renderGlobal.setDisplayListEntitiesDirty();
                             }
                         }
                     }
                 }
             }
+        }
+        if(mc.player.getHeldItemMainhand() != null && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun
+            && RenderParameters.adsSwitch != 0 && mc.gameSettings.thirdPersonView == 1) {
+            float dst = 50;
+            if (ModConfig.INSTANCE.hud.isDynamicFov) {
+                dst += event.getFOV() - mc.gameSettings.fovSetting;
+            }
+            float src = event.getFOV();
+            event.setFOV(Math.max(1, src + (dst - src) * RenderParameters.adsSwitch));
+            if (RenderParameters.adsSwitch != 0 && RenderParameters.adsSwitch != 1) {
+                // 更新视角内的区块
+                mc.renderGlobal.setDisplayListEntitiesDirty();
+            }
+        }
     }
     
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderHUD(RenderGameOverlayEvent.Pre event) {
         if(event.getType()!=ElementType.ALL) {
+            return;
+        }
+        if(Minecraft.getMinecraft().gameSettings.thirdPersonView!=0) {
             return;
         }
         ItemStack stack=Minecraft.getMinecraft().player.getHeldItemMainhand();

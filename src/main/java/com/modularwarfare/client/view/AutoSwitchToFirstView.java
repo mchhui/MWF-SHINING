@@ -15,34 +15,48 @@ import com.teamderpy.shouldersurfing.client.ShoulderInstance;
 
 public class AutoSwitchToFirstView {
 
-    private int initialThirdPersonView = -1;
+    private static boolean aimlock = false;
+    private static boolean aimFlag = false;
+    private static long lastAimTime;
 
     @SubscribeEvent
     public void onRenderTick(RenderTickEvent event) {
         if (Minecraft.getMinecraft().player != null && ModConfig.INSTANCE.hud.autoSwitchToFirstView) {
             boolean isMouseDown = Mouse.isButtonDown(1);
-    
-            if (initialThirdPersonView == -1 && Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
-                initialThirdPersonView = 1;
-            }
-    
-            if (initialThirdPersonView == 1) {
-                if (isMouseDown && (Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun)) {
-                    Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
-                } else if (!isMouseDown && !ClientRenderHooks.isAimingScope) {
-                    if (ClientProxy.shoulderSurfingLoaded) {
-                        Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
-                        ShoulderInstance.getInstance().setShoulderSurfing(true);
-                    } else {
-                        Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
-                    }
-                    initialThirdPersonView = -1;
+
+            long time = System.currentTimeMillis();
+            if (isMouseDown) {
+                if (!aimFlag) {
+                    aimFlag = true;
+                    lastAimTime = time;
                 }
             } else {
-                if (isMouseDown) {
+                if (aimFlag) {
+                    if (time - lastAimTime < 200) {
+                        if (!aimlock && Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
+                            aimlock = true;
+                        } else if (aimlock) {
+                            if (ClientProxy.shoulderSurfingLoaded) {
+                                Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
+                                 ShoulderInstance.getInstance().setShoulderSurfing(true);
+                            } else {
+                                Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
+                            }
+                            Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
+                            aimlock = false;
+                        }
+                    }
                 }
+                aimFlag = false;
+            }
+            if (aimlock) {
+                Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
             }
         }
+    }
+
+    public static boolean getAutoAimLock() {
+        return aimlock;
     }
 
 }

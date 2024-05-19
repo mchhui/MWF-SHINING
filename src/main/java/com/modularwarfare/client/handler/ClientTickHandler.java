@@ -115,9 +115,6 @@ public class ClientTickHandler extends ForgeEvent {
     public void renderTick(TickEvent.RenderTickEvent event) {
         switch (event.phase) {
             case START: {
-                if(Keyboard.isKeyDown(Keyboard.KEY_LMENU)){
-                    ModularWarfare.NETWORK.sendToServer(new PacketOpenGui(0));
-                }
                 //System.out.println(ClientTickHandler.reloadEnhancedPrognosisAmmoRendering);
                 float renderTick = event.renderTickTime;
                 renderTick *= 60d / (double) Minecraft.getDebugFPS();

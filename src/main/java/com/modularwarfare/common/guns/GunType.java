@@ -132,6 +132,7 @@ public class GunType extends BaseType {
     public float accuracyMoveOffset=0.75f;
     public float accuracySprintOffset=0.25f;
     public float accuracyHoverOffset=1.5f;
+    public float accuracyThirdOffset=0.25f;
     
 
     public float randomRecoilPitch = 0.5F;

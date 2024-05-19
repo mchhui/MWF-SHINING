@@ -51,7 +51,7 @@ public class RayUtil {
         return vec3d;
     }
 
-    public static float calculateAccuracyServer(final ItemGun item, final EntityLivingBase player) {
+    public static float calculateAccuracy(final ItemGun item, final EntityLivingBase player) {
         final GunType gun = item.type;
         //新增枪管散射影响
         float accuracyBarrelFactor = 1.0f;
@@ -70,8 +70,16 @@ public class RayUtil {
         if (player.isSprinting()) {
             acc += gun.accuracySprintOffset;
         }
-        if (player.isSneaking()) {
-            acc *= gun.accuracySneakFactor;
+        //潜行处理在下面
+//        if (player.isSneaking()) {
+//            acc *= gun.accuracySneakFactor;
+//        }
+        if(player.world.isRemote) {
+            if(player==Minecraft.getMinecraft().player) {
+                if(Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
+                    acc += gun.accuracyThirdOffset;
+                }
+            }
         }
         
         //Client side
@@ -130,85 +138,85 @@ public class RayUtil {
         return acc;
     }
 
-    public static float calculateAccuracyClient(final ItemGun item, final EntityPlayer player) {
-        final GunType gun = item.type;
-        //新增枪管散射影响
-        float accuracyBarrelFactor = 1.0f;
-        if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel) != null) {
-            ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel).getItem();
-            accuracyBarrelFactor = barrelAttachment.type.barrel.accuracyFactor;
-        };
-        float acc = gun.bulletSpread * accuracyBarrelFactor;
-        final GameSettings settings = Minecraft.getMinecraft().gameSettings;
-        if (settings.keyBindForward.isKeyDown() || settings.keyBindLeft.isKeyDown() || settings.keyBindBack.isKeyDown() || settings.keyBindRight.isKeyDown()) {
-            acc += 0.75f;
-        }
-        if (!player.onGround) {
-            acc += 1.5f;
-        }
-        if (player.isSprinting()) {
-            acc += 0.25f;
-        }
-        if (player.isSneaking()) {
-            acc *= gun.accuracySneakFactor;
-        }
-        
-      //Client side
-        if(player.world.isRemote) {
-        	if(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
-                acc *= gun.accuracyAimFactor;
-            }else {
-                
-            }
-        	if (ModularWarfare.isLoadedModularMovements) {
-                if (ClientLitener.clientPlayerState.isCrawling) {
-                    acc *= gun.accuracyCrawlFactor;
-                } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
-                    acc *= gun.accuracySneakFactor;
-                }
-            } else {
-                if (player.isSneaking()) {
-                    acc *= gun.accuracySneakFactor;
-                }
-            }
-        }else {//Server side
-        	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
-            if(bb!=null&&bb) {
-                acc *= gun.accuracyAimFactor;
-            }else {
-            }
-            if (ModularWarfare.isLoadedModularMovements) {
-                if (ServerListener.isCrawling(player.getEntityId())) {
-                    acc *= gun.accuracyCrawlFactor;
-                } else if (player.isSneaking() || ServerListener.isSitting(player.getEntityId())) {
-                    acc *= gun.accuracySneakFactor;
-                }
-            } else {
-                if (player.isSneaking()) {
-                    acc *= gun.accuracySneakFactor;
-                }
-            }
-        }
-
-        
-        
-        if (acc < 0) {
-            acc = 0;
-        }
-        
-        /** Bullet Accuracy **/
-        if (player.getHeldItemMainhand() != null) {
-            if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                ItemBullet bullet = ItemGun.getUsedBullet(player.getHeldItemMainhand(), ((ItemGun) player.getHeldItemMainhand().getItem()).type);
-                if (bullet != null) {
-                    if (bullet.type != null) {
-                        acc *= bullet.type.bulletAccuracyFactor;
-                    }
-                }
-            }
-        }
-        return acc;
-    }
+//    public static float calculateAccuracyClient(final ItemGun item, final EntityPlayer player) {
+//        final GunType gun = item.type;
+//        //新增枪管散射影响
+//        float accuracyBarrelFactor = 1.0f;
+//        if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel) != null) {
+//            ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel).getItem();
+//            accuracyBarrelFactor = barrelAttachment.type.barrel.accuracyFactor;
+//        };
+//        float acc = gun.bulletSpread * accuracyBarrelFactor;
+//        final GameSettings settings = Minecraft.getMinecraft().gameSettings;
+//        if (settings.keyBindForward.isKeyDown() || settings.keyBindLeft.isKeyDown() || settings.keyBindBack.isKeyDown() || settings.keyBindRight.isKeyDown()) {
+//            acc += 0.75f;
+//        }
+//        if (!player.onGround) {
+//            acc += 1.5f;
+//        }
+//        if (player.isSprinting()) {
+//            acc += 0.25f;
+//        }
+//        if (player.isSneaking()) {
+//            acc *= gun.accuracySneakFactor;
+//        }
+//        
+//      //Client side
+//        if(player.world.isRemote) {
+//        	if(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope) {
+//                acc *= gun.accuracyAimFactor;
+//            }else {
+//                
+//            }
+//        	if (ModularWarfare.isLoadedModularMovements) {
+//                if (ClientLitener.clientPlayerState.isCrawling) {
+//                    acc *= gun.accuracyCrawlFactor;
+//                } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
+//                    acc *= gun.accuracySneakFactor;
+//                }
+//            } else {
+//                if (player.isSneaking()) {
+//                    acc *= gun.accuracySneakFactor;
+//                }
+//            }
+//        }else {//Server side
+//        	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
+//            if(bb!=null&&bb) {
+//                acc *= gun.accuracyAimFactor;
+//            }else {
+//            }
+//            if (ModularWarfare.isLoadedModularMovements) {
+//                if (ServerListener.isCrawling(player.getEntityId())) {
+//                    acc *= gun.accuracyCrawlFactor;
+//                } else if (player.isSneaking() || ServerListener.isSitting(player.getEntityId())) {
+//                    acc *= gun.accuracySneakFactor;
+//                }
+//            } else {
+//                if (player.isSneaking()) {
+//                    acc *= gun.accuracySneakFactor;
+//                }
+//            }
+//        }
+//
+//        
+//        
+//        if (acc < 0) {
+//            acc = 0;
+//        }
+//        
+//        /** Bullet Accuracy **/
+//        if (player.getHeldItemMainhand() != null) {
+//            if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+//                ItemBullet bullet = ItemGun.getUsedBullet(player.getHeldItemMainhand(), ((ItemGun) player.getHeldItemMainhand().getItem()).type);
+//                if (bullet != null) {
+//                    if (bullet.type != null) {
+//                        acc *= bullet.type.bulletAccuracyFactor;
+//                    }
+//                }
+//            }
+//        }
+//        return acc;
+//    }
 
     @Nullable
     @SideOnly(Side.CLIENT)
@@ -266,7 +274,7 @@ public class RayUtil {
         HashSet<Entity> hashset = new HashSet<Entity>(1);
         hashset.add(player);
 
-        float accuracy = calculateAccuracyServer(item, player);
+        float accuracy = calculateAccuracy(item, player);
         Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, player.world.rand);
         double dx = dir.x * range;
         double dy = dir.y * range;

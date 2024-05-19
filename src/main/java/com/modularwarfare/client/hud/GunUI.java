@@ -152,6 +152,9 @@ public class GunUI {
                         }
 
                         boolean showCrosshair = ((adsSwitch < 0.6F) && (ClientProxy.gunEnhancedRenderer.getClientController().ADS < 0.5F));
+                        if(Minecraft.getMinecraft().gameSettings.thirdPersonView==1) {
+                            showCrosshair=true;
+                        }
                         if(ClientRenderHooks.getEnhancedAnimMachine(mc.player) != null){
                             if(ClientRenderHooks.getEnhancedAnimMachine(mc.player).reloading) {
                                 showCrosshair = false;
@@ -175,7 +178,7 @@ public class GunUI {
                                     GL11.glRotatef(gunRotY, 1, 0, 1);
                                 }
 
-                                final float accuracy = RayUtil.calculateAccuracyClient((ItemGun) mc.player.getHeldItemMainhand().getItem(), mc.player);
+                                final float accuracy = RayUtil.calculateAccuracy((ItemGun) mc.player.getHeldItemMainhand().getItem(), mc.player);
                                 int move = Math.max(0, (int) (accuracy * 3.0f));
                                 mc.renderEngine.bindTexture(crosshair);
                                 int xPos = width / 2;

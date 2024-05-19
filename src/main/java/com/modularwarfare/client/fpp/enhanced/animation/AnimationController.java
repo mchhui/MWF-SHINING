@@ -10,6 +10,7 @@ import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAda
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.view.AutoSwitchToFirstView;
 import com.modularwarfare.common.guns.AttachmentPresetEnum;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAttachment;
@@ -241,7 +242,7 @@ public class AnimationController {
         }
         double val = 0;
         if (RenderParameters.collideFrontDistance == 0 && Minecraft.getMinecraft().inGameHasFocus
-            && Mouse.isButtonDown(1) && !aimChargeMisc && INSPECT == 1F) {
+            && (Mouse.isButtonDown(1)||AutoSwitchToFirstView.getAutoAimLock()) && !aimChargeMisc && INSPECT == 1F) {
             val = ADS + adsSpeed * (2 - ADS);
         } else {
             val = ADS - adsSpeed * (1 + ADS);
@@ -380,6 +381,9 @@ public class AnimationController {
             } else {
                 if (ClientRenderHooks.isAiming) {
                     ClientRenderHooks.isAiming = false;
+                }
+                if (ClientRenderHooks.isAimingScope) {
+                    ClientRenderHooks.isAimingScope = false;
                 }
             }
         }
