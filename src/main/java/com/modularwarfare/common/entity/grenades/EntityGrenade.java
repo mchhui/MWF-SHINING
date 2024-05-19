@@ -8,12 +8,14 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.init.ModSounds;
 
+import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.MoverType;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
@@ -53,7 +55,13 @@ public class EntityGrenade extends Entity {
         this.grenadeType = grenadeType;
         this.fuse = grenadeType.fuseTime * 20;
         this.exploded = false;
-        this.setPosition(thrower.posX, thrower.posY + thrower.getEyeHeight(), thrower.posZ);
+        Vec3d eye=thrower.getPositionEyes(1);
+        if(ModularWarfare.isLoadedModularMovements) {
+            if (thrower instanceof EntityPlayer) {
+                eye = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) thrower, 1);
+            }
+        }
+        this.setPosition(eye.x,eye.y,eye.z);
         float strenght = grenadeType.throwStrength;
 
         if (!isRightClick) {

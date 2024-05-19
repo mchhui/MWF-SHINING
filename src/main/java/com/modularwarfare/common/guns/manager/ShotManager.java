@@ -28,6 +28,7 @@ import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
 
+import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -381,15 +382,21 @@ public class ShotManager {
             }
             
             
-            RayTraceResult r=getMouseOver(1f);
+            RayTraceResult r=getMouseOver(ClientProxy.renderHooks.partialTicks);
             Minecraft mc = Minecraft.getMinecraft();
             Entity entity = mc.getRenderViewEntity();
             float pitch=entityPlayer.rotationPitch;
             float yaw=entityPlayer.rotationYaw;
             if(ClientProxy.shoulderSurfingLoaded) {
-                double posX=entity.posX;
-                double posY=entity.posY+entity.getEyeHeight();
-                double posZ=entity.posZ;
+                Vec3d eye=entity.getPositionEyes(ClientProxy.renderHooks.partialTicks);
+                double posX=eye.x;
+                double posY=eye.y;
+                double posZ=eye.z;
+//                if(ModularWarfare.isLoadedModularMovements) {
+//                    if (entity instanceof EntityPlayer) {
+//                        eye= ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, ClientProxy.renderHooks.partialTicks);
+//                    }
+//                }
                 posX=r.hitVec.x-posX;
                 posY=r.hitVec.y-posY;
                 posZ=r.hitVec.z-posZ;

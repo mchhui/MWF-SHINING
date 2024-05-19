@@ -23,7 +23,7 @@ public class ModularMovementsHooks {
             vec3d = new Vec3d(d0, d1, d2);
         }
         
-        if(FMLCommonHandler.instance().getSide()==Side.CLIENT) {
+        if(player.world.isRemote) {
             vec3d = ClientLitener.onGetPositionEyes(player, partialTicks, vec3d);
         }else {
             vec3d = ServerListener.onGetPositionEyes(player, partialTicks, vec3d);

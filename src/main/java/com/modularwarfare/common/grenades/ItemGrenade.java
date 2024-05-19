@@ -99,7 +99,6 @@ public class ItemGrenade extends BaseItem {
             }
 
         }
-
         return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, stack);
     }
 

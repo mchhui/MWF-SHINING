@@ -132,7 +132,7 @@ public class GunType extends BaseType {
     /**
      * Factor of accuracy when aimming in third person
      */
-    public float accuracyThirdAimFactor=0.9f;
+    public float accuracyThirdAimFactor=0.65f;
     /**
      * 移动时偏移
      * */
