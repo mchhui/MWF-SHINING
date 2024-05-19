@@ -17,7 +17,7 @@ import com.teamderpy.shouldersurfing.client.ShoulderInstance;
 
 public class AutoSwitchToFirstView {
 
-    public ItemStack heldItemstStack=ItemStack.EMPTY;
+    // public ItemStack heldItemstStack=ItemStack.EMPTY;
 
     private static boolean aimlock = false;
     private static boolean aimFlag = false;
@@ -25,11 +25,10 @@ public class AutoSwitchToFirstView {
 
     @SubscribeEvent
     public void onRenderTick(RenderTickEvent event) {
-        Item item = heldItemstStack.getItem();
-        if(item instanceof ItemGun) {
-            if (Minecraft.getMinecraft().player != null && ModConfig.INSTANCE.hud.autoSwitchToFirstView) {
+        if (Minecraft.getMinecraft().player != null && ModConfig.INSTANCE.hud.autoSwitchToFirstView) {
+            if(Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 boolean isMouseDown = Mouse.isButtonDown(1);
-    
+
                 long time = System.currentTimeMillis();
                 if (isMouseDown) {
                     if (!aimFlag) {
@@ -44,7 +43,7 @@ public class AutoSwitchToFirstView {
                             } else if (aimlock) {
                                 if (ClientProxy.shoulderSurfingLoaded) {
                                     Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
-                                     ShoulderInstance.getInstance().setShoulderSurfing(true);
+                                    ShoulderInstance.getInstance().setShoulderSurfing(true);
                                 } else {
                                     Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
                                 }
@@ -57,9 +56,16 @@ public class AutoSwitchToFirstView {
                 }
                 if (aimlock) {
                     Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
-                }
+                }   
+            }else {
+                if (aimlock) {
+                    Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
+                }   
+                aimFlag=false;
+                aimlock=false;
             }
         }
+
     }
 
     public static boolean getAutoAimLock() {
