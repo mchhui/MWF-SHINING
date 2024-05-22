@@ -841,12 +841,21 @@ public class ClientProxy extends CommonProxy {
                     offsetYaw*=gunType.recoilCrawlYawFactor;
                 }
             }
+
+            if (RenderParameters.playerRecoilYaw < 0.1F && RenderParameters.playerRecoilPitch < 0.1F) {
+                ClientTickHandler.startAntiRecoilTime = System.currentTimeMillis();
+            }
+
             RenderParameters.playerRecoilPitch += offsetPitch;
             if (Math.random() > 0.5f) {
                 RenderParameters.playerRecoilYaw += offsetYaw;
             } else {
                 RenderParameters.playerRecoilYaw -= offsetYaw;
             }
+            RenderParameters.playerAntiRecoilFactor = gunType.antiRecoilFactor;
+            RenderParameters.playerAntiRecoilStartTime = gunType.antiRecoilStartTime;
+            RenderParameters.antiRecoilPitch = 0;
+            RenderParameters.antiRecoilYaw = 0;
             RenderParameters.phase = !RenderParameters.phase;
         }
     }

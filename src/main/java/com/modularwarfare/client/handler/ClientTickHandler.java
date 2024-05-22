@@ -47,7 +47,7 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 public class ClientTickHandler extends ForgeEvent {
 
     private static final int SPS=60;
-    
+
     public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ItemStack reloadEnhancedPrognosisAmmo = ItemStack.EMPTY;
@@ -59,8 +59,9 @@ public class ClientTickHandler extends ForgeEvent {
     public static ItemStack oldItemStack = ItemStack.EMPTY;
     public static ItemStack lastItemStack = ItemStack.EMPTY;
     public static World lastWorld;
+    public static long startAntiRecoilTime = 0;
     int i = 0;
-    
+
     private static long lastSyncTime;
 
     public ClientTickHandler() {
@@ -70,7 +71,7 @@ public class ClientTickHandler extends ForgeEvent {
     public void clientTick(TickEvent.ClientTickEvent event) {
         switch (event.phase) {
             case START:
-                
+
                 //CLEARING OLD_DATA BEGIN
                 if(lastWorld!=Minecraft.getMinecraft().world) {
                     ClientRenderHooks.weaponEnhancedAnimations.clear();
@@ -79,7 +80,7 @@ public class ClientTickHandler extends ForgeEvent {
                     lastWorld=Minecraft.getMinecraft().world;
                 }
                 //CLEARING OLD_DATA END
-                
+
                 onClientTickStart(Minecraft.getMinecraft());
                 ModularWarfare.NETWORK.handleClientPackets();
 
@@ -166,7 +167,7 @@ public class ClientTickHandler extends ForgeEvent {
     public void onRenderTickStart(Minecraft minecraft, float renderTick) {
         if (minecraft.player == null || minecraft.world == null)
             return;
-        
+
         if (minecraft.mouseHelper.deltaY > 0 || -minecraft.mouseHelper.deltaY > 1) {
             antiRecoilPitch *= 0.25;
         }
@@ -174,7 +175,7 @@ public class ClientTickHandler extends ForgeEvent {
             antiRecoilYaw *= 0.25;
         }
         EntityPlayerSP player = minecraft.player;
-        
+
         reloadEnhancedPrognosisAmmoRendering=reloadEnhancedPrognosisAmmo;
         reloadEnhancedIsQuicklyRendering=reloadEnhancedIsQuickly;
 
@@ -190,10 +191,10 @@ public class ClientTickHandler extends ForgeEvent {
         ClientProxy.gunEnhancedRenderer.getOtherControllers().values().forEach((ctrl)->{
             ctrl.updateCurrentItem();
         });
-        
+
         for (EntityLivingBase entity : ClientRenderHooks.weaponEnhancedAnimations.keySet()) {
             if(entity!=null) {
-                ClientRenderHooks.weaponEnhancedAnimations.get(entity).updateCurrentItem(entity);  
+                ClientRenderHooks.weaponEnhancedAnimations.get(entity).updateCurrentItem(entity);
             }
         }
 
@@ -212,27 +213,27 @@ public class ClientTickHandler extends ForgeEvent {
                 boolean aimChargeMisc = !anim.reloading;
                 float value = (Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && aimChargeMisc && !ClientRenderHooks.getAnimMachine(player).attachmentMode) ? RenderParameters.adsSwitch + adsSpeedFinal : RenderParameters.adsSwitch - adsSpeedFinal;
                 RenderParameters.adsSwitch = Math.max(0, Math.min(1, value));
-                
+
 
                 float sprintSpeed = 0.15f * renderTick;
                 float sprintValue = (player.isSprinting() && !ClientRenderHooks.getAnimMachine(player).attachmentMode) ? RenderParameters.sprintSwitch + sprintSpeed : RenderParameters.sprintSwitch - sprintSpeed;
                 RenderParameters.sprintSwitch = Math.max(0, Math.min(1, sprintValue));
-                
+
 
                 float attachmentSpeed = 0.15f * renderTick;
                 float attachmentValue = ClientRenderHooks.getAnimMachine(player).attachmentMode ? RenderParameters.attachmentSwitch + attachmentSpeed : RenderParameters.attachmentSwitch - attachmentSpeed;
                 RenderParameters.attachmentSwitch = Math.max(0, Math.min(1, attachmentValue));
-                
+
 
                 float crouchSpeed = 0.15f * renderTick;
                 float crouchValue = player.isSneaking() ? RenderParameters.crouchSwitch + crouchSpeed : RenderParameters.crouchSwitch - crouchSpeed;
                 RenderParameters.crouchSwitch = Math.max(0, Math.min(1, crouchValue));
-                
+
 
                 float reloadSpeed = 0.15f * renderTick;
                 float reloadValue = anim.reloading ? RenderParameters.reloadSwitch - reloadSpeed : RenderParameters.reloadSwitch + reloadSpeed;
                 RenderParameters.reloadSwitch = Math.max(0, Math.min(1, reloadValue));
-                
+
 
                 float triggerPullSpeed = 0.03f * renderTick;
                 float triggerPullValue = Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(0) && !ClientRenderHooks.getAnimMachine(player).attachmentMode ? RenderParameters.triggerPullSwitch + triggerPullSpeed : RenderParameters.triggerPullSwitch - triggerPullSpeed;
@@ -292,7 +293,7 @@ public class ClientTickHandler extends ForgeEvent {
             RayTraceResult rayTraceResult = RayUtil.rayTrace(player,5f, 1.0f);
             float recover=0.1f;
             if(Mouse.isButtonDown(1)) {
-                recover=0.8f;  
+                recover=0.8f;
             }
             if(rayTraceResult != null) {
                 if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
@@ -382,33 +383,57 @@ public class ClientTickHandler extends ForgeEvent {
         }
     }
 
-    
-
-    public void onClientTickEnd(Minecraft minecraft) {
-        if (minecraft.player == null || minecraft.world == null)
-            return;
-
-        EntityPlayerSP player = minecraft.player;
-
-        if (playerRecoilPitch > 0 || -playerRecoilPitch > 0)
+    private void doRecoil(EntityPlayerSP player) {
+        if (playerRecoilPitch != 0.f)
             playerRecoilPitch *= 0.8F;
 
-        if (playerRecoilYaw > 0 || -playerRecoilYaw > 0)
+        if (playerRecoilYaw != 0.f)
             playerRecoilYaw *= 0.8F;
 
         player.rotationPitch -= playerRecoilPitch;
         player.rotationYaw -= playerRecoilYaw;
         antiRecoilPitch += playerRecoilPitch;
         if (antiRecoilPitch >= 10f) {
-            antiRecoilPitch *= 0.9f;
+            antiRecoilPitch *= 0.8f;
         }
         antiRecoilYaw += playerRecoilYaw;
+    }
 
-        player.rotationPitch += antiRecoilPitch * 0.25F;
-        player.rotationYaw += antiRecoilYaw * 0.25F;
+    private void doAntiRecoil(EntityPlayerSP player) {
+        if (playerAntiRecoilFactor == 0) {
+            antiRecoilPitch = antiRecoilYaw = 0;
+            return;
+        }
+        long currentMillis = System.currentTimeMillis();
+        long intervalTime = currentMillis - startAntiRecoilTime;
+        if (startAntiRecoilTime == 0 || intervalTime < playerAntiRecoilStartTime) {
+            return;
+        }
+        float currentFac = (float) Math.log(intervalTime * intervalTime + 1) * (1 / playerAntiRecoilFactor) + 1;
+        if (antiRecoilPitch < 0.01F) {
+            antiRecoilPitch = 0;
+        }
+        if (antiRecoilYaw < 0.01F) {
+            antiRecoilYaw = 0;
+        }
+
+        float currentAntiPitch = antiRecoilPitch / currentFac;
+        float currentAntiYaw = antiRecoilYaw / currentFac;
+
+        player.rotationPitch += currentAntiPitch;
+        player.rotationYaw += currentAntiYaw;
         //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+player.rotationPitch+" "+antiRecoilPitch+" "+totalPitchAngle+" "+playerRecoilPitch));
-        antiRecoilPitch *= 0.75F;
-        antiRecoilYaw *= 0.75F;
+        antiRecoilPitch -= currentAntiPitch;
+        antiRecoilYaw -= currentAntiYaw;
+    }
+
+    public void onClientTickEnd(Minecraft minecraft) {
+        if (minecraft.player == null || minecraft.world == null)
+            return;
+
+        EntityPlayerSP player = minecraft.player;
+        doRecoil(player);
+        doAntiRecoil(player);
 
         if(!ItemGun.fireButtonHeld)
         RenderParameters.rate = Math.max(RenderParameters.rate - 0.05f , 0f);

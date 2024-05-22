@@ -164,6 +164,9 @@ public class GunType extends BaseType {
     public float recoilCrawlYawFactor = 0.5F;
     public float recoilCrawlPitchFactor = 0.5F;
 
+    public float antiRecoilFactor = 6.F;
+    public int antiRecoilStartTime = 40;
+
     /**
      * The firing modes of the gun. SEMI, FULL, BURST
      */
