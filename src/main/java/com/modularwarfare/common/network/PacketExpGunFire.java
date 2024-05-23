@@ -126,7 +126,7 @@ public class PacketExpGunFire extends PacketBase {
         IThreadListener mainThread = (WorldServer) entityPlayer.world;
         mainThread.addScheduledTask(new Runnable() {
             public void run() {
-                if (entityPlayer.ping > 100 * 20) {
+                if (entityPlayer.ping > 100 * 20 && ModConfig.INSTANCE.general.serverShotVerification) {
                     entityPlayer.sendMessage(new TextComponentString(TextFormatting.GRAY + "[" + TextFormatting.RED + "ModularWarfare" + TextFormatting.GRAY + "] Your ping is too high, shot not registered."));
                     return;
                 }

@@ -41,6 +41,9 @@ public class ModConfig {
         public ArrayList<String> content_pack_hash_list=new ArrayList<String>();
         
         public boolean drop_extra_slots_on_death = true;
+
+        public boolean serverTickVerification = true;
+        public boolean serverShotVerification = true;
         
         public float playerShadowOffset = 1f;
     }
