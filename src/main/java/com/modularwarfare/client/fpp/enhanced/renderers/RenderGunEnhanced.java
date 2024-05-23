@@ -469,6 +469,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                             exceptParts.addAll(config.attachment.get(attachmentType.internalName).hidePart);
                         }
                     }
+                    
                 }
             }
             
@@ -489,6 +490,21 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     }
                 }
             }
+
+            ItemStack loadedAmmo = new ItemStack(item.getTagCompound().getCompoundTag("ammo"));
+            if (loadedAmmo.getItem() instanceof ItemAmmo) {
+                ItemAmmo itemAmmo = (ItemAmmo) loadedAmmo.getItem();
+                AmmoType ammoType = itemAmmo.type;
+                if (config.attachment.containsKey(ammoType.internalName)) {
+                    if (config.attachment.get(ammoType.internalName).hidePart != null) {
+                        exceptParts.addAll(config.attachment.get(ammoType.internalName).hidePart);
+                    }
+                    if (config.attachment.get(ammoType.internalName).showPart != null) {
+                        exceptParts.removeAll(config.attachment.get(ammoType.internalName).showPart);
+                    }
+                }
+            }
+            
             
             exceptParts.addAll(DEFAULT_EXCEPT);
         }
@@ -1217,6 +1233,22 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
         }
 
+        ItemStack loadedAmmo = new ItemStack(demoStack.getTagCompound().getCompoundTag("ammo"));
+        if (loadedAmmo.getItem() instanceof ItemAmmo) {
+            ItemAmmo itemAmmo = (ItemAmmo) loadedAmmo.getItem();
+            AmmoType ammoType = itemAmmo.type;
+            if (config.attachment.containsKey(ammoType.internalName)) {
+                if (config.attachment.get(ammoType.internalName).hidePart != null) {
+                    exceptParts.addAll(config.attachment.get(ammoType.internalName).hidePart);
+                }
+                if (config.attachment.get(ammoType.internalName).showPart != null) {
+                    exceptParts.removeAll(config.attachment.get(ammoType.internalName).showPart);
+                }
+            }
+        }
+
+        
+
         exceptParts.addAll(RenderGunEnhanced.DEFAULT_EXCEPT);
 
         float worldScale = 1;
@@ -1254,7 +1286,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
          */
         if(renderPlayer!=null&&renderPlayer.getMainModel() instanceof ModelBiped) {
             ((ModelBiped)renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
-//            System.out.println("a");
+            //System.out.println("a");
         }
         RenderElement renderConfigElement=config.thirdPerson.renderElements.get(renderType.serializedName);
         GlStateManager.translate(renderConfigElement.pos.x, renderConfigElement.pos.y, renderConfigElement.pos.z);
