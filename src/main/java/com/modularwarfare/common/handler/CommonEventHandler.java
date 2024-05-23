@@ -67,29 +67,32 @@ public class CommonEventHandler {
     
     @SubscribeEvent
     public void onServerTick(ServerTickEvent event) {
-        if (event.phase != Phase.END) {
-            return;
-        }
-        long time=System.currentTimeMillis();
-        ArrayList<String> list = new ArrayList<String>();
-        playerTimeoutMap.forEach((name, t) -> {
-            EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList()
-                    .getPlayerByUsername(name);
-            if(player==null) {
-                list.add(name);
-            }else {
-                if(time>t+5000) {
-                    ModularWarfare.NETWORK.sendTo(new PacketVerification(), player);  
-                }
-                if(time>t+10000) {
-                    player.connection.disconnect(new TextComponentString("[ModularWarfare] Verification timeout."));
-                    list.add(name);
-                }
+        if (ModConfig.INSTANCE.general.serverTickVerification) {
+            if (event.phase != Phase.END) {
+                return;
             }
-        });
-        list.forEach((name)->{
-            playerTimeoutMap.remove(name);
-        });
+            long time=System.currentTimeMillis();
+            ArrayList<String> list = new ArrayList<String>();
+            playerTimeoutMap.forEach((name, t) -> {
+                EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList()
+                        .getPlayerByUsername(name);
+                if(player==null) {
+                    list.add(name);
+                }else {
+                    if(time>t+5000) {
+                        ModularWarfare.NETWORK.sendTo(new PacketVerification(), player);  
+                    }
+                    if(time>t+10000) {
+                        player.connection.disconnect(new TextComponentString("[ModularWarfare] Verification timeout."));
+                        list.add(name);
+                    }
+                }
+            });
+            list.forEach((name)->{
+                playerTimeoutMap.remove(name);
+            });
+        }
+        
     }
 
     @SubscribeEvent
