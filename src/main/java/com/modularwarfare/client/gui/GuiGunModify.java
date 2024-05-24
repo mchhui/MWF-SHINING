@@ -212,12 +212,8 @@ public class GuiGunModify extends GuiScreen {
                 if (itemStack != null && itemStack.getItem() instanceof ItemAttachment) {
                     ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
                     AttachmentType attachType = itemAttachment.type;
-                    if (attachType.attachmentType.equals(attachmentEnum)) {
-                        if (gunType.acceptedAttachments.get(attachType.attachmentType) != null && gunType.acceptedAttachments.get(attachType.attachmentType).size() >= 1) {
-                            if (gunType.acceptedAttachments.get(attachType.attachmentType).contains(attachType.internalName)) {
-                                attachments.add(i);
-                            }
-                        }
+                    if (attachType.attachmentType.equals(attachmentEnum) && gunType.canAcceptAttachment(itemStack)) {
+						attachments.add(i);
                     }
                 }
             } else {

@@ -205,13 +205,7 @@ public class ContainerInventoryModified extends Container {
             ItemStack clickItem = inventorySlots.get(slotId).getStack();
             if (playerInventoryItemStack.getItem() instanceof ItemAttachment && clickItem.getItem() instanceof ItemGun) {
                 ItemGun gun = (ItemGun) clickItem.getItem();
-                ItemAttachment attachment = (ItemAttachment) playerInventoryItemStack.getItem();
-                GunType gunType = gun.type;
-                AttachmentType attachmentType = attachment.type;
-                AttachmentPresetEnum attachmentPresetEnum = attachmentType.attachmentType;
-                HashMap<AttachmentPresetEnum, ArrayList<String>> acceptedSockets = gunType.acceptedAttachments;
-                ArrayList<String> acceptedAttachment = acceptedSockets.get(attachmentPresetEnum);
-                if (acceptedAttachment != null && acceptedAttachment.contains(attachmentType.internalName)) {
+                if (gun.type.canAcceptAttachment(playerInventoryItemStack)) {
                     new PacketGunAddAttachment(-999).handleServerSide((EntityPlayerMP) player);
                     return ItemStack.EMPTY;
                 }

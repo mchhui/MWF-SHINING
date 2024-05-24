@@ -55,36 +55,29 @@ public class PacketGunAddAttachment extends PacketBase {
                 attachStack=event.attach;
                 if (attachStack != null&&!attachStack.isEmpty()) {
                     if (attachStack.getItem() instanceof ItemAttachment) {
+                        if (!gunType.canAcceptAttachment(attachStack)) {
+                            return;
+                        }
                         ItemAttachment itemAttachment = (ItemAttachment) attachStack.getItem();
                         AttachmentType attachType = itemAttachment.type;
-                        if (gunType.acceptedAttachments.get(attachType.attachmentType) != null && gunType.acceptedAttachments.get(attachType.attachmentType).size() >= 1) {
-                            if (gunType.acceptedAttachments.containsKey(attachType.attachmentType)) {
-                                if (gunType.acceptedAttachments.get(attachType.attachmentType) != null) {
-                                    if (gunType.acceptedAttachments.get(attachType.attachmentType).size() >= 1) {
-                                        if (gunType.acceptedAttachments.get(attachType.attachmentType).contains(attachType.internalName)) {
-                                            ItemStack itemStack = GunType.getAttachment(gunStack, attachType.attachmentType);
-                                            if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                                                ItemAttachment localItemAttachment = (ItemAttachment) itemStack.getItem();
-                                                AttachmentType localAttachType = localItemAttachment.type;
-                                                GunType.removeAttachment(gunStack, localAttachType.attachmentType);
-                                                inventory.addItemStackToInventory(itemStack);
-                                            }
-                                        }
-                                    }
-                                    ItemStack attachmentStack = new ItemStack(itemAttachment);
-                                    NBTTagCompound tag = new NBTTagCompound();
-                                    tag.setInteger("skinId", 0);
-                                    attachmentStack.setTagCompound(tag);
-                                    GunType.addAttachment(gunStack, attachType.attachmentType, attachmentStack);
-                                    if (slot == -999) {
-                                        inventory.getItemStack().shrink(1);
-                                    } else {
-                                        inventory.getStackInSlot(this.slot).shrink(1);
-                                    }
-                                    ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
-                                }
-                            }
+                        ItemStack existAttachment = GunType.getAttachment(gunStack, attachType.attachmentType);
+                        if (existAttachment != null && existAttachment.getItem() != Items.AIR) {
+                            ItemAttachment localItemAttachment = (ItemAttachment) existAttachment.getItem();
+                            AttachmentType localAttachType = localItemAttachment.type;
+                            GunType.removeAttachment(gunStack, localAttachType.attachmentType);
+                            inventory.addItemStackToInventory(existAttachment);
                         }
+                        ItemStack attachmentStack = new ItemStack(itemAttachment);
+                        NBTTagCompound tag = new NBTTagCompound();
+                        tag.setInteger("skinId", 0);
+                        attachmentStack.setTagCompound(tag);
+                        GunType.addAttachment(gunStack, attachType.attachmentType, attachmentStack);
+                        if (slot == -999) {
+                            inventory.getItemStack().shrink(1);
+                        } else {
+                            inventory.getStackInSlot(this.slot).shrink(1);
+                        }
+                        ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
                     }
                     if (slot != -999 && (attachStack.getItem() instanceof ItemSpray)) {
                         ItemSpray spray = (ItemSpray) attachStack.getItem();
