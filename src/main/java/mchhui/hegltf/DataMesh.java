@@ -59,7 +59,7 @@ public class DataMesh {
     private int ssbo = -1;
 
     public void render() {
-        if (!compiled) {
+         if (!compiled) {
             try {
                 compileVAO(1);
                 return;
@@ -259,16 +259,17 @@ public class DataMesh {
     }
 
     public void delete() {
-        if(geoBuffer!=null) {
-            if(((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner())!=null) {
-                ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)geoBuffer).cleaner()).clean();  
-            }
-        }
-        if(elementBuffer!=null) {
-            if(((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner())!=null) {
-                ((sun.misc.Cleaner)((sun.nio.ch.DirectBuffer)elementBuffer).cleaner()).clean();  
-            }
-        }
+        // It will be auto clean.
+//        if(geoBuffer!=null) {
+//            if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() !=null) {
+//                ((sun.nio.ch.DirectBuffer)geoBuffer).cleaner().clean();
+//            }
+//        }
+//        if(elementBuffer!=null) {
+//            if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() !=null) {
+//                ((sun.nio.ch.DirectBuffer)elementBuffer).cleaner().clean();
+//            }
+//        }
         GL30.glDeleteVertexArrays(displayList);
         GL30.glDeleteVertexArrays(ssboVao);
         if (pos_vbo != -1) {
