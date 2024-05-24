@@ -592,10 +592,7 @@ public class AnimationController {
                 }
             }
         }
-        if(!customAnimationReload&&CUSTOM<1) {
-            return false;
-        }
-        return true;
+        return !customAnimationReload || !(CUSTOM < 1);
     }
     
     public boolean isCouldShoot() {
@@ -621,10 +618,7 @@ public class AnimationController {
                 }
             }
         }
-        if(!customAnimationFire&&CUSTOM<1) {
-            return false;
-        }
-        return true;
+        return !customAnimationFire || !(CUSTOM < 1);
     }
     
     public ItemStack getRenderAmmo(ItemStack ammo) {
