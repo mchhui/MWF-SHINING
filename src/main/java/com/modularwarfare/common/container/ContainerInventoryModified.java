@@ -1,13 +1,16 @@
 package com.modularwarfare.common.container;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
-import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.network.PacketGunAddAttachment;
 import com.modularwarfare.utility.ModUtil;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.*;
 import net.minecraft.item.ItemArmor;
@@ -20,6 +23,8 @@ import net.minecraftforge.items.SlotItemHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /***
  * Modified copy of Vanilla's Player inventory
@@ -191,10 +196,28 @@ public class ContainerInventoryModified extends Container {
 
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player) {
-        if(clickTypeIn!=ClickType.PICKUP&&clickTypeIn!=ClickType.QUICK_CRAFT&&clickTypeIn!=ClickType.THROW) {
+        if (clickTypeIn != ClickType.PICKUP && clickTypeIn != ClickType.QUICK_CRAFT && clickTypeIn != ClickType.THROW) {
             return ItemStack.EMPTY;
         }
-         return super.slotClick(slotId, dragType, clickTypeIn, player);
+        ItemStack playerInventoryItemStack = player.inventory.getItemStack();
+
+        if (ModConfig.INSTANCE.guns.acceptAttachmentDrag && player instanceof EntityPlayerMP && slotId != -999 && dragType == 0 && clickTypeIn == ClickType.PICKUP && !playerInventoryItemStack.isEmpty()) {
+            ItemStack clickItem = inventorySlots.get(slotId).getStack();
+            if (playerInventoryItemStack.getItem() instanceof ItemAttachment && clickItem.getItem() instanceof ItemGun) {
+                ItemGun gun = (ItemGun) clickItem.getItem();
+                ItemAttachment attachment = (ItemAttachment) playerInventoryItemStack.getItem();
+                GunType gunType = gun.type;
+                AttachmentType attachmentType = attachment.type;
+                AttachmentPresetEnum attachmentPresetEnum = attachmentType.attachmentType;
+                HashMap<AttachmentPresetEnum, ArrayList<String>> acceptedSockets = gunType.acceptedAttachments;
+                ArrayList<String> acceptedAttachment = acceptedSockets.get(attachmentPresetEnum);
+                if (acceptedAttachment != null && acceptedAttachment.contains(attachmentType.internalName)) {
+                    new PacketGunAddAttachment(-999).handleServerSide((EntityPlayerMP) player);
+                    return ItemStack.EMPTY;
+                }
+            }
+        }
+        return super.slotClick(slotId, dragType, clickTypeIn, player);
     }
 
     @Override

@@ -65,6 +65,7 @@ public class ModConfig {
     public Guns guns = new Guns();
     public static class Guns {
         public boolean guns_interaction_hand = true;
+        public boolean acceptAttachmentDrag = true;
 
         public List<String> anim_guns_show_default_objects = Arrays.asList("ammoModel",
                 "leftArmModel", "leftArmLayerModel",

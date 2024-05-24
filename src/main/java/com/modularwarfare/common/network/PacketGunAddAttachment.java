@@ -42,7 +42,12 @@ public class PacketGunAddAttachment extends PacketBase {
                 ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
                 GunType gunType = itemGun.type;
                 InventoryPlayer inventory = entityPlayer.inventory;
-                ItemStack attachStack = inventory.getStackInSlot(slot);
+                ItemStack attachStack;
+                if (slot == -999) {
+                    attachStack = inventory.getItemStack();
+                } else {
+                    attachStack = inventory.getStackInSlot(slot);
+                }
                 WeaponAttachmentEvent.Load event=new WeaponAttachmentEvent.Load(entityPlayer,gunStack, attachStack);
                 if(MinecraftForge.EVENT_BUS.post(event)) {
                     return;
@@ -71,13 +76,17 @@ public class PacketGunAddAttachment extends PacketBase {
                                     tag.setInteger("skinId", 0);
                                     attachmentStack.setTagCompound(tag);
                                     GunType.addAttachment(gunStack, attachType.attachmentType, attachmentStack);
-                                    inventory.getStackInSlot(this.slot).shrink(1);
+                                    if (slot == -999) {
+                                        inventory.getItemStack().shrink(1);
+                                    } else {
+                                        inventory.getStackInSlot(this.slot).shrink(1);
+                                    }
                                     ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f), entityPlayer);
                                 }
                             }
                         }
                     }
-                    if (attachStack.getItem() instanceof ItemSpray) {
+                    if (slot != -999 && (attachStack.getItem() instanceof ItemSpray)) {
                         ItemSpray spray = (ItemSpray) attachStack.getItem();
                         if (gunStack.getTagCompound() != null) {
                             for (int i = 0; i < gunType.modelSkins.length; i++) {
