@@ -28,9 +28,10 @@ public class ModConfig {
         this.casings_drops = new Casings();
         this.killFeed = new KillFeed();
     }
-    
+
     //general
     public General general = new General();
+
     public static class General {
         public boolean customInventory = true;
         public boolean prototype_pack_extraction = true;
@@ -38,24 +39,26 @@ public class ModConfig {
 
         public boolean modified_pack_server_kick = true;
         public boolean directory_pack_server_kick = true;
-        public ArrayList<String> content_pack_hash_list=new ArrayList<String>();
-        
+        public ArrayList<String> content_pack_hash_list = new ArrayList<String>();
+
         public boolean drop_extra_slots_on_death = true;
 
         public boolean serverTickVerification = true;
         public boolean serverShotVerification = true;
-        
+
         public float playerShadowOffset = 1f;
     }
-    
+
     //client
     public Client client = new Client();
+
     public static class Client {
-        public boolean hideSecondSkinWhenDressed=true;
+        public boolean hideSecondSkinWhenDressed = true;
     }
 
     //shots
     public Shots shots = new Shots();
+
     public static class Shots {
         public boolean shot_break_glass = false;
         public boolean knockback_entity_damage = false;
@@ -63,6 +66,7 @@ public class ModConfig {
 
     //guns
     public Guns guns = new Guns();
+
     public static class Guns {
         public boolean guns_interaction_hand = true;
         public boolean acceptAttachmentDrag = true;
@@ -72,13 +76,14 @@ public class ModConfig {
                 "leftArmSlimModel", "leftArmLayerSlimModel",
                 "rightArmModel", "rightArmLayerModel",
                 "rightArmSlimModel", "rightArmLayerSlimModel",
-                "flashModel","smokeModel","sprint_righthand","sprint_lefthand",
-                "selector_semi","selector_full","selector_brust",
+                "flashModel", "smokeModel", "sprint_righthand", "sprint_lefthand",
+                "selector_semi", "selector_full", "selector_brust",
                 "bulletModel");
     }
 
     //drops
     public Drops drops = new Drops();
+
     public static class Drops {
         public boolean advanced_drops_models = true;
         public int drops_despawn_time = 120;
@@ -87,6 +92,7 @@ public class ModConfig {
 
     //hud ui
     public Hud hud = new Hud();
+
     public static class Hud {
         public boolean hitmarkers = true;
         public boolean enable_crosshair = true;
@@ -94,18 +100,19 @@ public class ModConfig {
         public boolean ammo_count = true;
         public boolean snap_fade_hit = true;
         public boolean isDynamicFov = false;
-        public boolean ads_blur=false;
+        public boolean ads_blur = false;
         public float handDepthRangeMax = 0.6f;
         public float handDepthRangeMin = 0f;
         public Vector3f projectionScale = new Vector3f(0.125f, 0.125f, 0.125f);
-        public float eraseScopeDepth=1f;
-        public int shadersColorTexID=0;
-        public boolean alwaysRenderPIPWorld=false;
-        public boolean autoSwitchToFirstView=true;
+        public float eraseScopeDepth = 1f;
+        public int shadersColorTexID = 0;
+        public boolean alwaysRenderPIPWorld = false;
+        public boolean autoSwitchToFirstView = true;
     }
 
     //walk sounds
     public Walk walks_sounds = new Walk();
+
     public static class Walk {
         public boolean walk_sounds = true;
         public float volume = 0.3f;
@@ -113,11 +120,13 @@ public class ModConfig {
 
     //casings
     public Casings casings_drops = new Casings();
+
     public static class Casings {
         public int despawn_time = 10;
     }
 
     public KillFeed killFeed = new KillFeed();
+
     public static class KillFeed {
         public boolean enableKillFeed = true;
         public boolean sendDefaultKillMessage = false;
@@ -146,10 +155,10 @@ public class ModConfig {
 //                } else {
 //                    INSTANCE = config;
 //                }
-            INSTANCE = config;
-            System.out.println("test:"+config.client);
+                INSTANCE = config;
+                System.out.println("test:" + config.client);
             } else {
-                try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
+                try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), "UTF-8")) {
                     gson.toJson(this, writer);
                 }
                 INSTANCE = this;
