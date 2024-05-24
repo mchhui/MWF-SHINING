@@ -317,6 +317,16 @@ public class GunType extends BaseType {
         }
     }
 
+    public boolean canAcceptAttachment(ItemStack itemStack) {
+        if (itemStack == null || !(itemStack.getItem() instanceof ItemAttachment)) {
+            return false;
+        }
+        ItemAttachment attachment = (ItemAttachment) itemStack.getItem();
+        AttachmentType attachType = attachment.type;
+        ArrayList<String> acceptItems = acceptedAttachments.get(attachType.attachmentType);
+        return acceptItems != null && acceptItems.contains(attachType.internalName);
+    }
+
     @Override
     public void loadExtraValues() {
         if (maxStackSize == null)
