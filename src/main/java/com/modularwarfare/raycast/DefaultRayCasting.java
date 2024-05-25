@@ -181,10 +181,13 @@ public class DefaultRayCasting extends RayCasting {
                 if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
                     EntityLivingBase entityLivingBase = (EntityLivingBase) ent;
                     if (!ent.isDead && entityLivingBase.getHealth() > 0.0F) {
-                        float entBorder = ent.getCollisionBorderSize();
+                        double entBorder = ent.getCollisionBorderSize();
+                        if (entBorder == 0) {
+                            entBorder = 0.30000001192092896D;
+                        }
                         entityBb = ent.getEntityBoundingBox();
                         if (entityBb != null) {
-                            entityBb = entityBb.grow(entBorder, entBorder, entBorder);
+                            entityBb = entityBb.grow(entBorder);
                             GetLivingAABBEvent aabbEvent=new GetLivingAABBEvent(entityLivingBase, entityBb) ;
                             MinecraftForge.EVENT_BUS.post(aabbEvent);
                             entityBb=aabbEvent.box;
