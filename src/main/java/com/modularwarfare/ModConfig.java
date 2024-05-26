@@ -4,9 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
-import net.minecraft.util.math.Vec3d;
-
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -146,23 +146,14 @@ public class ModConfig {
         try {
             if (configFile.exists()) {
                 JsonReader jsonReader = new JsonReader(new FileReader(configFile));
-                ModConfig config = gson.fromJson(jsonReader, ModConfig.class);
-//                System.out.println("Comparing version " + config.version + " to " + ModularWarfare.MOD_VERSION);
-//                if (config.version == null || !config.version.matches(ModularWarfare.MOD_VERSION)) {
-//                    try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile),"UTF-8")) {
-//                        gson.toJson(this, writer);
-//                    }
-//                    INSTANCE = this;
-//                } else {
-//                    INSTANCE = config;
-//                }
-                INSTANCE = config;
-                System.out.println("test:" + config.client);
+                INSTANCE = gson.fromJson(jsonReader, ModConfig.class);
             } else {
-                try (Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), "UTF-8")) {
-                    gson.toJson(this, writer);
-                }
                 INSTANCE = this;
+            }
+
+            //rewrite config to file, because we need update config file with the new options.
+            try (Writer writer = Files.newBufferedWriter(configFile.toPath(), StandardCharsets.UTF_8)) {
+                gson.toJson(INSTANCE, writer);
             }
         } catch (Exception e) {
             e.printStackTrace();
