@@ -47,6 +47,7 @@ public class ModConfig {
         public boolean serverShotVerification = true;
 
         public float playerShadowOffset = 1f;
+        public float collisionBorderSizeFixNonPlayer = 0.f;
     }
 
     //client

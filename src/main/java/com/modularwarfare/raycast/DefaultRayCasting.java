@@ -183,7 +183,7 @@ public class DefaultRayCasting extends RayCasting {
                     if (!ent.isDead && entityLivingBase.getHealth() > 0.0F) {
                         double entBorder = ent.getCollisionBorderSize();
                         if (entBorder == 0) {
-                            entBorder = 0.30000001192092896D;
+                            entBorder = ModConfig.INSTANCE.general.collisionBorderSizeFixNonPlayer;
                         }
                         entityBb = ent.getEntityBoundingBox();
                         if (entityBb != null) {
