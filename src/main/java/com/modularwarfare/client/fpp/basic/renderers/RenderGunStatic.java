@@ -1317,7 +1317,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                 GlStateManager.colorMask(true, true, true, true);
                 GlStateManager.depthMask(true);
                 GlStateManager.clear (GL11.GL_DEPTH_BUFFER_BIT);
-                copyDepthBuffer();
+                ClientRenderHooks.copyDepthBuffer();
                 ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
                 GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
                 
@@ -1346,7 +1346,7 @@ public class RenderGunStatic extends CustomItemRenderer {
                 
                 GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, tex, 0);
                 GlStateManager.clear (GL11.GL_DEPTH_BUFFER_BIT);
-                copyDepthBuffer();
+                ClientRenderHooks.copyDepthBuffer();
                 ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
                 GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1368,18 +1368,6 @@ public class RenderGunStatic extends CustomItemRenderer {
         }
         
     }
-    
-    public void copyDepthBuffer() {
-        Minecraft mc=Minecraft.getMinecraft();
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);
-        GlStateManager.colorMask(false,false,false,false);
-        GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
-        GlStateManager.colorMask(true,true,true,true);
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, GL11.GL_NONE);
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, GL11.GL_NONE);
-    }
-
 
     @SideOnly(Side.CLIENT)
     private void renderWorldOntoScope(AttachmentType type, ModelAttachment modelAttachment) {

@@ -379,7 +379,7 @@ public class ClientRenderHooks extends ForgeEvent {
         ScopeUtils.isIndsideGunRendering=false;
     }
     
-    public void copyDepthBuffer() {
+    public static void copyDepthBuffer() {
         Minecraft mc=Minecraft.getMinecraft();
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);

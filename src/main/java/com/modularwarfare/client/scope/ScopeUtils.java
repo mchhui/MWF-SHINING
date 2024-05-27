@@ -516,17 +516,6 @@ public class ScopeUtils {
         GlStateManager.translate(0.0F, 0.0F, -2000.0F);
     }
     
-    public void copyDepthBuffer() {
-        Minecraft mc=Minecraft.getMinecraft();
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);
-        GlStateManager.colorMask(false,false,false,false);
-        GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight, GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
-        GlStateManager.colorMask(true,true,true,true);
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, GL11.GL_NONE);
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, GL11.GL_NONE);
-    }
-    
     public void copyEraseDepthBuffer() {
         GL43.glCopyImageSubData(MWFOptifineShadesHelper.getDFBDepthTextures().get(0), GL11.GL_TEXTURE_2D, 0, 0, 0, 0, DEPTH_ERASE_TEX, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, lastWidth, lastHeight, 1);
     }
