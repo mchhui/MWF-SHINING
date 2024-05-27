@@ -96,7 +96,7 @@ public class PacketExpShot extends PacketBase {
                                 
                                 //Hands upwards when shooting
                                 if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
-                                    ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
+                                    ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(entityPlayer.getName(), true));
                                 }
                                 ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
                                 

@@ -24,11 +24,8 @@ import com.modularwarfare.common.hitbox.hits.OBBHit;
 import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.network.*;
-import com.modularwarfare.utility.MWSound;
-import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
 
-import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -359,7 +356,7 @@ public class ShotManager {
 
             //Hands upwards when shooting
             if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
-                ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(entityPlayer.getName(), true));
+                ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(entityPlayer.getName(), true));
             }
             ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
         } else {

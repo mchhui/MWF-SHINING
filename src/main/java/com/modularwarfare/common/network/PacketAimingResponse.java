@@ -7,16 +7,16 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 
-public class PacketAimingReponse extends PacketBase {
+public class PacketAimingResponse extends PacketBase {
 
 
     public String playername;
     public boolean aiming;
 
-    public PacketAimingReponse() {
+    public PacketAimingResponse() {
     }
 
-    public PacketAimingReponse(String playername, boolean aiming) {
+    public PacketAimingResponse(String playername, boolean aiming) {
         this.playername = playername;
         this.aiming = aiming;
     }

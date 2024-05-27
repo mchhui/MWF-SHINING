@@ -5,8 +5,7 @@ import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.handler.data.DataGunReloadEnhancedTask;
-import com.modularwarfare.common.network.BackWeaponsManager;
-import com.modularwarfare.common.network.PacketAimingReponse;
+import com.modularwarfare.common.network.PacketAimingResponse;
 import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -64,7 +63,7 @@ public class ServerTickHandler extends ForgeEvent {
         if(playerAimInstant.get(event.player.getName())==Boolean.TRUE) {
             flag=true;
         }
-        ModularWarfare.NETWORK.sendToAll(new PacketAimingReponse(event.player.getName(), flag));
+        ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(event.player.getName(), flag));
     }
     
     @SubscribeEvent
