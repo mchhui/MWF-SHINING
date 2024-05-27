@@ -47,7 +47,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
      * Store received packets in these queues and have the main Minecraft threads use these
      */
     private ConcurrentLinkedQueue<PacketBase> receivedPacketsClient = new ConcurrentLinkedQueue<PacketBase>();
-    private ConcurrentHashMap<String, ConcurrentLinkedQueue<PacketBase>> receivedPacketsServer = new ConcurrentHashMap<String, ConcurrentLinkedQueue<PacketBase>>();
+    private ConcurrentHashMap<UUID, ConcurrentLinkedQueue<PacketBase>> receivedPacketsServer = new ConcurrentHashMap<UUID, ConcurrentLinkedQueue<PacketBase>>();
     
     //这种同步方法可能性能不是最好的 但还算够用
     private Object lock=new Object();
@@ -99,7 +99,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
             } catch (Exception e) {
                 ModularWarfare.LOGGER.error("ERROR encoding packet");
                 ModularWarfare.LOGGER.throwing(e);
-            }  
+            }
         }
     }
 
@@ -130,9 +130,9 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
                     case SERVER: {
                         INetHandler netHandler = ctx.channel().attr(NetworkRegistry.NET_HANDLER).get();
                         EntityPlayer player = ((NetHandlerPlayServer) netHandler).player;
-                        if (!receivedPacketsServer.containsKey(player.getName()))
-                            receivedPacketsServer.put(player.getName(), new ConcurrentLinkedQueue<PacketBase>());
-                        receivedPacketsServer.get(player.getName()).offer(packet);
+                        if (!receivedPacketsServer.containsKey(player.getUniqueID()))
+                            receivedPacketsServer.put(player.getUniqueID(), new ConcurrentLinkedQueue<PacketBase>());
+                        receivedPacketsServer.get(player.getUniqueID()).offer(packet);
                         //packet.handleServerSide();
                         break;
                     }
@@ -140,7 +140,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
             } catch (Exception e) {
                 ModularWarfare.LOGGER.error("ERROR decoding packet");
                 ModularWarfare.LOGGER.throwing(e);
-            }  
+            }
         }
     }
 
@@ -154,9 +154,9 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
 
     public void handleServerPackets() {
         synchronized(lock) {
-            for (String playerName : receivedPacketsServer.keySet()) {
-                ConcurrentLinkedQueue<PacketBase> receivedPacketsFromPlayer = receivedPacketsServer.get(playerName);
-                EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(playerName);
+            for (UUID playerEntityUniqueID : receivedPacketsServer.keySet()) {
+                ConcurrentLinkedQueue<PacketBase> receivedPacketsFromPlayer = receivedPacketsServer.get(playerEntityUniqueID);
+                EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUUID(playerEntityUniqueID);
                 if(player == null) {
                     receivedPacketsFromPlayer.clear();
                     continue;
