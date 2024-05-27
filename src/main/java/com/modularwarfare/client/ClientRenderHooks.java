@@ -337,11 +337,13 @@ public class ClientRenderHooks extends ForgeEvent {
                 GlStateManager.popMatrix();
                 
                 GL11.glDepthRange(0, 1);
-                if (mc.gameSettings.thirdPersonView == 0 && !flag) {
-                    if(!ScopeUtils.isIndsideGunRendering) {
-                        itemRenderer.renderOverlays(partialTicks);  
-                    }
-                }
+
+                // Game will render it. Why render overlays twice?
+//                if (mc.gameSettings.thirdPersonView == 0 && !flag) {
+//                    if(!ScopeUtils.isIndsideGunRendering) {
+//                        itemRenderer.renderOverlays(partialTicks);
+//                    }
+//                }
                 
             }
         }
