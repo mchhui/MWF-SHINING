@@ -95,14 +95,14 @@ public class PacketExpShot extends PacketBase {
                                 }
                                 
                                 //Hands upwards when shooting
-                                if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
-                                    ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(entityPlayer.getName(), true));
+                                if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getUniqueID()) == null) {
+                                    ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(entityPlayer.getUniqueID(), true));
                                 }
-                                ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
+                                ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getUniqueID(), 60);
                                 
                                 //Animation
                                 MinecraftForge.EVENT_BUS.post(new WeaponExpShotEvent(entityPlayer));
-                                ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getName(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
+                                ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getUniqueID(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
                                 Vec3d posSmoke =entityPlayer.getPositionEyes(0);
                                 if(ModularWarfare.isLoadedModularMovements) {
                                     posSmoke=ServerListener.onGetPositionEyes(entityPlayer, 0, posSmoke);

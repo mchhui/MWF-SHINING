@@ -103,7 +103,7 @@ public class RayUtil {
                 }
             }
         }else {//Server side
-        	Boolean bb=ServerTickHandler.playerAimInstant.get(player);
+        	Boolean bb=ServerTickHandler.playerAimInstant.get(player.getUniqueID());
             if(bb!=null&&bb) {
                 acc *= gun.accuracyAimFactor;
             }

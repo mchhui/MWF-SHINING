@@ -24,8 +24,8 @@ public class ServerTickHandler extends ForgeEvent {
     public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ConcurrentHashMap<UUID, ItemStack> playerReloadItemStack = new ConcurrentHashMap<UUID, ItemStack>();
 
-    public static ConcurrentHashMap<String, Integer> playerAimShootCooldown = new ConcurrentHashMap<String, Integer>();
-    public static ConcurrentHashMap<String, Boolean> playerAimInstant = new ConcurrentHashMap<String, Boolean>();
+    public static ConcurrentHashMap<UUID, Integer> playerAimShootCooldown = new ConcurrentHashMap<UUID, Integer>();
+    public static ConcurrentHashMap<UUID, Boolean> playerAimInstant = new ConcurrentHashMap<UUID, Boolean>();
     public static ConcurrentHashMap<UUID, DataGunReloadEnhancedTask> reloadEnhancedTask = new ConcurrentHashMap<UUID, DataGunReloadEnhancedTask>();
 
     int i = 0;
@@ -57,13 +57,13 @@ public class ServerTickHandler extends ForgeEvent {
         }
         
         boolean flag=false;
-        if(playerAimShootCooldown.containsKey(event.player.getName())) {
+        if(playerAimShootCooldown.containsKey(event.player.getUniqueID())) {
             flag=true;
         }
-        if(playerAimInstant.get(event.player.getName())==Boolean.TRUE) {
+        if(playerAimInstant.get(event.player.getUniqueID())==Boolean.TRUE) {
             flag=true;
         }
-        ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(event.player.getName(), flag));
+        ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(event.player.getUniqueID(), flag));
     }
     
     @SubscribeEvent
@@ -80,15 +80,15 @@ public class ServerTickHandler extends ForgeEvent {
             case START:
                 ModularWarfare.NETWORK.handleServerPackets();
                 // Player shoot aim cooldown
-                for (String playername : playerAimShootCooldown.keySet()) {
+                for (UUID playerEntityUniqueId : playerAimShootCooldown.keySet()) {
                     i += 1;
 
-                    int value = playerAimShootCooldown.get(playername) - 1;
+                    int value = playerAimShootCooldown.get(playerEntityUniqueId) - 1;
 
                     if (value <= 0) {
-                        playerAimShootCooldown.remove(playername);
+                        playerAimShootCooldown.remove(playerEntityUniqueId);
                     } else {
-                        playerAimShootCooldown.replace(playername, value);
+                        playerAimShootCooldown.replace(playerEntityUniqueId, value);
                     }
 
                 }

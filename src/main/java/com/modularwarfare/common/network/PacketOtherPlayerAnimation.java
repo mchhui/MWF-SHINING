@@ -16,22 +16,20 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
 
+import java.util.UUID;
+
 public class PacketOtherPlayerAnimation extends PacketBase {
 
-    public String playerName;
+    public UUID playerEntityUniqueID;
     public AnimationType animationType;
 
     public String internalname;
     public int fireTickDelay;
     public boolean isFailed;
 
-    public PacketOtherPlayerAnimation() {
-        // TODO Auto-generated constructor stub
-    }
-
-    public PacketOtherPlayerAnimation(String playerName, AnimationType animationType, String internalname,
+    public PacketOtherPlayerAnimation(UUID playerEntityUniqueID, AnimationType animationType, String internalname,
             int fireTickDelay, boolean isFailed) {
-        this.playerName = playerName;
+        this.playerEntityUniqueID = playerEntityUniqueID;
         this.animationType = animationType;
         this.internalname = internalname;
         this.fireTickDelay = fireTickDelay;
@@ -45,7 +43,7 @@ public class PacketOtherPlayerAnimation extends PacketBase {
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buffer = new PacketBuffer(data);
-        buffer.writeString(playerName);
+        buffer.writeUniqueId(playerEntityUniqueID);
         buffer.writeEnumValue(animationType);
         buffer.writeString(internalname);
         buffer.writeInt(fireTickDelay);
@@ -55,7 +53,7 @@ public class PacketOtherPlayerAnimation extends PacketBase {
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buffer = new PacketBuffer(data);
-        playerName = buffer.readString(Short.MAX_VALUE);
+        playerEntityUniqueID = buffer.readUniqueId();
         animationType = buffer.readEnumValue(AnimationType.class);
         internalname=buffer.readString(Short.MAX_VALUE);
         fireTickDelay=buffer.readInt();
@@ -70,23 +68,21 @@ public class PacketOtherPlayerAnimation extends PacketBase {
 
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
-        EntityPlayer player = Minecraft.getMinecraft().world.getPlayerEntityByName(playerName);
+        EntityPlayer player = Minecraft.getMinecraft().world.getPlayerEntityByUUID(playerEntityUniqueID);
         if (player == null) {
             return;
         }
         if (animationType == AnimationType.FIRE) {
-            if (player != null) {
-                GunType gunType = ModularWarfare.gunTypes.get(internalname).type;
-                if (gunType != null) {
-                    if (gunType.animationType == WeaponAnimationType.BASIC) {
-                        ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType,
-                                fireTickDelay);
-                    } else {
-                        ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(
-                                ClientProxy.gunEnhancedRenderer.getController(player,
-                                        (GunEnhancedRenderConfig) gunType.enhancedModel.config),
-                                (ModelEnhancedGun) gunType.enhancedModel, gunType, fireTickDelay, isFailed);
-                    }
+            GunType gunType = ModularWarfare.gunTypes.get(internalname).type;
+            if (gunType != null) {
+                if (gunType.animationType == WeaponAnimationType.BASIC) {
+                    ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType,
+                            fireTickDelay);
+                } else {
+                    ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(
+                            ClientProxy.gunEnhancedRenderer.getController(player,
+                                    (GunEnhancedRenderConfig) gunType.enhancedModel.config),
+                            (ModelEnhancedGun) gunType.enhancedModel, gunType, fireTickDelay, isFailed);
                 }
             }
         }

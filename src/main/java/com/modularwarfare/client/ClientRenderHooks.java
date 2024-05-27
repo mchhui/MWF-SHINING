@@ -125,7 +125,7 @@ public class ClientRenderHooks extends ForgeEvent {
                     return;
                 if (ClientProxy.gunUI.hitMarkerTime > 0)
                     ClientProxy.gunUI.hitMarkerTime--;
-                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(mc.player.getName(), isAiming||isAimingScope));  
+                ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(isAiming||isAimingScope));
                 break;
             }
         }
@@ -133,7 +133,7 @@ public class ClientRenderHooks extends ForgeEvent {
     
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRender(RenderPlayerEvent.Pre event) {
-        boolean aim = AnimationUtils.isAiming.containsKey(event.getEntityPlayer().getName());
+        boolean aim = AnimationUtils.isAiming.containsKey(event.getEntityPlayer().getUniqueID());
         if (!aim) {
             return;
         }
@@ -519,7 +519,7 @@ public class ClientRenderHooks extends ForgeEvent {
             ModelBiped biped = (ModelBiped) event.getRenderer().getMainModel();
             Entity entity = event.getEntity();
             if (type.id == 1 && entity instanceof EntityPlayer) {
-                if (AnimationUtils.isAiming.containsKey(((EntityPlayer) entity).getName())) {
+                if (AnimationUtils.isAiming.containsKey(entity.getUniqueID())) {
                     biped.rightArmPose = ArmPose.BOW_AND_ARROW;
                 } else {
                     biped.rightArmPose = ArmPose.BLOCK;

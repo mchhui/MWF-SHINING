@@ -61,8 +61,8 @@ public class EntityShell extends Entity implements IProjectile {
 
         Vec3d rotateYaw = new Vec3d(0, 0, 0);
 
-        if (ServerTickHandler.playerAimInstant.get(throwerIn.getDisplayNameString()) != null || ServerTickHandler.playerReloadCooldown.get(throwerIn.getDisplayNameString()) != null) {
-            if (ServerTickHandler.playerAimInstant.get(throwerIn.getDisplayNameString())) {
+        if (ServerTickHandler.playerAimInstant.get(throwerIn.getUniqueID()) != null || ServerTickHandler.playerReloadCooldown.get(throwerIn.getUniqueID()) != null) {
+            if (ServerTickHandler.playerAimInstant.get(throwerIn.getUniqueID())) {
                 rotateYaw = gun.type.shellEjectOffsetAiming.rotatePitch(-(float) Math.toRadians(throwerIn.rotationPitch)).rotateYaw(-(float) Math.toRadians(throwerIn.rotationYaw));
             } else {
                 rotateYaw = gun.type.shellEjectOffsetNormal.rotatePitch(-(float) Math.toRadians(throwerIn.rotationPitch)).rotateYaw(-(float) Math.toRadians(throwerIn.rotationYaw));

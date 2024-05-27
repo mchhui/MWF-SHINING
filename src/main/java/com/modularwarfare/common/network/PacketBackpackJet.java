@@ -1,6 +1,7 @@
 package com.modularwarfare.common.network;
 
 import java.lang.reflect.Field;
+import java.util.UUID;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
@@ -13,7 +14,6 @@ import com.modularwarfare.common.guns.WeaponSoundType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.block.Block;
-import net.minecraft.entity.MoverType;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
@@ -23,7 +23,7 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.world.WorldServer;
 
 public class PacketBackpackJet extends PacketBase {
-    public String name = "";
+    public UUID playerEntityUniqueID;
     public boolean jetFire;
     public int jetDuraton = 100;
     public static Field fieldFloatingTickCount;
@@ -32,19 +32,20 @@ public class PacketBackpackJet extends PacketBase {
         // TODO Auto-generated constructor stub
     }
 
-    public PacketBackpackJet(boolean jetFire) {
+    public PacketBackpackJet(boolean jetFire, UUID playerEntityUniqueID) {
         this.jetFire = jetFire;
+        this.playerEntityUniqueID = playerEntityUniqueID;
     }
 
-    public PacketBackpackJet(String name, int jetDuraton) {
-        this.name = name;
+    public PacketBackpackJet(UUID playerEntityUniqueID, int jetDuraton) {
+        this.playerEntityUniqueID = playerEntityUniqueID;
         this.jetDuraton = jetDuraton;
     }
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buf = new PacketBuffer(data);
-        buf.writeString(name);
+        buf.writeUniqueId(playerEntityUniqueID);
         buf.writeBoolean(jetFire);
         buf.writeInt(jetDuraton);
     }
@@ -52,7 +53,7 @@ public class PacketBackpackJet extends PacketBase {
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buf = new PacketBuffer(data);
-        name = buf.readString(Short.MAX_VALUE);
+        playerEntityUniqueID = buf.readUniqueId();
         jetFire = buf.readBoolean();
         jetDuraton = buf.readInt();
     }
@@ -69,11 +70,11 @@ public class PacketBackpackJet extends PacketBase {
                 if (itemstackBackpack.getItem() instanceof ItemBackpack) {
                     BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
                     if (!jetFire) {
-                        ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getName(), 100),
+                        ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getUniqueID(), 100),
                             playerEntity);
                     } else {
                         ModularWarfare.NETWORK.sendToAllTracking(
-                            new PacketBackpackJet(playerEntity.getName(), backpack.jetElytraBoostDuration * 50),
+                            new PacketBackpackJet(playerEntity.getUniqueID(), backpack.jetElytraBoostDuration * 50),
                             playerEntity);
                     }
                     if (backpack.isJet && backpack.weaponSoundMap != null) {
@@ -119,7 +120,7 @@ public class PacketBackpackJet extends PacketBase {
 
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
-        AnimationUtils.isJet.put(name, System.currentTimeMillis() + jetDuraton);
+        AnimationUtils.isJet.put(playerEntityUniqueID, System.currentTimeMillis() + jetDuraton);
     }
 
 }

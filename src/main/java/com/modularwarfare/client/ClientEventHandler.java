@@ -138,7 +138,7 @@ public class ClientEventHandler {
                     if (isJetFly && event.player.isElytraFlying()&&!event.player.isSneaking()) {
                         if (jetFireTime == 0 && jetCoolTime == 0) {
                             jetFireTime = 1;
-                            ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet(true));
+                            ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet(true, Minecraft.getMinecraft().player.getUniqueID()));
                         }
                     }
                     if(jetFireTime>0&&jetCoolTime==0){
@@ -155,7 +155,7 @@ public class ClientEventHandler {
                         event.player.motionX = vec.x;
                         event.player.motionY = vec.y;
                         event.player.motionZ = vec.z;
-                        AnimationUtils.isJet.put(event.player.getName(), System.currentTimeMillis()+100);
+                        AnimationUtils.isJet.put(event.player.getUniqueID(), System.currentTimeMillis()+100);
                     }
                     if(isJetFly&&!event.player.isElytraFlying()) {
                         jetPower+=backpack.jetWorkForce;
@@ -169,7 +169,7 @@ public class ClientEventHandler {
                             event.player.motionY=jetPower;
                         }
                         ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet());
-                        AnimationUtils.isJet.put(event.player.getName(), System.currentTimeMillis()+100);
+                        AnimationUtils.isJet.put(event.player.getUniqueID(), System.currentTimeMillis()+100);
                     }else {
                         jetPower=backpack.jetIdleForce;
                     }   

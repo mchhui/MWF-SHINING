@@ -74,7 +74,7 @@ public class PlayerSnapshot {
         if (p.getHeldItemMainhand() != null) {
             if (p.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 if (p.world.isRemote) {
-                    if (AnimationUtils.isAiming.get(player.getDisplayNameString()) != null) {
+                    if (AnimationUtils.isAiming.get(player.getUniqueID()) != null) {
                         yRight = -0.1F + yHead - ((float) Math.PI / 2F);
                         yLeft = 0.1F + yHead + 0.4F - ((float) Math.PI / 2F);
                         xRight = -((float) Math.PI / 2F) + xHead;
@@ -86,7 +86,7 @@ public class PlayerSnapshot {
                         xLeft = -((float) Math.PI / 2F) + 0.6990046f;
                     }
                 } else {
-                    if (ServerTickHandler.playerAimShootCooldown.get(p.getDisplayNameString()) != null) {
+                    if (ServerTickHandler.playerAimShootCooldown.get(p.getUniqueID()) != null) {
                         yRight = -0.1F + yHead - ((float) Math.PI / 2F);
                         yLeft = 0.1F + yHead + 0.4F - ((float) Math.PI / 2F);
                         xRight = -((float) Math.PI / 2F) + xHead;

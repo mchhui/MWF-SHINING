@@ -70,7 +70,7 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                 } else {
                     model.render("elytraOffModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                 }
-                if (AnimationUtils.isJet.getOrDefault(player.getName(), 0L) > System.currentTimeMillis()) {
+                if (AnimationUtils.isJet.getOrDefault(player.getUniqueID(), 0L) > System.currentTimeMillis()) {
                     if(!player.isElytraFlying()) {
                         model.render("jetOnModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                     }else {

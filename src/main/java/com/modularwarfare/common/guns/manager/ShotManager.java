@@ -355,10 +355,10 @@ public class ShotManager {
             }
 
             //Hands upwards when shooting
-            if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getName()) == null) {
-                ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(entityPlayer.getName(), true));
+            if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getUniqueID()) == null) {
+                ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(entityPlayer.getUniqueID(), true));
             }
-            ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getName(), 60);
+            ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getUniqueID(), 60);
         } else {
             if (ModConfig.INSTANCE.general.modified_pack_server_kick) {
                 ((EntityPlayerMP) entityPlayer).connection.disconnect(new TextComponentString("[ModularWarfare] Kicked for client-side modified content-pack. (Bad RPM/Recoil for the gun: " + itemGun.type.internalName + ") [RPM should be: " + itemGun.type.roundsPerMin + "]"));

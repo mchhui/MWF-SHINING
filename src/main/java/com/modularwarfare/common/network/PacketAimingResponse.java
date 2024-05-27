@@ -5,31 +5,28 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
+
+import java.util.UUID;
 
 public class PacketAimingResponse extends PacketBase {
 
-
-    public String playername;
+    public UUID entityUniqueID;
     public boolean aiming;
 
-    public PacketAimingResponse() {
-    }
-
-    public PacketAimingResponse(String playername, boolean aiming) {
-        this.playername = playername;
+    public PacketAimingResponse(UUID entityUniqueID, boolean aiming) {
+        this.entityUniqueID = entityUniqueID;
         this.aiming = aiming;
     }
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        ByteBufUtils.writeUTF8String(data, playername);
+        writeUniqueId(data, entityUniqueID);
         data.writeBoolean(aiming);
     }
 
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        playername = ByteBufUtils.readUTF8String(data);
+        entityUniqueID = readUniqueId(data);
         aiming = data.readBoolean();
     }
 
@@ -40,9 +37,9 @@ public class PacketAimingResponse extends PacketBase {
     @Override
     public void handleClientSide(EntityPlayer entityPlayer) {
         if (aiming) {
-            AnimationUtils.isAiming.put(playername, aiming);
+            AnimationUtils.isAiming.put(entityUniqueID, aiming);
         } else {
-            AnimationUtils.isAiming.remove(playername);
+            AnimationUtils.isAiming.remove(entityUniqueID);
         }
     }
 

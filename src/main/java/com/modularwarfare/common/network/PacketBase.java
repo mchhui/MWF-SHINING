@@ -8,6 +8,8 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import java.util.UUID;
+
 public abstract class PacketBase {
     /**
      * Util method for quickly writing strings
@@ -21,6 +23,15 @@ public abstract class PacketBase {
      */
     public static String readUTF(ByteBuf data) {
         return ByteBufUtils.readUTF8String(data);
+    }
+
+    public static void writeUniqueId(ByteBuf data, UUID uuid) {
+        data.writeLong(uuid.getMostSignificantBits());
+        data.writeLong(uuid.getLeastSignificantBits());
+    }
+
+    public static UUID readUniqueId(ByteBuf data) {
+        return new UUID(data.readLong(), data.readLong());
     }
 
     /**
