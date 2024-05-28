@@ -378,8 +378,7 @@ public class ShotManager {
                 }
             }
             
-            
-            RayTraceResult r=getMouseOver(ClientProxy.renderHooks.partialTicks);
+
             Minecraft mc = Minecraft.getMinecraft();
             Entity entity = mc.getRenderViewEntity();
             float pitch=entityPlayer.rotationPitch;
@@ -394,6 +393,7 @@ public class ShotManager {
 //                        eye= ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, ClientProxy.renderHooks.partialTicks);
 //                    }
 //                }
+                RayTraceResult r=getMouseOver(ClientProxy.renderHooks.partialTicks);
                 posX=r.hitVec.x-posX;
                 posY=r.hitVec.y-posY;
                 posZ=r.hitVec.z-posZ;
