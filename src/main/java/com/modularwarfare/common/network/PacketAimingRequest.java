@@ -10,6 +10,9 @@ public class PacketAimingRequest extends PacketBase {
 
     public boolean aiming;
 
+    public PacketAimingRequest() {
+    } // Don't delete
+
     public PacketAimingRequest(boolean aiming) {
         this.aiming = aiming;
     }

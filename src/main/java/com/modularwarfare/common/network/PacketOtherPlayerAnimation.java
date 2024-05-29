@@ -27,8 +27,12 @@ public class PacketOtherPlayerAnimation extends PacketBase {
     public int fireTickDelay;
     public boolean isFailed;
 
+    public PacketOtherPlayerAnimation() {
+
+    } // Don't delete
+
     public PacketOtherPlayerAnimation(UUID playerEntityUniqueID, AnimationType animationType, String internalname,
-            int fireTickDelay, boolean isFailed) {
+                                      int fireTickDelay, boolean isFailed) {
         this.playerEntityUniqueID = playerEntityUniqueID;
         this.animationType = animationType;
         this.internalname = internalname;
@@ -55,9 +59,9 @@ public class PacketOtherPlayerAnimation extends PacketBase {
         PacketBuffer buffer = new PacketBuffer(data);
         playerEntityUniqueID = buffer.readUniqueId();
         animationType = buffer.readEnumValue(AnimationType.class);
-        internalname=buffer.readString(Short.MAX_VALUE);
-        fireTickDelay=buffer.readInt();
-        isFailed=buffer.readBoolean();
+        internalname = buffer.readString(Short.MAX_VALUE);
+        fireTickDelay = buffer.readInt();
+        isFailed = buffer.readBoolean();
     }
 
     @Override

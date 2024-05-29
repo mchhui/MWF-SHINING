@@ -13,6 +13,9 @@ public class PacketAimingResponse extends PacketBase {
     public UUID entityUniqueID;
     public boolean aiming;
 
+    public PacketAimingResponse() {
+    } // Don't delete
+
     public PacketAimingResponse(UUID entityUniqueID, boolean aiming) {
         this.entityUniqueID = entityUniqueID;
         this.aiming = aiming;
