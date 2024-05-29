@@ -19,8 +19,7 @@ public class PacketVerification extends PacketBase {
     public ArrayList<String> md5List = new ArrayList<String>();
 
     public PacketVerification() {
-        // TODO Auto-generated constructor stub
-    }
+    } // Don't delete
 
     public PacketVerification(boolean usingDirectoryContentPack, ArrayList<String> md5List) {
         this.usingDirectoryContentPack = usingDirectoryContentPack;
@@ -53,12 +52,12 @@ public class PacketVerification extends PacketBase {
             playerEntity.connection.disconnect(new TextComponentString(
                     "[ModularWarfare] Kicked for client-side is using directory content-pack."));
         }
-        if(!ModConfig.INSTANCE.general.modified_pack_server_kick) {
+        if (!ModConfig.INSTANCE.general.modified_pack_server_kick) {
             return;
         }
         ArrayList<String> serverList = ModularWarfare.contentPackHashList;
-        if(!ModConfig.INSTANCE.general.content_pack_hash_list.isEmpty()) {
-            serverList=ModConfig.INSTANCE.general.content_pack_hash_list;
+        if (!ModConfig.INSTANCE.general.content_pack_hash_list.isEmpty()) {
+            serverList = ModConfig.INSTANCE.general.content_pack_hash_list;
         }
         if (serverList.size() == md5List.size()) {
             boolean flag = false;

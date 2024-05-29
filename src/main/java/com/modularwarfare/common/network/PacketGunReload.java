@@ -24,12 +24,12 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
 
 public class PacketGunReload extends PacketBase {
-    private static final ItemStack UNLOAD_EMPTY=new ItemStack(Blocks.DIRT, 1);
+    private static final ItemStack UNLOAD_EMPTY = new ItemStack(Blocks.DIRT, 1);
 
     public boolean unload = false;
 
     public PacketGunReload() {
-    }
+    } // Don't delete
 
     public PacketGunReload(boolean unload) {
         this.unload = unload;
@@ -47,7 +47,7 @@ public class PacketGunReload extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        if(entityPlayer.isSpectator()) {
+        if (entityPlayer.isSpectator()) {
             return;
         }
         if (entityPlayer.getHeldItemMainhand() != null) {
@@ -56,18 +56,18 @@ public class PacketGunReload extends PacketBase {
                 ItemGun itemGun = (ItemGun) entityPlayer.getHeldItemMainhand().getItem();
                 GunType gunType = itemGun.type;
                 InventoryPlayer inventory = entityPlayer.inventory;
-                
-                if(gunType.animationType==WeaponAnimationType.ENHANCED) {
+
+                if (gunType.animationType == WeaponAnimationType.ENHANCED) {
                     if (gunType.acceptedAmmo != null) {
                         handleMagGunReloadEnhanced(entityPlayer, gunStack, itemGun, gunType, inventory);
                     } else {
-                        handleBulletGunReloadEnhanced(entityPlayer, gunStack, itemGun, gunType, inventory);  
+                        handleBulletGunReloadEnhanced(entityPlayer, gunStack, itemGun, gunType, inventory);
                     }
-                }else {
+                } else {
                     if (gunType.acceptedAmmo != null) {
                         handleMagGunReload(entityPlayer, gunStack, itemGun, gunType, inventory);
                     } else {
-                        handleBulletGunReload(entityPlayer, gunStack, itemGun, gunType, inventory);  
+                        handleBulletGunReload(entityPlayer, gunStack, itemGun, gunType, inventory);
                     }
                 }
             } else if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemAmmo) {
@@ -85,7 +85,7 @@ public class PacketGunReload extends PacketBase {
         if (ServerTickHandler.playerReloadCooldown.containsKey(entityPlayer.getUniqueID()))
             return;
 
-        if(entityPlayer.getHeldItemMainhand().getCount() > 1){
+        if (entityPlayer.getHeldItemMainhand().getCount() > 1) {
             entityPlayer.sendMessage(new TextComponentString("You can only load bullets on a single magazine."));
             return;
         }
@@ -517,23 +517,23 @@ public class PacketGunReload extends PacketBase {
     public void handleBulletGunReloadEnhanced(EntityPlayerMP entityPlayer, ItemStack gunStack, ItemGun itemGun, GunType gunType, InventoryPlayer inventory) {
         if (ServerTickHandler.playerReloadCooldown.containsKey(entityPlayer.getUniqueID()))
             return;
-        
+
         if (gunType.acceptedBullets != null) {
             if (!unload) {
                 ItemStack bulletStackToLoad = null;
                 Integer bulletStackSlotToLoad = null;
-                
+
                 if (gunStack.getTagCompound() != null) {
                     if (gunType.internalAmmoStorage != null) {
                         if (gunStack.getTagCompound().hasKey("bullet")) {
                             /**
                              * 2023.4.4 因不符合“结束动画后结算”的原则 撤销下文unloadBullets
                              * */
-                            if(gunStack.getTagCompound().getInteger("ammocount")<=0) {
+                            if (gunStack.getTagCompound().getInteger("ammocount") <= 0) {
                                 //ReloadHelper.unloadBullets(entityPlayer, gunStack);
                             }
-                            
-                            bulletStackToLoad=new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
+
+                            bulletStackToLoad = new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
                             if (gunStack.getTagCompound().getInteger("ammocount") >= gunType.internalAmmoStorage) {
                                 return;
                             }
@@ -544,10 +544,10 @@ public class PacketGunReload extends PacketBase {
                 NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
                 boolean offhandedReload = false;
                 int highestBulletCount = 0;
-                
-                if(bulletStackToLoad==null||bulletStackToLoad.isEmpty()) {
+
+                if (bulletStackToLoad == null || bulletStackToLoad.isEmpty()) {
                     /** Offhand Reload */
-                    
+
                     if (inventory.offHandInventory.get(0) != ItemStack.EMPTY) {
                         ItemStack itemStack = inventory.offHandInventory.get(0);
                         if (itemStack != null && itemStack.getItem() instanceof ItemBullet) {
@@ -561,10 +561,10 @@ public class PacketGunReload extends PacketBase {
                             }
                         }
                     }
-                    
+
 
                     /** Search for bullets */
-                    
+
                     if (!offhandedReload) {
                         for (int i = 0; i < inventory.getSizeInventory(); i++) {
                             ItemStack itemStack = inventory.getStackInSlot(i);
@@ -584,26 +584,26 @@ public class PacketGunReload extends PacketBase {
                         }
                     }
                 }
-                
+
                 /** End of search, start to reload */
                 if (bulletStackToLoad == null)
                     return;
-                
+
                 ItemStack loadingItemStack = bulletStackToLoad.copy();
                 loadingItemStack.setCount(1);
-                int loadingCount=ReloadHelper.inventoryItemCount(entityPlayer, loadingItemStack);
+                int loadingCount = ReloadHelper.inventoryItemCount(entityPlayer, loadingItemStack);
                 int ammoCount = gunStack.getTagCompound().getInteger("ammocount");
                 int amountToLoad = gunType.internalAmmoStorage - ammoCount;
-                if(loadingCount>amountToLoad) {
-                    loadingCount=amountToLoad;
+                if (loadingCount > amountToLoad) {
+                    loadingCount = amountToLoad;
                 }
-                
-                SearchBullet searchBulletEvent=new SearchBullet(entityPlayer, gunStack, bulletStackToLoad, loadingCount);
+
+                SearchBullet searchBulletEvent = new SearchBullet(entityPlayer, gunStack, bulletStackToLoad, loadingCount);
                 MinecraftForge.EVENT_BUS.post(searchBulletEvent);
-                bulletStackToLoad=searchBulletEvent.bullet;
-                loadingCount=searchBulletEvent.count;
-                
-                if(loadingCount<=0) {
+                bulletStackToLoad = searchBulletEvent.bullet;
+                loadingCount = searchBulletEvent.count;
+
+                if (loadingCount <= 0) {
                     return;
                 }
 
@@ -652,12 +652,12 @@ public class PacketGunReload extends PacketBase {
                         inventory.setInventorySlotContents(bulletStackSlotToLoad, reserve >= 1 ? bulletStackToLoad : ItemStack.EMPTY);
                 }
                 */
-                
+
                 WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, offhandedReload, loadOnly, false, preReloadEvent.getReloadTime(), loadingCount);
                 MinecraftForge.EVENT_BUS.post(postReloadEvent);
                 int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : (postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full)).i;
                 ServerTickHandler.playerReloadCooldown.put(entityPlayer.getUniqueID(), preReloadEvent.getReloadTime());
-                ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem,gunStack, loadingItemStack.copy(),postReloadEvent.getReloadCount()));
+                ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, loadingItemStack.copy(), postReloadEvent.getReloadCount()));
                 ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(loadingItemStack), entityPlayer);
                 ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, postReloadEvent.getReloadTime(), postReloadEvent.getReloadCount(), reloadType), entityPlayer);
 
@@ -670,7 +670,7 @@ public class PacketGunReload extends PacketBase {
                 MinecraftForge.EVENT_BUS.post(unloadEvent);
                 if (unloadEvent.isCanceled())
                     return;
-                
+
                 Integer bulletCount = ReloadHelper.checkUnloadBullets(entityPlayer, gunStack);
                 if (bulletCount != null && bulletCount > 0) {
                     WeaponReloadEvent.Post postReloadEvent = new WeaponReloadEvent.Post(entityPlayer, gunStack, itemGun, false, false, true, preReloadEvent.getReloadTime(), bulletCount);
@@ -680,12 +680,12 @@ public class PacketGunReload extends PacketBase {
                     if (postReloadEvent.isUnload())
                         gunType.playSound(entityPlayer, WeaponSoundType.Unload, gunStack);
                     */
-                    
+
                     int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full).i;
-                    ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem,gunStack,true,bulletCount));
+                    ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, true, bulletCount));
                     ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(UNLOAD_EMPTY), entityPlayer);
                     ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, 0, bulletCount, reloadType), entityPlayer);
-                }else if(bulletCount!=null) {
+                } else if (bulletCount != null) {
                     handleBulletGunReload(entityPlayer, gunStack, itemGun, gunType, inventory);
                 }
             }
@@ -704,12 +704,12 @@ public class PacketGunReload extends PacketBase {
             Integer ammoStackSlotToLoad = null;
             Integer highestAmmoCount = 0;
             Integer multiMagToLoad = null;
-            boolean currentAmmo=false;
-            ItemStack currentAmmoToLoad=null;
-            ItemStack multiAmmoToLoad=null;
+            boolean currentAmmo = false;
+            ItemStack currentAmmoToLoad = null;
+            ItemStack multiAmmoToLoad = null;
 
             ItemStack currentAmmoStack = new ItemStack(nbtTagCompound.getCompoundTag("ammo")).copy();
-            
+
             /** Offhand Reload */
             if (inventory.offHandInventory.get(0) != ItemStack.EMPTY) {
                 ItemStack itemStack = inventory.offHandInventory.get(0);
@@ -747,7 +747,7 @@ public class PacketGunReload extends PacketBase {
                         currentAmmoTag.setInteger("magcount", selectedMagazine);
                         ammoStackToLoad = currentAmmoStack;
                         currentAmmoToLoad = currentAmmoStack;
-                        currentAmmo=true;
+                        currentAmmo = true;
                         highestAmmoCount = highestAmmo;
                     }
                 }
@@ -786,10 +786,10 @@ public class PacketGunReload extends PacketBase {
                 }
             }
 
-            SearchAmmo searchAmmoEvent=new SearchAmmo(entityPlayer, gunStack, ammoStackToLoad);
+            SearchAmmo searchAmmoEvent = new SearchAmmo(entityPlayer, gunStack, ammoStackToLoad);
             MinecraftForge.EVENT_BUS.post(searchAmmoEvent);
-            ammoStackToLoad=searchAmmoEvent.ammo;
-            
+            ammoStackToLoad = searchAmmoEvent.ammo;
+
             /** End of search, start to reload */
             if (ammoStackToLoad == null)
                 return;
@@ -827,7 +827,7 @@ public class PacketGunReload extends PacketBase {
             }
 
             /** Loading of new ammo stack */
-            
+
             ItemStack loadingItemStack = ammoStackToLoad.copy();
             loadingItemStack.setCount(1);
             /*
@@ -868,10 +868,10 @@ public class PacketGunReload extends PacketBase {
                 gunType.playSound(entityPlayer, WeaponSoundType.Reload, gunStack);
             }
             */
-            
+
             ServerTickHandler.playerReloadCooldown.put(entityPlayer.getUniqueID(), reloadTime);
-            ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem,gunStack, loadingItemStack.copy(),postReloadEvent.getReloadCount(),ammoStackToLoad==currentAmmoToLoad,ammoStackToLoad==multiAmmoToLoad,multiMagToLoad));
-            ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(loadingItemStack,ammoStackToLoad==currentAmmoToLoad), entityPlayer);
+            ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, loadingItemStack.copy(), postReloadEvent.getReloadCount(), ammoStackToLoad == currentAmmoToLoad, ammoStackToLoad == multiAmmoToLoad, multiMagToLoad));
+            ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(loadingItemStack, ammoStackToLoad == currentAmmoToLoad), entityPlayer);
             ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, reloadTime, postReloadEvent.getReloadCount(), reloadType), entityPlayer);
         } else {
 
@@ -879,7 +879,7 @@ public class PacketGunReload extends PacketBase {
             MinecraftForge.EVENT_BUS.post(preReloadEvent);
             if (preReloadEvent.isCanceled())
                 return;
-            
+
             Unload unloadEvent = new Unload(entityPlayer, gunStack);
             MinecraftForge.EVENT_BUS.post(unloadEvent);
             if (unloadEvent.isCanceled())
@@ -894,9 +894,9 @@ public class PacketGunReload extends PacketBase {
                     gunType.playSound(entityPlayer, WeaponSoundType.Unload, gunStack);
                 }
                 */
-                
+
                 int reloadType = (postReloadEvent.isLoadOnly() ? ReloadType.Load : postReloadEvent.isUnload() ? ReloadType.Unload : ReloadType.Full).i;
-                ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem,gunStack,true));
+                ServerTickHandler.reloadEnhancedTask.put(entityPlayer.getUniqueID(), new DataGunReloadEnhancedTask(entityPlayer.inventory.currentItem, gunStack, true));
                 ModularWarfare.NETWORK.sendTo(new PacketGunReloadEnhancedTask(UNLOAD_EMPTY), entityPlayer);
                 ModularWarfare.NETWORK.sendTo(new PacketClientAnimation(gunType.internalName, 0, 1, reloadType), entityPlayer);
             }

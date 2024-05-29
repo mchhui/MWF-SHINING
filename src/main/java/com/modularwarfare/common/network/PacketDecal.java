@@ -29,7 +29,7 @@ public class PacketDecal extends PacketBase {
     private boolean flag;
 
     public PacketDecal() {
-    }
+    } // Don't delete
 
     public PacketDecal(int decalIndex, EntityDecal.EnumDecalSide side, double x, double y, double z, boolean flag) {
         this.decalIndex = decalIndex;

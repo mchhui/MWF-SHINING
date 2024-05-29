@@ -14,7 +14,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 public class PacketGunSwitchMode extends PacketBase {
 
     public PacketGunSwitchMode() {
-    }
+    } // Don't delete
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
@@ -77,5 +77,5 @@ public class PacketGunSwitchMode extends PacketBase {
                     gunType.fireModes[spot]);
         }
     }
-    
+
 }

@@ -30,7 +30,7 @@ public class PacketGunFire extends PacketBase {
     public float rotationYaw;
 
     public PacketGunFire() {
-    }
+    } // Don't delete
 
     public PacketGunFire(String internalname, int fireTickDelay, float recoilPitch, float recoilYaw, float recoilAimReducer, float bulletSpread, float rotationPitch, float rotationYaw) {
         this.internalname = internalname;
@@ -72,7 +72,7 @@ public class PacketGunFire extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        
+
         IThreadListener mainThread = (WorldServer) entityPlayer.world;
         mainThread.addScheduledTask(new Runnable() {
             public void run() {
@@ -84,10 +84,10 @@ public class PacketGunFire extends PacketBase {
                             return;
                         ShotManager.fireServer(entityPlayer, rotationPitch, rotationYaw, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun, fireMode, fireTickDelay, recoilPitch, recoilYaw, recoilAimReducer, bulletSpread);
                     }
-                } 
+                }
             }
         });
-        
+
     }
 
     @Override

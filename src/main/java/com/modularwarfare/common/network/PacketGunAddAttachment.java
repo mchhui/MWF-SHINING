@@ -18,7 +18,7 @@ public class PacketGunAddAttachment extends PacketBase {
     public int slot;
 
     public PacketGunAddAttachment() {
-    }
+    } // Don't delete
 
     public PacketGunAddAttachment(int slot) {
         this.slot = slot;
@@ -48,12 +48,12 @@ public class PacketGunAddAttachment extends PacketBase {
                 } else {
                     attachStack = inventory.getStackInSlot(slot);
                 }
-                WeaponAttachmentEvent.Load event=new WeaponAttachmentEvent.Load(entityPlayer,gunStack, attachStack);
-                if(MinecraftForge.EVENT_BUS.post(event)) {
+                WeaponAttachmentEvent.Load event = new WeaponAttachmentEvent.Load(entityPlayer, gunStack, attachStack);
+                if (MinecraftForge.EVENT_BUS.post(event)) {
                     return;
                 }
-                attachStack=event.attach;
-                if (attachStack != null&&!attachStack.isEmpty()) {
+                attachStack = event.attach;
+                if (attachStack != null && !attachStack.isEmpty()) {
                     if (attachStack.getItem() instanceof ItemAttachment) {
                         if (!gunType.canAcceptAttachment(attachStack)) {
                             return;
@@ -88,7 +88,7 @@ public class PacketGunAddAttachment extends PacketBase {
                                     nbtTagCompound.setInteger("skinId", i);
                                     gunStack.setTagCompound(nbtTagCompound);
                                     inventory.getStackInSlot(slot).damageItem(1, entityPlayer);
-                                    if(inventory.getStackInSlot(slot).getMaxDamage() !=0 && inventory.getStackInSlot(slot).getItemDamage() == inventory.getStackInSlot(slot).getMaxDamage()) {
+                                    if (inventory.getStackInSlot(slot).getMaxDamage() != 0 && inventory.getStackInSlot(slot).getItemDamage() == inventory.getStackInSlot(slot).getMaxDamage()) {
                                         inventory.removeStackFromSlot(slot);
                                     }
                                     ModularWarfare.NETWORK.sendTo(new PacketPlaySound(entityPlayer.getPosition(), "spray", 1f, 1f), entityPlayer);

@@ -31,8 +31,7 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
     public boolean loaded;
 
     public PacketGunReloadEnhancedStop() {
-        // TODO Auto-generated constructor stub
-    }
+    } // Don't delete
 
     public PacketGunReloadEnhancedStop(int reloadValidCount, boolean unloaded, boolean loaded) {
         this.reloadValidCount = reloadValidCount;
@@ -71,7 +70,7 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
                     ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
                     return;
                 }
-                
+
                 if (gunType.animationType.equals(WeaponAnimationType.ENHANCED)) {
                     if (gunType.acceptedAmmo != null) {
                         handleMagGunReloadEnhanced(entityPlayer, gunStack, itemGun, gunType, inventory);
@@ -96,7 +95,7 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
     }
 
     public void handleBulletGunReloadEnhanced(EntityPlayerMP entityPlayer, ItemStack gunStack, ItemGun itemGun,
-            GunType gunType, InventoryPlayer inventory) {
+                                              GunType gunType, InventoryPlayer inventory) {
         if (!ServerTickHandler.reloadEnhancedTask.containsKey(entityPlayer.getUniqueID())) {
             return;
         }
@@ -105,18 +104,18 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
             return;
         }
-        
+
         if (reloadValidCount > task.reloadCount || reloadValidCount < 0) {
             ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
             return;
         }
-        
+
         NBTTagCompound nbtTagCompound = gunStack.getTagCompound();
-        ReloadStopFirst firstEvent=new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
+        ReloadStopFirst firstEvent = new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
         MinecraftForge.EVENT_BUS.post(firstEvent);
         if (firstEvent.unload) {
             if (task.isUnload) {
-                ReloadHelper.unloadBullets(entityPlayer, gunStack,reloadValidCount);
+                ReloadHelper.unloadBullets(entityPlayer, gunStack, reloadValidCount);
             } else if (nbtTagCompound.hasKey("bullet")) {
                 ItemBullet bulletItemToLoad = (ItemBullet) task.prognosisAmmo.getItem();
                 ItemStack currentBullet = new ItemStack(nbtTagCompound.getCompoundTag("bullet"));
@@ -125,11 +124,11 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
                     ReloadHelper.unloadBullets(entityPlayer, gunStack);
             }
         }
-        
+
         if (task.isUnload) {
             return;
         }
-        
+
 
         if (gunType.acceptedBullets != null) {
             if (gunStack.getTagCompound() != null) {
@@ -144,8 +143,8 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             }
 
             if (loaded) {
-                boolean result=ReloadHelper.removeItemstack(entityPlayer, task.prognosisAmmo, reloadValidCount);
-                ReloadStopSecond secondEvent=new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
+                boolean result = ReloadHelper.removeItemstack(entityPlayer, task.prognosisAmmo, reloadValidCount);
+                ReloadStopSecond secondEvent = new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
                 MinecraftForge.EVENT_BUS.post(secondEvent);
                 if (secondEvent.result) {
                     ItemStack loadingItemStack = task.prognosisAmmo.copy();
@@ -159,7 +158,7 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
     }
 
     public void handleMagGunReloadEnhanced(EntityPlayerMP entityPlayer, ItemStack gunStack, ItemGun itemGun,
-            GunType gunType, InventoryPlayer inventory) {
+                                           GunType gunType, InventoryPlayer inventory) {
         if (!ServerTickHandler.reloadEnhancedTask.containsKey(entityPlayer.getUniqueID())) {
             return;
         }
@@ -168,15 +167,15 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
             return;
         }
-        
-        ReloadStopFirst firstEvent=new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
+
+        ReloadStopFirst firstEvent = new ReloadStopFirst(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, unloaded);
         MinecraftForge.EVENT_BUS.post(firstEvent);
         /** Unload old ammo stack */
         if (firstEvent.unload) {
-            if(!(task.currentAmmo&&loaded)) {
+            if (!(task.currentAmmo && loaded)) {
                 if (ItemGun.hasAmmoLoaded(gunStack)) {
                     ReloadHelper.unloadAmmo(entityPlayer, gunStack);
-                }  
+                }
             }
         }
 
@@ -198,8 +197,8 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
 
         /** Loading of new ammo stack */
         if (loaded) {
-            boolean result=task.currentAmmo || ReloadHelper.removeItemstack(entityPlayer, ammoStackToLoad, 1);
-            ReloadStopSecond secondEvent=new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
+            boolean result = task.currentAmmo || ReloadHelper.removeItemstack(entityPlayer, ammoStackToLoad, 1);
+            ReloadStopSecond secondEvent = new ReloadStopSecond(entityPlayer, gunStack, task.prognosisAmmo, task.currentAmmo, result);
             MinecraftForge.EVENT_BUS.post(secondEvent);
             if (secondEvent.result) {
                 ItemStack loadingItemStack = ammoStackToLoad.copy();
@@ -211,10 +210,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         // TODO Auto-generated method stub
-        return "PacketGunReloadEnhancedStop["+reloadValidCount+","+unloaded+","+loaded+"]";
+        return "PacketGunReloadEnhancedStop[" + reloadValidCount + "," + unloaded + "," + loaded + "]";
     }
 }

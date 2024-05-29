@@ -13,7 +13,7 @@ public class PacketPlayerHit extends PacketBase {
 
 
     public PacketPlayerHit() {
-    }
+    } // Don't delete
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {

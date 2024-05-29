@@ -36,26 +36,24 @@ public class PacketCustomAnimation extends PacketBase {
     public boolean allowFire;
 
     public PacketCustomAnimation() {
-    }
+    } // Don't delete
 
 
-
-    public PacketCustomAnimation(UUID living,String name, double startTime,double endTime, float speedFactor, boolean allowReload,
-        boolean allowFire) {
+    public PacketCustomAnimation(UUID living, String name, double startTime, double endTime, float speedFactor, boolean allowReload,
+                                 boolean allowFire) {
         this.living = living;
-        this.name=""+name;
-        this.startTime=startTime;
-        this.endTime=endTime;
+        this.name = "" + name;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.speedFactor = speedFactor;
         this.allowReload = allowReload;
         this.allowFire = allowFire;
     }
 
 
-
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        PacketBuffer buffer=new PacketBuffer(data);
+        PacketBuffer buffer = new PacketBuffer(data);
         buffer.writeUniqueId(living);
         buffer.writeString(name);
         buffer.writeDouble(startTime);
@@ -67,14 +65,14 @@ public class PacketCustomAnimation extends PacketBase {
 
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
-        PacketBuffer buffer=new PacketBuffer(data);
-        living=buffer.readUniqueId();
-        name=buffer.readString(Short.MAX_VALUE);
-        startTime=buffer.readDouble();
-        endTime=buffer.readDouble();
-        speedFactor=buffer.readFloat();
-        allowReload=buffer.readBoolean();
-        allowFire=buffer.readBoolean();
+        PacketBuffer buffer = new PacketBuffer(data);
+        living = buffer.readUniqueId();
+        name = buffer.readString(Short.MAX_VALUE);
+        startTime = buffer.readDouble();
+        endTime = buffer.readDouble();
+        speedFactor = buffer.readFloat();
+        allowReload = buffer.readBoolean();
+        allowFire = buffer.readBoolean();
     }
 
     @Override
@@ -85,14 +83,14 @@ public class PacketCustomAnimation extends PacketBase {
     @Override
     @SideOnly(Side.CLIENT)
     public void handleClientSide(EntityPlayer entityPlayer) {
-        AnimationController controller=ClientProxy.gunEnhancedRenderer.getController(Minecraft.getMinecraft().world.getPlayerEntityByUUID(living), null);
-        controller.CUSTOM=0;
-        controller.customAnimation=name;
-        controller.startTime=startTime;
-        controller.endTime=endTime;
-        controller.customAnimationSpeed=speedFactor;
-        controller.customAnimationReload=allowReload;
-        controller.customAnimationFire=allowFire;
+        AnimationController controller = ClientProxy.gunEnhancedRenderer.getController(Minecraft.getMinecraft().world.getPlayerEntityByUUID(living), null);
+        controller.CUSTOM = 0;
+        controller.customAnimation = name;
+        controller.startTime = startTime;
+        controller.endTime = endTime;
+        controller.customAnimationSpeed = speedFactor;
+        controller.customAnimationReload = allowReload;
+        controller.customAnimationFire = allowFire;
 //        System.out.println("test");
     }
 

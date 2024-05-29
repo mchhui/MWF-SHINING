@@ -17,7 +17,7 @@ public class PacketGunReloadSound extends PacketBase {
     public WeaponSoundType soundType;
 
     public PacketGunReloadSound() {
-    }
+    } // Don't delete
 
     public PacketGunReloadSound(WeaponSoundType soundType) {
         this.soundType = soundType;
@@ -49,7 +49,7 @@ public class PacketGunReloadSound extends PacketBase {
                 if (soundType == null)
                     return;
                 //System.out.println(soundType);
-                gunType.playSound(entityPlayer, soundType, gunStack,entityPlayer);
+                gunType.playSound(entityPlayer, soundType, gunStack, entityPlayer);
             }
         }
     }

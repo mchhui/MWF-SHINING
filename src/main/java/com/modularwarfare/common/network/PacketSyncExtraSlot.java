@@ -20,7 +20,7 @@ public class PacketSyncExtraSlot extends PacketBase {
     ItemStack itemStack;
 
     public PacketSyncExtraSlot() {
-    }
+    } // Don't delete
 
     public PacketSyncExtraSlot(final EntityPlayer player, final int slot, final ItemStack backpack) {
         this.player = player.getEntityId();

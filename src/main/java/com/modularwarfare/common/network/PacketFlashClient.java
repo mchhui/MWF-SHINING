@@ -17,7 +17,7 @@ public class PacketFlashClient extends PacketBase {
     private int flashAmount;
 
     public PacketFlashClient() {
-    }
+    } // Don't delete
 
     public PacketFlashClient(int givenFlashAmount) {
 
@@ -44,7 +44,7 @@ public class PacketFlashClient extends PacketBase {
         FlashSystem.hasTookScreenshot = false;
         FlashSystem.flashValue += this.flashAmount;
 
-        ((ClientProxy)(ModularWarfare.PROXY)).playFlashSound(entityPlayer);
+        ((ClientProxy) (ModularWarfare.PROXY)).playFlashSound(entityPlayer);
 
         if (FlashSystem.flashValue > 255) {
             FlashSystem.flashValue = 255;

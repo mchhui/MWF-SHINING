@@ -18,8 +18,7 @@ public class PacketParticle extends PacketBase {
     }
 
     public PacketParticle() {
-        // TODO Auto-generated constructor stub
-    }
+    }  // Don't delete
 
     public PacketParticle(ParticleType particleType, double posX, double posY, double posZ) {
         this.particleType = particleType;
@@ -57,7 +56,7 @@ public class PacketParticle extends PacketBase {
     public void handleClientSide(EntityPlayer clientPlayer) {
         if (this.particleType == ParticleType.EXPLOSION) {
             ModularWarfare.PROXY.spawnExplosionParticle(clientPlayer.world, this.posX, this.posY, this.posZ);
-        }else if (this.particleType == ParticleType.ROCKET) {
+        } else if (this.particleType == ParticleType.ROCKET) {
             ModularWarfare.PROXY.spawnRocketParticle(clientPlayer.world, this.posX, this.posY, this.posZ);
         }
     }

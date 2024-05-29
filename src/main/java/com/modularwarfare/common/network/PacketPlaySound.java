@@ -18,7 +18,7 @@ public class PacketPlaySound extends PacketBase {
     public float pitch;
 
     public PacketPlaySound() {
-    }
+    } // Don't delete
 
     public PacketPlaySound(BlockPos blockPos, String soundName, float volume, float pitch) {
         this.posX = blockPos.getX();

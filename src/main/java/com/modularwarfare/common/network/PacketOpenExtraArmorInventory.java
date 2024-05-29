@@ -8,6 +8,10 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.IThreadListener;
 
 public class PacketOpenExtraArmorInventory extends PacketBase {
+    public PacketOpenExtraArmorInventory() {
+
+    } // Don't delete
+
     @Override
     public void encodeInto(final ChannelHandlerContext ctx, final ByteBuf data) {
     }

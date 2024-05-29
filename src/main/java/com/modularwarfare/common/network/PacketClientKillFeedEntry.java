@@ -20,7 +20,7 @@ public class PacketClientKillFeedEntry extends PacketBase {
 
 
     public PacketClientKillFeedEntry() {
-    }
+    } // Don't delete
 
 
     public PacketClientKillFeedEntry(String text, int timeLiving, String weaponInternalName) {

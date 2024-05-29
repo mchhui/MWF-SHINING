@@ -29,8 +29,7 @@ public class PacketBackpackJet extends PacketBase {
     public static Field fieldFloatingTickCount;
 
     public PacketBackpackJet() {
-        // TODO Auto-generated constructor stub
-    }
+    } // Don't delete
 
     public PacketBackpackJet(boolean jetFire, UUID playerEntityUniqueID) {
         this.jetFire = jetFire;
@@ -68,27 +67,27 @@ public class PacketBackpackJet extends PacketBase {
 
             if (!itemstackBackpack.isEmpty()) {
                 if (itemstackBackpack.getItem() instanceof ItemBackpack) {
-                    BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
+                    BackpackType backpack = ((ItemBackpack) itemstackBackpack.getItem()).type;
                     if (!jetFire) {
                         ModularWarfare.NETWORK.sendToAllTracking(new PacketBackpackJet(playerEntity.getUniqueID(), 100),
-                            playerEntity);
+                                playerEntity);
                     } else {
                         ModularWarfare.NETWORK.sendToAllTracking(
-                            new PacketBackpackJet(playerEntity.getUniqueID(), backpack.jetElytraBoostDuration * 50),
-                            playerEntity);
+                                new PacketBackpackJet(playerEntity.getUniqueID(), backpack.jetElytraBoostDuration * 50),
+                                playerEntity);
                     }
                     if (backpack.isJet && backpack.weaponSoundMap != null) {
                         backpack.playSoundPos(playerEntity.getPosition(), playerEntity.world, WeaponSoundType.JetWork);
                         if (jetFire) {
                             backpack.playSoundPos(playerEntity.getPosition(), playerEntity.world,
-                                WeaponSoundType.JetFire);
+                                    WeaponSoundType.JetFire);
                         } else {
-                            ((WorldServer)playerEntity.world).spawnParticle(EnumParticleTypes.BLOCK_DUST,
-                                playerEntity.posX, playerEntity.posY, playerEntity.posZ, 5, 0.0D, 0.0D, 0.0D,
-                                0.15000000596046448D, Block.getStateId(playerEntity.world.getBlockState(playerEntity.getPosition().down())));
-                            ((WorldServer)playerEntity.world).spawnParticle(EnumParticleTypes.BLOCK_DUST,
-                                playerEntity.posX, playerEntity.posY, playerEntity.posZ, 5, 0.0D, 0.0D, 0.0D,
-                                0.15000000596046448D, Block.getStateId(playerEntity.world.getBlockState(playerEntity.getPosition().down(2))));
+                            ((WorldServer) playerEntity.world).spawnParticle(EnumParticleTypes.BLOCK_DUST,
+                                    playerEntity.posX, playerEntity.posY, playerEntity.posZ, 5, 0.0D, 0.0D, 0.0D,
+                                    0.15000000596046448D, Block.getStateId(playerEntity.world.getBlockState(playerEntity.getPosition().down())));
+                            ((WorldServer) playerEntity.world).spawnParticle(EnumParticleTypes.BLOCK_DUST,
+                                    playerEntity.posX, playerEntity.posY, playerEntity.posZ, 5, 0.0D, 0.0D, 0.0D,
+                                    0.15000000596046448D, Block.getStateId(playerEntity.world.getBlockState(playerEntity.getPosition().down(2))));
                         }
                     }
                 }

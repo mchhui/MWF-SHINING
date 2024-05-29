@@ -11,7 +11,7 @@ public class PacketOpenGui extends PacketBase {
     public int guiID;
 
     public PacketOpenGui() {
-    }
+    }  // Don't delete
 
     public PacketOpenGui(final int guiID) {
         this.guiID = guiID;

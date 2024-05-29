@@ -17,7 +17,7 @@ public class PacketExplosion extends PacketBase {
     private double posZ;
 
     public PacketExplosion() {
-    }
+    } // Don't delete
 
     public PacketExplosion(double x, double y, double z) {
         this.posX = x;

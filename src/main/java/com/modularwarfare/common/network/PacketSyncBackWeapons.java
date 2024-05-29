@@ -13,7 +13,7 @@ public class PacketSyncBackWeapons extends PacketBase {
 
     public PacketSyncBackWeapons() {
         this.tag = BackWeaponsManager.INSTANCE.serializeNBT();
-    }
+    }  // Don't delete
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {

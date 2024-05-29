@@ -19,7 +19,7 @@ public class PacketGunUnloadAttachment extends PacketBase {
     public boolean unloadAll;
 
     public PacketGunUnloadAttachment() {
-    }
+    } // Don't delete
 
     public PacketGunUnloadAttachment(String attachmentType, boolean unloadAll) {
         this.attachmentType = attachmentType;
@@ -44,8 +44,8 @@ public class PacketGunUnloadAttachment extends PacketBase {
             if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 ItemStack gunStack = entityPlayer.getHeldItemMainhand();
                 InventoryPlayer inventory = entityPlayer.inventory;
-                WeaponAttachmentEvent.Unload event=new WeaponAttachmentEvent.Unload(entityPlayer, gunStack, AttachmentPresetEnum.getAttachment(attachmentType), unloadAll);
-                if(MinecraftForge.EVENT_BUS.post(event)) {
+                WeaponAttachmentEvent.Unload event = new WeaponAttachmentEvent.Unload(entityPlayer, gunStack, AttachmentPresetEnum.getAttachment(attachmentType), unloadAll);
+                if (MinecraftForge.EVENT_BUS.post(event)) {
                     return;
                 }
                 if (unloadAll) {

@@ -1,4 +1,4 @@
- package com.modularwarfare.common.network;
+package com.modularwarfare.common.network;
 
 import com.modularwarfare.common.backpacks.BackpackType;
 import com.modularwarfare.common.backpacks.ItemBackpack;
@@ -17,29 +17,26 @@ import net.minecraft.item.ItemStack;
 public class PacketBackpackElytraStart extends PacketBase {
 
     public PacketBackpackElytraStart() {
-        // TODO Auto-generated constructor stub
-    }
-    
+    } // Don't delete
+
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         // TODO Auto-generated method stub
-         
+
     }
 
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         // TODO Auto-generated method stub
-         
+
     }
 
     @Override
     public void handleServerSide(EntityPlayerMP playerEntity) {
         ItemStack itemstack = playerEntity.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
 
-        if (itemstack.getItem() == Items.ELYTRA && ItemElytra.isUsable(itemstack))
-        {
-            if (itemstack.getItem() == Items.ELYTRA && ItemElytra.isUsable(itemstack))
-            {
+        if (itemstack.getItem() == Items.ELYTRA && ItemElytra.isUsable(itemstack)) {
+            if (itemstack.getItem() == Items.ELYTRA && ItemElytra.isUsable(itemstack)) {
                 return;
             }
         }
@@ -49,14 +46,11 @@ public class PacketBackpackElytraStart extends PacketBase {
 
             if (!itemstackBackpack.isEmpty()) {
                 if (itemstackBackpack.getItem() instanceof ItemBackpack) {
-                    BackpackType backpack = ((ItemBackpack)itemstackBackpack.getItem()).type;
+                    BackpackType backpack = ((ItemBackpack) itemstackBackpack.getItem()).type;
                     if (backpack.isElytra) {
-                        if (!playerEntity.onGround && playerEntity.motionY < 0.0D && !playerEntity.isElytraFlying() && !playerEntity.isInWater())
-                        {
+                        if (!playerEntity.onGround && playerEntity.motionY < 0.0D && !playerEntity.isElytraFlying() && !playerEntity.isInWater()) {
                             playerEntity.setElytraFlying();
-                        }
-                        else if(backpack.elytraStoppable)
-                        {
+                        } else if (backpack.elytraStoppable) {
                             playerEntity.clearElytraFlying();
                         }
                     }
@@ -68,7 +62,7 @@ public class PacketBackpackElytraStart extends PacketBase {
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
         // TODO Auto-generated method stub
-         
+
     }
 
 }

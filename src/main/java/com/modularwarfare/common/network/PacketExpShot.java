@@ -28,7 +28,7 @@ public class PacketExpShot extends PacketBase {
     public String internalname;
 
     public PacketExpShot() {
-    }
+    } // Don't delete
 
     public PacketExpShot(int entityId, String internalname) {
         this.entityId = entityId;
@@ -76,47 +76,47 @@ public class PacketExpShot extends PacketBase {
 
                                 // Sound
                                 if (GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel) != null) {
-                                    ItemStack barrel=GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel);
-                                    if(((ItemAttachment)barrel.getItem()).type.barrel.isSuppressor) {
-                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.FireSuppressed, entityPlayer.getHeldItemMainhand(), entityPlayer);  
-                                    }else {
-                                        if(!itemGun.hasNextShot(entityPlayer.getHeldItemMainhand())&&itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
-                                            itemGun.type.playSound(entityPlayer, WeaponSoundType.FireLast, entityPlayer.getHeldItemMainhand(), entityPlayer);  
-                                        }else {
+                                    ItemStack barrel = GunType.getAttachment(entityPlayer.getHeldItemMainhand(), AttachmentPresetEnum.Barrel);
+                                    if (((ItemAttachment) barrel.getItem()).type.barrel.isSuppressor) {
+                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.FireSuppressed, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                    } else {
+                                        if (!itemGun.hasNextShot(entityPlayer.getHeldItemMainhand()) && itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                                            itemGun.type.playSound(entityPlayer, WeaponSoundType.FireLast, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                        } else {
                                             itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
                                         }
                                     }
                                 } else {
-                                    if(!itemGun.hasNextShot(entityPlayer.getHeldItemMainhand())&&itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
-                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.FireLast, entityPlayer.getHeldItemMainhand(), entityPlayer);  
-                                    }else {
+                                    if (!itemGun.hasNextShot(entityPlayer.getHeldItemMainhand()) && itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                                        itemGun.type.playSound(entityPlayer, WeaponSoundType.FireLast, entityPlayer.getHeldItemMainhand(), entityPlayer);
+                                    } else {
                                         itemGun.type.playSound(entityPlayer, WeaponSoundType.Fire, entityPlayer.getHeldItemMainhand(), entityPlayer);
                                     }
                                 }
-                                
+
                                 //Hands upwards when shooting
                                 if (ServerTickHandler.playerAimShootCooldown.get(entityPlayer.getUniqueID()) == null) {
                                     ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(entityPlayer.getUniqueID(), true));
                                 }
                                 ServerTickHandler.playerAimShootCooldown.put(entityPlayer.getUniqueID(), 60);
-                                
+
                                 //Animation
                                 MinecraftForge.EVENT_BUS.post(new WeaponExpShotEvent(entityPlayer));
                                 ModularWarfare.NETWORK.sendToAll(new PacketOtherPlayerAnimation(entityPlayer.getUniqueID(), AnimationType.FIRE, internalname, itemGun.type.fireTickDelay, false));
-                                Vec3d posSmoke =entityPlayer.getPositionEyes(0);
-                                if(ModularWarfare.isLoadedModularMovements) {
-                                    posSmoke=ServerListener.onGetPositionEyes(entityPlayer, 0, posSmoke);
+                                Vec3d posSmoke = entityPlayer.getPositionEyes(0);
+                                if (ModularWarfare.isLoadedModularMovements) {
+                                    posSmoke = ServerListener.onGetPositionEyes(entityPlayer, 0, posSmoke);
                                 }
-                                posSmoke=posSmoke.add(entityPlayer.getLookVec().scale(0.8f));
-                                Vec3d crossVec=new Vec3d(1, 0, 0).rotateYaw(-(float)Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float)Math.toRadians(entityPlayer.rotationPitch));
+                                posSmoke = posSmoke.add(entityPlayer.getLookVec().scale(0.8f));
+                                Vec3d crossVec = new Vec3d(1, 0, 0).rotateYaw(-(float) Math.toRadians(entityPlayer.rotationYaw)).rotatePitch((float) Math.toRadians(entityPlayer.rotationPitch));
                                 Vec3d offsetVec;
-                                for(int i=0;i<5;i++) {
-                                    double rand=Math.random()-0.5f;
-                                    offsetVec=crossVec.scale((rand/Math.abs(rand)* 0.5f)).add(entityPlayer.getLookVec().scale(0.9f));
+                                for (int i = 0; i < 5; i++) {
+                                    double rand = Math.random() - 0.5f;
+                                    offsetVec = crossVec.scale((rand / Math.abs(rand) * 0.5f)).add(entityPlayer.getLookVec().scale(0.9f));
                                     EasyEffect.sendEffect(entityPlayer, posSmoke.x,
                                             posSmoke.y - 0.1f, posSmoke.z,
-                                            offsetVec.x/(i+1), 1.2f, offsetVec.z/(i+1), 0.5f, -1f, 0.5f, 200/(i+1), (int)(10+20*Math.random()), 20, 5,
-                                            (Math.random()*0.3f+0.2f), "modularwarfare:textures/particles/fire_smoke.png");    
+                                            offsetVec.x / (i + 1), 1.2f, offsetVec.z / (i + 1), 0.5f, -1f, 0.5f, 200 / (i + 1), (int) (10 + 20 * Math.random()), 20, 5,
+                                            (Math.random() * 0.3f + 0.2f), "modularwarfare:textures/particles/fire_smoke.png");
                                 }
                             }
                         }

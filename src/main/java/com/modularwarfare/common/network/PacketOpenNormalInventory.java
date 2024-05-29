@@ -7,6 +7,10 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.IThreadListener;
 
 public class PacketOpenNormalInventory extends PacketBase {
+    public PacketOpenNormalInventory() {
+
+    } // Don't delete
+
     @Override
     public void encodeInto(final ChannelHandlerContext ctx, final ByteBuf data) {
     }

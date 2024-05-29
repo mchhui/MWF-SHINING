@@ -11,7 +11,7 @@ public class PacketPlayHitmarker extends PacketBase {
     public boolean headshot;
 
     public PacketPlayHitmarker() {
-    }
+    } // Don't delete
 
     public PacketPlayHitmarker(boolean headshot) {
         this.headshot = headshot;

@@ -12,7 +12,7 @@ public class PacketBulletSnap extends PacketBase {
 
 
     public PacketBulletSnap() {
-    }
+    } // Don't delete
 
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {

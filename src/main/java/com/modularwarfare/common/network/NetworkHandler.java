@@ -48,10 +48,10 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
      */
     private ConcurrentLinkedQueue<PacketBase> receivedPacketsClient = new ConcurrentLinkedQueue<PacketBase>();
     private ConcurrentHashMap<UUID, ConcurrentLinkedQueue<PacketBase>> receivedPacketsServer = new ConcurrentHashMap<UUID, ConcurrentLinkedQueue<PacketBase>>();
-    
+
     //这种同步方法可能性能不是最好的 但还算够用
-    private Object lock=new Object();
-    
+    private Object lock = new Object();
+
     /**
      * Registers a packet with the handler
      */
@@ -75,7 +75,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
 
     @Override
     protected void encode(ChannelHandlerContext ctx, PacketBase msg, List<Object> out) throws Exception {
-        synchronized(lock) {
+        synchronized (lock) {
             try {
                 //Define a new buffer to store our data upon encoding
                 ByteBuf encodedData = Unpooled.buffer();
@@ -106,7 +106,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
 
     @Override
     protected void decode(ChannelHandlerContext ctx, FMLProxyPacket msg, List<Object> out) throws Exception {
-        synchronized(lock) {
+        synchronized (lock) {
             try {
                 //Get the encoded data from the incoming packet
                 ByteBuf encodedData = msg.payload();
@@ -147,26 +147,26 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
     }
 
     public void handleClientPackets() {
-        synchronized(lock) {
+        synchronized (lock) {
             for (PacketBase packet = receivedPacketsClient.poll(); packet != null; packet = receivedPacketsClient.poll()) {
                 packet.handleClientSide(getClientPlayer());
-            }  
+            }
         }
     }
 
     public void handleServerPackets() {
-        synchronized(lock) {
+        synchronized (lock) {
             for (UUID playerEntityUniqueID : receivedPacketsServer.keySet()) {
                 ConcurrentLinkedQueue<PacketBase> receivedPacketsFromPlayer = receivedPacketsServer.get(playerEntityUniqueID);
                 EntityPlayerMP player = FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUUID(playerEntityUniqueID);
-                if(player == null) {
+                if (player == null) {
                     receivedPacketsFromPlayer.clear();
                     continue;
                 }
                 for (PacketBase packet = receivedPacketsFromPlayer.poll(); packet != null; packet = receivedPacketsFromPlayer.poll()) {
                     packet.handleServerSide(player);
                 }
-            }  
+            }
         }
     }
 
@@ -208,11 +208,11 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketExpGunFire.class);
         registerPacket(PacketGunTrailAskServer.class);
         registerPacket(PacketExpShot.class);
-        
+
         registerPacket(PacketOtherPlayerAnimation.class);
         registerPacket(PacketBackpackElytraStart.class);
         registerPacket(PacketBackpackJet.class);
-        
+
         registerPacket(PacketCustomAnimation.class);
 
     }
