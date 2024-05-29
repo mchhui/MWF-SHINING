@@ -1233,16 +1233,19 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
         }
 
-        ItemStack loadedAmmo = new ItemStack(demoStack.getTagCompound().getCompoundTag("ammo"));
-        if (loadedAmmo.getItem() instanceof ItemAmmo) {
-            ItemAmmo itemAmmo = (ItemAmmo) loadedAmmo.getItem();
-            AmmoType ammoType = itemAmmo.type;
-            if (config.attachment.containsKey(ammoType.internalName)) {
-                if (config.attachment.get(ammoType.internalName).hidePart != null) {
-                    exceptParts.addAll(config.attachment.get(ammoType.internalName).hidePart);
-                }
-                if (config.attachment.get(ammoType.internalName).showPart != null) {
-                    exceptParts.removeAll(config.attachment.get(ammoType.internalName).showPart);
+
+        if (demoStack.hasTagCompound()) {
+            ItemStack loadedAmmo = new ItemStack(demoStack.getTagCompound().getCompoundTag("ammo"));
+            if (loadedAmmo.getItem() instanceof ItemAmmo) {
+                ItemAmmo itemAmmo = (ItemAmmo) loadedAmmo.getItem();
+                AmmoType ammoType = itemAmmo.type;
+                if (config.attachment.containsKey(ammoType.internalName)) {
+                    if (config.attachment.get(ammoType.internalName).hidePart != null) {
+                        exceptParts.addAll(config.attachment.get(ammoType.internalName).hidePart);
+                    }
+                    if (config.attachment.get(ammoType.internalName).showPart != null) {
+                        exceptParts.removeAll(config.attachment.get(ammoType.internalName).showPart);
+                    }
                 }
             }
         }
