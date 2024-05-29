@@ -99,6 +99,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
             } catch (Exception e) {
                 ModularWarfare.LOGGER.error("ERROR encoding packet");
                 ModularWarfare.LOGGER.throwing(e);
+                throw e; // Re throw exception to disconnect.
             }
         }
     }
@@ -140,6 +141,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
             } catch (Exception e) {
                 ModularWarfare.LOGGER.error("ERROR decoding packet");
                 ModularWarfare.LOGGER.throwing(e);
+                throw e; // Re throw exception to disconnect.
             }
         }
     }
