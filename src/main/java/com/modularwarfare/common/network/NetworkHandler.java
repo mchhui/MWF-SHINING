@@ -24,6 +24,7 @@ import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -123,10 +124,12 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
                     break;
                 }
                 case SERVER: {
-                    INetHandler netHandler = ctx.channel().attr(NetworkRegistry.NET_HANDLER).get();
+                    INetHandler netHandler = msg.handler();
+                    if (!(netHandler instanceof NetHandlerPlayServer)) {
+                        throw new IOException("Player net handler is not NetHandlerPlayServer");
+                    }
                     EntityPlayer player = ((NetHandlerPlayServer) netHandler).player;
-                    if (!receivedPacketsServer.containsKey(player.getUniqueID()))
-                        receivedPacketsServer.put(player.getUniqueID(), new ConcurrentLinkedQueue<PacketBase>());
+                    receivedPacketsServer.computeIfAbsent(player.getUniqueID(), uuid -> new ConcurrentLinkedQueue<PacketBase>());
                     receivedPacketsServer.get(player.getUniqueID()).offer(packet);
                     //packet.handleServerSide();
                     break;
