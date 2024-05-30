@@ -277,9 +277,6 @@ public class RayUtil {
 
         float accuracy = calculateAccuracy(item, player);
         Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, player.world.rand);
-        double dx = dir.x * range;
-        double dy = dir.y * range;
-        double dz = dir.z * range;
 
         if(side.isServer()) {
 //            ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(item.type,player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
@@ -317,13 +314,13 @@ public class RayUtil {
             ping = entityPlayerMP.ping;
         }
 
-        Vec3d offsetVec = player.getPositionEyes(1.0f);
+        Vec3d origin = player.getPositionEyes(1.0f);
         if(ModularWarfare.isLoadedModularMovements) {
             if (player instanceof EntityPlayer) {
-                offsetVec = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, 1.0f);
+                origin = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, 1.0f);
             }
         }
 
-        return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, (float) offsetVec.x, (float) offsetVec.y, (float) offsetVec.z, (float) (offsetVec.x + dx), (float) (offsetVec.y + dy), (float) (offsetVec.z + dz), 0.001f, hashset, false, ping);
+        return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, hashset, false, ping);
     }
 }

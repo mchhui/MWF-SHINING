@@ -46,59 +46,48 @@ public class DefaultRayCasting extends RayCasting {
 
     //在未来应当考虑穿透
     @Override
-    public BulletHit computeDetection(World world, float x, float y, float z, float tx, float ty, float tz, float borderSize, HashSet<Entity> excluded, boolean collideablesOnly, int ping) {
-        Vec3d startVec = new Vec3d(x, y, z);
+    public BulletHit computeDetection(World world, Vec3d origin, Vec3d forward, double maxDistance, float borderSize, HashSet<Entity> excluded, boolean collideablesOnly, int ping) {
         // Vec3d lookVec = new Vec3d(tx-x, ty-y, tz-z);
-        Vec3d endVec = new Vec3d(tx, ty, tz);
+        Vec3d endVec = origin.add(forward.scale(maxDistance));
+        AxisAlignedBB bb = new AxisAlignedBB(new BlockPos(origin), new BlockPos(endVec)).grow(borderSize);
 
-        float minX = x < tx ? x : tx;
-        float minY = y < ty ? y : ty;
-        float minZ = z < tz ? z : tz;
-        float maxX = x > tx ? x : tx;
-        float maxY = y > ty ? y : ty;
-        float maxZ = z > tz ? z : tz;
-        AxisAlignedBB bb = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ).grow(borderSize, borderSize, borderSize);
         /*
          * 2023.12.31删除了这个莫名其妙的offset 因为他会导致平视射击时判定错误
          * */
 //        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.offset(0,-1.62f,0));
-        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb);
-        RayTraceResult blockHit = rayTraceBlocks(world, startVec, endVec, true, true, false);
+        RayTraceResult blockHit = rayTraceBlocks(world, origin, endVec, true, true, false);
 
-        startVec = new Vec3d(x, y, z);
-        endVec = new Vec3d(tx, ty, tz);
-        float maxDistance = (float) endVec.distanceTo(startVec);
         if (blockHit != null) {
-            maxDistance = (float) blockHit.hitVec.distanceTo(startVec);
+            maxDistance = blockHit.hitVec.distanceTo(origin);
         	endVec = blockHit.hitVec;
         }
-        
-        Vector3f rayVec=new Vector3f(endVec.x-startVec.x, endVec.y-startVec.y, endVec.z-startVec.z);
-        float len=rayVec.length();
-        Vector3f normlVec=rayVec.normalise(null);
+
+        endVec.subtract(origin);
+        Vector3f rayVec=new Vector3f(endVec.subtract(origin));
+        Vector3f normaliseVec=rayVec.normalise(null);
         OBBModelBox ray=new OBBModelBox();
-        float pitch=(float) Math.asin(normlVec.y);
-        normlVec.y=0;
-        normlVec=normlVec.normalise(null);
-        float yaw=(float)Math.asin(normlVec.x);
-        if(normlVec.z<0) {
+        float pitch=(float) Math.asin(normaliseVec.y);
+        normaliseVec.y=0;
+        normaliseVec=normaliseVec.normalise(null);
+        float yaw=(float)Math.asin(normaliseVec.x);
+        if(normaliseVec.z<0) {
             yaw=(float) (Math.PI-yaw);
         }
         Matrix4f matrix=new Matrix4f();
         matrix.rotate(yaw, new Vector3f(0, 1, 0));
         matrix.rotate(pitch, new Vector3f(-1, 0, 0));
-        ray.center=new Vector3f((startVec.x+endVec.x)/2, (startVec.y+endVec.y)/2, (startVec.z+endVec.z)/2);
+        ray.center=new Vector3f(origin.add(endVec).scale(0.5));
         ray.axis.x=new Vector3f(0, 0, 0);
         ray.axis.y=new Vector3f(0, 0, 0);
-        ray.axis.z=Matrix4f.transform(matrix, new Vector3f(0, 0, len/2), null);
+        ray.axis.z=Matrix4f.transform(matrix, new Vector3f(0, 0, maxDistance/2), null);
         ray.axisNormal.x=Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
         ray.axisNormal.y=Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
         ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
         
         if(OBBPlayerManager.debug) {
-            System.out.println("test0:"+startVec+"|"+Minecraft.getMinecraft().player.getPositionVector());
+            System.out.println("test0:"+ origin +"|"+Minecraft.getMinecraft().player.getPositionVector());
             OBBPlayerManager.lines.add(new OBBDebugObject(ray));
-            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec), new Vector3f(endVec)));  
+            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin), new Vector3f(endVec)));
         }
         //Iterate over all entities
         for (int i = 0; i < world.loadedEntityList.size(); i++) {
@@ -142,11 +131,11 @@ public class DefaultRayCasting extends RayCasting {
                     PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
                     OBBModelBox finalBox=null;
                     List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
-                    if (boxes.size() > 0) {
+                    if (!boxes.isEmpty()) {
                         double t = Double.MAX_VALUE;
                         Vector3f hitFaceNormal=null;
                         RayCastResult temp;
-                        Vector3f startVector=new Vector3f(startVec);
+                        Vector3f startVector=new Vector3f(origin);
                         for (OBBModelBox obb : boxes) {
                             temp=OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
                             if(temp.t<t) {
@@ -157,7 +146,7 @@ public class DefaultRayCasting extends RayCasting {
                         }
                         
                         if(OBBPlayerManager.debug) {
-                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(startVec.x+rayVec.x*t,startVec.y+rayVec.y*t,startVec.z+rayVec.z*t)));
+                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin.x+rayVec.x*t, origin.y+rayVec.y*t, origin.z+rayVec.z*t)));
                         }
                         if (finalBox != null) {
                             PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
@@ -171,11 +160,12 @@ public class DefaultRayCasting extends RayCasting {
 
         Entity closestHitEntity = null;
         Vec3d hit = null;
-        float closestHit = maxDistance;
-        float currentHit = 0.f;
+        double closestHit = maxDistance;
+        double currentHit = 0.0;
         AxisAlignedBB entityBb;// = ent.getBoundingBox();
         RayTraceResult intercept;
 //        System.out.println("test1:"+allEntities.size());
+        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.grow(1));
         for (Entity ent : allEntities) {
             if ((ent.canBeCollidedWith() || !collideablesOnly) && ((excluded != null && !excluded.contains(ent)) || excluded == null)) {
                 if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
@@ -191,10 +181,10 @@ public class DefaultRayCasting extends RayCasting {
                             GetLivingAABBEvent aabbEvent=new GetLivingAABBEvent(entityLivingBase, entityBb) ;
                             MinecraftForge.EVENT_BUS.post(aabbEvent);
                             entityBb=aabbEvent.box;
-                            intercept = entityBb.calculateIntercept(startVec, endVec);
+                            intercept = entityBb.calculateIntercept(origin, endVec);
 //                            System.out.println("test:"+intercept);
                             if (intercept != null) {
-                                currentHit = (float) intercept.hitVec.distanceTo(startVec);
+                                currentHit = intercept.hitVec.distanceTo(origin);
                                 hit = intercept.hitVec;
                                 if (currentHit < closestHit || currentHit == 0) {
                                     closestHit = currentHit;
@@ -208,9 +198,9 @@ public class DefaultRayCasting extends RayCasting {
                     entityBb = ent.getEntityBoundingBox();
                     if (entityBb != null) {
                         entityBb = entityBb.grow(entBorder, entBorder, entBorder);
-                        intercept = entityBb.calculateIntercept(startVec, endVec);
+                        intercept = entityBb.calculateIntercept(origin, endVec);
                         if (intercept != null) {
-                            currentHit = (float) intercept.hitVec.distanceTo(startVec);
+                            currentHit = (float) intercept.hitVec.distanceTo(origin);
                             hit = intercept.hitVec;
                             if (currentHit < closestHit || currentHit == 0) {
                                 closestHit = currentHit;
