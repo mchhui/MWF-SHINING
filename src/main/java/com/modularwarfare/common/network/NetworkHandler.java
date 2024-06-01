@@ -54,7 +54,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
      * Registers a packet with the handler
      */
     public boolean registerPacket(Class<? extends PacketBase> cl) {
-        if (packets.size() > 256) {
+        if (packets.size() > 255) {
             ModularWarfare.LOGGER.warn("Packet limit exceeded in Modular Warfare packet handler by packet " + cl.getCanonicalName() + ".");
             return false;
         }
@@ -107,7 +107,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
             ByteBuf encodedData = msg.payload();
             //Get the class for interpreting this packet
             byte discriminator = encodedData.readByte();
-            Class<? extends PacketBase> cl = packets.get(discriminator);
+            Class<? extends PacketBase> cl = packets.get(discriminator & 0xff);
 
             //If this discriminator returns no class, reject it
             if (cl == null)
