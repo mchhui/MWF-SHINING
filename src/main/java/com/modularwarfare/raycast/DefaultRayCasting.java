@@ -62,7 +62,6 @@ public class DefaultRayCasting extends RayCasting {
         	endVec = blockHit.hitVec;
         }
 
-        endVec.subtract(origin);
         Vector3f rayVec=new Vector3f(endVec.subtract(origin));
         Vector3f normaliseVec=rayVec.normalise(null);
         OBBModelBox ray=new OBBModelBox();
