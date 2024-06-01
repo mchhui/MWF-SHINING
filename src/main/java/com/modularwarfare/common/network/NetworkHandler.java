@@ -139,6 +139,8 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
             ModularWarfare.LOGGER.error("ERROR decoding packet");
             ModularWarfare.LOGGER.throwing(e);
             throw e; // Re throw exception to disconnect.
+        } finally {
+            msg.payload().release();
         }
     }
 
