@@ -18,6 +18,7 @@ public class Handler {
         default:
             break;
         }
+        event.getPacket().payload().release();
     }
 
     @SubscribeEvent
@@ -31,5 +32,6 @@ public class Handler {
         default:
             break;
         }
+        event.getPacket().payload().release();
     }
 }

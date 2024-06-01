@@ -28,6 +28,7 @@ public class EasyEffectClient {
         double size=buf.readDouble();
         String name=buf.readString(Short.MAX_VALUE);
         renderer.objects.add(new EEObject(name,delay,fps,unit,length,x,y,z,vx,vy,vz,ax,ay,az,size,System.currentTimeMillis()));
+        event.getPacket().payload().release();
     }
     
     @SubscribeEvent
