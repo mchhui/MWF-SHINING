@@ -6,6 +6,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
+import moe.komi.mwnetwork.asm.PacketBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -37,6 +38,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 @ChannelHandler.Sharable
 public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, PacketBase> {
+    private final PacketBuilder packetBuilder = new PacketBuilder();
     //Map of channels for each side
     private EnumMap<Side, FMLEmbeddedChannel> channels;
     //The list of registered packets. Should contain no more than 256 packets.
@@ -107,14 +109,18 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
             ByteBuf encodedData = msg.payload();
             //Get the class for interpreting this packet
             byte discriminator = encodedData.readByte();
-            Class<? extends PacketBase> cl = packets.get(discriminator & 0xff);
+            PacketBase packet = packetBuilder.build(discriminator);
+            if (packet == null) {
+                Class<? extends PacketBase> cl = packets.get(discriminator & 0xff);
 
-            //If this discriminator returns no class, reject it
-            if (cl == null)
-                throw new NullPointerException("Packet not registered for discriminator : " + discriminator);
+                //If this discriminator returns no class, reject it
+                if (cl == null)
+                    throw new NullPointerException("Packet not registered for discriminator : " + discriminator);
 
-            //Create an empty packet and decode our packet data into it
-            PacketBase packet = cl.newInstance();
+                //Create an empty packet and decode our packet data into it
+                packet = cl.newInstance();
+            }
+
             packet.decodeInto(ctx, encodedData.slice());
             //Check the side and handle our packet accordingly
             switch (FMLCommonHandler.instance().getEffectiveSide()) {
@@ -231,6 +237,11 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
                         return com;
                     }
                 });
+
+        int packetSize = packets.size();
+        for (int i = 0; i < packetSize; i++) {
+            packetBuilder.register((byte) i, packets.get(i));
+        }
     }
 
     @SideOnly(Side.CLIENT)
