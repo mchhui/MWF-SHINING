@@ -1,6 +1,7 @@
 package com.modularwarfare.api;
 
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.hitbox.hits.BulletHit;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -27,13 +28,14 @@ public class WeaponHitEvent extends WeaponEvent {
     public static class Pre extends WeaponHitEvent {
         private boolean isHeadshot;
         private float damage;
+        private float penetrateDamageFactor;
         private Entity victim;
 
-        public Pre(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, Entity victim) {
+        public Pre(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, float penetrateDamageFactor, Entity victim) {
             super(entityPlayer, stackWeapon, itemWeapon);
             this.isHeadshot = isHeadshot;
             this.damage = damage;
-
+            this.penetrateDamageFactor = penetrateDamageFactor;
             this.victim = victim;
         }
 
@@ -41,8 +43,16 @@ public class WeaponHitEvent extends WeaponEvent {
             return damage;
         }
 
+        public float getPenetrateDamageFactor() {
+            return penetrateDamageFactor;
+        }
+
         public void setDamage(float damage) {
             this.damage = damage;
+        }
+
+        public void setPenetrateDamageFactor(float penetrateDamageFactor) {
+            this.penetrateDamageFactor = penetrateDamageFactor;
         }
 
         public boolean isHeadhot() {
@@ -66,21 +76,21 @@ public class WeaponHitEvent extends WeaponEvent {
      * This event is fired on the {@link MinecraftForge#EVENT_BUS}.<br>
      */
     public static class Post extends WeaponHitEvent {
-        private List<Entity> affectedEntities;
+        private List<BulletHit> hits;
         private float finalDamage;
 
-        public Post(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, List<Entity> affectedEntities, float finalDamage) {
+        public Post(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits, float finalDamage) {
             super(entityPlayer, stackWeapon, itemWeapon);
-            this.affectedEntities = affectedEntities;
+            this.hits = hits;
             this.finalDamage = finalDamage;
         }
 
-        public List<Entity> getAffectedEntities() {
-            return affectedEntities;
+        public List<BulletHit> getAffectedEntities() {
+            return hits;
         }
 
-        public void setAffectedEntities(List<Entity> updatedList) {
-            this.affectedEntities = updatedList;
+        public void setAffectedEntities(List<BulletHit> updatedList) {
+            this.hits = updatedList;
         }
 
         public float getFinalDamage() {

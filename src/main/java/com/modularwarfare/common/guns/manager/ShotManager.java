@@ -46,6 +46,7 @@ import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.relauncher.Side;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -55,15 +56,15 @@ public class ShotManager {
 
     public static void fireClient(EntityPlayer entityPlayer, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode) {
         GunType gunType = itemGun.type;
-        
+
         if (ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reloading) {
             if(gunType.allowReloadFiring) {
                 ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).stopReload();
                 ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reset();
-                ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).updateCurrentItem(entityPlayer);  
+                ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).updateCurrentItem(entityPlayer);
             }
         }
-        
+
         // Can fire checks
         if (!checkCanFireClient(entityPlayer, world, gunStack, itemGun, fireMode)) {
             return;
@@ -150,7 +151,7 @@ public class ShotManager {
             fireClientSide(entityPlayer, itemGun);
         }
     }
-    
+
     public static boolean checkCanFireClient(EntityPlayer entityPlayer, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode) {
         if(entityPlayer.isSpectator()) {
             return false;
@@ -207,136 +208,142 @@ public class ShotManager {
             } else {
                 gunType.playSound(entityPlayer, WeaponSoundType.Fire, gunStack, entityPlayer);
             }
-            List<Entity> entities = new ArrayList();
             int numBullets = gunType.numBullets;
             ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
-            if (bulletItem != null) {
-                if (bulletItem.type.isSlug) {
-                    numBullets = 1;
-                }
+            if (bulletItem == null) {
+                return;
+            }
+            if (bulletItem.type.isSlug) {
+                numBullets = 1;
             }
 
             if(gunType.weaponType != WeaponType.Launcher) {
-                ArrayList<BulletHit> rayTraceList = new ArrayList<BulletHit>();
+                List<BulletHit> rayTraceList = new ArrayList<>();
                 for (int i = 0; i < numBullets; i++) {
-                    BulletHit rayTrace = RayUtil.standardEntityRayTrace(Side.SERVER, world, rotationPitch, rotationYaw, entityPlayer, preFireEvent.getWeaponRange(), itemGun, GunType.isPackAPunched(gunStack));
-                    rayTraceList.add(rayTrace);
+                    List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.SERVER, world, rotationPitch, rotationYaw, entityPlayer, preFireEvent.getWeaponRange(), itemGun, GunType.isPackAPunched(gunStack));
+                    if (rayTrace == null) {
+                        continue;
+                    }
+                    rayTraceList.addAll(rayTrace);
                 }
 
                 boolean headshot = false;
-                for (BulletHit rayTrace : rayTraceList) {
+                Iterator<BulletHit> rayTraceIterator = rayTraceList.iterator();
+                while (rayTraceIterator.hasNext() && !world.isRemote) {
+                    BulletHit rayTrace = rayTraceIterator.next();
                     if (rayTrace instanceof PlayerHit) {
-                        if (!world.isRemote) {
-                            final EntityPlayer victim = ((PlayerHit) rayTrace).getEntity();
-                            if (victim != null) {
-                                if (!victim.isDead && victim.getHealth() > 0.0f) {
-                                    entities.add(victim);
-                                    gunType.playSoundPos(victim.getPosition(), world, WeaponSoundType.Penetration);
-                                    headshot = ((PlayerHit) rayTrace).hitbox.type.equals(EnumHitboxType.HEAD);
-                                    if (entityPlayer instanceof EntityPlayerMP) {
-                                        ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(headshot), (EntityPlayerMP) entityPlayer);
-                                        ModularWarfare.NETWORK.sendTo(new PacketPlaySound(victim.getPosition(), "flyby", 1f, 1f), (EntityPlayerMP) victim);
-                                        if (ModConfig.INSTANCE.hud.snap_fade_hit) {
-                                            ModularWarfare.NETWORK.sendTo(new PacketPlayerHit(), (EntityPlayerMP) victim);
-                                        }
-                                    }
-                                }
+                        final EntityPlayer victim = ((PlayerHit) rayTrace).getEntity();
+                        if (victim == null || victim.isDead || victim.getHealth() <= 0.f) {
+                            rayTraceIterator.remove();
+                            continue;
+                        }
+                        gunType.playSoundPos(victim.getPosition(), world, WeaponSoundType.Penetration);
+                        headshot = ((PlayerHit) rayTrace).hitbox.type.equals(EnumHitboxType.HEAD);
+                        if (entityPlayer instanceof EntityPlayerMP) {
+                            ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(headshot), (EntityPlayerMP) entityPlayer);
+                            ModularWarfare.NETWORK.sendTo(new PacketPlaySound(victim.getPosition(), "flyby", 1f, 1f), (EntityPlayerMP) victim);
+                            if (ModConfig.INSTANCE.hud.snap_fade_hit) {
+                                ModularWarfare.NETWORK.sendTo(new PacketPlayerHit(), (EntityPlayerMP) victim);
                             }
                         }
-                    } else {
-                        if (!world.isRemote) {
-                            if (rayTrace.rayTraceResult != null) {
-                                if (rayTrace.rayTraceResult.entityHit instanceof EntityGrenade) {
-                                    ((EntityGrenade) rayTrace.rayTraceResult.entityHit).explode();
-                                }
-                                if (rayTrace.rayTraceResult.entityHit instanceof EntityLivingBase) {
-                                    final EntityLivingBase victim = (EntityLivingBase) ((BulletHit) rayTrace).rayTraceResult.entityHit;
-                                    if (victim != null) {
-                                        entities.add(victim);
-                                        gunType.playSoundPos(victim.getPosition(), world, WeaponSoundType.Penetration);
-                                        headshot = ItemGun.canEntityGetHeadshot(victim) && rayTrace.rayTraceResult.hitVec.y >= victim.getPosition().getY() + victim.getEyeHeight() - 0.15f;
-                                        if (entityPlayer instanceof EntityPlayerMP) {
-                                            ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(headshot), (EntityPlayerMP) entityPlayer);
-                                        }
-                                    }
-                                } else if (rayTrace.rayTraceResult.hitVec != null) {
-                                    BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
-                                    ItemGun.playImpactSound(world, blockPos, gunType);
-                                    gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entityPlayer, 1.0f);
-                                    ItemGun.doHit(rayTrace.rayTraceResult, entityPlayer);
-                                }
-                            }
+                        continue;
+                    }
+                    Entity targetEnt = rayTrace.getEntity();
+                    if (targetEnt == null) {
+                        rayTraceIterator.remove();
+                        continue;
+                    }
+                    if (targetEnt instanceof EntityGrenade) {
+                        ((EntityGrenade) targetEnt).explode();
+                        continue;
+                    }
+                    if (targetEnt instanceof EntityLivingBase) {
+                        final EntityLivingBase victim = (EntityLivingBase) targetEnt;
+                        gunType.playSoundPos(victim.getPosition(), world, WeaponSoundType.Penetration);
+                        headshot = ItemGun.canEntityGetHeadshot(victim) && rayTrace.rayTraceResult.hitVec.y >= victim.getPosition().getY() + victim.getEyeHeight() - 0.15f;
+                        if (entityPlayer instanceof EntityPlayerMP) {
+                            ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(headshot), (EntityPlayerMP) entityPlayer);
                         }
+                        continue;
+                    }
+                    if (rayTrace.rayTraceResult.hitVec != null) {
+                        BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
+                        ItemGun.playImpactSound(world, blockPos, gunType);
+                        gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entityPlayer, 1.0f);
+                        ItemGun.doHit(rayTrace.rayTraceResult, entityPlayer);
                     }
                 }
 
                 // Weapon post fire event
-                WeaponFireEvent.Post postFireEvent = new WeaponFireEvent.Post(entityPlayer, gunStack, itemGun, entities);
+                WeaponFireEvent.Post postFireEvent = new WeaponFireEvent.Post(entityPlayer, gunStack, itemGun, rayTraceList);
                 MinecraftForge.EVENT_BUS.post(postFireEvent);
 
-                if (postFireEvent.getAffectedEntities() != null && !postFireEvent.getAffectedEntities().isEmpty()) {
-                    for (Entity target : postFireEvent.getAffectedEntities()) {
-                        if (target != null) {
-                            if (target != entityPlayer) {
+                if (postFireEvent.getHits() != null && !postFireEvent.getHits().isEmpty()) {
+                    List<BulletHit> hits = postFireEvent.getHits();
+                    for (BulletHit bulletHit : hits) {
+                        if (bulletHit == null) {
+                            continue;
+                        }
+                        Entity targetEntity = bulletHit.getEntity();
+                        if (targetEntity == null || targetEntity == entityPlayer) {
+                            continue;
+                        }
 
-                                // Weapon pre hit event
-                                WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre(entityPlayer, gunStack, itemGun, headshot, postFireEvent.getDamage(), target);
-                                MinecraftForge.EVENT_BUS.post(preHitEvent);
-                                if (preHitEvent.isCanceled())
-                                    return;
+                        // Weapon pre hit event
+                        WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre(entityPlayer, gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, targetEntity);
+                        MinecraftForge.EVENT_BUS.post(preHitEvent);
+                        if (preHitEvent.isCanceled())
+                            return;
 
-                                if (headshot) {
-                                    preHitEvent.setDamage(preHitEvent.getDamage() + gunType.gunDamageHeadshotBonus);
-                                }
+                        if (headshot) {
+                            preHitEvent.setDamage(preHitEvent.getDamage() + gunType.gunDamageHeadshotBonus);
+                        }
+                        if (gunType.gunPenetrationDamageFalloff && preHitEvent.getPenetrateDamageFactor() > 0) {
+                            preHitEvent.setDamage(preHitEvent.getDamage() * preHitEvent.getPenetrateDamageFactor());
+                        }
 
-                                if (target instanceof EntityLivingBase) {
-                                    EntityLivingBase targetELB = (EntityLivingBase) target;
-                                    if (bulletItem != null) {
-                                        if (bulletItem.type != null) {
-                                            preHitEvent.setDamage(preHitEvent.getDamage() * bulletItem.type.bulletDamageFactor);
-                                            if (bulletItem.type.bulletProperties != null) {
-                                                if (!bulletItem.type.bulletProperties.isEmpty()) {
-                                                    BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? bulletItem.type.bulletProperties.get(targetELB.getName()) : bulletItem.type.bulletProperties.get("All");
-                                                    if (bulletProperty.potionEffects != null) {
-                                                        for (PotionEntry potionEntry : bulletProperty.potionEffects) {
-                                                            targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
-                                                        }
-                                                    }
-                                                }
+                        if (targetEntity instanceof EntityLivingBase) {
+                            EntityLivingBase targetELB = (EntityLivingBase) targetEntity;
+                            if (bulletItem.type != null) {
+                                preHitEvent.setDamage(preHitEvent.getDamage() * bulletItem.type.bulletDamageFactor);
+                                if (bulletItem.type.bulletProperties != null) {
+                                    if (!bulletItem.type.bulletProperties.isEmpty()) {
+                                        BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? bulletItem.type.bulletProperties.get(targetELB.getName()) : bulletItem.type.bulletProperties.get("All");
+                                        if (bulletProperty.potionEffects != null) {
+                                            for (PotionEntry potionEntry : bulletProperty.potionEffects) {
+                                                targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
                                             }
                                         }
                                     }
                                 }
-
-                                if (target instanceof EntityPlayer) {
-                                    if (((PlayerHit) rayTraceList.get(0)).hitbox.type.equals(EnumHitboxType.BODY)) {
-                                        EntityPlayer player = (EntityPlayer) target;
-                                        if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
-                                            final IExtraItemHandler extraSlots = player.getCapability(CapabilityExtra.CAPABILITY, null);
-                                            final ItemStack plate = extraSlots.getStackInSlot(1);
-                                            if (plate != null) {
-                                                if (plate.getItem() instanceof ItemSpecialArmor) {
-                                                    ArmorType armorType = ((ItemSpecialArmor) plate.getItem()).type;
-                                                    float damage = preHitEvent.getDamage();
-                                                    preHitEvent.setDamage((float) (damage - (damage * armorType.defense)));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                                    RayUtil.attackEntityWithoutKnockback(target, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
-                                } else {
-                                    target.attackEntityFrom(DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
-                                }
-                                target.hurtResistantTime = 0;
-
-                                // Weapon pre hit event
-                                WeaponHitEvent.Post postHitEvent = new WeaponHitEvent.Post(entityPlayer, gunStack, itemGun, postFireEvent.getAffectedEntities(), preHitEvent.getDamage());
-                                MinecraftForge.EVENT_BUS.post(postHitEvent);
                             }
                         }
+
+                        if (bulletHit instanceof PlayerHit && ((PlayerHit) bulletHit).hitbox.type.equals(EnumHitboxType.BODY) && targetEntity instanceof EntityPlayer) {
+                            EntityPlayer player = (EntityPlayer) targetEntity;
+                            if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
+                                final IExtraItemHandler extraSlots = player.getCapability(CapabilityExtra.CAPABILITY, null);
+                                if (extraSlots != null) {
+                                    final ItemStack plate = extraSlots.getStackInSlot(1);
+                                    if (plate != null && plate.getItem() instanceof ItemSpecialArmor) {
+                                        ArmorType armorType = ((ItemSpecialArmor) plate.getItem()).type;
+                                        float damage = preHitEvent.getDamage();
+                                        preHitEvent.setDamage((float) (damage - (damage * armorType.defense)));
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
+                            RayUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                        } else {
+                            targetEntity.attackEntityFrom(DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                        }
+                        targetEntity.hurtResistantTime = 0;
+
+                        // Weapon pre hit event
+                        WeaponHitEvent.Post postHitEvent = new WeaponHitEvent.Post(entityPlayer, gunStack, itemGun, postFireEvent.getHits(), preHitEvent.getDamage());
+                        MinecraftForge.EVENT_BUS.post(postHitEvent);
                     }
                 }
             } else {
@@ -351,7 +358,7 @@ public class ShotManager {
             }
 
             if (preFireEvent.getResult() == Event.Result.DEFAULT || preFireEvent.getResult() == Event.Result.ALLOW) {
-                itemGun.consumeShot(gunStack);
+                ItemGun.consumeShot(gunStack);
             }
 
             //Hands upwards when shooting
@@ -369,7 +376,6 @@ public class ShotManager {
 
     public static void fireClientSide(EntityPlayer entityPlayer, ItemGun itemGun){
         if (entityPlayer.world.isRemote) {
-            List<Entity> entities = new ArrayList();
             int numBullets = itemGun.type.numBullets;
             ItemBullet bulletItem = ItemGun.getUsedBullet(entityPlayer.getHeldItemMainhand(), itemGun.type);
             if (bulletItem != null) {
@@ -377,7 +383,7 @@ public class ShotManager {
                     numBullets = 1;
                 }
             }
-            
+
 
             Minecraft mc = Minecraft.getMinecraft();
             Entity entity = mc.getRenderViewEntity();
@@ -401,12 +407,12 @@ public class ShotManager {
                 yaw=(float)Math.toDegrees(Math.acos((posX*0+posZ*1)/Math.sqrt(posX*posX+posZ*posZ)));
                 if(posX>0) {
                     yaw=-yaw;
-                }  
+                }
             }
             ArrayList<BulletHit> rayTraceList = new ArrayList<BulletHit>();
             for (int i = 0; i < numBullets; i++) {
-                BulletHit rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, entityPlayer.world, pitch, yaw, entityPlayer, itemGun.type.weaponMaxRange, itemGun, false);
-                rayTraceList.add(rayTrace);
+                List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, entityPlayer.world, pitch, yaw, entityPlayer, itemGun.type.weaponMaxRange, itemGun, false);
+                rayTraceList.addAll(rayTrace);
             }
 
             ModularWarfare.NETWORK.sendToServer(new PacketExpShot(entityPlayer.getEntityId(), itemGun.type.internalName));
@@ -417,10 +423,9 @@ public class ShotManager {
                     final EntityLivingBase victim = ((OBBHit) rayTrace).entity;
                     if (victim != null) {
                         if (!victim.isDead && victim.getHealth() > 0.0f) {
-                            entities.add(victim);
                             //Send server player hit + hitbox
                             //entityPlayer.sendMessage(new TextComponentString(((OBBHit) rayTrace).box.name));
-                            ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(victim.getEntityId(), itemGun.type.internalName, ((OBBHit) rayTrace).box.name, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
+                            ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(victim.getEntityId(), itemGun.type.internalName, ((OBBHit) rayTrace).box.name, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
                         }
                     }
                 } else {
@@ -429,10 +434,10 @@ public class ShotManager {
                             if(rayTrace.rayTraceResult.entityHit != null){
                                 //Normal entity hit
                                 headshot = ItemGun.canEntityGetHeadshot(rayTrace.rayTraceResult.entityHit) && rayTrace.rayTraceResult.hitVec.y >= rayTrace.rayTraceResult.entityHit.getPosition().getY() + rayTrace.rayTraceResult.entityHit.getEyeHeight() - 0.15f;
-                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, (headshot? "head":""), itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
+                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, (headshot? "head":""), itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
                             } else {
                                 //Crack hit block packet
-                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(-1, itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z,rayTrace.rayTraceResult.sideHit));                            }
+                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(-1, itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z,rayTrace.rayTraceResult.sideHit));                            }
                         }
                     }
                 }
@@ -450,7 +455,7 @@ public class ShotManager {
             Vec3d vec3d = entity.getPositionEyes(partialTicks);
             double d1 = 128.0D;
             if (objectMouseOver != null)
-              d1 = objectMouseOver.hitVec.distanceTo(vec3d); 
+              d1 = objectMouseOver.hitVec.distanceTo(vec3d);
             Vec3d vec3d1 = entity.getLook(1.0F);
             Vec3d vec3d2 = vec3d.addVector(vec3d1.x * d1, vec3d1.y * d1, vec3d1.z * d1);
             Entity pointedEntity = null;
@@ -471,7 +476,7 @@ public class ShotManager {
                   pointedEntity = entity1;
                   vec3d3 = (raytraceresult == null) ? vec3d : raytraceresult.hitVec;
                   d2 = 0.0D;
-                } 
+                }
               } else if (raytraceresult != null) {
                 double d3 = vec3d.distanceTo(raytraceresult.hitVec);
                 if (d3 < d2 || d2 == 0.0D)
@@ -479,17 +484,17 @@ public class ShotManager {
                     if (d2 == 0.0D) {
                       pointedEntity = entity1;
                       vec3d3 = raytraceresult.hitVec;
-                    } 
+                    }
                   } else {
                     pointedEntity = entity1;
                     vec3d3 = raytraceresult.hitVec;
                     d2 = d3;
-                  }  
-              } 
-            } 
+                  }
+              }
+            }
             if (pointedEntity != null && (d2 < d1 || objectMouseOver == null))
-              objectMouseOver = new RayTraceResult(pointedEntity, vec3d3); 
-          }  
+              objectMouseOver = new RayTraceResult(pointedEntity, vec3d3);
+          }
         return objectMouseOver;
       }
 }

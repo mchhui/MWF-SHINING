@@ -2,12 +2,7 @@ package com.modularwarfare.utility;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.common.guns.AttachmentPresetEnum;
-import com.modularwarfare.common.guns.BulletType;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemAttachment;
-import com.modularwarfare.common.guns.ItemBullet;
-import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.network.PacketGunTrail;
@@ -34,6 +29,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 
 public class RayUtil {
@@ -270,12 +266,17 @@ public class RayUtil {
      * @return
      */
     @Nullable
-    public static BulletHit standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item, boolean isPunched) {
+    public static List<BulletHit> standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item, boolean isPunched) {
 
         HashSet<Entity> hashset = new HashSet<Entity>(1);
         hashset.add(player);
 
         float accuracy = calculateAccuracy(item, player);
+        float penetrate = item.type.gunPenetrateSize;
+        ItemBullet usedBullet = ItemAmmo.getUsedBullet(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND));
+        if (usedBullet != null) {
+            penetrate *= usedBullet.type.bulletPenetrateFactor;
+        }
         Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, player.world.rand);
 
         if(side.isServer()) {
@@ -321,6 +322,6 @@ public class RayUtil {
             }
         }
 
-        return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, hashset, false, ping);
+        return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate, hashset, false, ping);
     }
 }

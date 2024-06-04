@@ -66,7 +66,7 @@ minecraft {
         }
 
         server {
-
+            jvmArg('-Xmx1G')
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
 

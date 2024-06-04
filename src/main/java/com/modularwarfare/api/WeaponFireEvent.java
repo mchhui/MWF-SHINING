@@ -2,6 +2,7 @@ package com.modularwarfare.api;
 
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.hitbox.hits.BulletHit;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -77,13 +78,13 @@ public class WeaponFireEvent extends WeaponEvent {
      * This event is fired on the {@link MinecraftForge#EVENT_BUS}.<br>
      */
     public static class Post extends WeaponFireEvent {
-        private List<Entity> affectedEntities;
+        private List<BulletHit> hits;
         private int fireTickDelay;
         private float damage;
 
-        public Post(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, List<Entity> affectedEntities) {
+        public Post(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits) {
             super(entityPlayer, stackWeapon, itemWeapon);
-            this.affectedEntities = affectedEntities;
+            this.hits = hits;
 
             GunType type = itemWeapon.type;
 
@@ -92,12 +93,12 @@ public class WeaponFireEvent extends WeaponEvent {
             fireTickDelay = type.fireTickDelay;
         }
 
-        public List<Entity> getAffectedEntities() {
-            return affectedEntities;
+        public List<BulletHit> getHits() {
+            return hits;
         }
 
-        public void setAffectedEntities(List<Entity> updatedList) {
-            this.affectedEntities = updatedList;
+        public void setHits(List<BulletHit> updatedList) {
+            this.hits = updatedList;
         }
 
         public float getDamage() {

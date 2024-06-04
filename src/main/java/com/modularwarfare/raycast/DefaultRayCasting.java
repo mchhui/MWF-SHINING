@@ -35,6 +35,9 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 import javax.annotation.Nullable;
+import java.awt.geom.RectangularShape;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
@@ -46,7 +49,7 @@ public class DefaultRayCasting extends RayCasting {
 
     //在未来应当考虑穿透
     @Override
-    public BulletHit computeDetection(World world, Vec3d origin, Vec3d forward, double maxDistance, float borderSize, HashSet<Entity> excluded, boolean collideablesOnly, int ping) {
+    public List<BulletHit> computeDetection(World world, Vec3d origin, Vec3d forward, double maxDistance, float borderSize, float penetrateSize, HashSet<Entity> excluded, boolean collideablesOnly, int ping) {
         // Vec3d lookVec = new Vec3d(tx-x, ty-y, tz-z);
         Vec3d endVec = origin.add(forward.scale(maxDistance));
         AxisAlignedBB bb = new AxisAlignedBB(new BlockPos(origin), new BlockPos(endVec)).grow(borderSize);
@@ -55,11 +58,13 @@ public class DefaultRayCasting extends RayCasting {
          * 2023.12.31删除了这个莫名其妙的offset 因为他会导致平视射击时判定错误
          * */
 //        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.offset(0,-1.62f,0));
+        final float originPenetrateSize = penetrateSize;
+        List<BulletHit> allHits = new ArrayList<>();
         RayTraceResult blockHit = rayTraceBlocks(world, origin, endVec, true, true, false);
-
         if (blockHit != null) {
             maxDistance = blockHit.hitVec.distanceTo(origin);
         	endVec = blockHit.hitVec;
+            allHits.add(new BulletHit(blockHit, maxDistance, 0.f));
         }
 
         Vector3f rayVec=new Vector3f(endVec.subtract(origin));
@@ -82,7 +87,7 @@ public class DefaultRayCasting extends RayCasting {
         ray.axisNormal.x=Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
         ray.axisNormal.y=Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
         ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
-        
+
         if(OBBPlayerManager.debug) {
             System.out.println("test0:"+ origin +"|"+Minecraft.getMinecraft().player.getPositionVector());
             OBBPlayerManager.lines.add(new OBBDebugObject(ray));
@@ -143,24 +148,22 @@ public class DefaultRayCasting extends RayCasting {
                                 finalBox=obb;
                             }
                         }
-                        
+
                         if(OBBPlayerManager.debug) {
                             OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin.x+rayVec.x*t, origin.y+rayVec.y*t, origin.z+rayVec.z*t)));
                         }
                         if (finalBox != null) {
                             PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
                             RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
-                            return new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept);  
+
+                            allHits.add(new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept, intercept.hitVec.distanceTo(origin), 0));
                         }
                     }
                 }
             }
         }
 
-        Entity closestHitEntity = null;
         Vec3d hit = null;
-        double closestHit = maxDistance;
-        double currentHit = 0.0;
         AxisAlignedBB entityBb;// = ent.getBoundingBox();
         RayTraceResult intercept;
 //        System.out.println("test1:"+allEntities.size());
@@ -183,11 +186,10 @@ public class DefaultRayCasting extends RayCasting {
                             intercept = entityBb.calculateIntercept(origin, endVec);
 //                            System.out.println("test:"+intercept);
                             if (intercept != null) {
-                                currentHit = intercept.hitVec.distanceTo(origin);
+                                double currentHitDistance = intercept.hitVec.distanceTo(origin);
                                 hit = intercept.hitVec;
-                                if (currentHit < closestHit || currentHit == 0) {
-                                    closestHit = currentHit;
-                                    closestHitEntity = ent;
+                                if (currentHitDistance < maxDistance) {
+                                    allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0));
                                 }
                             }
                         }
@@ -199,22 +201,55 @@ public class DefaultRayCasting extends RayCasting {
                         entityBb = entityBb.grow(entBorder, entBorder, entBorder);
                         intercept = entityBb.calculateIntercept(origin, endVec);
                         if (intercept != null) {
-                            currentHit = (float) intercept.hitVec.distanceTo(origin);
+                            double currentHitDistance = (float) intercept.hitVec.distanceTo(origin);
                             hit = intercept.hitVec;
-                            if (currentHit < closestHit || currentHit == 0) {
-                                closestHit = currentHit;
-                                closestHitEntity = ent;
+                            if (currentHitDistance < maxDistance) {
+                                allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0));
                             }
                         }
                     }
                 }
             }
         }
-        if (closestHitEntity != null && hit != null) {
-            blockHit = new RayTraceResult(closestHitEntity, hit);
+        if (allHits.isEmpty()) {
+            return allHits;
         }
-
-        return new BulletHit(blockHit);
+        allHits.sort(Comparator.comparingDouble(bulletHit -> bulletHit.distance));
+        List<BulletHit> result = new ArrayList<>();
+        if (originPenetrateSize == 0) {
+            result.add(allHits.get(0));
+            return result;
+        }
+        for (BulletHit currentHit : allHits) {
+            if (penetrateSize <= 0) {
+                break;
+            }
+            currentHit.remainingPenetrate = penetrateSize / originPenetrateSize;
+            do {
+                if (currentHit instanceof PlayerHit) {
+                    penetrateSize -= 0.5f;
+                    break;
+                }
+                if (currentHit instanceof OBBHit) {
+                    OBBHit obbHit = (OBBHit) currentHit;
+                    if (obbHit.entity instanceof EntityPlayer) {
+                        penetrateSize -= 0.5f;
+                        break;
+                    }
+                    double avgSize = (obbHit.box.size.x + obbHit.box.size.y + obbHit.box.size.z) / 3;
+                    penetrateSize -= (float) avgSize;
+                    break;
+                }
+                if (currentHit.rayTraceResult.typeOfHit == RayTraceResult.Type.ENTITY && currentHit.rayTraceResult.entityHit != null) {
+                    AxisAlignedBB entityBoundingBox = currentHit.rayTraceResult.entityHit.getEntityBoundingBox();
+                    double avgSize = entityBoundingBox.getAverageEdgeLength();
+                    penetrateSize -= (float) avgSize;
+                    break;
+                }
+            } while (false);
+            result.add(currentHit);
+        }
+        return result;
     }
 
     @Nullable

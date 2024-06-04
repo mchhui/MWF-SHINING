@@ -61,6 +61,14 @@ public class GunType extends BaseType {
     public float gunDamageHeadshotBonus = 0;
 
     /**
+     * 穿透碰撞大小
+     */
+    public float gunPenetrateSize = 0.f;
+    /**
+     * 穿透后伤害线性衰减
+     */
+    public boolean gunPenetrationDamageFalloff = true;
+    /**
      * Weapon block range
      */
     public int weaponMaxRange = 200;
