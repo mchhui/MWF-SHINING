@@ -61,7 +61,7 @@ public class GunType extends BaseType {
     public float gunDamageHeadshotBonus = 0;
 
     /**
-     * 穿透碰撞大小
+     * 可以穿透的实体的碰撞大小
      */
     public float gunPenetrateSize = 0.f;
     /**
