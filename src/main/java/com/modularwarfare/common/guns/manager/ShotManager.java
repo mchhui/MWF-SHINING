@@ -25,6 +25,8 @@ import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.network.*;
 import com.modularwarfare.utility.RayUtil;
+import com.teamderpy.shouldersurfing.client.ShoulderHelper;
+import com.teamderpy.shouldersurfing.client.ShoulderInstance;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -390,23 +392,25 @@ public class ShotManager {
             float pitch=entityPlayer.rotationPitch;
             float yaw=entityPlayer.rotationYaw;
             if(ClientProxy.shoulderSurfingLoaded) {
-                Vec3d eye=entity.getPositionEyes(ClientProxy.renderHooks.partialTicks);
-                double posX=eye.x;
-                double posY=eye.y;
-                double posZ=eye.z;
-//                if(ModularWarfare.isLoadedModularMovements) {
-//                    if (entity instanceof EntityPlayer) {
-//                        eye= ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, ClientProxy.renderHooks.partialTicks);
+                if(ShoulderInstance.getInstance().doShoulderSurfing()) {
+                    Vec3d eye=entity.getPositionEyes(ClientProxy.renderHooks.partialTicks);
+                    double posX=eye.x;
+                    double posY=eye.y;
+                    double posZ=eye.z;
+//                    if(ModularWarfare.isLoadedModularMovements) {
+//                        if (entity instanceof EntityPlayer) {
+//                            eye= ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, ClientProxy.renderHooks.partialTicks);
+//                        }
 //                    }
-//                }
-                RayTraceResult r=getMouseOver(ClientProxy.renderHooks.partialTicks);
-                posX=r.hitVec.x-posX;
-                posY=r.hitVec.y-posY;
-                posZ=r.hitVec.z-posZ;
-                pitch=(float)-Math.toDegrees(Math.atan(posY/Math.sqrt(posX*posX+posZ*posZ)));
-                yaw=(float)Math.toDegrees(Math.acos((posX*0+posZ*1)/Math.sqrt(posX*posX+posZ*posZ)));
-                if(posX>0) {
-                    yaw=-yaw;
+                    RayTraceResult r=getMouseOver(ClientProxy.renderHooks.partialTicks);
+                    posX=r.hitVec.x-posX;
+                    posY=r.hitVec.y-posY;
+                    posZ=r.hitVec.z-posZ;
+                    pitch=(float)-Math.toDegrees(Math.atan(posY/Math.sqrt(posX*posX+posZ*posZ)));
+                    yaw=(float)Math.toDegrees(Math.acos((posX*0+posZ*1)/Math.sqrt(posX*posX+posZ*posZ)));
+                    if(posX>0) {
+                        yaw=-yaw;
+                    }  
                 }
             }
             ArrayList<BulletHit> rayTraceList = new ArrayList<BulletHit>();
@@ -452,7 +456,7 @@ public class ShotManager {
         if (entity != null)
           if (mc.world != null) {
             objectMouseOver = entity.rayTrace(128.0D, partialTicks);
-            Vec3d vec3d = entity.getPositionEyes(partialTicks);
+            Vec3d vec3d = ShoulderHelper.shoulderSurfingLook(entity, partialTicks, 128).cameraPos();
             double d1 = 128.0D;
             if (objectMouseOver != null)
               d1 = objectMouseOver.hitVec.distanceTo(vec3d);
