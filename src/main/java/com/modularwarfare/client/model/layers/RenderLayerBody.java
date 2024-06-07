@@ -8,7 +8,6 @@ import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
-import com.modularwarfare.common.network.BackWeaponsManager;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 
@@ -46,27 +45,6 @@ public class RenderLayerBody implements LayerRenderer<EntityPlayer> {
                     this.renderBody(player, ((ItemSpecialArmor) itemStackSpecialArmor.getItem()).type, scale);
                 }
             }
-        }
-
-        if (player instanceof AbstractClientPlayer) {
-            ItemStack gun = BackWeaponsManager.INSTANCE
-                    .getItemToRender((AbstractClientPlayer) player);
-            if (gun != ItemStack.EMPTY && !gun.isEmpty()) {
-                BaseType type = ((BaseItem) gun.getItem()).baseType;
-                {
-                    GlStateManager.pushMatrix();
-                    if (ClientRenderHooks.customRenderers[type.id] != null) {
-                        if (player.isSneaking()) {
-                            GlStateManager.translate(0.0f, 0.2f, 0.0f);
-                            GlStateManager.rotate(30.0f, 1.0f, 0.0f, 0.0f);
-                        }
-                        GlStateManager.translate(0, -0.6, 0.35);
-                        ClientRenderHooks.customRenderers[type.id].renderItem(CustomItemRenderType.BACK, null, gun, player.world, player, partialTicks);
-                    }
-                    GlStateManager.popMatrix();
-                }
-            }
-
         }
     }
 
