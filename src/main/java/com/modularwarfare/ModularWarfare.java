@@ -159,7 +159,7 @@ public class ModularWarfare {
     public static IZip getiZip(File file) throws IOException {
         IZip izip;
         try {
-            Class<?> protectorClass = Class.forName("moe.komi.mwprotect.ProtectZip");
+            Class<?> protectorClass = Class.forName("moe.komi.mwprotect.cipher.ProtectZip");
             Constructor<?> constructor = protectorClass.getConstructor(File.class);
             izip = (IZip) constructor.newInstance(file);
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
