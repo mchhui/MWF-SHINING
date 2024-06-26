@@ -165,25 +165,25 @@ public class EnhancedStateMachine {
                 } else {
                     //使用子弹的枪械
                     if (reloadPhase == Phase.FIRST) {
-                        if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_EMPTY)) {
+                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_EMPTY)) {
                             aniType = AnimationType.RELOAD_FIRST_EMPTY;
                         } else {
                             aniType = AnimationType.RELOAD_FIRST;
                         }
                     } else if (reloadPhase == Phase.SECOND) {
-                        if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_EMPTY)) {
+                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_EMPTY)) {
                             aniType = AnimationType.RELOAD_SECOND_EMPTY;
                         } else {
                             aniType = AnimationType.RELOAD_SECOND;
                         }
                     } else if (reloadPhase == Phase.POST) {
-                        if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
+                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
                             aniType = AnimationType.POST_RELOAD_EMPTY;
                         } else {
                             aniType = AnimationType.POST_RELOAD;
                         }
                     } else {
-                        if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.PRE_RELOAD_EMPTY)) {
+                        if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.PRE_RELOAD_EMPTY)) {
                             aniType = AnimationType.PRE_RELOAD_EMPTY;
                         } else {
                             aniType = AnimationType.PRE_RELOAD;
@@ -201,25 +201,25 @@ public class EnhancedStateMachine {
             }
         } else if (reloadType == ReloadType.Full) {
             if (reloadPhase == Phase.FIRST) {
-                if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_EMPTY)) {
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_FIRST_EMPTY)) {
                     aniType = AnimationType.RELOAD_FIRST_EMPTY;
                 } else {
                     aniType = AnimationType.RELOAD_FIRST;
                 }
             } else if (reloadPhase == Phase.SECOND) {
-                if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_EMPTY)) {
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.RELOAD_SECOND_EMPTY)) {
                     aniType = AnimationType.RELOAD_SECOND_EMPTY;
                 } else {
                     aniType = AnimationType.RELOAD_SECOND;
                 }
             } else if (reloadPhase == Phase.POST) {
-                if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_RELOAD_EMPTY)) {
                     aniType = AnimationType.POST_RELOAD_EMPTY;
                 } else {
                     aniType = AnimationType.POST_RELOAD;
                 }
             } else {
-                if (!ItemGun.hasAmmoLoaded(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.PRE_RELOAD_EMPTY)) {
+                if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.PRE_RELOAD_EMPTY)) {
                     aniType = AnimationType.PRE_RELOAD_EMPTY;
                 } else {
                     aniType = AnimationType.PRE_RELOAD;
