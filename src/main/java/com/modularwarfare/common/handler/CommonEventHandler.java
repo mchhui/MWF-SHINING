@@ -185,11 +185,11 @@ public class CommonEventHandler {
     @SubscribeEvent
     public void onEntityInteract(final PlayerInteractEvent.EntityInteractSpecific event) {
         if (event.getTarget() instanceof EntityItemLoot) {
-            if (!event.getWorld().isRemote && event.getTarget().onGround && !event.getEntityPlayer().isSpectator()) {
+            if (!event.getWorld().isRemote && !event.getEntityPlayer().isSpectator()) {
                 final EntityItemLoot loot = (EntityItemLoot) event.getTarget();
                 if (loot.getCustomAge() > 20) {
                     final ItemStack stack = loot.getItem();
-                    if (stack.getItem() != Items.AIR && event.getTarget().onGround) {
+                    if (stack.getItem() != Items.AIR) {
                         loot.pickup(event.getEntityPlayer());
                     }
                 }
