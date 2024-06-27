@@ -626,7 +626,8 @@ public class AnimationController {
         if(anim.reloading) {
             AnimationType reloadAni=anim.getReloadAnimationType();
             if (anim.getReloadType() == ReloadType.Full && (reloadAni == AnimationType.PRE_RELOAD
-                    || reloadAni == AnimationType.RELOAD_FIRST || reloadAni == AnimationType.RELOAD_FIRST_QUICKLY)) {
+                    || reloadAni == AnimationType.RELOAD_FIRST || reloadAni == AnimationType.RELOAD_FIRST_QUICKLY
+            || reloadAni == AnimationType.RELOAD_FIRST_EMPTY || reloadAni == AnimationType.PRE_RELOAD_EMPTY)) {
                 return ammo;
             }
             if (reloadAni == AnimationType.PRE_UNLOAD || reloadAni == AnimationType.UNLOAD|| reloadAni == AnimationType.POST_UNLOAD) {
