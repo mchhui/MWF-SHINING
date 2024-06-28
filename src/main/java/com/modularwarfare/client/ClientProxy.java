@@ -927,6 +927,9 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void addBlood(final EntityLivingBase living, final int amount) {
+        if (!ModConfig.INSTANCE.client.enableBloodParticle) {
+            return;
+        }
         for (int k = 0; k < amount; ++k) {
             float attenuator = 0.3f;
             double mX = -MathHelper.sin(living.rotationYaw / 180.0f * 3.1415927f) * MathHelper.cos(living.rotationPitch / 180.0f * 3.1415927f) * attenuator;

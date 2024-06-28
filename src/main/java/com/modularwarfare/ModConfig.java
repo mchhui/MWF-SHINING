@@ -55,6 +55,7 @@ public class ModConfig {
 
     public static class Client {
         public boolean hideSecondSkinWhenDressed = true;
+        public boolean enableBloodParticle = true;
     }
 
     //shots
