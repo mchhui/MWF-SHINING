@@ -106,6 +106,28 @@ public class BaseType {
             iconName = internalName;
     }
 
+    public void loadWeaponSoundMap() {
+        try {
+            if (weaponSoundMap != null) {
+                for (ArrayList<SoundEntry> entryList : weaponSoundMap.values()) {
+                    for (SoundEntry soundEntry : entryList) {
+                        if (soundEntry.soundName != null) {
+                            ModularWarfare.PROXY.registerSound(soundEntry.soundName);
+                            if (soundEntry.soundNameDistant != null)
+                                ModularWarfare.PROXY.registerSound(soundEntry.soundNameDistant);
+                        } else {
+                            ModularWarfare.LOGGER
+                                    .error(String.format("Sound entry event '%s' has null soundName for type '%s'",
+                                            soundEntry.soundEvent, internalName));
+                        }
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+    }
+
     public void postLoad(){
 
     }

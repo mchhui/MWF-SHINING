@@ -44,23 +44,7 @@ public class BackpackType extends BaseType {
         if (maxStackSize == null)
             maxStackSize = 1;
         loadBaseValues();
-        try {
-            for (ArrayList<SoundEntry> entryList : weaponSoundMap.values()) {
-                for (SoundEntry soundEntry : entryList) {
-                    if (soundEntry.soundName != null) {
-                        ModularWarfare.PROXY.registerSound(soundEntry.soundName);
-                        if (soundEntry.soundNameDistant != null)
-                            ModularWarfare.PROXY.registerSound(soundEntry.soundNameDistant);
-                    } else {
-                        ModularWarfare.LOGGER
-                            .error(String.format("Sound entry event '%s' has null soundName for type '%s'",
-                                soundEntry.soundEvent, internalName));
-                    }
-                }
-            }
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
+        loadWeaponSoundMap();
     }
 
     @Override
