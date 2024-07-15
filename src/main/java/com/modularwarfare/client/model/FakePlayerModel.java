@@ -51,6 +51,8 @@ public class FakePlayerModel extends ModelPlayer {
                         if(config.renderOffhandPart) {
                             this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
                             this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                            this.bipedLeftArmwear.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
+                            this.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
                         }
                     }
                 }
