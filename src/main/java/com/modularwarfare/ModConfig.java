@@ -34,6 +34,7 @@ public class ModConfig {
 
     public static class General {
         public boolean customInventory = true;
+        public boolean allowGunModifyGui = true;
         public boolean prototype_pack_extraction = true;
         public boolean animated_pack_extraction = true;
 

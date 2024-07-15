@@ -3,6 +3,7 @@ package com.modularwarfare.client.handler;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.HandleKeyEvent;
+import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
@@ -47,9 +48,10 @@ public class KeyInputHandler extends ForgeEvent {
         keyBinds.add(new KeyEntry(KeyType.AddAttachment));
         keyBinds.add(new KeyEntry(KeyType.Flashlight));
 
-        if (!ModConfig.INSTANCE.general.customInventory) {
-            keyBinds.add(new KeyEntry(KeyType.Backpack));
-        }
+        // Deprecated.
+//        if (!ModConfig.INSTANCE.general.customInventory) {
+//            keyBinds.add(new KeyEntry(KeyType.Backpack));
+//        }
 
         keyBinds.add(new KeyEntry(KeyType.Left));
         keyBinds.add(new KeyEntry(KeyType.Right));
@@ -162,7 +164,7 @@ public class KeyInputHandler extends ForgeEvent {
                     break;
 
                 case AddAttachment:
-                    if(!entityPlayer.isSpectator()) {
+                    if(!entityPlayer.isSpectator() && ClientEventHandler.serverAllowGunModifyGui) {
                         if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
                             if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                                 /*if(((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.BASIC) {
@@ -201,13 +203,16 @@ public class KeyInputHandler extends ForgeEvent {
                         }  
                     }
                     break;
-                case Backpack:
-                    if (!ModConfig.INSTANCE.general.customInventory) {
-                        if (!entityPlayer.isCreative()) {
-                            ModularWarfare.NETWORK.sendToServer(new PacketOpenGui(0));
-                        }
-                    }
-                    break;
+
+                    // Deprecated
+//                case Backpack:
+//                    if (!ModConfig.INSTANCE.general.customInventory) {
+//                        if (!entityPlayer.isCreative()) {
+//                            ModularWarfare.NETWORK.sendToServer(new PacketOpenGui(0));
+//                        }
+//                    }
+//                    break;
+
                 case Left:
                     ClientProxy.attachmentUI.processKeyInput(KeyType.Left);
                     break;
