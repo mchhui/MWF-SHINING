@@ -522,6 +522,9 @@ public class ModularWarfare {
             contentPacks = PROXY.getContentList();
         }
 
+        NetworkRegistry.INSTANCE.newEventDrivenChannel("MWF_sync_customInventory_" + (ModConfig.INSTANCE.general.customInventory ? "enabled" : "disabled"));
+        NetworkRegistry.INSTANCE.newEventDrivenChannel("MWF_sync_allowGunModifyGui_" + (ModConfig.INSTANCE.general.allowGunModifyGui ? "enabled" : "disabled"));
+
         registerRayCasting(new DefaultRayCasting());
         this.loaderManager.preInitAddons(event);
 

@@ -12,7 +12,7 @@ public enum KeyType {
     GunUnload("Unload Key", 0x16), // U
     AddAttachment("Attachment Mode", 0x32), // M
     Flashlight("Flashlight", 0x23), // H
-    Backpack("Backpack Inventory", 0x30), // B
+    // Backpack("Backpack Inventory", 0x30), // B // Deprecated
     Jetpack("Jetpack fire", Keyboard.KEY_X), 
 
 

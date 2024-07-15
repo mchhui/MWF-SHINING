@@ -1,5 +1,6 @@
 package com.modularwarfare.client;
 
+import net.minecraft.network.play.INetHandlerPlayClient;
 import org.lwjgl.input.Keyboard;
 
 import com.modularwarfare.ModConfig;
@@ -54,6 +55,8 @@ public class ClientEventHandler {
     public static float jetPower=0;
     public static int jetFireTime=0;
     public static int jetCoolTime=0;
+    public static boolean serverCustomInventory = false;
+    public static boolean serverAllowGunModifyGui = false;
     
     @SubscribeEvent
     public void onInput(InputUpdateEvent event) {
@@ -180,7 +183,7 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public void onGuiLaunch(GuiOpenEvent event) {
-        if (ModConfig.INSTANCE.general.customInventory) {
+        if (serverCustomInventory) {
             if (event.getGui() != null && event.getGui().getClass() == GuiInventory.class) {
                 final EntityPlayer player = Minecraft.getMinecraft().player;
                 if (!player.isCreative()) {
@@ -188,6 +191,23 @@ public class ClientEventHandler {
                     ModularWarfare.NETWORK.sendToServer(new PacketOpenGui(0));
                 }
             }
+        }
+    }
+
+    @SubscribeEvent
+    public void onCustomPacketRegistration(FMLNetworkEvent.CustomPacketRegistrationEvent<INetHandlerPlayClient> event) {
+        boolean isRegister = event.getOperation().equals("REGISTER");
+        if (event.getRegistrations().contains("MWF_sync_customInventory_enabled")) {
+            serverCustomInventory = isRegister;
+        }
+        if (event.getRegistrations().contains("MWF_sync_customInventory_disabled")) {
+            serverCustomInventory = !isRegister;
+        }
+        if (event.getRegistrations().contains("MWF_sync_allowGunModifyGui_enabled")) {
+            serverAllowGunModifyGui = isRegister;
+        }
+        if (event.getRegistrations().contains("MWF_sync_allowGunModifyGui_disabled")) {
+            serverAllowGunModifyGui = !isRegister;
         }
     }
 
