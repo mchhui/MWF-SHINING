@@ -225,13 +225,19 @@ public class DataMesh {
         }
         
         //内存优化
-        geoList.clear();
-        geoList=null;
-        if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() !=null) {
-            ((sun.nio.ch.DirectBuffer)geoBuffer).cleaner().clean();
+        if(geoList!=null) {
+            geoList.clear();
+            geoList=null;  
         }
-        if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() !=null) {
-            ((sun.nio.ch.DirectBuffer)elementBuffer).cleaner().clean();
+        if(geoBuffer!=null) {
+            if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() !=null) {
+                ((sun.nio.ch.DirectBuffer)geoBuffer).cleaner().clean();
+            }  
+        }
+        if(elementBuffer!=null) {
+            if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() !=null) {
+                ((sun.nio.ch.DirectBuffer)elementBuffer).cleaner().clean();
+            }  
         }
     }
 
