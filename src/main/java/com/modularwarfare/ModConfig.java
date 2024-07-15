@@ -147,8 +147,9 @@ public class ModConfig {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
             if (configFile.exists()) {
-                JsonReader jsonReader = new JsonReader(new FileReader(configFile));
-                INSTANCE = gson.fromJson(jsonReader, ModConfig.class);
+                try (Reader reader = Files.newBufferedReader(configFile.toPath(), StandardCharsets.UTF_8)) {
+                    INSTANCE = gson.fromJson(reader, ModConfig.class);
+                }
             } else {
                 INSTANCE = this;
             }
