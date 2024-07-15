@@ -25,6 +25,10 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public HashSet<String> defaultHidePart=new HashSet<String>();
     public HashSet<String> thirdHidePart=new HashSet<String>();
     public HashSet<String> thirdShowPart=new HashSet<String>();
+    
+    public boolean renderOffhandPart=false;
+    public HashSet<String> thirdHideOffhandPart=new HashSet<String>();
+    public HashSet<String> thirdShowOffhandPart=new HashSet<String>();
 
     public GunEnhancedRenderConfig.ThirdPerson thirdPerson = new GunEnhancedRenderConfig.ThirdPerson();
     
@@ -120,6 +124,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
 
         public HashMap<String, RenderElement> renderElements=new HashMap<String, GunEnhancedRenderConfig.ThirdPerson.RenderElement>(){{
             put(RenderType.PLAYER.serializedName, new RenderElement());
+            put(RenderType.PLAYER_OFFHAND.serializedName, new RenderElement());
             put(RenderType.ITEMLOOT.serializedName, new RenderElement());
             put(RenderType.ITEMFRAME.serializedName, new RenderElement());
         }};

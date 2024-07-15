@@ -251,6 +251,7 @@ public class ModularWarfare {
             //PROXY.generateJsonSounds(gunTypes.values(), DEV_ENV);
             PROXY.generateLangFiles(baseTypes, DEV_ENV);
         }
+        System.gc();
     }
 
     /**

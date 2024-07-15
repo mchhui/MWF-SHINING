@@ -1,4 +1,4 @@
-package mchhui.modularmovements.tactical.client;
+package com.modularwarfare.client.model;
 
 import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.layers.LayerBipedArmor;

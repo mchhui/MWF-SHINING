@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.modularwarfare.client.model.FakeRenderPlayer;
 import com.modularwarfare.common.guns.ItemGun;
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.ModularMovementsConfig;
@@ -139,19 +140,7 @@ public class ClientLitener {
     }
 
     public void onFMLInitPost(FMLPostInitializationEvent event) {
-        Field field = ReflectionHelper.findField(RenderManager.class, "skinMap", "field_178636_l");
-        try {
-            Map<String, RenderPlayer> skinMap = (Map<String, RenderPlayer>) field
-                    .get(Minecraft.getMinecraft().getRenderManager());
-            skinMap.clear();
-            skinMap.put("default", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager()));
-            skinMap.put("slim", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager(), true));
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        field = ReflectionHelper.findField(Minecraft.class, "tutorial", "field_193035_aW");
+        Field field = ReflectionHelper.findField(Minecraft.class, "tutorial", "field_193035_aW");
         try {
             field.set(Minecraft.getMinecraft(), new FakeTutorial(Minecraft.getMinecraft()));
         } catch (IllegalArgumentException | IllegalAccessException e) {

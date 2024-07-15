@@ -223,6 +223,16 @@ public class DataMesh {
             this.compiled = true;
             this.compiling = false;
         }
+        
+        //内存优化
+        geoList.clear();
+        geoList=null;
+        if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() !=null) {
+            ((sun.nio.ch.DirectBuffer)geoBuffer).cleaner().clean();
+        }
+        if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() !=null) {
+            ((sun.nio.ch.DirectBuffer)elementBuffer).cleaner().clean();
+        }
     }
 
     public void callSkinning() {
@@ -260,16 +270,6 @@ public class DataMesh {
 
     public void delete() {
         // It will be auto clean.
-//        if(geoBuffer!=null) {
-//            if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() !=null) {
-//                ((sun.nio.ch.DirectBuffer)geoBuffer).cleaner().clean();
-//            }
-//        }
-//        if(elementBuffer!=null) {
-//            if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() !=null) {
-//                ((sun.nio.ch.DirectBuffer)elementBuffer).cleaner().clean();
-//            }
-//        }
         GL30.glDeleteVertexArrays(displayList);
         GL30.glDeleteVertexArrays(ssboVao);
         if (pos_vbo != -1) {

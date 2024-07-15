@@ -12,7 +12,7 @@ import com.google.gson.stream.JsonWriter;
 
 @JsonAdapter(RenderType.RenderTypeJsonAdapter.class)
 public enum RenderType {
-    PLAYER("player"),ITEMLOOT("itemloot"),ITEMFRAME("itemframe");
+    PLAYER("player"),PLAYER_OFFHAND("player_offhand"),ITEMLOOT("itemloot"),ITEMFRAME("itemframe");
     
     public String serializedName;
     private RenderType(String serializedName) {

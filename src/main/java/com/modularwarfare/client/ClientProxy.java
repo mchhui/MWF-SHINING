@@ -24,6 +24,7 @@ import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.hud.GunUI;
 import com.modularwarfare.client.killchat.KillFeedManager;
 import com.modularwarfare.client.killchat.KillFeedRender;
+import com.modularwarfare.client.model.FakeRenderPlayer;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.client.model.layers.RenderLayerBackpack;
 import com.modularwarfare.client.model.layers.RenderLayerBody;
@@ -74,6 +75,7 @@ import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.entity.MWFRenderHelper;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.resources.IReloadableResourceManager;
 import net.minecraft.client.resources.IResourceManager;
@@ -100,6 +102,7 @@ import net.minecraftforge.fml.common.discovery.ModCandidate;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.EntityEntry;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.lwjgl.opengl.GL11;
@@ -108,6 +111,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -277,18 +281,30 @@ public class ClientProxy extends CommonProxy {
         WeaponAnimations.registerAnimation("toprifle", new AnimationTopRifle());
         WeaponAnimations.registerAnimation("rocket_launcher", new AnimationRocketLauncher());
 
-        final Map<String, RenderPlayer> skinMap = Minecraft.getMinecraft().getRenderManager().getSkinMap();
-        for (final RenderPlayer renderer : skinMap.values()) {
-            setupLayers(renderer);
+//        final Map<String, RenderPlayer> skinMap = Minecraft.getMinecraft().getRenderManager().getSkinMap();
+//        for (final RenderPlayer renderer : skinMap.values()) {
+//            setupLayers(renderer);
+//        }
+        Field field = ReflectionHelper.findField(RenderManager.class, "skinMap", "field_178636_l");
+        try {
+            Map<String, RenderPlayer> skinMap =
+                (Map<String, RenderPlayer>)field.get(Minecraft.getMinecraft().getRenderManager());
+            skinMap.clear();
+            skinMap.put("default", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager()));
+            skinMap.put("slim", new FakeRenderPlayer(Minecraft.getMinecraft().getRenderManager(), true));
+        } catch (IllegalArgumentException | IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 
+    @Deprecated
     public void setupLayers(RenderPlayer renderer) {
-        MWFRenderHelper helper = new MWFRenderHelper(renderer);
-        helper.getLayerRenderers().add(0, new ResetHiddenModelLayer(renderer));
-        renderer.addLayer(new RenderLayerBackpack(renderer, renderer.getMainModel().bipedBodyWear));
-        renderer.addLayer(new RenderLayerBody(renderer, renderer.getMainModel().bipedBodyWear));
-        renderer.addLayer(new RenderLayerHeldGun(renderer));
+//        MWFRenderHelper helper = new MWFRenderHelper(renderer);
+//        helper.getLayerRenderers().add(0, new ResetHiddenModelLayer(renderer));
+//        renderer.addLayer(new RenderLayerBackpack(renderer, renderer.getMainModel().bipedBodyWear));
+//        renderer.addLayer(new RenderLayerBody(renderer, renderer.getMainModel().bipedBodyWear));
+//        renderer.addLayer(new RenderLayerHeldGun(renderer));
     }
 
     @Override
@@ -433,8 +449,10 @@ public class ClientProxy extends CommonProxy {
                 baseType.reloadModel();
             }
         }
-        if (reloadSkins)
-            forceReload();
+        if (reloadSkins) {
+            forceReload();  
+        }
+        System.gc();
     }
 
     @Override

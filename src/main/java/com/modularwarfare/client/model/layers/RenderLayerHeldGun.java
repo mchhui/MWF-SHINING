@@ -85,6 +85,9 @@ public class RenderLayerHeldGun extends LayerHeldItem {
                 GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
                 
                 ClientProxy.gunEnhancedRenderer.drawThirdGun(livingEntityRenderer,RenderType.PLAYER, entitylivingbaseIn, itemstack);
+                if(config.renderOffhandPart) {
+                    ClientProxy.gunEnhancedRenderer.drawThirdGun(livingEntityRenderer,RenderType.PLAYER_OFFHAND, entitylivingbaseIn, itemstack);  
+                }
 
             }
 

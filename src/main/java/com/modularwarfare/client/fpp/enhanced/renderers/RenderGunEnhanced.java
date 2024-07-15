@@ -66,9 +66,12 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.RenderPlayer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -918,7 +921,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 
                 ObjModelRenderer.glowTxtureMode=false;
                 GlStateManager.enableBlend();
-                GlStateManager.depthMask(false);
+                GlStateManager.depthMask(true);
+                GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
                 boolean shouldRenderFlash=true;
                 if ((GunType.getAttachment(item, AttachmentPresetEnum.Barrel) != null)) {
                     AttachmentType attachmentType = ((ItemAttachment) GunType.getAttachment(item, AttachmentPresetEnum.Barrel).getItem()).type;
@@ -950,10 +954,22 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     GlStateManager.enableLighting();
                     GlStateManager.popMatrix();
                 }
-                
-                //model.renderPart("smokeModel");
-                GlStateManager.depthMask(true);
                 ObjModelRenderer.glowTxtureMode=true;
+                
+//                model.applyGlobalTransformToOther("flashModel", ()->{
+//                    Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/particles/fire_smoke.png"));
+//                    GlStateManager.rotate(145, 0, 1, 0);
+//                    Tessellator tessellator=Tessellator.getInstance();
+//                    tessellator.getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+//                    tessellator.getBuffer().pos(0, 0, 0).tex(0, 0);
+//                    tessellator.getBuffer().pos(0, 10, 0).tex(0, 1);
+//                    tessellator.getBuffer().pos(10, 10, 0).tex(1, 1);
+//                    tessellator.getBuffer().pos(10, 0, 0).tex(1, 0);
+//                    tessellator.draw();
+//                });
+                
+                GlStateManager.depthMask(true);
+                //model.renderPart("smokeModel");
             }
         });
         
@@ -1191,8 +1207,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
         HashSet<String> exceptParts = new HashSet<String>();
         exceptParts.addAll(config.defaultHidePart);
-        exceptParts.addAll(config.thirdHidePart);
-        exceptParts.removeAll(config.thirdShowPart);
+        if(renderType==RenderType.PLAYER_OFFHAND) {
+            exceptParts.addAll(config.thirdHideOffhandPart);
+            exceptParts.removeAll(config.thirdShowOffhandPart);
+        }else {
+            exceptParts.addAll(config.thirdHidePart);
+            exceptParts.removeAll(config.thirdShowPart);
+        }
         //exceptParts.addAll(DEFAULT_EXCEPT);
 
         boolean glowTxtureMode=ObjModelRenderer.glowTxtureMode;
@@ -1264,32 +1285,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if (player!=null&&sneakFlag) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
         }
-
-        /*
-        if (renderConfigElement.bindding.equals("head")) {
-            ((ModelBiped) this.renderPlayer.getMainModel()).bipedHead.postRender(0.0625F);
-        } else if (renderConfigElement.bindding.equals("body")) {
-            ((ModelBiped) this.renderPlayer.getMainModel()).bipedBody.postRender(0.0625F);
-        } else if (renderConfigElement.bindding.equals("rightArm")) {
-            ((ModelBiped) this.renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
-        } else if (renderConfigElement.bindding.equals("leftArm")) {
-            ((ModelBiped) this.renderPlayer.getMainModel()).bipedLeftArm.postRender(0.0625F);
-        } else if (renderConfigElement.bindding.equals("rightLeg")) {
-            ((ModelBiped) this.renderPlayer.getMainModel()).bipedRightLeg.postRender(0.0625F);
-        } else if (renderConfigElement.bindding.equals("leftLeg")) {
-            ((ModelBiped) this.renderPlayer.getMainModel()).bipedLeftLeg.postRender(0.0625F);
-        }
-
-        GlStateManager.translate(renderConfigElement.pos[0], renderConfigElement.pos[1], renderConfigElement.pos[2]);
-        GlStateManager.scale(1 / 10f, 1 / 10f, 1 / 10f);
-        GlStateManager.scale(renderConfigElement.size[0], renderConfigElement.size[1], renderConfigElement.size[2]);
-        GlStateManager.rotate(renderConfigElement.rot[1], 0, -1, 0);
-        GlStateManager.rotate(renderConfigElement.rot[0], -1, 0, 0);
-        GlStateManager.rotate(renderConfigElement.rot[2], 0, 0, -1);
-         */
         if(renderPlayer!=null&&renderPlayer.getMainModel() instanceof ModelBiped) {
-            ((ModelBiped)renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
-            //System.out.println("a");
+            if(renderType==RenderType.PLAYER_OFFHAND) {
+                ((ModelBiped)renderPlayer.getMainModel()).bipedLeftArm.postRender(0.0625F);
+            }else {
+                ((ModelBiped)renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
+            }
         }
         RenderElement renderConfigElement=config.thirdPerson.renderElements.get(renderType.serializedName);
         GlStateManager.translate(renderConfigElement.pos.x, renderConfigElement.pos.y, renderConfigElement.pos.z);
