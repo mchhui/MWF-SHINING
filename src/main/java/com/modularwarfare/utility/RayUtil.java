@@ -7,6 +7,8 @@ import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.network.PacketGunTrail;
 import com.modularwarfare.common.network.PacketGunTrailAskServer;
+import com.modularwarfare.common.playerstate.PlayerStateManager;
+
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import mchhui.modularmovements.tactical.server.ServerListener;
@@ -116,7 +118,7 @@ public class RayUtil {
             }
         }
 
-        
+        acc*=PlayerStateManager.clientPlayerState.accuracyFactor;
         
         if (acc < 0) {
             acc = 0;

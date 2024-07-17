@@ -62,6 +62,7 @@ import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.particle.EntityBloodFX;
 import com.modularwarfare.common.particle.ParticleExplosion;
 import com.modularwarfare.common.particle.ParticleRocket;
+import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.objects.SoundEntry;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
@@ -859,6 +860,8 @@ public class ClientProxy extends CommonProxy {
                     offsetYaw*=gunType.recoilCrawlYawFactor;
                 }
             }
+            offsetYaw*=PlayerStateManager.clientPlayerState.recoilYawFactor;
+            offsetPitch*=PlayerStateManager.clientPlayerState.recoilPitchFactor;
 
             if (RenderParameters.playerRecoilYaw < 0.1F && RenderParameters.playerRecoilPitch < 0.1F) {
                 ClientTickHandler.startAntiRecoilTime = System.currentTimeMillis();

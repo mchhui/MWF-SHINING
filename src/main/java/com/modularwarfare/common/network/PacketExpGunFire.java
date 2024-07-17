@@ -9,6 +9,8 @@ import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.guns.manager.ShotValidation;
+import com.modularwarfare.common.playerstate.PlayerState;
+import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
 import io.netty.buffer.ByteBuf;
@@ -135,6 +137,7 @@ public class PacketExpGunFire extends PacketBase {
                     entityPlayer.sendMessage(new TextComponentString(TextFormatting.GRAY + "[" + TextFormatting.RED + "ModularWarfare" + TextFormatting.GRAY + "] Your ping is too high, shot not registered."));
                     return;
                 }
+                PlayerState state=PlayerStateManager.getPlayerState(entityPlayer);
                 ItemStack handItem = entityPlayer.getHeldItemMainhand();
                 if (handItem == null || !(handItem.getItem() instanceof ItemGun)) {
                     return;
@@ -168,15 +171,21 @@ public class PacketExpGunFire extends PacketBase {
                         return;
                     }
                     float damage = itemGun.type.gunDamage;
+                    if(itemGun.type.acceptedBullets!=null) {
+                        damage*=state.bulletGunDamageAmplifier;
+                    }else {
+                        damage*=state.ammoGunDamageAmplifier;
+                    }
                     if (target instanceof EntityPlayer && hitboxType != null && hitboxType.contains("body")) {
                         EntityPlayer player = (EntityPlayer) target;
+                        PlayerState victimState=PlayerStateManager.getPlayerState(player);
                         if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
                             extraSlots = player.getCapability(CapabilityExtra.CAPABILITY, null);
                             if (extraSlots != null) {
                                 plate = extraSlots.getStackInSlot(1);
                                 if (plate != null && plate.getItem() instanceof ItemSpecialArmor) {
                                     ArmorType armorType = ((ItemSpecialArmor) plate.getItem()).type;
-                                    damage = (float) (damage - (damage * armorType.defense));
+                                    damage = (float) (damage - (damage * armorType.defense*victimState.bulletproofFactor));
                                 }
                             }
                         }

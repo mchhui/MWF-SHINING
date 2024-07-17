@@ -151,7 +151,10 @@ public class KeyInputHandler extends ForgeEvent {
                         ModularWarfare.NETWORK.sendToServer(new PacketGunUnloadAttachment(ClientProxy.attachmentUI.selectedAttachEnum.getName(), false));
                     } else {
                         if (unloadStack != null && (unloadStack.getItem() instanceof ItemGun || unloadStack.getItem() instanceof ItemAmmo)) {
-                            ModularWarfare.NETWORK.sendToServer(new PacketGunReload(true));
+                            if (ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null) == null
+                                || ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).isCouldReload()) {
+                                ModularWarfare.NETWORK.sendToServer(new PacketGunReload(true));  
+                            }
                         }
                     }
                     break;

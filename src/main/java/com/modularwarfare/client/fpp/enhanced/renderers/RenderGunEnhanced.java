@@ -72,6 +72,7 @@ import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
+import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
@@ -106,6 +107,14 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 
 public class RenderGunEnhanced extends CustomItemRenderer {
+    public static float diversion = 64f;
+    public static float[] es_joint=new float[(int)(diversion+1)];
+    public static float[] strafing_joint=new float[(int)(diversion+1)];
+    public static float[]  forward_joint=new float[(int)(diversion+1)];
+    public static float postSmokeTp=0;
+    public static float postSmokeWind=1;
+    public static float postSmokeAlpha=1;
+    
     public static float sizeFactor=10000f;
     public static boolean debug=false;
     public static boolean debug1=false;
@@ -955,19 +964,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     GlStateManager.popMatrix();
                 }
                 ObjModelRenderer.glowTxtureMode=true;
-                
-//                model.applyGlobalTransformToOther("flashModel", ()->{
-//                    Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/particles/fire_smoke.png"));
-//                    GlStateManager.rotate(145, 0, 1, 0);
-//                    Tessellator tessellator=Tessellator.getInstance();
-//                    tessellator.getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
-//                    tessellator.getBuffer().pos(0, 0, 0).tex(0, 0);
-//                    tessellator.getBuffer().pos(0, 10, 0).tex(0, 1);
-//                    tessellator.getBuffer().pos(10, 10, 0).tex(1, 1);
-//                    tessellator.getBuffer().pos(10, 0, 0).tex(1, 0);
-//                    tessellator.draw();
-//                });
-                
                 GlStateManager.depthMask(true);
                 //model.renderPart("smokeModel");
             }
@@ -992,6 +988,14 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
         });
         
+        /**
+         * POST HANDLE
+         * */
+        
+        model.applyGlobalTransformToOther("gunModel", ()->{
+            drawPostSmoke();
+        });
+
         if(sightRendering!=null) {
             if (!ScopeUtils.isIndsideGunRendering) {
                 if(!sightRendering.type.sight.modeType.isPIP) {
@@ -1021,6 +1025,124 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
+    }
+
+    public void drawPostSmoke() {
+        if(postSmokeTp==0) {
+            return;
+        }
+        if(postSmokeAlpha<0.5f) {
+            return;
+        }
+        GlStateManager.depthMask(false);
+        GlStateManager.disableLighting();
+        GlStateManager.disableAlpha();
+        GlStateManager.pushMatrix();
+        GlStateManager.tryBlendFuncSeparate(SourceFactor.ONE, DestFactor.ONE, SourceFactor.ONE, DestFactor.ZERO);
+        Minecraft.getMinecraft().getTextureManager()
+            .bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/particles/smoke_es.png"));
+        // Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(ModularWarfare.MOD_ID,
+        // "textures/skins/white.png"));
+        GlStateManager.translate(9f, 0, -0.2f);
+        float s = 0.05f;
+        float tp = postSmokeTp;
+        float sinTp = (float)Math.sin(tp * 3.14 / 2);
+        float per = (float)Math.sin(Math.sin(tp * 3.14f / 2) * 2);
+        float ox = tp / 100;
+        float oy = 1 - tp / 50;
+        Tessellator tessellator = Tessellator.getInstance();
+        float step = 2.5f / diversion;
+        float alpha1 = 1;
+        if (tp > 0.5) {
+            alpha1 =    (float)Math.cos((tp-0.5f)*3.14);
+            // alpha1=alpha1*alpha1;
+        }
+        float alpha2 =(1-1.2f*tp);
+        if(alpha2<0) {
+            alpha2=0;
+        }
+        alpha2*=alpha2;
+        
+        alpha1*=(postSmokeAlpha-0.5f)*2;
+        alpha2*=(postSmokeAlpha-0.5f)*2;
+        float wind=0.2f*tp+0.3f*postSmokeWind;
+        for(int i=0;i<=diversion;i++) {
+            es_joint[i]=0.5f*wind*tp/diversion*i;
+        }
+        
+        tessellator.getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+        for (int i = 0; i < diversion; i++) {
+            float oz = (float)Math.sin(3.14 * 2.5*wind * per / diversion * i) * tp+es_joint[i+1]+strafing_joint[i+1];
+            float oz_ = (float)Math.sin(3.14 * 2.5*wind * per / diversion * (i - 1)) * tp+es_joint[i]+strafing_joint[i];
+            float fz = 0.1f / diversion * i * tp* tp;
+            float a=alpha1*(diversion-(i+1)*alpha1)/diversion;
+//            System.out.println(a);
+            if(a<0) {
+                a=0;
+            }
+//            a=alpha1;
+            if (i + 1 >= diversion) {
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0 + oz_ - fz).tex(0 + ox, s / diversion * i * per + oy)
+                    .color(1 * a, 1 * a, 1 * a, 1f * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0.15 + oz_ + fz).tex(s / 20 + ox, s / diversion * i * per + oy)
+                    .color(1 * a, 1 * a, 1 * a, 0 * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0.15 + oz)
+                    .tex(s / 20 + ox, (s + s * i) / diversion * per + oy).color(1 * a, 1 * a, 1 * a, 0 * a)
+                    .endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0 + oz).tex(0 + ox, (s + s * i) / diversion * per + oy)
+                    .color(1 * a, 1 * a, 1 * a, 0f * a).endVertex();
+            } else {
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0 + oz_ - fz).tex(0 + ox, s / diversion * i * per + oy)
+                    .color(1 * a, 1 * a, 1 * a, 1f * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0.15 + oz_ + fz).tex(s / 20 + ox, s / diversion * i * per + oy)
+                    .color(1 * a, 1 * a, 1 * a, 0 * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0.15 + oz + fz)
+                    .tex(s / 20 + ox, (s + s * i) / diversion * per + oy).color(1 * a, 1 * a, 1 * a, 0 * a)
+                    .endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0 + oz - fz)
+                    .tex(0 + ox, (s + s * i) / diversion * per + oy).color(1 * a, 1 * a, 1 * a, 1f * a)
+                    .endVertex();
+            }
+        }
+        tessellator.draw();
+        Minecraft.getMinecraft().getTextureManager()
+            .bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/white.png"));
+        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE, SourceFactor.ONE, DestFactor.ZERO);
+        float light = 0.85f;
+        tessellator.getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+        for (int i = 0; i < diversion; i++) {
+            float oz = (float)Math.sin(3.14 * 2.5*wind * per / diversion * i) * tp+es_joint[i+1]+strafing_joint[i+1];
+            float oz_ = (float)Math.sin(3.14 * 2.5*wind * per / diversion * (i - 1)) * tp+es_joint[i]+strafing_joint[i];
+            float fz = 0.1f / diversion * i * per;
+            float a=alpha2*(diversion-(i+1)*alpha2)/diversion;
+            if(a<0) {
+                a=0;
+            }
+            if (i + 1 >= diversion) {
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0 + oz_ - fz).tex(0, 0).color(1, 1, 1, 1f * a)
+                    .endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0.1 + oz_ + fz).tex(1, 0)
+                    .color(light, light, light, 0 * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0.1 + oz).tex(1, 1)
+                    .color(light, light, light, 0 * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0 + oz).tex(0, 1).color(1, 1, 1, 0f * a)
+                    .endVertex();
+            } else {
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0 + oz_ - fz).tex(0, 0).color(1, 1, 1, 1f * a)
+                    .endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i], step * i * per, 0.1 + oz_ + fz).tex(1, 0)
+                    .color(light, light, light, 0 * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0.1 + oz + fz).tex(1, 1)
+                    .color(light, light, light, 0 * a).endVertex();
+                tessellator.getBuffer().pos(0+forward_joint[i+1], (step + step * i) * per, 0 + oz - fz).tex(0, 1)
+                    .color(1, 1, 1, 1f * a).endVertex();
+            }
+        }
+        tessellator.draw();
+        GlStateManager.popMatrix();
+        GlStateManager.enableAlpha();
+        GlStateManager.enableLighting();
+        GlStateManager.depthMask(true);
     }
     
     public void renderHandAndArmor(EnumHandSide side, AbstractClientPlayer player, EnhancedRenderConfig config,

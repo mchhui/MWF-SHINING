@@ -11,6 +11,7 @@ import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Animation;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
@@ -90,6 +91,7 @@ public class EnhancedStateMachine {
         reloadPhase = Phase.PRE;
         lastReloadPhase = null;
         shootingPhase = Phase.PRE;
+        RenderGunEnhanced.postSmokeTp=0;
     }
 
     public void triggerShoot(AnimationController controller,ModelEnhancedGun model, GunType gunType, int fireTickDelay) {
@@ -112,6 +114,13 @@ public class EnhancedStateMachine {
         this.shootingPhase = Phase.PRE;
         this.currentModel = model;
         this.controller=controller;
+        
+        if(!isFailed&&this.controller.POST_SMOKE==0) {
+            RenderGunEnhanced.postSmokeAlpha+=0.05f;
+            if(RenderGunEnhanced.postSmokeAlpha>1) {
+                RenderGunEnhanced.postSmokeAlpha=1;
+            }  
+        }
     }
 
     public void triggerReload(AnimationController controller,EntityLivingBase entity,int reloadTime, int reloadCount, ModelEnhancedGun model, ReloadType reloadType) {
@@ -414,6 +423,15 @@ public class EnhancedStateMachine {
                 shootingPhase = phase.get();
                 controller.FIRE = progess.get();
                 if (!shooting) {
+                    if((controller.POST_SMOKE==0||controller.POST_SMOKE>1)) {
+                        controller.POST_SMOKE=1.2f;
+                        RenderGunEnhanced.postSmokeWind=(float)(Math.random()-0.5f);
+                        for(int i=0;i<=RenderGunEnhanced.diversion;i++) {
+                            RenderGunEnhanced.forward_joint[i]=0;
+                            RenderGunEnhanced.strafing_joint[i]=0;
+                        }
+//                        System.out.println(RenderGunEnhanced.postSmokeAlpha);
+                    }
                     controller.updateActionAndTime();
                 }
             }

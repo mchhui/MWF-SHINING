@@ -24,6 +24,7 @@ import com.modularwarfare.common.hitbox.hits.OBBHit;
 import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.network.*;
+import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
 import com.teamderpy.shouldersurfing.client.ShoulderHelper;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
@@ -94,7 +95,7 @@ public class ShotManager {
         }
 
         ModularWarfare.PROXY.onShootAnimation(entityPlayer, gunType.internalName, gunType.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw);
-
+        
         // Sound
         if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Barrel) != null) {
             ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(gunStack, AttachmentPresetEnum.Barrel).getItem();
@@ -120,7 +121,7 @@ public class ShotManager {
             gunStack.getTagCompound().setInteger("shotsremaining", shotCount);
         }
 
-        ClientTickHandler.playerShootCooldown.put(entityPlayer.getUniqueID(), gunType.fireTickDelay);
+        ClientTickHandler.playerShootCooldown.put(entityPlayer.getUniqueID(), (int)(gunType.fireTickDelay/PlayerStateManager.clientPlayerState.roundsPerMinFactor));
 
 
         if ((gunType.dropBulletCasing)) {

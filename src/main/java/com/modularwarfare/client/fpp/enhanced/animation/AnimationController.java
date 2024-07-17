@@ -1,6 +1,7 @@
 package com.modularwarfare.client.fpp.enhanced.animation;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
@@ -8,6 +9,7 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.view.AutoSwitchToFirstView;
@@ -58,6 +60,8 @@ public class AnimationController {
     public double FIRE;
     public double MODE_CHANGE;
     public double CUSTOM;
+    
+    public double POST_SMOKE=0;
     
     public long sprintCoolTime=0;
     public long sprintLoopCoolTime=0;
@@ -134,6 +138,7 @@ public class AnimationController {
         long time=System.currentTimeMillis();
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         float moveDistance=player.distanceWalkedModified-player.prevDistanceWalkedModified;
+        double speedFactor=Math.sqrt((player.posX-player.prevPosX)*(player.posX-player.prevPosX)+(player.posY-player.prevPosY)*(player.posY-player.prevPosY)+(player.posZ-player.prevPosZ)*(player.posZ-player.prevPosZ))/0.21;
         /** DEFAULT **/
         double defaultSpeed = config.animations.get(AnimationType.DEFAULT).getSpeed(config.FPS) * stepTick;
         if(playback.action==AnimationType.DEFAULT_EMPTY) {
@@ -222,6 +227,56 @@ public class AnimationController {
             if(CUSTOM>=1) {
                 CUSTOM=1;
             }
+        }
+        if(POST_SMOKE>0) {
+            if(POST_SMOKE<1) {
+                RenderGunEnhanced.postSmokeTp=(float)(1-POST_SMOKE);
+                if(Math.abs(player.moveStrafing)>0) {
+                    RenderGunEnhanced.postSmokeAlpha-=0.005*Math.abs(player.moveStrafing)*speedFactor*stepTick;
+                    RenderGunEnhanced.postSmokeWind+=0.01*Math.abs(player.moveStrafing)*speedFactor*stepTick;
+                }else {
+                    if(player.moveForward>0) {
+                        POST_SMOKE-=0.01*player.moveForward*speedFactor*stepTick;
+                    }
+                    if(player.moveForward<0&&POST_SMOKE<0.9) {
+                        RenderGunEnhanced.postSmokeAlpha-=0.005*(-player.moveForward)*speedFactor*stepTick;
+                        POST_SMOKE-=0.01*(-player.moveForward)*speedFactor*stepTick;
+                    }
+                }
+                if(Math.abs(player.moveVertical)>0) {
+                    RenderGunEnhanced.postSmokeAlpha-=0.005*Math.abs(player.moveVertical)*speedFactor*stepTick;
+                }
+                if(Math.abs(player.motionY)>0) {
+                    RenderGunEnhanced.postSmokeAlpha-=0.005*Math.abs(player.motionY)*speedFactor*stepTick;
+                }
+                if(Math.abs(ClientEventHandler.mouseDX)>0) {
+                    RenderGunEnhanced.postSmokeAlpha-=0.004*Math.abs(ClientEventHandler.mouseDX)*Minecraft.getMinecraft().gameSettings.mouseSensitivity*stepTick;
+                    POST_SMOKE-=0.004*Math.abs(ClientEventHandler.mouseDX)*Minecraft.getMinecraft().gameSettings.mouseSensitivity*stepTick;
+                }
+                double a=-0.15f*player.moveForward*speedFactor*stepTick;
+                double b=+0.08f*player.moveStrafing*speedFactor*stepTick;
+                a+=0.08f*ClientEventHandler.mouseDY*Minecraft.getMinecraft().gameSettings.mouseSensitivity*stepTick;
+                a-=0.06f*Math.abs(ClientEventHandler.mouseDX)*Minecraft.getMinecraft().gameSettings.mouseSensitivity*stepTick;
+                b-=0.08f*ClientEventHandler.mouseDX*Minecraft.getMinecraft().gameSettings.mouseSensitivity*stepTick;
+                for(int i=0;i<=RenderGunEnhanced.diversion;i++) {
+                    RenderGunEnhanced.forward_joint[i]+=0.2*a*i/RenderGunEnhanced.diversion;
+                    RenderGunEnhanced.strafing_joint[i]+=0.2*b*Math.sin(i/RenderGunEnhanced.diversion*2.9/2);
+                }
+            }
+            POST_SMOKE-=0.006*stepTick;
+            POST_SMOKE-=0.003*Math.cos(RenderGunEnhanced.postSmokeTp*3.14/2)*stepTick;
+            if(POST_SMOKE<=0) {
+                RenderGunEnhanced.postSmokeAlpha=0;
+            }
+//          System.out.println(RenderGunEnhanced.postSmokeTp);
+        }
+        if(RenderGunEnhanced.postSmokeAlpha<=0) {
+            RenderGunEnhanced.postSmokeAlpha=0;
+            POST_SMOKE=0;
+        }
+        if(POST_SMOKE<=0) {
+            POST_SMOKE=0;
+            RenderGunEnhanced.postSmokeTp=0;
         }
 //        System.out.println(customAnimationSpeed);
         /** ADS **/
@@ -563,7 +618,7 @@ public class AnimationController {
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                return this.playback.action == AnimationType.DRAW;
+                return this.playback.action == AnimationType.DRAW||this.playback.action == AnimationType.DRAW_EMPTY;
             }
         }
         return false;

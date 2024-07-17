@@ -36,6 +36,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
+import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.fml.common.Loader;
@@ -48,6 +49,8 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ClientEventHandler {
+    public static int mouseDX;
+    public static int mouseDY;
 
     public static float cemeraBobbing=0f;
     public boolean lastJump;
@@ -102,6 +105,12 @@ public class ClientEventHandler {
             isJetFly=false;
         }
         lastJump=event.getMovementInput().jump;
+    }
+    
+    @SubscribeEvent
+    public void onMouse(MouseEvent event) {
+        mouseDX=event.getDx();
+        mouseDY=event.getDy();
     }
     
     @SubscribeEvent(priority = EventPriority.HIGH)

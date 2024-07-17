@@ -39,6 +39,7 @@ import com.modularwarfare.common.handler.GuiHandler;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.NetworkHandler;
+import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
@@ -539,6 +540,7 @@ public class ModularWarfare {
         PROXY.registerEventHandlers();
 
         MinecraftForge.EVENT_BUS.register(new CommonEventHandler());
+        MinecraftForge.EVENT_BUS.register(new PlayerStateManager());
         MinecraftForge.EVENT_BUS.register(this);
 
     }

@@ -213,6 +213,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketBackpackJet.class);
 
         registerPacket(PacketCustomAnimation.class);
+        registerPacket(PacketPlayerState.class);
 
     }
 
