@@ -566,6 +566,9 @@ public class ModularWarfare {
             bukkitOnline=true;
         } catch (ClassNotFoundException e) {
         }
+        if(Boolean.valueOf(System.getProperty("mwf.banbukkit","false"))) {
+            bukkitOnline=false;
+        }
 //        bukkitOnline=true;
         if(bukkitOnline) {
             MinecraftForge.EVENT_BUS.register(BukkitHelper.class);

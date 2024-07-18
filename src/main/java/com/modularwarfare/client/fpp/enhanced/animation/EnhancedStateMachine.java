@@ -115,8 +115,14 @@ public class EnhancedStateMachine {
         this.currentModel = model;
         this.controller=controller;
         
-        if(!isFailed&&this.controller.POST_SMOKE==0) {
-            RenderGunEnhanced.postSmokeAlpha+=0.05f;
+        if(!isFailed&&this.controller.EJECTION_SMOKE==0) {
+            this.controller.EJECTION_SMOKE=1;
+        }
+        if(!isFailed&&this.controller.POST_SMOKE==0||this.controller.POST_SMOKE>1) {
+            if(this.controller.POST_SMOKE>1) {
+                this.controller.POST_SMOKE=1.2f;
+            }
+            RenderGunEnhanced.postSmokeAlpha+=0.05f*controller.getConfig().specialEffect.postSmokeFactor;
             if(RenderGunEnhanced.postSmokeAlpha>1) {
                 RenderGunEnhanced.postSmokeAlpha=1;
             }  
@@ -410,12 +416,7 @@ public class EnhancedStateMachine {
                 AnimationType aniType = getShootingAnimationType();
                 Passer<Phase> phase = new Passer(shootingPhase);
                 Passer<Double> progess = new Passer(controller.FIRE);
-                Random r = new Random();
-                int Low = 0;
-                int High = type.flashType.resourceLocations.size()-1;
-                int result = r.nextInt(High - Low) + Low;
                 shooting = phaseUpdate(aniType, partialTick, 1, phase, progess,()->{
-                    flashCount = result;
                     phase.set(Phase.FIRST);
                 }, () -> {
                     phase.set(Phase.POST);

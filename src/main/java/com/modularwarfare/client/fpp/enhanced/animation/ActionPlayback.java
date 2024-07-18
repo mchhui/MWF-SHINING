@@ -3,6 +3,7 @@ package com.modularwarfare.client.fpp.enhanced.animation;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.utility.maths.Interpolation;
 
 public class ActionPlayback {
@@ -10,12 +11,15 @@ public class ActionPlayback {
     public AnimationType action;
 
     public double time;
+    
+    private double lastTime=0;
 
     public boolean hasPlayed;
     
     private AnimationController animationController;
 
     private GunEnhancedRenderConfig config;
+    
 
     public ActionPlayback(AnimationController animationController, GunEnhancedRenderConfig config){
         this.animationController=animationController;
@@ -47,6 +51,25 @@ public class ActionPlayback {
             this.time = Interpolation.LINEAR.interpolate(startTime, endTime, alpha);
             checkPlayed();
         }
+        /**
+         * 特殊帧触发器 BEGIN
+         * */
+//        System.out.println(alpha);
+        if(this.lastTime<this.time) {
+            if(config.specialEffect.ejectionGroups!=null) {
+                config.specialEffect.ejectionGroups.forEach((group)->{
+                    double testTime=group.throwShellFrame/config.FPS;
+                    if(this.lastTime<=testTime&&this.time>testTime) {
+//                        RenderGunEnhanced.addEjectShell(group);
+//                        System.out.println("a");
+                    }
+                });
+            }  
+        }
+        /**
+         * 特殊帧触发器 END
+         * */
+        this.lastTime=time;
     }
     
     public boolean checkPlayed() {

@@ -28,6 +28,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Quaternion;
@@ -55,6 +56,11 @@ public class EnhancedModel implements IMWModel {
             modelCache.put(getModelLocation(), GltfDataModel.load(getModelLocation()));
         }
         model = new GltfRenderModel(modelCache.get(getModelLocation()));
+        updateAnimation(0);
+        model.nodeStates.forEach((node,state)->{
+            invMatCache.put(node, new Matrix4f(state.mat).invert());
+        });
+        
     }
     
     public static void clearCache() {
@@ -167,6 +173,17 @@ public class EnhancedModel implements IMWModel {
         }
         return state.mat;
     }
+    
+    public Matrix4f getGlobalInverseTransform(String name) {
+        if (!initCal) {
+            return new Matrix4f();
+        }
+        Matrix4f invmat = invMatCache.get(name);
+        if(invmat==null) {
+            return new Matrix4f();
+        }
+        return invmat;
+    }
 
     public void applyGlobalTransformToOther(String binding, Runnable run) {
         if (!initCal) {
@@ -189,16 +206,12 @@ public class EnhancedModel implements IMWModel {
         if (!initCal) {
             return;
         }
-        NodeState state = model.nodeStates.get(binding);
-        GlStateManager.pushMatrix();
-        if (state != null) {
-            Matrix4f invmat = invMatCache.get(binding);
-            if (invmat == null) {
-                invmat = new Matrix4f(state.mat).invert();
-                invMatCache.put(binding, invmat);
-            }
-            GlStateManager.multMatrix(invmat.get(MATRIX_BUFFER));
+        Matrix4f invmat = invMatCache.get(binding);
+        if(invmat==null) {
+            return;
         }
+        GlStateManager.pushMatrix();
+        GlStateManager.multMatrix(invmat.get(MATRIX_BUFFER));
         run.run();
 
         GlStateManager.popMatrix();

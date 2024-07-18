@@ -171,7 +171,7 @@ public class InstantBulletRenderer {
             GL11.glEnable(3042);
             GL11.glEnable(2832);
             GL11.glHint(3153, 4353);
-
+            GlStateManager.enableLighting();
             if(model==null) {
                 Tessellator tessellator = Tessellator.getInstance();
                 tessellator.getBuffer().begin(7, DefaultVertexFormats.POSITION_TEX);
@@ -213,10 +213,9 @@ public class InstantBulletRenderer {
                 GlStateManager.popMatrix();
                 if(glow) {
                     OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x_, y_);
-                    GlStateManager.enableLighting();
                 }
             }
-
+            GlStateManager.disableLighting();
 
             GL11.glDisable(3042);
             GL11.glDisable(2832);

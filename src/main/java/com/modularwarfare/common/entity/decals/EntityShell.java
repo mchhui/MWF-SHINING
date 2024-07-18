@@ -68,7 +68,6 @@ public class EntityShell extends Entity implements IProjectile {
                 rotateYaw = gun.type.shellEjectOffsetNormal.rotatePitch(-(float) Math.toRadians(throwerIn.rotationPitch)).rotateYaw(-(float) Math.toRadians(throwerIn.rotationYaw));
             }
         }
-
         Vec3d source = new Vec3d(throwerIn.posX + throwerIn.motionX + rotateYaw.x, throwerIn.posY + (double) throwerIn.getEyeHeight() - 0.10000000149011612D + throwerIn.motionY + rotateYaw.y, throwerIn.posZ + throwerIn.motionZ + rotateYaw.z);
         this.setPosition(source.x, source.y, source.z);
         this.setSize(0.25F, 0.25F);
@@ -133,9 +132,10 @@ public class EntityShell extends Entity implements IProjectile {
         this.motionZ *= 0.9800000190734863D;
 
         if (this.onGround) {
+            this.rotationPitch=0;
             this.motionX *= 0.699999988079071D;
             this.motionZ *= 0.699999988079071D;
-            this.motionY *= -0.5D;
+            this.motionY= 0;
             if (!playedSound) {
                 if (ModularWarfare.bulletTypes.containsKey(getBulletName())) {
                     ItemBullet itemBullet = ModularWarfare.bulletTypes.get(getBulletName());
@@ -143,33 +143,16 @@ public class EntityShell extends Entity implements IProjectile {
                     playedSound = true;
                 }
             }
+        }else{
+            this.rotationYaw+=10+50*Math.random();
+            this.rotationPitch+=10+50*Math.random();
         }
 
-        {
-            this.posX += this.motionX;
-            this.posY += this.motionY;
-            this.posZ += this.motionZ;
-            float f = MathHelper.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
-
-            for (this.rotationPitch = (float) (MathHelper.atan2(this.motionY, (double) f) * (180D / Math.PI)); this.rotationPitch - this.prevRotationPitch < -180.0F; this.prevRotationPitch -= 360.0F) {
-                ;
-            }
-
-            while (this.rotationPitch - this.prevRotationPitch >= 180.0F) {
-                this.prevRotationPitch += 360.0F;
-            }
-
-            while (this.rotationYaw - this.prevRotationYaw < -180.0F) {
-                this.prevRotationYaw -= 360.0F;
-            }
-
-            while (this.rotationYaw - this.prevRotationYaw >= 180.0F) {
-                this.prevRotationYaw += 360.0F;
-            }
-
-            this.rotationPitch = this.prevRotationPitch + (this.rotationPitch - this.prevRotationPitch) * this.rand.nextFloat();
-            this.rotationYaw = this.prevRotationYaw + (this.rotationYaw - this.prevRotationYaw) * this.rand.nextFloat();
-        }
+//        {
+//            this.posX += this.motionX;
+//            this.posY += this.motionY;
+//            this.posZ += this.motionZ;
+//        }
         if (this.getAge() > -this.maxTimeAlive) {
             this.setAge(this.getAge() - 1);
         } else {
@@ -220,6 +203,7 @@ public class EntityShell extends Entity implements IProjectile {
         this.motionX += entityThrower.motionX;
         this.motionZ += entityThrower.motionZ;
 
+        this.motionY=0.2;
         if (!entityThrower.onGround) {
             this.motionY += entityThrower.motionY;
         }

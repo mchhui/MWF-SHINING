@@ -62,6 +62,9 @@ public class AnimationController {
     public double CUSTOM;
     
     public double POST_SMOKE=0;
+    public double EJECTION_SMOKE=0;
+    public double FIRE_FLASH=0;
+    public double SHELL_UPDATE=0;
     
     public long sprintCoolTime=0;
     public long sprintLoopCoolTime=0;
@@ -123,6 +126,8 @@ public class AnimationController {
         }
         FIRE=0;
         MODE_CHANGE=1;
+        EJECTION_SMOKE=0;
+        POST_SMOKE=0;
         updateActionAndTime();
     }
     
@@ -277,6 +282,41 @@ public class AnimationController {
         if(POST_SMOKE<=0) {
             POST_SMOKE=0;
             RenderGunEnhanced.postSmokeTp=0;
+        }
+        if(EJECTION_SMOKE>0) {
+            EJECTION_SMOKE-=0.1*stepTick;
+        }
+        if(EJECTION_SMOKE<=0) {
+            EJECTION_SMOKE=0;
+        }
+        RenderGunEnhanced.ejectionTp=(float)(1-EJECTION_SMOKE);
+        FIRE_FLASH-=0.3*stepTick;
+        if(FIRE_FLASH<=0) {
+            anim.flashCount++;
+            if(anim.flashCount>1000) {
+                anim.flashCount=0;
+            }
+            FIRE_FLASH=1;
+        }
+        
+        FIRE_FLASH-=2*stepTick;
+        if(FIRE_FLASH<=0) {
+            for(int i=0;i<RenderGunEnhanced.shellEffects.length;i++) {
+                if(RenderGunEnhanced.shellEffects[i]==null) {
+                    continue;
+                }
+                RenderGunEnhanced.shellEffects[i].pos.x+=RenderGunEnhanced.shellEffects[i].vec.x;
+                RenderGunEnhanced.shellEffects[i].pos.y+=RenderGunEnhanced.shellEffects[i].vec.y;
+                RenderGunEnhanced.shellEffects[i].pos.z+=RenderGunEnhanced.shellEffects[i].vec.z;
+                RenderGunEnhanced.shellEffects[i].vec.x*=0.98;
+                RenderGunEnhanced.shellEffects[i].vec.y*=0.98;
+                RenderGunEnhanced.shellEffects[i].vec.z*=0.98;
+                RenderGunEnhanced.shellEffects[i].vec.y-=0.03;
+                RenderGunEnhanced.shellEffects[i].rot.x+=0;
+                RenderGunEnhanced.shellEffects[i].rot.z+=10;
+                RenderGunEnhanced.shellEffects[i].rot.y+=0;
+            }
+            FIRE_FLASH=1;
         }
 //        System.out.println(customAnimationSpeed);
         /** ADS **/

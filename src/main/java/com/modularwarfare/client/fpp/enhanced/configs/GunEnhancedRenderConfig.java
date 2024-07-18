@@ -19,6 +19,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public GunEnhancedRenderConfig.Global global = new GunEnhancedRenderConfig.Global();
     public GunEnhancedRenderConfig.Sprint sprint = new GunEnhancedRenderConfig.Sprint();
     public GunEnhancedRenderConfig.Aim aim = new GunEnhancedRenderConfig.Aim();
+    public GunEnhancedRenderConfig.SpecialEffect specialEffect = new GunEnhancedRenderConfig.SpecialEffect();
     public GunEnhancedRenderConfig.Extra extra = new GunEnhancedRenderConfig.Extra();
     public HashMap<String, Attachment> attachment=new HashMap<String, GunEnhancedRenderConfig.Attachment>();
     public HashMap<String, AttachmentGroup> attachmentGroup=new HashMap<String, GunEnhancedRenderConfig.AttachmentGroup>();
@@ -131,6 +132,43 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
 
         
         
+    }
+    
+    public static class SpecialEffect{
+        //是否启用对传统的FlashModel对象的渲染
+        public boolean oldFlashModel=true;
+        
+        //枪口过热烟的系数 这个数越大 烟越容易出现
+        public float postSmokeFactor=1;
+        
+        //填入该组的对象会被当作FlashModel对象渲染
+        public ArrayList<FlashModelGroup> flashModelGroups=new ArrayList<GunEnhancedRenderConfig.SpecialEffect.FlashModelGroup>();
+        
+        //填入该组的对象会成为枪口过热烟的绑定点
+        public ArrayList<PostSmokeGroup> postSmokeGroups=new ArrayList<GunEnhancedRenderConfig.SpecialEffect.PostSmokeGroup>();
+        
+        //填入该组的对象会成为抛壳口的绑定点
+        public ArrayList<EjectionGroup> ejectionGroups=new ArrayList<GunEnhancedRenderConfig.SpecialEffect.EjectionGroup>();
+        
+        public Vector3f firstPersonShellEjectPos=new Vector3f(0, 0, 0);
+        public Vector3f thirdPersonShellEjectPos;
+        
+        public static class FlashModelGroup{
+            public String name;
+        }
+        
+        public static class PostSmokeGroup{
+            public String name;
+        }
+        
+        public static class EjectionGroup{
+            public String name;
+            public float throwShellFrame;
+            public Vector3f throwShellMaxForce;
+            
+            public boolean ejectSmoke;
+            public Vector3f ejectSmokeForce;
+        }
     }
 
     public static class Extra {

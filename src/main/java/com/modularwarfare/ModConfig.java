@@ -57,6 +57,7 @@ public class ModConfig {
     public static class Client {
         public boolean hideSecondSkinWhenDressed = true;
         public boolean enableBloodParticle = true;
+        public boolean gunSmokeCorrectForBSL=true;
     }
 
     //shots
@@ -81,7 +82,7 @@ public class ModConfig {
                 "rightArmSlimModel", "rightArmLayerSlimModel",
                 "flashModel", "smokeModel", "sprint_righthand", "sprint_lefthand",
                 "selector_semi", "selector_full", "selector_brust",
-                "bulletModel");
+                "bulletModel","shellEffect");
     }
 
     //drops

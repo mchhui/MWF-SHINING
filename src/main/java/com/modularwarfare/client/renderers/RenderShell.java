@@ -47,6 +47,7 @@ public class RenderShell extends Render<EntityShell> {
 
         GlStateManager.rotate(entityIn.prevRotationYaw + (entityIn.rotationYaw - entityIn.prevRotationYaw) * partialTicks,
                 0.0F, 1.0F, 0.0F);
+        GlStateManager.rotate(-entityIn.rotationPitch, 0.0F, 0.0F, 1.0F);
         GlStateManager.rotate(-entityIn.rotationPitch, 1.0F, 0.0F, 0.0F);
 
         GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);

@@ -164,9 +164,11 @@ public class ClientEventHandler {
                         }
                         Vec3d vec = event.player.getLookVec();
                         vec = vec.scale(Math.max(speed, backpack.jetElytraBoost));
-                        event.player.motionX = vec.x;
-                        event.player.motionY = vec.y;
-                        event.player.motionZ = vec.z;
+                        if(event.player.isElytraFlying()) {
+                            event.player.motionX = vec.x;
+                            event.player.motionY = vec.y;
+                            event.player.motionZ = vec.z;
+                        }
                         AnimationUtils.isJet.put(event.player.getUniqueID(), System.currentTimeMillis()+100);
                     }
                     if(isJetFly&&!event.player.isElytraFlying()) {
@@ -180,7 +182,7 @@ public class ClientEventHandler {
                         if(event.player.motionY<jetPower) {
                             event.player.motionY=jetPower;
                         }
-                        ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet());
+                        ModularWarfare.NETWORK.sendToServer(new PacketBackpackJet(false, Minecraft.getMinecraft().player.getUniqueID()));
                         AnimationUtils.isJet.put(event.player.getUniqueID(), System.currentTimeMillis()+100);
                     }else {
                         jetPower=backpack.jetIdleForce;
