@@ -13,11 +13,14 @@ public class PlayerState {
      public float speedAmplifier=1;
      public float bulletproofFactor=1;
      
-     //client
+     //client-sync
      public float recoilPitchFactor=1;
      public float recoilYawFactor=1;
      public float accuracyFactor=1;
      public float roundsPerMinFactor=1;
+     
+     //client-unsync
+     public float devetionRoundsPerMinFactor=1;
      
      protected boolean dirty;
      protected UUID speedModifier=MathHelper.getRandomUUID(ThreadLocalRandom.current());

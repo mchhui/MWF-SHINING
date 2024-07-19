@@ -120,8 +120,8 @@ public class ShotManager {
             shotCount = shotCount - 1;
             gunStack.getTagCompound().setInteger("shotsremaining", shotCount);
         }
-
-        ClientTickHandler.playerShootCooldown.put(entityPlayer.getUniqueID(), (int)(gunType.fireTickDelay/PlayerStateManager.clientPlayerState.roundsPerMinFactor));
+        
+        ClientTickHandler.playerNextTime.put(entityPlayer.getUniqueID(), System.currentTimeMillis()+(long)((60f*1000/gunType.roundsPerMin)/PlayerStateManager.clientPlayerState.roundsPerMinFactor/PlayerStateManager.clientPlayerState.devetionRoundsPerMinFactor));
 
 
         if ((gunType.dropBulletCasing)) {

@@ -40,7 +40,9 @@ public class PlayerStateManager {
         }
         playerStates.forEach((name, state) -> {
             EntityPlayerMP player=FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayerByUsername(name);
-            
+            if(player==null) {
+                return;
+            }
             AttributeModifier modifier=player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).getModifier(state.speedModifier);
             if(modifier==null||modifier.getAmount()!=state.speedAmplifier-1) {
                 if(modifier!=null) {

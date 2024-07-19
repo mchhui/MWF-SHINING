@@ -97,6 +97,12 @@ public class GunType extends BaseType {
      * The fire rate of the gun in RPM, 1200 = MAX
      */
     public int roundsPerMin = 1;
+    
+    /**
+     * 连射中 每射一发对下一发的加速强度
+     * 类似专注轻机枪
+     * */
+    public float devotionSpeed=0;
     /**
      * For when RPM is converted to ticks - Do not use
      */

@@ -69,7 +69,7 @@ public class ItemGun extends BaseItem {
      * @return shoot cooldown
      */
     public static boolean isOnShootCooldown(UUID uuid) {
-        return ClientTickHandler.playerShootCooldown.containsKey(uuid);
+        return System.currentTimeMillis()<ClientTickHandler.playerNextTime.getOrDefault(uuid, 0L);
     }
 
     /**

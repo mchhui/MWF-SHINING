@@ -48,7 +48,8 @@ public class ClientTickHandler extends ForgeEvent {
 
     private static final int SPS=60;
 
-    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
+//    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
+    public static ConcurrentHashMap<UUID, Long> playerNextTime = new ConcurrentHashMap<UUID, Long>();
     public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ItemStack reloadEnhancedPrognosisAmmo = ItemStack.EMPTY;
     public static ItemStack reloadEnhancedPrognosisAmmoRendering = ItemStack.EMPTY;
@@ -84,16 +85,16 @@ public class ClientTickHandler extends ForgeEvent {
                 onClientTickStart(Minecraft.getMinecraft());
                 ModularWarfare.NETWORK.handleClientPackets();
 
-                // Player shoot cooldown
-                for (UUID uuid : playerShootCooldown.keySet()) {
-                    i += 1;
-                    int value = playerShootCooldown.get(uuid) - 1;
-                    if (value <= 0) {
-                        playerShootCooldown.remove(uuid);
-                    } else {
-                        playerShootCooldown.replace(uuid, value);
-                    }
-                }
+//                // Player shoot cooldown
+//                for (UUID uuid : playerShootCooldown.keySet()) {
+//                    i += 1;
+//                    int value = playerShootCooldown.get(uuid) - 1;
+//                    if (value <= 0) {
+//                        playerShootCooldown.remove(uuid);
+//                    } else {
+//                        playerShootCooldown.replace(uuid, value);
+//                    }
+//                }
 
                 // Player reload cooldown
                 for (UUID uuid : playerReloadCooldown.keySet()) {

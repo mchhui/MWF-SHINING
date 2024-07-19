@@ -20,6 +20,7 @@ import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.network.PacketGunReloadEnhancedStop;
 import com.modularwarfare.common.network.PacketGunReloadSound;
+import com.modularwarfare.common.playerstate.PlayerStateManager;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
@@ -67,6 +68,8 @@ public class EnhancedStateMachine {
 
     public ItemStack heldItemstStack=ItemStack.EMPTY;
     public int lastItemIndex=0;
+    
+    public float devotionSpeed=1;
 
     public static enum Phase {
         PRE, FIRST, SECOND, POST
@@ -115,6 +118,11 @@ public class EnhancedStateMachine {
         this.currentModel = model;
         this.controller=controller;
         
+        
+        if(!isFailed) {
+            devotionSpeed+=gunType.devotionSpeed;
+        }
+//        System.out.println(devotionSpeed);
         if(!isFailed&&this.controller.EJECTION_SMOKE==0) {
             this.controller.EJECTION_SMOKE=1;
         }
@@ -288,6 +296,10 @@ public class EnhancedStateMachine {
         int index=0;
         if(player==Minecraft.getMinecraft().player) {
             index=Minecraft.getMinecraft().player.inventory.currentItem;
+            if(devotionSpeed<0||!(ItemGun.fireButtonHeld&&ItemGun.lastFireButtonHeld)) {
+                devotionSpeed=1;
+            }
+            PlayerStateManager.clientPlayerState.devetionRoundsPerMinFactor=devotionSpeed;
         }
         if ((!ItemStack.areItemStacksEqualUsingNBTShareTag(heldItemstStack,player.getHeldItemMainhand()))||index!=lastItemIndex) {
             if (reloading) {
@@ -299,7 +311,7 @@ public class EnhancedStateMachine {
             //ClientTickHandler.reloadEnhancedPrognosisAmmo=ItemStack.EMPTY;
         }
         heldItemstStack = player.getHeldItemMainhand();
-
+        
         lastItemIndex=index;
     }
 
