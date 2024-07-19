@@ -74,6 +74,10 @@ public class ClientRenderHooks extends ForgeEvent {
     private Minecraft mc;
     private float equippedProgress = 1f, prevEquippedProgress = 1f;
     public static boolean debug=false;
+    
+    //增强型换枪参数
+    public static int currentGun=-1;
+    public static int wannaSlot=-1;
 
     public static final ResourceLocation grenade_smoke = new ResourceLocation("modularwarfare", "textures/particles/smoke.png");
 
@@ -118,11 +122,32 @@ public class ClientRenderHooks extends ForgeEvent {
                 if(!Minecraft.getMinecraft().getFramebuffer().isStencilEnabled()) {
                     Minecraft.getMinecraft().getFramebuffer().enableStencil();
                 }
+                boolean flag=true;
+                if (Minecraft.getMinecraft().player != null) {
+                    if (Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                        if (((ItemGun)Minecraft.getMinecraft().player.getHeldItemMainhand()
+                            .getItem()).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
+                            flag=false;
+                        }
+                    }
+                }
+                if(flag) {
+                    currentGun=-1;
+                }
+                if(currentGun==-1&&wannaSlot!=-1) {
+                    if(Minecraft.getMinecraft().player!=null) {
+                        Minecraft.getMinecraft().player.inventory.currentItem=wannaSlot;
+                        wannaSlot=-1;  
+                    }
+                }
                 break;
             }
             case END: {
-                if (mc.player == null || mc.world == null)
-                    return;
+                if (mc.player == null || mc.world == null) {
+                    currentGun=-1;
+                    wannaSlot=-1;
+                    return;  
+                }
                 if (ClientProxy.gunUI.hitMarkerTime > 0)
                     ClientProxy.gunUI.hitMarkerTime--;
                 ModularWarfare.NETWORK.sendToServer(new PacketAimingRequest(isAiming||isAimingScope));
@@ -201,7 +226,6 @@ public class ClientRenderHooks extends ForgeEvent {
         if(mc.currentScreen instanceof GuiGunModify) {
         	return true;
         }
-
         if (stack != null && stack.getItem() instanceof BaseItem) {
             BaseType type = ((BaseItem) stack.getItem()).baseType;
             BaseItem item = ((BaseItem) stack.getItem());
@@ -309,17 +333,24 @@ public class ClientRenderHooks extends ForgeEvent {
                         if(((GunType)type).animationType.equals(WeaponAnimationType.BASIC)){
                             customRenderers[1].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, (ClientTickHandler.lastItemStack.isEmpty() ? stack : ClientTickHandler.lastItemStack), mc.world, mc.player);
                         } else{
-                            
                             //客户端预测需要 必须是即时物品
-                            if (GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight) != null) {
-                                final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight).getItem();
+                            ItemStack heldStack=mc.player.getHeldItemMainhand();
+                            if(currentGun==-1) {
+                                currentGun=mc.player.inventory.currentItem;
+                            }
+                            if(mc.player.inventory.getStackInSlot(currentGun).getItem() instanceof ItemGun) {
+                                heldStack=mc.player.inventory.getStackInSlot(currentGun);
+                            }else {
+                                currentGun=mc.player.inventory.currentItem;
+                            }
+                            if (GunType.getAttachment(heldStack, AttachmentPresetEnum.Sight) != null) {
+                                final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(heldStack, AttachmentPresetEnum.Sight).getItem();
                                 if(itemAttachment.type.sight.modeType.insideGunRendering) {
-                                    renderInsideGun(stack, hand, partialTicksTime, fov);
+                                    renderInsideGun(heldStack, hand, partialTicksTime, fov);
                                     GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
                                 }
                             }
-                            customRenderers[0].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, mc.player.getHeldItemMainhand(), mc.world, mc.player);
-                             
+                            customRenderers[0].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, heldStack, mc.world, mc.player);
                             ScopeUtils.needRenderHand1=true;
                         }
                     } else {

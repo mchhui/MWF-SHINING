@@ -76,6 +76,9 @@ public class PacketOtherPlayerAnimation extends PacketBase {
         if (player == null) {
             return;
         }
+        if(player==Minecraft.getMinecraft().player) {
+            return;
+        }
         if (animationType == AnimationType.FIRE) {
             GunType gunType = ModularWarfare.gunTypes.get(internalname).type;
             if (gunType != null) {

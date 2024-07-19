@@ -51,6 +51,7 @@ public class AnimationController {
 
     public double DEFAULT;
     public double DRAW;
+    public double TAKEDOWN;
     public double ADS;
     public double RELOAD;
     public double SPRINT;
@@ -59,7 +60,7 @@ public class AnimationController {
     public double INSPECT=1;
     public double FIRE;
     public double MODE_CHANGE;
-    public double CUSTOM;
+    public double CUSTOM=1;
     
     public double POST_SMOKE=0;
     public double EJECTION_SMOKE=0;
@@ -101,13 +102,17 @@ public class AnimationController {
     public AnimationController(EntityLivingBase player,GunEnhancedRenderConfig config){
         this.config = config;
         this.playback = new ActionPlayback(this,config);
-        this.playback.action = AnimationType.DEFAULT;
+        this.playback.action = AnimationType.DRAW;
         this.player = player;
+        if(player!=null&&config!=null) {
+            reset(true);
+            updateActionAndTime();
+        }
     }
     
     public void reset(boolean resetSprint) {
         DEFAULT=0;
-        DRAW=0;
+        DRAW=0f;
         hasPlayedDrawSound = false;
         ADS=0;
         RELOAD=0;
@@ -128,6 +133,7 @@ public class AnimationController {
         MODE_CHANGE=1;
         EJECTION_SMOKE=0;
         POST_SMOKE=0;
+        CUSTOM=1;
         updateActionAndTime();
     }
     
@@ -177,10 +183,23 @@ public class AnimationController {
                 drawSound=null;
             }
         }
+        if(TAKEDOWN>0) {
+            double takedownSpeed = 1;
+            if(config.animations.get(AnimationType.TAKEDOWN)!=null) {
+                takedownSpeed = config.animations.get(AnimationType.TAKEDOWN).getSpeed(config.FPS) * stepTick;
+            }
+            TAKEDOWN-=takedownSpeed;
+            if(TAKEDOWN<=0) {
+                ClientRenderHooks.currentGun=-1;
+            }
+        }
+        if(TAKEDOWN<=0) {
+            TAKEDOWN=0;
+        }
 //        System.out.println(INSPECT);
         /** INSPECT **/
         if (INSPECT == 0) {
-            if (player.getHeldItemMainhand().getItem() instanceof ItemGun&&player instanceof EntityPlayer) {
+            if (player.getHeldItemMainhand().getItem() instanceof ItemGun&&player==Minecraft.getMinecraft().player) {
                 
                 if(inspectSound!=null) {
                     Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
@@ -299,7 +318,7 @@ public class AnimationController {
             FIRE_FLASH=1;
         }
         
-        FIRE_FLASH-=2*stepTick;
+        FIRE_FLASH-=stepTick;
         if(FIRE_FLASH<=0) {
             for(int i=0;i<RenderGunEnhanced.shellEffects.length;i++) {
                 if(RenderGunEnhanced.shellEffects[i]==null) {
@@ -308,13 +327,10 @@ public class AnimationController {
                 RenderGunEnhanced.shellEffects[i].pos.x+=RenderGunEnhanced.shellEffects[i].vec.x;
                 RenderGunEnhanced.shellEffects[i].pos.y+=RenderGunEnhanced.shellEffects[i].vec.y;
                 RenderGunEnhanced.shellEffects[i].pos.z+=RenderGunEnhanced.shellEffects[i].vec.z;
-                RenderGunEnhanced.shellEffects[i].vec.x*=0.98;
-                RenderGunEnhanced.shellEffects[i].vec.y*=0.98;
-                RenderGunEnhanced.shellEffects[i].vec.z*=0.98;
-                RenderGunEnhanced.shellEffects[i].vec.y-=0.03;
-                RenderGunEnhanced.shellEffects[i].rot.x+=0;
-                RenderGunEnhanced.shellEffects[i].rot.z+=10;
-                RenderGunEnhanced.shellEffects[i].rot.y+=0;
+                RenderGunEnhanced.shellEffects[i].vec.y-=0.05;
+                RenderGunEnhanced.shellEffects[i].rot.x+=2;
+                RenderGunEnhanced.shellEffects[i].rot.z+=5;
+                RenderGunEnhanced.shellEffects[i].rot.y+=2;
             }
             FIRE_FLASH=1;
         }
@@ -457,6 +473,7 @@ public class AnimationController {
             return;
         }
         ItemStack stack = player.getHeldItemMainhand();
+        int currentItem=((EntityPlayer)player).inventory.currentItem;
         Item item = stack.getItem();
         if (item instanceof ItemGun) {
             GunType type = ((ItemGun) item).type;
@@ -483,15 +500,26 @@ public class AnimationController {
             }
         }
         boolean resetFlag=false;
-        if(oldCurrentItem != ((EntityPlayer)player).inventory.currentItem){
+        //切换格子要重置
+        if(oldCurrentItem != currentItem){
             resetFlag=true;
-            oldCurrentItem = ((EntityPlayer)player).inventory.currentItem;
+            oldCurrentItem = currentItem;
         }
-        if(oldItemstack != player.getHeldItemMainhand()) {
+        //之前是空手要重置
+        if(oldItemstack != stack) {
             if(oldItemstack==null||oldItemstack.isEmpty()) {
                 resetFlag=true;
             }
-            oldItemstack=player.getHeldItemMainhand();
+            oldItemstack=stack;
+        }
+        if(player==Minecraft.getMinecraft().player) {
+            if(ClientRenderHooks.currentGun!=-1) {
+                if(currentItem!=ClientRenderHooks.wannaSlot&&ClientRenderHooks.wannaSlot!=-1) {
+                    if(TAKEDOWN==0) {
+                        TAKEDOWN=1;
+                    }
+                }  
+            }
         }
         if(resetFlag) {
             reset(true);
@@ -509,12 +537,7 @@ public class AnimationController {
             if(!hasPlayedDrawSound){
                 Item item = player.getHeldItemMainhand().getItem();
                 if (item instanceof ItemGun) {
-                    if((!(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify))&&player instanceof EntityPlayer) {
-//                        if(!ItemGun.hasNextShot(player.getHeldItemMainhand())&&((ItemGun) item).type.weaponSoundMap.containsKey(WeaponSoundType.DrawEmpty)) {
-//                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.DrawEmpty);  
-//                        }else {
-//                            ((ItemGun) item).type.playClientSound(((EntityPlayer)player), WeaponSoundType.Draw);  
-//                        }
+                    if((!(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify))&&player==Minecraft.getMinecraft().player) {
                         if(drawSound!=null) {
                             Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
                             drawSound=null;

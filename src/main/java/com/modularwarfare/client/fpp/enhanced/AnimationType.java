@@ -14,6 +14,7 @@ public enum AnimationType {
     DEFAULT("default"),
     DEFAULT_EMPTY("defaultEmpty"),
     DRAW("draw"),
+    TAKEDOWN("takedown"),
     DRAW_EMPTY("drawEmpty"),
     AIM("aim"),
     INSPECT("inspect"),

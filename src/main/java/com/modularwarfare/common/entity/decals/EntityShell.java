@@ -2,10 +2,14 @@ package com.modularwarfare.common.entity.decals;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.network.PacketPlaySound;
+
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.MoverType;
@@ -66,6 +70,24 @@ public class EntityShell extends Entity implements IProjectile {
                 rotateYaw = gun.type.shellEjectOffsetAiming.rotatePitch(-(float) Math.toRadians(throwerIn.rotationPitch)).rotateYaw(-(float) Math.toRadians(throwerIn.rotationYaw));
             } else {
                 rotateYaw = gun.type.shellEjectOffsetNormal.rotatePitch(-(float) Math.toRadians(throwerIn.rotationPitch)).rotateYaw(-(float) Math.toRadians(throwerIn.rotationYaw));
+            }
+        }
+        if (gun.type.enhancedModel != null && gun.type.enhancedModel.config != null) {
+            GunEnhancedRenderConfig cfg = (GunEnhancedRenderConfig)gun.type.enhancedModel.config;
+            if (Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
+                if (cfg.specialEffect.firstPersonShellEjectPos != null) {
+                    rotateYaw = new Vec3d(cfg.specialEffect.firstPersonShellEjectPos.x,
+                        cfg.specialEffect.firstPersonShellEjectPos.y, cfg.specialEffect.firstPersonShellEjectPos.z)
+                            .rotatePitch(-(float)Math.toRadians(throwerIn.rotationPitch))
+                            .rotateYaw(-(float)Math.toRadians(throwerIn.rotationYaw));
+                }
+            } else {
+                if (cfg.specialEffect.thirdPersonShellEjectPos != null) {
+                    rotateYaw = new Vec3d(cfg.specialEffect.thirdPersonShellEjectPos.x,
+                        cfg.specialEffect.thirdPersonShellEjectPos.y, cfg.specialEffect.thirdPersonShellEjectPos.z)
+                            .rotatePitch(-(float)Math.toRadians(throwerIn.rotationPitch))
+                            .rotateYaw(-(float)Math.toRadians(throwerIn.rotationYaw));
+                }
             }
         }
         Vec3d source = new Vec3d(throwerIn.posX + throwerIn.motionX + rotateYaw.x, throwerIn.posY + (double) throwerIn.getEyeHeight() - 0.10000000149011612D + throwerIn.motionY + rotateYaw.y, throwerIn.posZ + throwerIn.motionZ + rotateYaw.z);

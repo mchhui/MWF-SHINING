@@ -6,6 +6,7 @@ import org.lwjgl.input.Keyboard;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.model.InstantBulletRenderer;
@@ -13,6 +14,7 @@ import com.modularwarfare.common.backpacks.BackpackType;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
+import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.network.PacketBackpackElytraStart;
@@ -115,6 +117,24 @@ public class ClientEventHandler {
     
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void cemeraSetup(CameraSetup event) {
+        if (Minecraft.getMinecraft().player != null) {
+            if (Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                ItemGun gun = (ItemGun)Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
+                if (gun.type.enhancedModel != null) {
+                    GlStateManager.rotate(90, 0, 1, 0);
+                    GlStateManager.rotate((float)Math.toDegrees(RenderGunEnhanced.mwf_camera_rot.angle),
+                        (float)-RenderGunEnhanced.mwf_camera_rot.x, (float)-RenderGunEnhanced.mwf_camera_rot.y,
+                        (float)-RenderGunEnhanced.mwf_camera_rot.z);
+                    GlStateManager.translate(RenderGunEnhanced.mwf_camera_pos.x / 10,
+                        RenderGunEnhanced.mwf_camera_pos.y / 10, RenderGunEnhanced.mwf_camera_pos.z / 10);
+                    GlStateManager.rotate(90, 0, -1, 0);
+                    if (RenderGunEnhanced.mwf_camera_pos.x != 0 || RenderGunEnhanced.mwf_camera_pos.y != 0
+                        || RenderGunEnhanced.mwf_camera_pos.z != 0 || RenderGunEnhanced.mwf_camera_rot.angle != 0) {
+                        Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
+                    }
+                }
+            }
+        }
         GlStateManager.rotate((float) cemeraBobbing * 5, 0, 0, 1);
     }
     

@@ -90,19 +90,24 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.optifine.shaders.Shaders;
 
+import org.joml.AxisAngle4d;
+import org.joml.AxisAngle4f;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaterniond;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Quaternion;
 
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -125,6 +130,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     private static String shellTexType;
     private static String shellTexPath;
     
+    public static Vector3f mwf_camera_pos=new Vector3f();
+    public static AxisAngle4d mwf_camera_rot=new AxisAngle4d();
+    
     public static float sizeFactor=10000f;
     public static boolean debug=false;
     public static boolean debug1=false;
@@ -133,6 +141,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     private ShortBuffer pixelBuffer=null;
     private int lastWidth;
     private int lastHeight;
+    
+    private static FloatBuffer lightBuf=BufferUtils.createFloatBuffer(4);
 
     private Timer timer;
 
@@ -160,14 +170,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             "rightArmSlimModel", "rightArmLayerSlimModel"
     };
     static {
-        for(String str : ModConfig.INSTANCE.guns.anim_guns_show_default_objects) {
+        List<String> list=Arrays.asList("ammoModel", "leftArmModel", "leftArmLayerModel", "leftArmSlimModel",
+            "leftArmLayerSlimModel", "rightArmModel", "rightArmLayerModel", "rightArmSlimModel",
+            "rightArmLayerSlimModel", "flashModel", "smokeModel", "sprint_righthand", "sprint_lefthand",
+            "selector_semi", "selector_full", "selector_brust", "bulletModel", "shellEffect", "panelModel");
+        for (String str :  list) {
             DEFAULT_EXCEPT.add(str);
         }
-        for(int i=0;i<BULLET_MAX_RENDER;i++) {
-            DEFAULT_EXCEPT.add("bulletModel_"+i);
+        for (int i = 0; i < BULLET_MAX_RENDER; i++) {
+            DEFAULT_EXCEPT.add("bulletModel_" + i);
         }
-        for(int i=0;i<BULLET_MAX_RENDER;i++) {
-            DEFAULT_EXCEPT.add("shellModel_"+i);
+        for (int i = 0; i < BULLET_MAX_RENDER; i++) {
+            DEFAULT_EXCEPT.add("shellModel_" + i);
         }
     }
 
@@ -177,6 +191,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         public Vector3f pos=new Vector3f();
         public Vector3f vec=new Vector3f();
         public Vector3f rot=new Vector3f();
+    }
+    
+    public void resetClientController() {
+        controller=new AnimationController(null, null);
     }
     
     public AnimationController getClientController() {
@@ -232,7 +250,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if(this.controller == null || this.controller.getConfig() != config||this.controller.player!=Minecraft.getMinecraft().player){
             this.controller = new AnimationController(Minecraft.getMinecraft().player,config);
         }
-
 
         if (this.timer == null) {
             this.timer = ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "timer", "field_71428_T");
@@ -461,10 +478,61 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             mat.translate(new Vector3f(-renderInsideGunOffset, 0, 0));
         }
 
+        boolean shouldRenderFlash1=true;
+        if ((GunType.getAttachment(item, AttachmentPresetEnum.Barrel) != null)) {
+            AttachmentType attachmentType = ((ItemAttachment) GunType.getAttachment(item, AttachmentPresetEnum.Barrel).getItem()).type;
+            if (attachmentType.attachmentType == AttachmentPresetEnum.Barrel) {
+                shouldRenderFlash1 = !attachmentType.barrel.hideFlash;
+            }
+        }
+        /**
+         * 不支持光影
+         * */
+        if(ModConfig.INSTANCE.client.gunFlashEffect) {
+            if(!OptifineHelper.isShadersEnabled()) {
+                if (shouldRenderFlash1 && anim.shooting && anim.getShootingAnimationType().showFlashModel() && !player.isInWater()) {
+                    float handLight=(bx+Minecraft.getMinecraft().world.getSunBrightness(partialTicks)*by)/240f;
+                    if(handLight<1) {
+                        if(handLight<0.9f) {
+                            Minecraft.getMinecraft().entityRenderer.disableLightmap();
+                        }
+                        if(handLight<0.5f) {
+                            GlStateManager.disableLight(0);
+                            GlStateManager.disableLight(1);
+                        }
+                        GlStateManager.glLightModel(GL11.GL_LIGHT_MODEL_AMBIENT, buf(0.8f*handLight, 0.8f*handLight, 0.8f*handLight, 1));
+                        GlStateManager.enableLight(2);
+                        GlStateManager.glLight(GL11.GL_LIGHT2, GL11.GL_POSITION, buf(1, 5f, -10, 1));
+                        GlStateManager.glLight(GL11.GL_LIGHT2, GL11.GL_AMBIENT, buf(0, 0, 0, 1));
+                        GlStateManager.glLight(GL11.GL_LIGHT2, GL11.GL_DIFFUSE, buf(10, 10f, 10f, 1));
+                        GlStateManager.glLight(GL11.GL_LIGHT2, GL11.GL_SPECULAR, buf(0, 0, 0, 1));
+                        GlStateManager.enableLight(3);
+                        GlStateManager.glLight(GL11.GL_LIGHT3, GL11.GL_POSITION, buf(-1, 5f, -10, 1));
+                        GlStateManager.glLight(GL11.GL_LIGHT3, GL11.GL_AMBIENT, buf(0, 0, 0, 1));
+                        GlStateManager.glLight(GL11.GL_LIGHT3, GL11.GL_DIFFUSE, buf(10, 10f, 10f, 1));
+                        GlStateManager.glLight(GL11.GL_LIGHT3, GL11.GL_SPECULAR, buf(0, 0, 0, 1));    
+                    }
+                }      
+            }
+        }
+        if(model.model.geoModel.nodes.get("mwf_camera")!=null) {
+            Matrix4f cameraMat=model.getGlobalTransform("mwf_camera");
+            AxisAngle4d cam_aa=mwf_camera_rot;
+            Vector3f cam_pos=mwf_camera_pos;
+            Vector3f cam_begin_pos=model.model.geoModel.nodes.get("mwf_camera").pos;
+            cameraMat.getRotation(cam_aa);
+            cameraMat.getTranslation(cam_pos);
+            cam_pos.sub(cam_begin_pos).negate();
+            mat.translate(cam_pos);
+            mat.rotate((float)cam_aa.angle,(float)-cam_aa.x,(float)-cam_aa.y,(float)-cam_aa.z);
+        }else {
+            mwf_camera_pos.set(0,0,0);
+            mwf_camera_rot.set(0, 0, 0, 0);
+        }
+        
         floatBuffer.clear();
         mat.get(floatBuffer);
         floatBuffer.rewind();
-        
         GlStateManager.pushMatrix();
         GlStateManager.multMatrix(floatBuffer);
         
@@ -1036,12 +1104,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             config.specialEffect.postSmokeGroups.forEach((group)->{
                 Matrix4f mat2=new Matrix4f(mat);
                 Matrix4f mat3=model.getGlobalTransform(group.name);
-                Quaternionf q=new Quaternionf();
                 mat2.mul(mat3);
-                mat2.getNormalizedRotation(q);
-                q.invert();
+                AxisAngle4d aa=new AxisAngle4d();
+                mat2.getRotation(aa);
                 model.applyGlobalTransformToOther((group.name), ()->{
-                    GlStateManager.rotate(new Quaternion(q.x, q.y, q.z, q.w));
+                    GlStateManager.rotate((float)Math.toDegrees(aa.angle), -(float)aa.x, -(float)aa.y, -(float)aa.z);
+                    GlStateManager.rotate(90, 0, 1, 0);
                     drawPostSmoke();
                 });
             });
@@ -1049,14 +1117,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if(config.specialEffect.ejectionGroups!=null) {
             config.specialEffect.ejectionGroups.forEach((group)->{
                 if(group.ejectSmoke) {
-                    Matrix4f mat2=new Matrix4f(mat);
-                    Matrix4f mat3=model.getGlobalTransform(group.name);
-                    Quaternionf q=new Quaternionf();
-                    mat2.mul(mat3);
-                    mat2.getNormalizedRotation(q);
-                    q.invert();
                     model.applyGlobalTransformToOther((group.name), ()->{
-                        GlStateManager.rotate(new Quaternion(q.x, q.y, q.z, q.w));
                         drawEjectionSmoke(group.ejectSmokeForce);
                     });
                 }
@@ -1135,9 +1196,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
+        GlStateManager.disableLight(2);
+        GlStateManager.disableLight(3);
     }
     
-    public static void addEjectShell(EjectionGroup group) {
+    private static FloatBuffer buf(float x,float y,float z,float w) {
+        lightBuf.clear();
+        lightBuf.put(x).put(y).put(z).put(w);
+        lightBuf.flip();
+        return lightBuf;
+    }
+    
+    public static void addEjectShell(EjectionGroup group,float acc) {
         for(int i=shellEffects.length-1;i>0;i--) {
             shellEffects[i]=shellEffects[i-1];
         }
@@ -1145,6 +1215,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         shellEffects[0].bindding=group.name;
         if(group.throwShellMaxForce!=null) {
             shellEffects[0].vec=new Vector3f(group.throwShellMaxForce.x,group.throwShellMaxForce.y,group.throwShellMaxForce.z);
+            shellEffects[0].vec.rotateX(-(float)(0.2+Math.random())*acc*2);
+            shellEffects[0].vec.rotateY((float)(0.2+Math.random())*acc*2);
+            shellEffects[0].vec.mul((float)(0.5+0.5*Math.random()));
+            shellEffects[0].rot=new Vector3f((float)Math.random()*360*acc,(float)Math.random()*360*acc,(float)Math.random()*360*acc);
         }
         shellTime=System.currentTimeMillis();
     }

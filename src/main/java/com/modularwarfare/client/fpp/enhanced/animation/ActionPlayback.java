@@ -1,5 +1,7 @@
 package com.modularwarfare.client.fpp.enhanced.animation;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
@@ -13,6 +15,7 @@ public class ActionPlayback {
     public double time;
     
     private double lastTime=0;
+    private AnimationType lastAction;
 
     public boolean hasPlayed;
     
@@ -54,22 +57,26 @@ public class ActionPlayback {
         /**
          * 特殊帧触发器 BEGIN
          * */
-//        System.out.println(alpha);
-        if(this.lastTime<this.time) {
-            if(config.specialEffect.ejectionGroups!=null) {
-                config.specialEffect.ejectionGroups.forEach((group)->{
-                    double testTime=group.throwShellFrame/config.FPS;
-                    if(this.lastTime<=testTime&&this.time>testTime) {
-//                        RenderGunEnhanced.addEjectShell(group);
-//                        System.out.println("a");
-                    }
-                });
+        if(config.animations.get(this.action)!=null) {
+            if(this.lastTime!=this.time) {
+                if(this.lastAction!=this.action) {
+                    this.lastTime=config.animations.get(this.action).getStartTime(config.FPS);
+                }
+                if(config.specialEffect.ejectionGroups!=null) {
+                    config.specialEffect.ejectionGroups.forEach((group)->{
+                        double testTime=group.throwShellFrame/config.FPS;
+                        if(this.lastTime<=testTime&&this.time>testTime) {
+                            RenderGunEnhanced.addEjectShell(group,0.15f);
+                        }
+                    });
+                }
             }  
         }
+        this.lastTime=time;
+        this.lastAction=action;
         /**
          * 特殊帧触发器 END
          * */
-        this.lastTime=time;
     }
     
     public boolean checkPlayed() {

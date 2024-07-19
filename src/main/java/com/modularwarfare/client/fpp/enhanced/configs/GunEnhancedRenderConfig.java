@@ -150,7 +150,8 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         //填入该组的对象会成为抛壳口的绑定点
         public ArrayList<EjectionGroup> ejectionGroups=new ArrayList<GunEnhancedRenderConfig.SpecialEffect.EjectionGroup>();
         
-        public Vector3f firstPersonShellEjectPos=new Vector3f(0, 0, 0);
+        // X正左负右,Y正下负上,Z正前负后
+        public Vector3f firstPersonShellEjectPos=new Vector3f(0, 0f, -0.2f);
         public Vector3f thirdPersonShellEjectPos;
         
         public static class FlashModelGroup{

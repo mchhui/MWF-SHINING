@@ -35,11 +35,11 @@ public class ModConfig {
     public static class General {
         public boolean customInventory = true;
         public boolean allowGunModifyGui = true;
-        public boolean prototype_pack_extraction = true;
-        public boolean animated_pack_extraction = true;
+        public boolean prototype_pack_extraction = false;
+        public boolean animated_pack_extraction = false;
 
-        public boolean modified_pack_server_kick = true;
-        public boolean directory_pack_server_kick = true;
+        public boolean modified_pack_server_kick = false;
+        public boolean directory_pack_server_kick = false;
         public ArrayList<String> content_pack_hash_list = new ArrayList<String>();
 
         public boolean drop_extra_slots_on_death = true;
@@ -58,6 +58,7 @@ public class ModConfig {
         public boolean hideSecondSkinWhenDressed = true;
         public boolean enableBloodParticle = true;
         public boolean gunSmokeCorrectForBSL=true;
+        public boolean gunFlashEffect=true;
     }
 
     //shots
@@ -74,15 +75,6 @@ public class ModConfig {
     public static class Guns {
         public boolean guns_interaction_hand = true;
         public boolean acceptAttachmentDrag = true;
-
-        public List<String> anim_guns_show_default_objects = Arrays.asList("ammoModel",
-                "leftArmModel", "leftArmLayerModel",
-                "leftArmSlimModel", "leftArmLayerSlimModel",
-                "rightArmModel", "rightArmLayerModel",
-                "rightArmSlimModel", "rightArmLayerSlimModel",
-                "flashModel", "smokeModel", "sprint_righthand", "sprint_lefthand",
-                "selector_semi", "selector_full", "selector_brust",
-                "bulletModel","shellEffect");
     }
 
     //drops

@@ -1,6 +1,7 @@
 package com.modularwarfare.mixin.client;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -39,6 +40,7 @@ public abstract class MixinInventoryPlayer {
         if(ClientRenderHooks.getAnimMachine(player).reloading){
             return;
         }
+        int temp=this.currentItem;
         if (direction > 0)
         {
             direction = 1;
@@ -57,6 +59,10 @@ public abstract class MixinInventoryPlayer {
         while (this.currentItem >= 9)
         {
             this.currentItem -= 9;
+        }
+        if(ClientRenderHooks.currentGun!=-1) {
+            ClientRenderHooks.wannaSlot=this.currentItem;
+            this.currentItem=temp;
         }
     }
 

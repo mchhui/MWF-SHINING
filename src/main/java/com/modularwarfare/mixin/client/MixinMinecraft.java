@@ -1,5 +1,6 @@
 package com.modularwarfare.mixin.client;
 
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -84,6 +85,8 @@ public abstract class MixinMinecraft {
 
     @Shadow
     public boolean inGameHasFocus;
+    
+    
 
     /**
      * @author
@@ -123,7 +126,11 @@ public abstract class MixinMinecraft {
                 }
                 else if ((!this.player.isCreative() || this.currentScreen != null || !flag1 && !flag) && !reloading)
                 {
-                    this.player.inventory.currentItem = i;
+                    if(ClientRenderHooks.currentGun!=-1) {
+                        ClientRenderHooks.wannaSlot=i;
+                    }else {
+                        this.player.inventory.currentItem = i;
+                    }
                 }
                 else
                 {
