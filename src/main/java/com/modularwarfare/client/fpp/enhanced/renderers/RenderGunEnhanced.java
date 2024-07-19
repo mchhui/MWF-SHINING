@@ -1106,6 +1106,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         /**
          * POST HANDLE
          * */
+        Minecraft.getMinecraft().entityRenderer.enableLightmap();
+        GlStateManager.enableLight(0);
+        GlStateManager.enableLight(1);
+        GlStateManager.disableLight(2);
+        GlStateManager.disableLight(3);
+        
         if(config.specialEffect.postSmokeGroups!=null) {
             config.specialEffect.postSmokeGroups.forEach((group)->{
                 Matrix4f mat2=new Matrix4f(mat);
@@ -1202,8 +1208,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
-        GlStateManager.disableLight(2);
-        GlStateManager.disableLight(3);
     }
     
     private static FloatBuffer buf(float x,float y,float z,float w) {
