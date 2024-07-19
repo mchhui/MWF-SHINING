@@ -127,6 +127,7 @@ public class ClientTickHandler extends ForgeEvent {
                 long time = System.currentTimeMillis();
                 if (time > lastSyncTime + 1000 / 144) {
                     if (lastSyncTime > 0) {
+                        
                         final float stepTick = (time - lastSyncTime) / (1000/(float)SPS);
                         if (ClientProxy.gunEnhancedRenderer.getClientController() != null) {
                             if (Minecraft.getMinecraft().player != null) {

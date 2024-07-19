@@ -104,6 +104,8 @@ public enum WeaponSoundType {
     @SerializedName("weaponDraw") Draw("weaponDraw", 12, "human.equip.gun"),
     
     @SerializedName("weaponDrawEmpty") DrawEmpty("weaponDrawEmpty", 12, null),
+    
+    @SerializedName("weaponTakedown") Takedown("weaponTakedown", 12, null),
 
 
     @SerializedName("weaponPostUnload") PostUnload("weaponPostUnload", 12, null),

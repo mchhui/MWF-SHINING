@@ -9,6 +9,7 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Extra.DynamicTextureConfig;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -33,6 +34,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
@@ -67,6 +69,10 @@ public class AnimationController {
     public double FIRE_FLASH=0;
     public double SHELL_UPDATE=0;
     
+    public double PANEL_LOGO=0;
+    public double PANEL_AMMO=0;
+    public double PANEL_RELOAD=0;
+    
     public long sprintCoolTime=0;
     public long sprintLoopCoolTime=0;
 
@@ -77,6 +83,7 @@ public class AnimationController {
     public boolean nextResetDefault=false;
 
     public boolean hasPlayedDrawSound = true;
+    public boolean hasPlayedTakedownSound = true;
     public ISound inspectSound=null;
     public String customAnimation="null";
     public double startTime;
@@ -84,6 +91,8 @@ public class AnimationController {
     public double customAnimationSpeed=1;
     public boolean customAnimationReload=false;
     public boolean customAnimationFire=false;
+    
+    public DynamicTextureConfig lastAmmoCfg;
     
     public static ISound drawSound=null;
 
@@ -114,6 +123,7 @@ public class AnimationController {
         DEFAULT=0;
         DRAW=0f;
         hasPlayedDrawSound = false;
+        hasPlayedTakedownSound=false;
         ADS=0;
         RELOAD=0;
         if(resetSprint) {
@@ -134,6 +144,7 @@ public class AnimationController {
         EJECTION_SMOKE=0;
         POST_SMOKE=0;
         CUSTOM=1;
+        PANEL_LOGO=0;
         updateActionAndTime();
     }
     
@@ -178,19 +189,23 @@ public class AnimationController {
         DRAW = Math.max(0, DRAW + drawSpeed);
         if(DRAW>1F) {
             DRAW=1F;
-            if(drawSound!=null) {
-                Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
-                drawSound=null;
-            }
+//            if(drawSound!=null) {
+//                Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
+//                drawSound=null;
+//            }
         }
         if(TAKEDOWN>0) {
             double takedownSpeed = 1;
             if(config.animations.get(AnimationType.TAKEDOWN)!=null) {
                 takedownSpeed = config.animations.get(AnimationType.TAKEDOWN).getSpeed(config.FPS) * stepTick;
             }
+            if(DRAW<1) {
+                takedownSpeed=0;  
+            }
             TAKEDOWN-=takedownSpeed;
             if(TAKEDOWN<=0) {
                 ClientRenderHooks.currentGun=-1;
+                reset(true);
             }
         }
         if(TAKEDOWN<=0) {
@@ -333,6 +348,30 @@ public class AnimationController {
                 RenderGunEnhanced.shellEffects[i].rot.y+=2;
             }
             FIRE_FLASH=1;
+        }
+        if(config.extra.panelLogo!=null) {
+            PANEL_LOGO+=(1d/(config.extra.panelLogo.frameCount/(double)(config.extra.panelLogo.FPS/60d)))*stepTick;
+            if(PANEL_LOGO>1) {
+                PANEL_LOGO=1;
+            }
+        }else {
+            PANEL_LOGO=1;
+        }
+        if(config.extra.panelReload!=null) {
+            PANEL_RELOAD+=(1d/(config.extra.panelReload.frameCount/(double)(config.extra.panelReload.FPS/60d)))*stepTick;
+            if(PANEL_RELOAD>1) {
+                PANEL_RELOAD=0;
+            }
+        }else {
+            PANEL_RELOAD=1;
+        }
+        if(lastAmmoCfg!=null) {
+            PANEL_AMMO+=(1d/(lastAmmoCfg.frameCount/(double)(lastAmmoCfg.FPS/60d)))*stepTick;
+            if(PANEL_AMMO>1) {
+                PANEL_AMMO=0;
+            }
+        }else {
+            PANEL_AMMO=1;
         }
 //        System.out.println(customAnimationSpeed);
         /** ADS **/
@@ -565,6 +604,16 @@ public class AnimationController {
                     this.playback.action = AnimationType.DRAW_EMPTY;  
                 }
             }
+        }else if(TAKEDOWN>0) {
+            this.playback.action = AnimationType.TAKEDOWN;
+            Item item = player.getHeldItemMainhand().getItem();
+            if(!hasPlayedTakedownSound) {
+                hasPlayedTakedownSound=true;
+                if (item instanceof ItemGun) {
+                    GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
+                    type.playClientSound((EntityPlayer)player, WeaponSoundType.Takedown);
+                }
+            }
         }else if (RELOAD > 0F) {
             resetView();
             this.playback.action = anim.getReloadAnimationType();
@@ -613,6 +662,9 @@ public class AnimationController {
                 break;
             case DRAW:
                 this.playback.updateTime(DRAW);
+                break;
+            case TAKEDOWN:
+                this.playback.updateTime(1-TAKEDOWN);
                 break;
             case DRAW_EMPTY:
                 this.playback.updateTime(DRAW);
@@ -681,7 +733,8 @@ public class AnimationController {
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                return this.playback.action == AnimationType.DRAW||this.playback.action == AnimationType.DRAW_EMPTY;
+                //因为takedown是下一把枪draw的序幕 所以也算drawing罢
+                return this.playback.action == AnimationType.DRAW||this.playback.action == AnimationType.DRAW_EMPTY||this.playback.action==AnimationType.TAKEDOWN;
             }
         }
         return false;
@@ -772,6 +825,54 @@ public class AnimationController {
             return true;
         }
         return ItemGun.hasAmmoLoaded(player.getHeldItemMainhand());
+    }
+    
+    public ResourceLocation getPanelTexture(ItemStack item, GunType gunType, int ammo, boolean reloading) {
+        int frame;
+        ResourceLocation loc=null;
+        if(config!=null) {
+            if(config.extra.panelLogo!=null) {
+                if(PANEL_LOGO<1) { 
+                    frame=(int)(config.extra.panelLogo.frameCount*PANEL_LOGO);
+                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelLogo.texhead+frame+".png");
+                    return loc;
+                }
+            }
+        } 
+        if(config!=null) {
+            if(config.extra.panelReload!=null) {
+                if(reloading) { 
+                    frame=(int)(config.extra.panelReload.frameCount*PANEL_RELOAD);
+                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelReload.texhead+frame+".png");
+                    return loc;
+                }
+            }
+        } 
+        if(config.extra.panelSpecialAmmo!=null) {
+            DynamicTextureConfig cfg=config.extra.panelSpecialAmmo.get(ammo);
+            if(lastAmmoCfg!=cfg) {
+                PANEL_AMMO=0;
+            }
+            lastAmmoCfg=cfg;
+            if(cfg!=null) {
+                frame=(int)(cfg.frameCount*PANEL_AMMO);
+                if(frame<0) {
+                    frame=0;
+                }
+                if(frame>=cfg.frameCount) {
+                    frame=cfg.frameCount-1;
+                }
+                loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+cfg.texhead+(frame)+".png");
+                return loc;
+            }
+        }
+        if(config!=null) {
+            if(config.extra.panelAmmo!=null) {
+                loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelAmmo.texhead+(ammo%config.extra.panelAmmo.frameCount)+".png");
+                return loc;
+            }
+        } 
+        return loc;
     }
 
 }

@@ -325,6 +325,11 @@ public class ClientProxy extends CommonProxy {
 
         });
         loadTextures();
+        
+        ModularWarfare.preloadTasklist.forEach((task)->{
+            task.run();
+        });
+        ModularWarfare.preloadTasklist.clear();
 
         ClientCommandHandler.instance.registerCommand(new CommandMWClient());
         

@@ -1022,8 +1022,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 }
                 
                 /**
-                 *  flashmodel 
+                 *  flashmodel panelModel
                  *  */
+                GlStateManager.enableBlend();
+                GlStateManager.depthMask(false);
+                GlStateManager.disableLighting();
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
                 boolean shouldRenderFlash=true;
                 if ((GunType.getAttachment(item, AttachmentPresetEnum.Barrel) != null)) {
                     AttachmentType attachmentType = ((ItemAttachment) GunType.getAttachment(item, AttachmentPresetEnum.Barrel).getItem()).type;
@@ -1033,8 +1037,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 }
                 if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType().showFlashModel() && !player.isInWater()) {
                     ObjModelRenderer.glowTxtureMode=false;
-                    GlStateManager.enableBlend();
-                    GlStateManager.depthMask(false);
                     if (ScopeUtils.isIndsideGunRendering) {
                         GlStateManager.tryBlendFuncSeparate(SourceFactor.ONE, DestFactor.ZERO, SourceFactor.ONE,
                             DestFactor.ZERO);
@@ -1042,8 +1044,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
                             SourceFactor.ONE, DestFactor.ZERO);
                     }
-                    GlStateManager.disableLighting();
-                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
                     
                     GlStateManager.pushMatrix();
                     ItemStack itemStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
@@ -1069,12 +1069,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                         });
                     }
                     GlStateManager.popMatrix();
-                    
-                    ObjModelRenderer.glowTxtureMode=true;
-                    GlStateManager.depthMask(true);
-                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
-                    GlStateManager.enableLighting();
                 }
+                GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
+                    SourceFactor.ONE, DestFactor.ZERO);
+                ResourceLocation panelTex=this.controller.getPanelTexture(item, gunType, currentAmmoCount, anim.reloading);
+                if(panelTex!=null) {
+                    Minecraft.getMinecraft().getTextureManager().bindTexture(panelTex);
+                    model.renderPart("panelModel");
+                }
+                ObjModelRenderer.glowTxtureMode=true;
+                GlStateManager.depthMask(true);
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
+                GlStateManager.enableLighting();
             }
         });
         

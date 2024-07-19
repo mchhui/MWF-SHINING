@@ -373,6 +373,7 @@ public class GunType extends BaseType {
                 model = new ModelGun(ModularWarfare.getRenderConfig(this, GunRenderConfig.class), this);
             } else {
                 enhancedModel = new ModelEnhancedGun(ModularWarfare.getRenderConfig(this, GunEnhancedRenderConfig.class), this);
+                ((GunEnhancedRenderConfig)enhancedModel.config).extra.preloadDynamicTexture();
             }  
         }catch(Throwable t) {
             ModularWarfare.LOGGER.warn("Something is going wrong when reloading model:"+internalName);

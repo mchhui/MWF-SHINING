@@ -142,6 +142,8 @@ public class ModularWarfare {
     public static boolean usingDirectoryContentPack=false;
 
     public static HashMap<String, MWTab> MODS_TABS = new HashMap<String, MWTab>();
+    
+    public static ArrayList<Runnable> preloadTasklist=new ArrayList<Runnable>();
 
     /**
      * Custom RayCasting

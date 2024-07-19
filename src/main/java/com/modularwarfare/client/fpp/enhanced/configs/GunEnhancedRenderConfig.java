@@ -1,9 +1,15 @@
 package com.modularwarfare.client.fpp.enhanced.configs;
 
 import com.google.gson.annotations.SerializedName;
+import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.util.ResourceLocation;
+
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -173,6 +179,26 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     }
 
     public static class Extra {
+        
+        public static class DynamicTextureConfig{
+            public String texhead;
+            /**
+             * 序列图后缀从从0开始数 数到frameCount-1
+             * 用于panelAmmo时
+             * frameCount表示循环周期
+             * 比如当前弹量为4
+             * frameCount为3
+             * 则取后缀assets/modularwarfare/panel/+texhead+1.png的图片为纹理
+             * */
+            public int frameCount;
+            public int FPS;
+            public boolean linear=false;
+        }
+        
+        public DynamicTextureConfig panelAmmo;
+        public HashMap<Integer, DynamicTextureConfig> panelSpecialAmmo;
+        public DynamicTextureConfig panelLogo;
+        public DynamicTextureConfig panelReload;
 
         /**
          * Adds backwards recoil translations to the gun staticModel when firing
@@ -198,5 +224,33 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public float shellPitchOffset;
         public float shellForwardOffset;
         
+        public void preloadDynamicTexture() {
+            ModularWarfare.preloadTasklist.add(()->{
+                ArrayList<DynamicTextureConfig> list=new ArrayList<GunEnhancedRenderConfig.Extra.DynamicTextureConfig>();
+                list.add(panelAmmo);
+                list.add(panelLogo);
+                list.add(panelReload);
+                if(panelSpecialAmmo!=null) {
+                    panelSpecialAmmo.values().forEach((v)->{
+                        list.add(v);
+                    });  
+                }
+                list.forEach((tex)->{
+                    if(tex==null) {
+                        return;
+                    }
+                    for(int i=0;i<tex.frameCount;i++) {
+                        Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+tex.texhead+i+".png"));  
+                        if(tex.linear) {
+                            GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D,GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                            GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D,GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                        }else {
+                            GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D,GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                            GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D,GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                        }
+                    }
+                });
+            });
+        }
     }
 }
