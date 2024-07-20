@@ -17,6 +17,7 @@ public class BulletType extends BaseType {
     public float bulletDamageFactor = 1.0f;
     public float bulletAccuracyFactor = 1.0f;
     public float bulletPenetrateFactor = 1.0f;
+    public float bulletBlockPenetrateFactor = 1.0f;
     public boolean isSlug = false;
     
     public boolean isFireDamage=false;

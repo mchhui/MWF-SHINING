@@ -25,6 +25,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 public class InstantBulletRenderer {
@@ -96,10 +97,12 @@ public class InstantBulletRenderer {
 
             Vector3f dPos = Vector3f.sub(hitPos, origin, null);
 
-            RayTraceResult result = ModularWarfare.INSTANCE.RAY_CASTING.rayTraceBlocks(Minecraft.getMinecraft().world, origin.toVec3(), hitPos.toVec3(), true, true, false);
-            if (result != null) {
-                if (result.hitVec != null) {
-                    dPos = Vector3f.sub(new Vector3f(result.hitVec), origin, null);
+            List<RayTraceResult> result = ModularWarfare.INSTANCE.RAY_CASTING.rayTraceBlocks(Minecraft.getMinecraft().world, origin.toVec3(), hitPos.toVec3(), gunType.gunMaxPenetrateBlockResistance, gunType.gunPenetrateBlocksResistance, true, true, false);
+            if (result != null && !result.isEmpty()) {
+                int lastIndex = result.size() - 1;
+                RayTraceResult lastResult = result.get(lastIndex);
+                if (lastResult.hitVec != null) {
+                    dPos = Vector3f.sub(new Vector3f(lastResult.hitVec), origin, null);
                 }
             }
             this.distanceToTarget = dPos.length();

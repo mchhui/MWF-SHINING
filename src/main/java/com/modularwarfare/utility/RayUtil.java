@@ -275,9 +275,14 @@ public class RayUtil {
 
         float accuracy = calculateAccuracy(item, player);
         float penetrate = item.type.gunPenetrateSize;
+        float maxPenetrateBlockResistance = item.type.gunMaxPenetrateBlockResistance;
+        float penetrateBlocksResistance = item.type.gunPenetrateBlocksResistance;
+
         ItemBullet usedBullet = ItemAmmo.getUsedBullet(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND));
         if (usedBullet != null) {
             penetrate *= usedBullet.type.bulletPenetrateFactor;
+            maxPenetrateBlockResistance *= usedBullet.type.bulletBlockPenetrateFactor;
+            penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
         }
         Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, player.world.rand);
 
@@ -324,6 +329,6 @@ public class RayUtil {
             }
         }
 
-        return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate, hashset, false, ping);
+        return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate, maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
     }
 }
