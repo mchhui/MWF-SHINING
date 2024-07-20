@@ -29,6 +29,8 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.GlStateManager.DestFactor;
+import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 
 public class DataMesh {
     private static final int SIZE_OF_FLOAT = 4;
@@ -49,6 +51,7 @@ public class DataMesh {
     private boolean compiled = false;
     private boolean compiling = false;
     private boolean initSkinning = false;
+    public boolean translucent;
 
     // BUFFER OBJECT
     private int pos_vbo = -1;
@@ -70,7 +73,11 @@ public class DataMesh {
         /*
          * 如果需要 可加入纹理处理内容
          * */
-        
+         if (translucent) {
+             GlStateManager.enableBlend();
+             GlStateManager.depthMask(false);
+             GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
+         }
         callVAO();
         
         if(ObjModelRenderer.glowTxtureMode) {
@@ -98,6 +105,10 @@ public class DataMesh {
             if(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
                 GlStateManager.disableLighting();
             }
+        }
+        if (translucent) {
+            GlStateManager.depthMask(true);
+            GlStateManager.disableBlend();
         }
     }
 
