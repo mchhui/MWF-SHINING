@@ -1939,6 +1939,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             GlStateManager.enableLighting();
             GlStateManager.popMatrix();
         }
+        
+        model.renderPart("translucentModel");
 
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.popMatrix();
