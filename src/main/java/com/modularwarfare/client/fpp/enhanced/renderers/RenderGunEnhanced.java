@@ -1916,6 +1916,15 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
             if(config.specialEffect.flashModelGroups!=null) {
                 config.specialEffect.flashModelGroups.forEach((group)->{
+                    if(renderType==RenderType.PLAYER_OFFHAND) {
+                        if(config.thirdHideOffhandPart.contains(group.name)) {
+                            return;
+                        }
+                    }else {
+                        if(config.thirdHidePart.contains(group.name)) {
+                            return;
+                        }
+                    }
                     model.renderPart(group.name);
                 });
             }
