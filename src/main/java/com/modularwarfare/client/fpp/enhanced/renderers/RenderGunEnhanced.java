@@ -1239,7 +1239,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     }
 
     public void drawEjectionSmoke(org.lwjgl.util.vector.Vector3f force) {
-        if(ejectionTp==0&&ejectionTp==1) {
+        if(ejectionTp==0||ejectionTp==1) {
             return;
         }
         float tp=ejectionTp;
