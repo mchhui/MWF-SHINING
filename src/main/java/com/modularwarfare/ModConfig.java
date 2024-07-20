@@ -59,6 +59,7 @@ public class ModConfig {
         public boolean hideSecondSkinWhenDressed = true;
         public boolean enableBloodParticle = true;
         public boolean gunSmokeCorrectForBSL=true;
+        public boolean gunSmokeCorrectForIterationT=false;
         public boolean gunFlashEffect=true;
         public int shellEffectCapacity=64;
     }
