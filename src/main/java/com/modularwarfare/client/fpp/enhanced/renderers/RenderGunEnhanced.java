@@ -169,12 +169,12 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     private static final String[] RIGHT_SLIM_HAND_PART=new String[]{
             "rightArmSlimModel", "rightArmLayerSlimModel"
     };
+    public static final List<String> defaultHideList=Arrays.asList("ammoModel", "leftArmModel", "leftArmLayerModel", "leftArmSlimModel",
+        "leftArmLayerSlimModel", "rightArmModel", "rightArmLayerModel", "rightArmSlimModel",
+        "rightArmLayerSlimModel", "flashModel", "smokeModel", "sprint_righthand", "sprint_lefthand",
+        "selector_semi", "selector_full", "selector_brust", "bulletModel", "shellEffect", "panelModel");
     static {
-        List<String> list=Arrays.asList("ammoModel", "leftArmModel", "leftArmLayerModel", "leftArmSlimModel",
-            "leftArmLayerSlimModel", "rightArmModel", "rightArmLayerModel", "rightArmSlimModel",
-            "rightArmLayerSlimModel", "flashModel", "smokeModel", "sprint_righthand", "sprint_lefthand",
-            "selector_semi", "selector_full", "selector_brust", "bulletModel", "shellEffect", "panelModel");
-        for (String str :  list) {
+        for (String str :  defaultHideList) {
             DEFAULT_EXCEPT.add(str);
         }
         for (int i = 0; i < BULLET_MAX_RENDER; i++) {
