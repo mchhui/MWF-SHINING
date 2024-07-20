@@ -202,6 +202,8 @@ public class ClientTickHandler extends ForgeEvent {
 
         if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
             float adsSpeed = 0F;
+            ItemGun gun=(ItemGun)player.getHeldItemMainhand().getItem();
+            gun.onUpdateClient(player, player.world, player.getHeldItemMainhand(), gun, gun.type);
             if(((ItemGun) player.getHeldItemMainhand().getItem()).type.animationType.equals(WeaponAnimationType.BASIC)){
                 ModelGun model = (ModelGun) ((ItemGun) player.getHeldItemMainhand().getItem()).type.model;
                 if (!RenderParameters.lastModel.equalsIgnoreCase(model.getClass().getName())) {

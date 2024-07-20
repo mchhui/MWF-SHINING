@@ -186,10 +186,12 @@ public class ItemGun extends BaseItem {
                 ItemGun itemGun = (ItemGun) heldStack.getItem();
                 GunType gunType = itemGun.type;
 
-                if (world.isRemote)
-                    onUpdateClient(entityPlayer, world, heldStack, itemGun, gunType);
-                else
-                    onUpdateServer(entityPlayer, world, heldStack, itemGun, gunType);
+                if (world.isRemote) {
+//                    onUpdateClient(entityPlayer, world, heldStack, itemGun, gunType);   
+                }
+                else {
+                    onUpdateServer(entityPlayer, world, heldStack, itemGun, gunType);   
+                }
 
                 if (heldStack.getTagCompound() == null) {
                     NBTTagCompound nbtTagCompound = new NBTTagCompound();
