@@ -213,11 +213,6 @@ public class GltfDataModel {
                             node.meshes.put("###DEFAULT###", dataMesh);
                         } else {
                             node.meshes.put(meshModel.getMaterialModel().getName(), dataMesh);
-                            dataMesh.material = meshModel.getMaterialModel().getName();
-                            DataMaterial dataMaterial = gltfDataModel.materials.get(dataMesh.material);
-                            if (dataMaterial.isTranslucent) {
-                                dataMesh.translucent = true;
-                            }
                         }
                         ArrayList<Vector3f> posList = new ArrayList<>();
                         ArrayList<Vector3f> normalList = new ArrayList<>();

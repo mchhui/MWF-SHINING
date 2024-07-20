@@ -619,14 +619,33 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
         //model.updateAnimation(controller.getTime(),false);
         
-        /**
-         * RIGHT HAND GROUP
-         * */
-        
         final ItemAttachment sightRendering=sight;
 
         boolean glowMode=ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode=true;
+        
+        /**
+         * LEFT HAND GROUP
+         * */
+        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, () -> {
+            if (isRenderHand0) {
+                /**
+                 * player left hand
+                 * */
+                if (gunType.handsTextureType != null) {
+                    bindCustomHands(gunType.handsTextureType);
+                } else {
+                    bindPlayerSkin();
+                }
+                ObjModelRenderer.glowTxtureMode=false;
+                renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
+                ObjModelRenderer.glowTxtureMode=true;
+            }
+        });
+        
+        /**
+         * RIGHT HAND GROUP
+         * */
         blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, true, () -> {
             if(isRenderHand0) {
                 if(sightRendering!=null) {
@@ -1083,28 +1102,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     model.renderPart("panelModel");
                 }
                 ObjModelRenderer.glowTxtureMode=true;
-                GlStateManager.depthMask(true);
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
+                
+                GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
+                    SourceFactor.ONE, DestFactor.ZERO);
+                model.renderPart("translucentModel");
+                GlStateManager.depthMask(true);
                 GlStateManager.enableLighting();
-            }
-        });
-        
-        /**
-         * LEFT HAND GROUP
-         * */
-        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, () -> {
-            if (isRenderHand0) {
-                /**
-                 * player left hand
-                 * */
-                if (gunType.handsTextureType != null) {
-                    bindCustomHands(gunType.handsTextureType);
-                } else {
-                    bindPlayerSkin();
-                }
-                ObjModelRenderer.glowTxtureMode=false;
-                renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
-                ObjModelRenderer.glowTxtureMode=true;
             }
         });
         
