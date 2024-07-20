@@ -1170,6 +1170,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
             GlStateManager.popMatrix();
         }
+        if(shellEffects.length!=ModConfig.INSTANCE.client.shellEffectCapacity) {
+            shellEffects=new ShellEffect[ModConfig.INSTANCE.client.shellEffectCapacity];
+        }
         if(shellTime!=-1&&System.currentTimeMillis()>shellTime+5000) {
             for(int i=0;i<shellEffects.length;i++) {
                 shellEffects[i]=null;

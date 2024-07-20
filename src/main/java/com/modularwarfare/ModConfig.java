@@ -3,6 +3,7 @@ package com.modularwarfare;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -59,6 +60,7 @@ public class ModConfig {
         public boolean enableBloodParticle = true;
         public boolean gunSmokeCorrectForBSL=true;
         public boolean gunFlashEffect=true;
+        public int shellEffectCapacity=16;
     }
 
     //shots
