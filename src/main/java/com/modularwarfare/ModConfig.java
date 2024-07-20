@@ -60,7 +60,7 @@ public class ModConfig {
         public boolean enableBloodParticle = true;
         public boolean gunSmokeCorrectForBSL=true;
         public boolean gunFlashEffect=true;
-        public int shellEffectCapacity=16;
+        public int shellEffectCapacity=64;
     }
 
     //shots
