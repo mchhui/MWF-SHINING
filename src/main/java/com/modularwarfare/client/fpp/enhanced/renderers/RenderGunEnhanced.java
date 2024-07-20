@@ -552,6 +552,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         HashSet<String> exceptParts=new HashSet<String>();
         if(isRenderHand0) {
             exceptParts.addAll(config.defaultHidePart);
+            if(config.specialEffect.flashModelGroups!=null) {
+                config.specialEffect.flashModelGroups.forEach((g)->{
+                    exceptParts.add(g.name);
+                });
+            }
             //exceptParts.addAll(DEFAULT_EXCEPT);
             
             for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
@@ -1060,7 +1065,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     }
                     TextureType flashType = gunType.flashType;
                     bindTexture(flashType.resourceLocations.get(anim.flashCount % flashType.resourceLocations.size()));
-                    if(config.specialEffect.oldFlashModel) {
+                    if(config.specialEffect.oldFlashModel) { 
                         model.renderPart("flashModel");
                     }
                     if(config.specialEffect.flashModelGroups!=null) {
@@ -1234,7 +1239,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     }
 
     public void drawEjectionSmoke(org.lwjgl.util.vector.Vector3f force) {
-        if(ejectionTp==0) {
+        if(ejectionTp==0&&ejectionTp==1) {
             return;
         }
         float tp=ejectionTp;
@@ -1558,6 +1563,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
 
         HashSet<String> exceptParts = new HashSet<String>();
+        if(config.specialEffect.flashModelGroups!=null) {
+            config.specialEffect.flashModelGroups.forEach((g)->{
+                exceptParts.add(g.name);
+            });
+        }
         exceptParts.addAll(config.defaultHidePart);
         if(renderType==RenderType.PLAYER_OFFHAND) {
             exceptParts.addAll(config.thirdHideOffhandPart);
@@ -1901,7 +1911,14 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
             TextureType flashType = gunType.flashType;
             bindTexture(flashType.resourceLocations.get(anim.flashCount % flashType.resourceLocations.size()));
-            model.renderPart("flashModel");
+            if(config.specialEffect.oldFlashModel) { 
+                model.renderPart("flashModel");
+            }
+            if(config.specialEffect.flashModelGroups!=null) {
+                config.specialEffect.flashModelGroups.forEach((group)->{
+                    model.renderPart(group.name);
+                });
+            }
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
             GlStateManager.enableLighting();
             GlStateManager.popMatrix();

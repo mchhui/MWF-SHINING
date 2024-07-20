@@ -116,7 +116,6 @@ public class AnimationController {
         this.playback.action = AnimationType.DRAW;
         this.player = player;
         if(player!=null&&config!=null) {
-            reset(true);
             updateActionAndTime();
         }
     }
@@ -204,10 +203,13 @@ public class AnimationController {
             if(DRAW<1) {
                 takedownSpeed=0;  
             }
+            
             TAKEDOWN-=takedownSpeed;
             if(TAKEDOWN<=0) {
+                TAKEDOWN=0;
                 ClientRenderHooks.currentGun=-1;
-                reset(true);
+                ClientProxy.gunEnhancedRenderer.resetClientController();
+                return;
             }
         }
         if(TAKEDOWN<=0) {
@@ -336,8 +338,8 @@ public class AnimationController {
             FIRE_FLASH=1;
         }
         
-        FIRE_FLASH-=stepTick;
-        if(FIRE_FLASH<=0) {
+        SHELL_UPDATE-=stepTick;
+        if(SHELL_UPDATE<=0) {
             for(int i=0;i<RenderGunEnhanced.shellEffects.length;i++) {
                 if(RenderGunEnhanced.shellEffects[i]==null) {
                     continue;
@@ -345,12 +347,12 @@ public class AnimationController {
                 RenderGunEnhanced.shellEffects[i].pos.x+=RenderGunEnhanced.shellEffects[i].vec.x;
                 RenderGunEnhanced.shellEffects[i].pos.y+=RenderGunEnhanced.shellEffects[i].vec.y;
                 RenderGunEnhanced.shellEffects[i].pos.z+=RenderGunEnhanced.shellEffects[i].vec.z;
-                RenderGunEnhanced.shellEffects[i].vec.y-=0.05;
+                RenderGunEnhanced.shellEffects[i].vec.y-=0.08;
                 RenderGunEnhanced.shellEffects[i].rot.x+=2;
                 RenderGunEnhanced.shellEffects[i].rot.z+=5;
                 RenderGunEnhanced.shellEffects[i].rot.y+=2;
             }
-            FIRE_FLASH=1;
+            SHELL_UPDATE=1;
         }
         if(config.extra.panelLogo!=null) {
             PANEL_LOGO+=(1d/(config.extra.panelLogo.frameCount/(double)(config.extra.panelLogo.FPS/60d)))*stepTick;
