@@ -199,6 +199,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public HashMap<Integer, DynamicTextureConfig> panelSpecialAmmo;
         public DynamicTextureConfig panelLogo;
         public DynamicTextureConfig panelReload;
+        public DynamicTextureConfig panelInspect;
 
         /**
          * Adds backwards recoil translations to the gun staticModel when firing

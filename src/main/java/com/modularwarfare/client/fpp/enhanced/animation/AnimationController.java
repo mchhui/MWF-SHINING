@@ -72,6 +72,8 @@ public class AnimationController {
     public double PANEL_LOGO=0;
     public double PANEL_AMMO=0;
     public double PANEL_RELOAD=0;
+    public double PANEL_INSPECT=0;
+
     
     public long sprintCoolTime=0;
     public long sprintLoopCoolTime=0;
@@ -233,6 +235,7 @@ public class AnimationController {
                     Minecraft.getMinecraft().getSoundHandler().playSound(inspectSound);  
                 }
             }
+            PANEL_INSPECT=0;
         }
         if(INSPECT == 1) {
             if(inspectSound!=null) {
@@ -364,6 +367,14 @@ public class AnimationController {
             }
         }else {
             PANEL_RELOAD=1;
+        }
+        if(config.extra.panelInspect!=null) {
+            PANEL_INSPECT+=(1d/(config.extra.panelInspect.frameCount/(double)(config.extra.panelInspect.FPS/60d)))*stepTick;
+            if(PANEL_INSPECT>1) {
+                PANEL_INSPECT=1;
+            }
+        }else {
+            PANEL_INSPECT=1;
         }
         if(lastAmmoCfg!=null) {
             PANEL_AMMO+=(1d/(lastAmmoCfg.frameCount/(double)(lastAmmoCfg.FPS/60d)))*stepTick;
@@ -844,6 +855,15 @@ public class AnimationController {
                 if(reloading) { 
                     frame=(int)(config.extra.panelReload.frameCount*PANEL_RELOAD);
                     loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelReload.texhead+frame+".png");
+                    return loc;
+                }
+            }
+        }
+        if(config!=null) {
+            if(config.extra.panelInspect!=null) {
+                if(PANEL_INSPECT<1) { 
+                    frame=(int)(config.extra.panelInspect.frameCount*PANEL_INSPECT);
+                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelInspect.texhead+frame+".png");
                     return loc;
                 }
             }
