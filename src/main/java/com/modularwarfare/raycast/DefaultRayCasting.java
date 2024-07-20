@@ -30,6 +30,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
@@ -49,7 +50,7 @@ public class DefaultRayCasting extends RayCasting {
 
     //在未来应当考虑穿透
     @Override
-    public List<BulletHit> computeDetection(World world, Vec3d origin, Vec3d forward, double maxDistance, float borderSize, float penetrateSize, HashSet<Entity> excluded, boolean collideablesOnly, int ping) {
+    public List<BulletHit> computeDetection(World world, Vec3d origin, Vec3d forward, double maxDistance, float borderSize, float penetrateSize, float maxPenetrateBlockResistance, float penetrateBlocksResistance, HashSet<Entity> excluded, boolean collideablesOnly, int ping) {
         // Vec3d lookVec = new Vec3d(tx-x, ty-y, tz-z);
         Vec3d endVec = origin.add(forward.scale(maxDistance));
         AxisAlignedBB bb = new AxisAlignedBB(new BlockPos(origin), new BlockPos(endVec)).grow(borderSize);
@@ -59,12 +60,17 @@ public class DefaultRayCasting extends RayCasting {
          * */
 //        List<Entity> allEntities = world.getEntitiesWithinAABBExcludingEntity(null, bb.offset(0,-1.62f,0));
         final float originPenetrateSize = penetrateSize;
+        final float originBlockPenetrate = penetrateBlocksResistance;
         List<BulletHit> allHits = new ArrayList<>();
-        RayTraceResult blockHit = rayTraceBlocks(world, origin, endVec, true, true, false);
-        if (blockHit != null) {
-            maxDistance = blockHit.hitVec.distanceTo(origin);
-        	endVec = blockHit.hitVec;
-            allHits.add(new BulletHit(blockHit, maxDistance, 0.f));
+        List<RayTraceResult> blockHits = rayTraceBlocks(world, origin, endVec, maxPenetrateBlockResistance, penetrateBlocksResistance, true, true, false);
+        if (blockHits != null && !blockHits.isEmpty()) {
+            int lastHitIndex = blockHits.size() - 1;
+            RayTraceResult lastHitResult = blockHits.get(lastHitIndex);
+            maxDistance = lastHitResult.hitVec.distanceTo(origin);
+        	endVec = lastHitResult.hitVec;
+            for (RayTraceResult blockHit : blockHits) {
+                allHits.add(new BulletHit(blockHit, blockHit.hitVec.distanceTo(origin), 0.f, 0.f));
+            }
         }
 
         Vector3f rayVec=new Vector3f(endVec.subtract(origin));
@@ -156,7 +162,7 @@ public class DefaultRayCasting extends RayCasting {
                             PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
                             RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
 
-                            allHits.add(new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept, intercept.hitVec.distanceTo(origin), 0));
+                            allHits.add(new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept, intercept.hitVec.distanceTo(origin), 0, 0));
                         }
                     }
                 }
@@ -189,7 +195,7 @@ public class DefaultRayCasting extends RayCasting {
                                 double currentHitDistance = intercept.hitVec.distanceTo(origin);
                                 hit = intercept.hitVec;
                                 if (currentHitDistance < maxDistance) {
-                                    allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0));
+                                    allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0, 0));
                                 }
                             }
                         }
@@ -204,7 +210,7 @@ public class DefaultRayCasting extends RayCasting {
                             double currentHitDistance = (float) intercept.hitVec.distanceTo(origin);
                             hit = intercept.hitVec;
                             if (currentHitDistance < maxDistance) {
-                                allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0));
+                                allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0, 0));
                             }
                         }
                     }
@@ -216,35 +222,43 @@ public class DefaultRayCasting extends RayCasting {
         }
         allHits.sort(Comparator.comparingDouble(bulletHit -> bulletHit.distance));
         List<BulletHit> result = new ArrayList<>();
-        if (originPenetrateSize == 0) {
-            result.add(allHits.get(0));
-            return result;
-        }
         for (BulletHit currentHit : allHits) {
-            if (penetrateSize <= 0) {
+            if ((originPenetrateSize > 0 && penetrateSize <= 0) || (originBlockPenetrate > 0 && penetrateBlocksResistance <= 0)) {
                 break;
             }
-            currentHit.remainingPenetrate = penetrateSize / originPenetrateSize;
+            currentHit.remainingPenetrate = originPenetrateSize == 0 ? 1.f : penetrateSize / originPenetrateSize;
+            currentHit.remainingBlockPenetrate = originBlockPenetrate == 0 ? 1.f : penetrateBlocksResistance / originBlockPenetrate;
             do {
-                if (currentHit instanceof PlayerHit) {
-                    penetrateSize -= 0.5f;
-                    break;
-                }
-                if (currentHit instanceof OBBHit) {
-                    OBBHit obbHit = (OBBHit) currentHit;
-                    if (obbHit.entity instanceof EntityPlayer) {
+                if (originPenetrateSize > 0) {
+                    if (currentHit instanceof PlayerHit) {
                         penetrateSize -= 0.5f;
                         break;
                     }
-                    double avgSize = (obbHit.box.size.x + obbHit.box.size.y + obbHit.box.size.z) / 3;
-                    penetrateSize -= (float) avgSize;
-                    break;
+                    if (currentHit instanceof OBBHit) {
+                        OBBHit obbHit = (OBBHit) currentHit;
+                        if (obbHit.entity instanceof EntityPlayer) {
+                            penetrateSize -= 0.5f;
+                            break;
+                        }
+                        double avgSize = (obbHit.box.size.x + obbHit.box.size.y + obbHit.box.size.z) / 3;
+                        penetrateSize -= (float) avgSize;
+                        break;
+                    }
+                    if (currentHit.rayTraceResult.typeOfHit == RayTraceResult.Type.ENTITY && currentHit.rayTraceResult.entityHit != null) {
+                        AxisAlignedBB entityBoundingBox = currentHit.rayTraceResult.entityHit.getEntityBoundingBox();
+                        double avgSize = entityBoundingBox.getAverageEdgeLength();
+                        penetrateSize -= (float) avgSize;
+                        break;
+                    }
                 }
-                if (currentHit.rayTraceResult.typeOfHit == RayTraceResult.Type.ENTITY && currentHit.rayTraceResult.entityHit != null) {
-                    AxisAlignedBB entityBoundingBox = currentHit.rayTraceResult.entityHit.getEntityBoundingBox();
-                    double avgSize = entityBoundingBox.getAverageEdgeLength();
-                    penetrateSize -= (float) avgSize;
-                    break;
+                if (originBlockPenetrate > 0) {
+                    if (currentHit.rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
+                        BlockPos blockPos = new BlockPos(currentHit.rayTraceResult.hitVec);
+                        IBlockState iBlockState = world.getBlockState(blockPos);
+                        Block block = iBlockState.getBlock();
+                        float blockExplosionResistance = block.getExplosionResistance(world, blockPos, null, new Explosion(world, null, blockPos.getX(), blockPos.getY(), blockPos.getZ(), 1.f, false, false));
+                        penetrateBlocksResistance -= blockExplosionResistance;
+                    }
                 }
             } while (false);
             result.add(currentHit);
@@ -253,9 +267,10 @@ public class DefaultRayCasting extends RayCasting {
     }
 
     @Nullable
-    public RayTraceResult rayTraceBlocks(World world, Vec3d vec31, Vec3d vec32, boolean stopOnLiquid, boolean ignoreBlockWithoutBoundingBox, boolean returnLastUncollidableBlock) {
+    public List<RayTraceResult> rayTraceBlocks(World world, Vec3d vec31, Vec3d vec32, float maxPenetrateBlockResistance, float penetrateBlocksResistance, boolean stopOnLiquid, boolean ignoreBlockWithoutBoundingBox, boolean returnLastUncollidableBlock) {
         if (!Double.isNaN(vec31.x) && !Double.isNaN(vec31.y) && !Double.isNaN(vec31.z)) {
             if (!Double.isNaN(vec32.x) && !Double.isNaN(vec32.y) && !Double.isNaN(vec32.z)) {
+                List<RayTraceResult> result = new ArrayList<>();
                 int i = MathHelper.floor(vec32.x);
                 int j = MathHelper.floor(vec32.y);
                 int k = MathHelper.floor(vec32.z);
@@ -270,7 +285,8 @@ public class DefaultRayCasting extends RayCasting {
                     RayTraceResult raytraceresult = iblockstate.collisionRayTrace(world, blockpos, vec31, vec32);
 
                     if (raytraceresult != null) {
-                        return raytraceresult;
+                        result.add(raytraceresult);
+                        return result;
                     }
                 }
 
@@ -283,7 +299,10 @@ public class DefaultRayCasting extends RayCasting {
                     }
 
                     if (l == i && i1 == j && j1 == k) {
-                        return returnLastUncollidableBlock ? raytraceresult2 : null;
+                        if (returnLastUncollidableBlock && raytraceresult2 != null) {
+                            result.add(raytraceresult2);
+                        }
+                        return result;
                     }
 
                     boolean flag2 = true;
@@ -367,29 +386,35 @@ public class DefaultRayCasting extends RayCasting {
                     blockpos = new BlockPos(l, i1, j1);
                     IBlockState iblockstate1 = world.getBlockState(blockpos);
                     Block block1 = iblockstate1.getBlock();
+                    float blockExplosionResistance = block1.getExplosionResistance(world, blockpos, null, new Explosion(world, null, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 1.f, false, false));
 
-                    if (ModConfig.INSTANCE.shots.shot_break_glass) {
-                        if (block1 instanceof BlockGlass || block1 instanceof BlockStainedGlassPane || block1 instanceof BlockStainedGlass) {
-                            world.setBlockToAir(blockpos);
-                            ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.glass", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));
-                            continue;
-                        }
-                    }
-
-                    if (block1 instanceof BlockPane) {
-                        ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.iron", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));
-                        continue;
-                    }
-
-                    if (block1 instanceof BlockDoor || block1 instanceof BlockLeaves) {
-                        continue;
-                    }
+//                    if (ModConfig.INSTANCE.shots.shot_break_glass) {
+//                        if (block1 instanceof BlockGlass || block1 instanceof BlockStainedGlassPane || block1 instanceof BlockStainedGlass) {
+//                            world.setBlockToAir(blockpos);
+//                            ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.glass", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));
+//                            continue;
+//                        }
+//                    }
+//
+//                    if (block1 instanceof BlockPane) {
+//                        ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.iron", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));
+//                        continue;
+//                    }
+//
+//                    if (block1 instanceof BlockDoor || block1 instanceof BlockLeaves) {
+//                        continue;
+//                    }
 
                     if (!ignoreBlockWithoutBoundingBox || iblockstate1.getMaterial() == Material.BARRIER || iblockstate1.getMaterial() == Material.PORTAL || iblockstate1.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) {
                         if (block1.canCollideCheck(iblockstate1, stopOnLiquid)) {
                             RayTraceResult raytraceresult1 = iblockstate1.collisionRayTrace(world, blockpos, vec31, vec32);
                             if (raytraceresult1 != null) {
-                                return raytraceresult1;
+                                result.add(raytraceresult1);
+                                if (blockExplosionResistance < maxPenetrateBlockResistance && penetrateBlocksResistance > 0.f) {
+                                    penetrateBlocksResistance -= blockExplosionResistance;
+                                    continue;
+                                }
+                                return result;
                             }
                         } else {
                             raytraceresult2 = new RayTraceResult(RayTraceResult.Type.MISS, vec31, enumfacing, blockpos);
@@ -397,7 +422,11 @@ public class DefaultRayCasting extends RayCasting {
                     }
                 }
 
-                return returnLastUncollidableBlock ? raytraceresult2 : null;
+                if (!returnLastUncollidableBlock || raytraceresult2 == null) {
+                    return null;
+                }
+                result.add(raytraceresult2);
+                return result;
             } else {
                 return null;
             }

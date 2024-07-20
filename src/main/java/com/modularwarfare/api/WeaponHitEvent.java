@@ -29,13 +29,15 @@ public class WeaponHitEvent extends WeaponEvent {
         private boolean isHeadshot;
         private float damage;
         private float penetrateDamageFactor;
+        private float penetrateBlockDamageFactor;
         private Entity victim;
 
-        public Pre(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, float penetrateDamageFactor, Entity victim) {
+        public Pre(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, float penetrateDamageFactor, float penetrateBlockDamageFactor, Entity victim) {
             super(entityPlayer, stackWeapon, itemWeapon);
             this.isHeadshot = isHeadshot;
             this.damage = damage;
             this.penetrateDamageFactor = penetrateDamageFactor;
+            this.penetrateBlockDamageFactor = penetrateBlockDamageFactor;
             this.victim = victim;
         }
 
@@ -47,12 +49,20 @@ public class WeaponHitEvent extends WeaponEvent {
             return penetrateDamageFactor;
         }
 
+        public float getPenetrateBlockDamageFactor() {
+            return penetrateBlockDamageFactor;
+        }
+
         public void setDamage(float damage) {
             this.damage = damage;
         }
 
         public void setPenetrateDamageFactor(float penetrateDamageFactor) {
             this.penetrateDamageFactor = penetrateDamageFactor;
+        }
+
+        public void setPenetrateBlockDamageFactor(float penetrateBlockDamageFactor) {
+            this.penetrateBlockDamageFactor = penetrateBlockDamageFactor;
         }
 
         public boolean isHeadhot() {

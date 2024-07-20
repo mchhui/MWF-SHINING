@@ -69,6 +69,18 @@ public class GunType extends BaseType {
      */
     public boolean gunPenetrationDamageFalloff = true;
     /**
+     *  可以穿透的最大方块爆炸阻力
+     */
+    public float gunMaxPenetrateBlockResistance = 0;
+    /**
+     *  最大可连续穿透的阻力
+     */
+    public float gunPenetrateBlocksResistance = 0;
+    /**
+     * 穿透后的伤害衰减系数 原始伤害 * ((剩余连续穿透的阻力 / 最大连续穿透阻力) * 衰减系数)
+     */
+    public float gunPenetrateBlocksDamageFalloffFactor = 0.8f;
+    /**
      * Weapon block range
      */
     public int weaponMaxRange = 200;

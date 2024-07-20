@@ -8,8 +8,8 @@ public class PlayerHit extends BulletHit {
 
     public PlayerHitbox hitbox;
 
-    public PlayerHit(PlayerHitbox box, RayTraceResult result, double distance, float remainingPenetrate) {
-        super(result, distance, remainingPenetrate);
+    public PlayerHit(PlayerHitbox box, RayTraceResult result, double distance, float remainingPenetrate, float remainingBlockPenetrate) {
+        super(result, distance, remainingPenetrate, remainingBlockPenetrate);
         this.hitbox = box;
     }
 
