@@ -634,7 +634,13 @@ public class AnimationController {
                 hasPlayedTakedownSound=true;
                 if (item instanceof ItemGun) {
                     GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
-                    type.playClientSound((EntityPlayer)player, WeaponSoundType.Takedown);
+                    if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
+                        && ((ItemGun)player.getHeldItemMainhand().getItem()).type.weaponSoundMap
+                            .containsKey(WeaponSoundType.TakedownEmpty)) {
+                        type.playClientSound((EntityPlayer)player, WeaponSoundType.TakedownEmpty);
+                    }else {
+                        type.playClientSound((EntityPlayer)player, WeaponSoundType.Takedown);
+                    }
                 }
             }
         }else if (RELOAD > 0F) {

@@ -1140,7 +1140,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
          * 需要处理深度遮蔽 可以延迟渲染
         */
         if (isRenderHand0) {
-            GlStateManager.depthMask(false);
             if (config.specialEffect.postSmokeGroups != null) {
                 config.specialEffect.postSmokeGroups.forEach((group) -> {
                     Matrix4f mat2 = new Matrix4f(mat);
@@ -1156,6 +1155,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     });
                 });
             }
+            //这里不写深度 会导致水反异常反射 不过这玩意不太明显 暂时这样处理吧
+            GlStateManager.depthMask(false);
             if (config.specialEffect.ejectionGroups != null) {
                 config.specialEffect.ejectionGroups.forEach((group) -> {
                     if (group.ejectSmoke) {
@@ -1298,7 +1299,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             return;
         }
         GlStateManager.disableLighting();
-        GlStateManager.disableAlpha();
         GlStateManager.pushMatrix();
         GlStateManager.tryBlendFuncSeparate(SourceFactor.ONE, DestFactor.ONE, SourceFactor.ONE, DestFactor.ZERO);
         Minecraft.getMinecraft().getTextureManager()
@@ -1403,7 +1403,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         }
         tessellator.draw();
         GlStateManager.popMatrix();
-        GlStateManager.enableAlpha();
         GlStateManager.enableLighting();
     }
     
