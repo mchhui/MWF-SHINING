@@ -1138,6 +1138,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
          * 推荐在isRenderHand1渲染
          * 但是出于现状考虑 暂时设在isRenderHand0渲染
          * 需要处理深度遮蔽 可以延迟渲染
+         * 就像镜面渲染一样 MC的手部半透明一坨大便 只好延迟到hud渲染
         */
         if (isRenderHand0) {
             if (config.specialEffect.postSmokeGroups != null) {
