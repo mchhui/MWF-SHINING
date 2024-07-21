@@ -219,7 +219,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
         return this;
     }
 
-    public static class Bones extends net.minecraft.client.model.ModelPlayer {
+    public static class Bones extends FakePlayerModel {
         public ModelCustomArmor armor = null;
         public boolean isSlim;
 
