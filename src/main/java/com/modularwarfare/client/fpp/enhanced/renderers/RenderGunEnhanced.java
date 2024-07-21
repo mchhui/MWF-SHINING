@@ -1131,11 +1131,16 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             Shaders.pushProgram();
             if (ModConfig.INSTANCE.client.gunSmokeCorrectForBSL) {
                 Shaders.useProgram(Shaders.ProgramNone);
-            } else if (ModConfig.INSTANCE.client.gunSmokeCorrectForIterationT) {
-                Shaders.useProgram(Shaders.ProgramTextured);
             }
         }
+        /**
+         * 这一块光影兼容性不好
+         * 推荐在isRenderHand1渲染
+         * 但是出于现状考虑 暂时设在isRenderHand0渲染
+         * 需要处理深度遮蔽 可以延迟渲染
+        */
         if (isRenderHand0) {
+            GlStateManager.depthMask(false);
             if (config.specialEffect.postSmokeGroups != null) {
                 config.specialEffect.postSmokeGroups.forEach((group) -> {
                     Matrix4f mat2 = new Matrix4f(mat);
@@ -1160,6 +1165,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     }
                 });
             }
+            GlStateManager.depthMask(true);
         }
         if (OptifineHelper.isShadersEnabled()) {
             Shaders.popProgram();
@@ -1169,39 +1175,41 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.popMatrix();
         GlStateManager.color(1, 1, 1,1);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
-        for(int i=0;i<shellEffects.length;i++) {
-            if(shellEffects[i]==null) {
-                continue;
-            }
-            if(shellEffects[i].mat==null) {
-                shellEffects[i].mat=new Matrix4f(mat).mul(model.getGlobalTransform(shellEffects[i].bindding));
-            }
-            GlStateManager.pushMatrix();
-            floatBuffer.clear();
-            shellEffects[i].mat.get(floatBuffer);
-            floatBuffer.rewind();
-            GlStateManager.multMatrix(floatBuffer);
-            GlStateManager.translate(shellEffects[i].pos.x, shellEffects[i].pos.y, shellEffects[i].pos.z);
-            GlStateManager.rotate(shellEffects[i].rot.x, 1, 0, 0);
-            GlStateManager.rotate(shellEffects[i].rot.y, 0, 1, 0);
-            GlStateManager.rotate(shellEffects[i].rot.z, 0, 0, 1);
-            if(shellModel!=null) {
-                bindTexture(shellTexType, shellTexPath);
-                shellModel.renderPart("shellModel", worldScale);
-            }else {
-                bindTexture(shellTexType, shellTexPath);
-                model.renderPart("shellEffect");
-            }
-            GlStateManager.popMatrix();
-        }
-        if(shellEffects.length!=ModConfig.INSTANCE.client.shellEffectCapacity) {
-            shellEffects=new ShellEffect[ModConfig.INSTANCE.client.shellEffectCapacity];
-        }
-        if(shellTime!=-1&&System.currentTimeMillis()>shellTime+5000) {
+        if(isRenderHand0&&!ScopeUtils.isIndsideGunRendering) {
             for(int i=0;i<shellEffects.length;i++) {
-                shellEffects[i]=null;
+                if(shellEffects[i]==null) {
+                    continue;
+                }
+                if(shellEffects[i].mat==null) {
+                    shellEffects[i].mat=new Matrix4f(mat).mul(model.getGlobalTransform(shellEffects[i].bindding));
+                }
+                GlStateManager.pushMatrix();
+                floatBuffer.clear();
+                shellEffects[i].mat.get(floatBuffer);
+                floatBuffer.rewind();
+                GlStateManager.multMatrix(floatBuffer);
+                GlStateManager.translate(shellEffects[i].pos.x, shellEffects[i].pos.y, shellEffects[i].pos.z);
+                GlStateManager.rotate(shellEffects[i].rot.x, 1, 0, 0);
+                GlStateManager.rotate(shellEffects[i].rot.y, 0, 1, 0);
+                GlStateManager.rotate(shellEffects[i].rot.z, 0, 0, 1);
+                if(shellModel!=null) {
+                    bindTexture(shellTexType, shellTexPath);
+                    shellModel.renderPart("shellModel", worldScale);
+                }else {
+                    bindTexture(shellTexType, shellTexPath);
+                    model.renderPart("shellEffect");
+                }
+                GlStateManager.popMatrix();
             }
-            shellTime=-1;
+            if(shellEffects.length!=ModConfig.INSTANCE.client.shellEffectCapacity) {
+                shellEffects=new ShellEffect[ModConfig.INSTANCE.client.shellEffectCapacity];
+            }
+            if(shellTime!=-1&&System.currentTimeMillis()>shellTime+5000) {
+                for(int i=0;i<shellEffects.length;i++) {
+                    shellEffects[i]=null;
+                }
+                shellTime=-1;
+            }  
         }
         
         if(sightRendering!=null) {
@@ -1262,7 +1270,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             return;
         }
         float tp=ejectionTp;
-        GlStateManager.depthMask(false);
         GlStateManager.pushMatrix();
 //        GlStateManager.translate(-1, -2, 0);
         GlStateManager.translate(tp*force.x, tp*force.y, tp*force.z);
@@ -1279,19 +1286,17 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         tessellator.getInstance().getBuffer().pos(0, 0.5, -0.5).tex(1, 0).endVertex();
         tessellator.draw();
         GlStateManager.popMatrix();
-        GlStateManager.depthMask(true);
         GlStateManager.color(1f, 1f, 1f,1f);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
     }
     
     public void drawPostSmoke() {
-        if(postSmokeTp==0) {
+        if(postSmokeTp==0||postSmokeTp==1) {
             return;
         }
         if(postSmokeAlpha<0.5f) {
             return;
         }
-        GlStateManager.depthMask(false);
         GlStateManager.disableLighting();
         GlStateManager.disableAlpha();
         GlStateManager.pushMatrix();
@@ -1400,7 +1405,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.popMatrix();
         GlStateManager.enableAlpha();
         GlStateManager.enableLighting();
-        GlStateManager.depthMask(true);
     }
     
     public void renderHandAndArmor(EnumHandSide side, AbstractClientPlayer player, EnhancedRenderConfig config,
