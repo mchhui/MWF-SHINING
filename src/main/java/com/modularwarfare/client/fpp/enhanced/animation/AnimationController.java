@@ -200,6 +200,11 @@ public class AnimationController {
             if(config.animations.get(AnimationType.TAKEDOWN)!=null) {
                 takedownSpeed = config.animations.get(AnimationType.TAKEDOWN).getSpeed(config.FPS) * stepTick;
             }
+            if(config.animations.get(AnimationType.TAKEDOWN_EMPTY)!=null) {
+                if(playback.action==AnimationType.TAKEDOWN_EMPTY) {
+                    takedownSpeed = config.animations.get(AnimationType.TAKEDOWN_EMPTY).getSpeed(config.FPS) * stepTick;
+                }  
+            }
             if(DRAW<1) {
                 takedownSpeed=0;  
             }
@@ -619,6 +624,11 @@ public class AnimationController {
             }
         }else if(TAKEDOWN>0) {
             this.playback.action = AnimationType.TAKEDOWN;
+            if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.TAKEDOWN_EMPTY)) {
+                    this.playback.action = AnimationType.TAKEDOWN_EMPTY;  
+                }
+            }
             Item item = player.getHeldItemMainhand().getItem();
             if(!hasPlayedTakedownSound) {
                 hasPlayedTakedownSound=true;
