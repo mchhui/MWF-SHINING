@@ -461,7 +461,7 @@ public class AnimationController {
             sprintCoolTime = time + 100;
             sprintValue = SPRINT - sprintSpeed;
         }
-        if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0 || INSPECT < 1) {
+        if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0 || INSPECT < 1 || TAKEDOWN > 0) {
             sprintValue = SPRINT - sprintSpeed * 2.5f;
         }
 
@@ -692,11 +692,14 @@ public class AnimationController {
             case DRAW:
                 this.playback.updateTime(DRAW);
                 break;
+            case DRAW_EMPTY:
+                this.playback.updateTime(DRAW);
+                break;
             case TAKEDOWN:
                 this.playback.updateTime(1-TAKEDOWN);
                 break;
-            case DRAW_EMPTY:
-                this.playback.updateTime(DRAW);
+            case TAKEDOWN_EMPTY:
+                this.playback.updateTime(1-TAKEDOWN);
                 break;
             case INSPECT:
                 this.playback.updateTime(INSPECT);
