@@ -179,12 +179,12 @@ public class ClientLitener {
                                 clientPlayerState.enableSit();
                             }
 
-                            if (Minecraft.getMinecraft().player.isSprinting() && ModularMovements.CONFIG.slide.enable) {
+                            if (Minecraft.getMinecraft().player.isSprinting() && ModularMovements.REMOTE_CONFIG.slide.enable) {
                                 if (wannaSliding) {
                                     clientPlayerSitMoveAmplifierCharging = 1;
                                 }
                                 clientPlayerSitMoveAmplifierCharged = clientPlayerSitMoveAmplifierCharging;
-                                clientPlayerSitMoveAmplifier = ModularMovements.CONFIG.slide.maxForce;
+                                clientPlayerSitMoveAmplifier = ModularMovements.REMOTE_CONFIG.slide.maxForce;
                                 clientPlayerSitMoveVec3d = new Vec3d(clientPlayer.posX - clientPlayer.lastTickPosX, 0,
                                         clientPlayer.posZ - clientPlayer.lastTickPosZ).normalize();
                             }
@@ -235,7 +235,7 @@ public class ClientLitener {
             }
         }
 
-        if(ModularMovements.CONFIG.lean.withGunsOnly) {
+        if(ModularMovements.REMOTE_CONFIG.lean.withGunsOnly) {
             if (Loader.isModLoaded("modularwarfare")) {
                 if (Minecraft.getMinecraft().player.getHeldItemMainhand() != null) {
                     if (!(Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun)) {
@@ -322,23 +322,23 @@ public class ClientLitener {
     }
 
     public static void onMouseMove(MouseHelper mouseHelper) {
-        if (clientPlayerState.probe != 0 && ModularMovements.CONFIG.lean.mouseCorrection) {
+        if (clientPlayerState.probe != 0 && ModularMovements.REMOTE_CONFIG.lean.mouseCorrection) {
             Vec3d vec = Vec3d.ZERO.addVector(mouseHelper.deltaX, 0, mouseHelper.deltaY);
             vec = vec.rotateYaw((float) (cameraProbeOffset * 10 * Math.PI / 180d));
             mouseHelper.deltaX = Math.round((float) vec.x);
             mouseHelper.deltaY = Math.round((float) vec.z);
         }
-        if (clientPlayerState.isCrawling & ModularMovements.CONFIG.crawl.blockView) {
-            float angle = (float) (ModularMovements.CONFIG.crawl.blockAngle * Math.PI);
-            if (Math.abs(crawlingMousePosXMove + mouseHelper.deltaX) > angle) {
-                if (mouseHelper.deltaX > 0) {
-                    mouseHelper.deltaX = (int)(angle - crawlingMousePosXMove);
-                } else {
-                    mouseHelper.deltaX = (int)(-angle - crawlingMousePosXMove);
-                }
-            }
-            crawlingMousePosXMove += mouseHelper.deltaX;
-        }
+//        if (clientPlayerState.isCrawling & ModularMovements.REMOTE_CONFIG.crawl.blockView) {
+//            float angle = (float) (ModularMovements.REMOTE_CONFIG.crawl.blockAngle * Math.PI);
+//            if (Math.abs(crawlingMousePosXMove + mouseHelper.deltaX) > angle) {
+//                if (mouseHelper.deltaX > 0) {
+//                    mouseHelper.deltaX = (int)(angle - crawlingMousePosXMove);
+//                } else {
+//                    mouseHelper.deltaX = (int)(-angle - crawlingMousePosXMove);
+//                }
+//            }
+//            crawlingMousePosXMove += mouseHelper.deltaX;
+//        }
     }
 
     public static void setRotationAngles(ModelPlayer model, float limbSwing, float limbSwingAmount, float ageInTicks,
@@ -619,7 +619,7 @@ public class ClientLitener {
                 }
             };
             if (event.getMovementInput().moveForward != 0) {
-                if (isButtonDown(Minecraft.getMinecraft().gameSettings.keyBindSprint.getKeyCode()) && clientPlayer.onGround && clientPlayer.motionY < 0 && ModularMovements.CONFIG.crawl.sprintCancel) {
+                if (isButtonDown(Minecraft.getMinecraft().gameSettings.keyBindSprint.getKeyCode()) && clientPlayer.onGround && clientPlayer.motionY < 0 && ModularMovements.REMOTE_CONFIG.crawl.sprintCancel) {
                     if (!Minecraft.getMinecraft().player.isSneaking()) {
                         double d0 = 0.3;
                         if (!clientPlayer.world.collidesWithAnyBlock(
@@ -689,15 +689,15 @@ public class ClientLitener {
 
             if (!isButtonDown(leftProbe.getKeyCode()) && !isButtonDown(rightProbe.getKeyCode())) {
                 probeKeyLock = false;
-                if (!ModularMovements.CONFIG.lean.autoHold && clientPlayerState.probe != 0) {
+                if (!ModularMovements.REMOTE_CONFIG.lean.autoHold && clientPlayerState.probe != 0) {
                     clientPlayerState.resetProbe();
                 }
             } else if (isButtonDown(leftProbe.getKeyCode())) {
-                if (!ModularMovements.CONFIG.lean.autoHold && clientPlayerState.probe != -1) {
+                if (!ModularMovements.REMOTE_CONFIG.lean.autoHold && clientPlayerState.probe != -1) {
                     probeKeyLock = false;
                 }
             } else if (isButtonDown(rightProbe.getKeyCode())) {
-                if (!ModularMovements.CONFIG.lean.autoHold && clientPlayerState.probe != 1) {
+                if (!ModularMovements.REMOTE_CONFIG.lean.autoHold && clientPlayerState.probe != 1) {
                     probeKeyLock = false;
                 }
             }
@@ -816,7 +816,7 @@ public class ClientLitener {
                             Minecraft.getMinecraft().player
                                     .playSound(SoundEvents.BLOCK_GRASS_HIT,
                                             2 * (float) (clientPlayerSitMoveAmplifier
-                                                    * clientPlayerSitMoveAmplifierCharged / ModularMovements.CONFIG.slide.maxForce),
+                                                    * clientPlayerSitMoveAmplifierCharged / ModularMovements.REMOTE_CONFIG.slide.maxForce),
                                             0.8f);
                         }
                     }
@@ -826,7 +826,7 @@ public class ClientLitener {
                     clientPlayerSitMoveAmplifier += clientPlayerSitMoveLess;
                 }
                 if (clientPlayerSitMoveAmplifier <= 0) {
-                    if (ModularMovements.CONFIG.sit.autoHold) {
+                    if (ModularMovements.REMOTE_CONFIG.sit.autoHold) {
                         if (!isButtonDown(sit.getKeyCode())) {
                             clientPlayerState.disableSit();
                         }

@@ -50,6 +50,9 @@ import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.ZipContentPack;
+
+import mchhui.modularmovements.ModularMovements;
+import mchhui.modularmovements.ModularMovementsConfig;
 import moe.komi.mwprotect.*;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -549,6 +552,9 @@ public class ModularWarfare {
     
     public static void loadConfig() {
         new ModConfig(new File(MOD_DIR, "mod_config.json"));
+        if(isLoadedModularMovements) {
+            ModularMovements.loadConfig();
+        }
     }
 
     /**

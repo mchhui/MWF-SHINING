@@ -67,16 +67,19 @@ public class PlayerState {
         return !isCrawling && !isSitting;
     }
 
+    @SideOnly(Side.CLIENT)
     public boolean canSit() {
-        return (System.currentTimeMillis() - this.lastSit > TimeUnit.SECONDS.toMillis((long)ModularMovements.CONFIG.cooldown.sitCooldown));
+        return ModularMovements.REMOTE_CONFIG.sit.enable && ((System.currentTimeMillis() - lastSit) > 300);
     }
 
+    @SideOnly(Side.CLIENT)
     public boolean canCrawl() {
-        return (System.currentTimeMillis() - this.lastCrawl > TimeUnit.SECONDS.toMillis((long)ModularMovements.CONFIG.cooldown.crawlCooldown));
+        return ModularMovements.REMOTE_CONFIG.crawl.enable && ((System.currentTimeMillis() - lastCrawl) > 500);
     }
 
+    @SideOnly(Side.CLIENT)
     public boolean canProbe() {
-        return (System.currentTimeMillis() - this.lastProbe > TimeUnit.SECONDS.toMillis((long)ModularMovements.CONFIG.cooldown.leanCooldown));
+        return ModularMovements.REMOTE_CONFIG.lean.enable;
     }
 
     public void enableSit() {
@@ -87,16 +90,18 @@ public class PlayerState {
 
     public void disableSit() {
         isSitting = false;
+        this.lastSit = System.currentTimeMillis();
     }
 
     public void enableCrawling() {
         isCrawling = true;
         disableSit();
-        this.lastCrawl = System.currentTimeMillis();
+        this.lastCrawl = System.currentTimeMillis();  
     }
 
     public void disableCrawling() {
         isCrawling = false;
+        this.lastCrawl = System.currentTimeMillis();  
     }
 
     public void resetProbe() {

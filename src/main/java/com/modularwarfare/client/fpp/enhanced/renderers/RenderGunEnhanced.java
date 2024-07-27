@@ -624,11 +624,32 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
         boolean glowMode=ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode=true;
-        
+        /**
+         * 绘制镜面擦除
+         * */
+        blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
+            controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, () -> {
+                if (isRenderHand0) {
+                    if (sightRendering != null) {
+                        String binding = "gunModel";
+                        if (config.attachment.containsKey(sightRendering.type.internalName)) {
+                            binding = config.attachment.get(sightRendering.type.internalName).binding;
+                        }
+                        model.applyGlobalTransformToOther(binding, () -> {
+                            renderAttachment(config, AttachmentPresetEnum.Sight.typeName,
+                                sightRendering.type.internalName, () -> {
+                                    writeScopeGlassDepth(sightRendering.type,
+                                        (ModelAttachment)sightRendering.type.model, controller.ADS > 0, worldScale,
+                                        sightRendering.type.sight.modeType.isPIP);
+                                });
+                        });
+                    }
+                }
+            });
         /**
          * LEFT HAND GROUP
          * */
-        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, true, () -> {
+        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, () -> {
             if (isRenderHand0) {
                 /**
                  * player left hand
@@ -649,17 +670,18 @@ public class RenderGunEnhanced extends CustomItemRenderer {
          * */
         blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, false, () -> {
             if(isRenderHand0) {
-                if(sightRendering!=null) {
-                    String binding = "gunModel";
-                    if (config.attachment.containsKey(sightRendering.type.internalName)) {
-                        binding = config.attachment.get(sightRendering.type.internalName).binding;
-                    }
-                    model.applyGlobalTransformToOther(binding, () -> {
-                        renderAttachment(config, AttachmentPresetEnum.Sight.typeName, sightRendering.type.internalName, () -> {
-                            writeScopeGlassDepth(sightRendering.type, (ModelAttachment)sightRendering.type.model, controller.ADS > 0, worldScale, sightRendering.type.sight.modeType.isPIP);
-                        });
-                    });
-                }
+                //上移了
+//                if(sightRendering!=null) {
+//                    String binding = "gunModel";
+//                    if (config.attachment.containsKey(sightRendering.type.internalName)) {
+//                        binding = config.attachment.get(sightRendering.type.internalName).binding;
+//                    }
+//                    model.applyGlobalTransformToOther(binding, () -> {
+//                        renderAttachment(config, AttachmentPresetEnum.Sight.typeName, sightRendering.type.internalName, () -> {
+//                            writeScopeGlassDepth(sightRendering.type, (ModelAttachment)sightRendering.type.model, controller.ADS > 0, worldScale, sightRendering.type.sight.modeType.isPIP);
+//                        });
+//                    });
+//                }
 
                 /**
                  * player right hand

@@ -41,19 +41,18 @@ public class TacticalHandler {
                 break;
 
             case MOD_CONFIG:
+                boolean leanEnable = buffer.readBoolean();
+                boolean sitEnable = buffer.readBoolean();
+                boolean slideEnable = buffer.readBoolean();
+                boolean crawlEnable = buffer.readBoolean();
                 boolean withGunsOnly = buffer.readBoolean();
                 float slideMaxForce = buffer.readFloat();
-                boolean blockView = buffer.readBoolean();
-                float blockAngle = buffer.readFloat();
-                float sitCooldown = buffer.readFloat();
-                float crawlCooldown = buffer.readFloat();
 
-                ModularMovements.CONFIG.lean.withGunsOnly = withGunsOnly;
-                ModularMovements.CONFIG.slide.maxForce = slideMaxForce;
-                ModularMovements.CONFIG.crawl.blockView = blockView;
-                ModularMovements.CONFIG.crawl.blockAngle = blockAngle;
-                ModularMovements.CONFIG.cooldown.sitCooldown = sitCooldown;
-                ModularMovements.CONFIG.cooldown.crawlCooldown = crawlCooldown;
+                ModularMovements.REMOTE_CONFIG.lean.enable = leanEnable;
+                ModularMovements.REMOTE_CONFIG.sit.enable = sitEnable;
+                ModularMovements.REMOTE_CONFIG.slide.enable = slideEnable;
+                ModularMovements.REMOTE_CONFIG.crawl.enable = crawlEnable;
+                ModularMovements.REMOTE_CONFIG.slide.maxForce = slideMaxForce;
                 break;
         }
     }
@@ -77,7 +76,7 @@ public class TacticalHandler {
             }
             break;
         case NOFALL:
-            player.fallDistance = 0;
+//            player.fallDistance = 0;
             break;
         case NOSTEP:
             int time = buffer.readInt();
@@ -132,12 +131,15 @@ public class TacticalHandler {
         PacketBuffer buffer = new PacketBuffer(Unpooled.buffer());
         buffer.writeEnumValue(EnumFeatures.Tactical);
         buffer.writeEnumValue(EnumPacketType.MOD_CONFIG);
+        
+        buffer.writeBoolean(ModularMovements.CONFIG.lean.enable);
+        buffer.writeBoolean(ModularMovements.CONFIG.sit.enable);
+        buffer.writeBoolean(ModularMovements.CONFIG.slide.enable);
+        buffer.writeBoolean(ModularMovements.CONFIG.crawl.enable);
+        
         buffer.writeBoolean(ModularMovements.CONFIG.lean.withGunsOnly);
         buffer.writeFloat(ModularMovements.CONFIG.slide.maxForce);
-        buffer.writeBoolean(ModularMovements.CONFIG.crawl.blockView);
-        buffer.writeFloat(ModularMovements.CONFIG.crawl.blockAngle);
-        buffer.writeFloat(ModularMovements.CONFIG.cooldown.sitCooldown);
-        buffer.writeFloat(ModularMovements.CONFIG.cooldown.crawlCooldown);
+        
         ModularMovements.channel.sendTo(new FMLProxyPacket(buffer, "modularmovements"), entityPlayer);
     }
 

@@ -18,9 +18,8 @@ public class ModularMovementsConfig {
     public Sit sit = new Sit();
     public Crawl crawl = new Crawl();
 
-    public Cooldown cooldown = new Cooldown();
-
     public static class Lean {
+        public boolean enable = true;
         public boolean autoHold = false;
         public boolean mouseCorrection = true;
         public boolean withGunsOnly = false;
@@ -32,19 +31,13 @@ public class ModularMovementsConfig {
     }
 
     public static class Sit {
+        public boolean enable = true;
         public boolean autoHold = true;
     }
 
     public static class Crawl {
-        public boolean blockView = false;
-        public float blockAngle = 190;
+        public boolean enable = true;
         public boolean sprintCancel = true;
-    }
-
-    public static class Cooldown {
-        public float sitCooldown = 0.75f;
-        public float crawlCooldown = 0.75f;
-        public float leanCooldown = 0f;
     }
 
     public String version = ModularMovements.MOD_VERSION;

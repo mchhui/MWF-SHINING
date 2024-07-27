@@ -19,6 +19,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Logger;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 
 import java.io.File;
@@ -46,6 +47,7 @@ public class ModularMovements {
     public static Logger LOGGER;
 
     public static ModularMovementsConfig CONFIG;
+    public static ModularMovementsConfig REMOTE_CONFIG;
 
 
     @EventHandler
@@ -57,6 +59,11 @@ public class ModularMovements {
             MOD_DIR.mkdir();
             LOGGER.info("Created ModularMovements folder.");
         }
+        new ModularMovementsConfig(new File(MOD_DIR, "mod_config.json"));
+        REMOTE_CONFIG=CONFIG;
+    }
+    
+    public static void loadConfig() {
         new ModularMovementsConfig(new File(MOD_DIR, "mod_config.json"));
     }
 
