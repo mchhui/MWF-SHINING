@@ -244,7 +244,7 @@ public class PacketExpGunFire extends PacketBase {
                         damage *= remainingPenetrate;
                     }
 
-                    if (itemGun.type.gunPenetrateBlocksDamageFalloffFactor > 0 && remainingBlockPenetrate > 0) {
+                    if (itemGun.type.gunPenetrateBlocksDamageFalloffFactor > 0 && remainingBlockPenetrate > 0 && remainingBlockPenetrate < 1) {
                         damage *= (remainingBlockPenetrate * itemGun.type.gunPenetrateBlocksDamageFalloffFactor);
                     }
                     

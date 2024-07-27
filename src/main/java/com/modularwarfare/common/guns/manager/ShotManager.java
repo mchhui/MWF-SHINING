@@ -399,7 +399,7 @@ public class ShotManager {
                         if (gunType.gunPenetrationDamageFalloff && preHitEvent.getPenetrateDamageFactor() > 0) {
                             preHitEvent.setDamage(preHitEvent.getDamage() * preHitEvent.getPenetrateDamageFactor());
                         }
-                        if (gunType.gunPenetrateBlocksDamageFalloffFactor > 0 && preHitEvent.getPenetrateBlockDamageFactor() > 0) {
+                        if (gunType.gunPenetrateBlocksDamageFalloffFactor > 0 && preHitEvent.getPenetrateBlockDamageFactor() > 0 && preHitEvent.getPenetrateBlockDamageFactor() < 1) {
                             preHitEvent.setDamage(preHitEvent.getDamage() * preHitEvent.getPenetrateBlockDamageFactor() * gunType.gunPenetrateBlocksDamageFalloffFactor);
                         }
 
