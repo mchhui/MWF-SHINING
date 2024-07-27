@@ -410,7 +410,7 @@ public class DefaultRayCasting extends RayCasting {
                             RayTraceResult raytraceresult1 = iblockstate1.collisionRayTrace(world, blockpos, vec31, vec32);
                             if (raytraceresult1 != null) {
                                 result.add(raytraceresult1);
-                                if (blockExplosionResistance < maxPenetrateBlockResistance && penetrateBlocksResistance > 0.f) {
+                                if (blockExplosionResistance < maxPenetrateBlockResistance && penetrateBlocksResistance > blockExplosionResistance) {
                                     penetrateBlocksResistance -= blockExplosionResistance;
                                     continue;
                                 }
