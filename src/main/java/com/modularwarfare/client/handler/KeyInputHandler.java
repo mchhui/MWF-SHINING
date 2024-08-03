@@ -7,6 +7,7 @@ import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
+import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
@@ -171,7 +172,9 @@ public class KeyInputHandler extends ForgeEvent {
                         if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
                             if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun
                                     && ClientRenderHooks.currentGun != -1
-                                    && ClientRenderHooks.wannaSlot == -1) {
+                                    && ClientRenderHooks.wannaSlot == -1
+                                    && (ClientProxy.gunEnhancedRenderer.getClientController() != null
+                                        && (ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT || ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT_EMPTY))) {
                                 /*if(((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.BASIC) {
                                     AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
                                     stateMachine.attachmentMode = !stateMachine.attachmentMode;
