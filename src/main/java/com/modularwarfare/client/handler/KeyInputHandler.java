@@ -169,7 +169,9 @@ public class KeyInputHandler extends ForgeEvent {
                 case AddAttachment:
                     if(!entityPlayer.isSpectator() && ClientEventHandler.serverAllowGunModifyGui) {
                         if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
-                            if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
+                            if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun
+                                    && ClientRenderHooks.currentGun != -1
+                                    && ClientRenderHooks.wannaSlot == -1) {
                                 /*if(((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.BASIC) {
                                     AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
                                     stateMachine.attachmentMode = !stateMachine.attachmentMode;

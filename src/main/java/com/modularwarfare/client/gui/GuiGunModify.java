@@ -146,6 +146,10 @@ public class GuiGunModify extends GuiScreen {
 	}
 	public void updateItemModifying() {
 		ItemStack itemMainhand=Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+		if (!(itemMainhand.getItem() instanceof ItemGun)) {
+			Minecraft.getMinecraft().displayGuiScreen(null);
+			return;
+		}
 		boolean refresh=false;
 		if(this.currentModify!=null&&!this.currentModify.equals(itemMainhand)) {
 			refresh=true;

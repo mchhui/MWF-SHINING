@@ -137,6 +137,9 @@ public class ClientRenderHooks extends ForgeEvent {
                 if(currentGun==-1&&wannaSlot!=-1) {
                     if(Minecraft.getMinecraft().player!=null) {
                         Minecraft.getMinecraft().player.inventory.currentItem=wannaSlot;
+                        if (Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
+                            Minecraft.getMinecraft().displayGuiScreen(null);
+                        }
                         wannaSlot=-1;  
                     }
                 }
