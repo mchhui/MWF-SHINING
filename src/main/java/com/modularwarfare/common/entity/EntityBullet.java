@@ -36,7 +36,7 @@ public class EntityBullet extends EntityArrow implements IProjectile {
         setSize(0.2F, 0.2F);
     }
 
-    public EntityBullet(World par1World, EntityPlayer par2EntityPlayer, float damage, float accuracy, float velocity, String bulletName) {
+    public EntityBullet(World par1World, EntityPlayer par2EntityPlayer, float damage, float accuracy, float velocity, String bulletName, float gravity, boolean isSmoke, boolean isExplosion) {
         super(par1World);
         this.setBulletType(bulletName);
         this.player = par2EntityPlayer;

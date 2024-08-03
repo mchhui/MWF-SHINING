@@ -13,8 +13,8 @@ public class EntityBulletClient extends EntityBullet {
 
     public float renderLifeTime = 0;
 
-    public EntityBulletClient(World par1World, EntityPlayer p, float damage, float accuracy, float velocity, String bulletName) {
-        super(par1World, p, damage, accuracy, velocity, bulletName);
+    public EntityBulletClient(World par1World, EntityPlayer p, float damage, float accuracy, float velocity, String bulletName, float gravity, boolean isSmoke, boolean isExplosion) {
+        super(par1World, p, damage, accuracy, velocity, bulletName, gravity, isSmoke, isExplosion);
     }
 
     public EntityBulletClient(World par1World) {

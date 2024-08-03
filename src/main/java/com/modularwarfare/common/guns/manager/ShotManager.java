@@ -460,7 +460,8 @@ public class ShotManager {
                     }
                 }
             } else {
-                EntityExplosiveProjectile projectile = new EntityExplosiveProjectile(world, entityPlayer, 0.5f, 3f, 2.5f, bulletItem.type.internalName);
+                final float accuracy = RayUtil.calculateAccuracy(itemGun, entityPlayer);
+                EntityExplosiveProjectile projectile = new EntityExplosiveProjectile(world, entityPlayer, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke, bulletItem.type.isExplosion);
                 world.spawnEntity(projectile);
             }
 
