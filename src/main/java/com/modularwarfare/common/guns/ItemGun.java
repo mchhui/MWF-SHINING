@@ -111,7 +111,7 @@ public class ItemGun extends BaseItem {
         return 0;
     }
 
-    public static boolean hasNextShot(ItemStack gunStack) {
+    public static int getAmmoCount(ItemStack gunStack) {
         if (hasAmmoLoaded(gunStack)) {
             ItemStack ammoStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
             if (ammoStack != null) {
@@ -119,15 +119,18 @@ public class ItemGun extends BaseItem {
                     ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
                     if (ammoStack.getTagCompound() != null) {
                         String key = itemAmmo.type.magazineCount > 1 ? "ammocount" + ammoStack.getTagCompound().getInteger("magcount") : "ammocount";
-                        int ammoCount = ammoStack.getTagCompound().getInteger(key) - 1;
-                        return ammoCount >= 0;
+                        return ammoStack.getTagCompound().getInteger(key);
                     }
                 }
             }
         } else if (gunStack.getTagCompound() != null && gunStack.getTagCompound().hasKey("ammocount")) {
-            return gunStack.getTagCompound().getInteger("ammocount") > 0;
+            return gunStack.getTagCompound().getInteger("ammocount");
         }
-        return false;
+        return 0;
+    }
+
+    public static boolean hasNextShot(ItemStack gunStack) {
+        return getAmmoCount(gunStack) > 0;
     }
 
     public static void consumeShot(ItemStack gunStack) {

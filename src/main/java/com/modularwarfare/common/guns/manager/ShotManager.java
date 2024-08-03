@@ -99,20 +99,32 @@ public class ShotManager {
         }
 
         ModularWarfare.PROXY.onShootAnimation(entityPlayer, gunType.internalName, gunType.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw);
-        
+
         // Sound
         if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Barrel) != null) {
             ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(gunStack, AttachmentPresetEnum.Barrel).getItem();
             if (barrelAttachment.type.barrel.isSuppressor) {
                 gunType.playClientSound(entityPlayer, WeaponSoundType.FireSuppressed);
             } else {
-                gunType.playClientSound(entityPlayer, WeaponSoundType.Fire);
+                if (ItemGun.getAmmoCount(entityPlayer.getHeldItemMainhand()) <= 1 && itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                    gunType.playClientSound(entityPlayer, WeaponSoundType.FireLast);
+                } else {
+                    gunType.playClientSound(entityPlayer, WeaponSoundType.Fire);
+                }
             }
         } else if (GunType.isPackAPunched(gunStack)) {
             gunType.playClientSound(entityPlayer, WeaponSoundType.Punched);
-            gunType.playClientSound(entityPlayer, WeaponSoundType.Fire);
+            if (ItemGun.getAmmoCount(entityPlayer.getHeldItemMainhand()) <= 1 && itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                gunType.playClientSound(entityPlayer, WeaponSoundType.FireLast);
+            } else {
+                gunType.playClientSound(entityPlayer, WeaponSoundType.Fire);
+            }
         } else {
-            gunType.playClientSound(entityPlayer, WeaponSoundType.Fire);
+            if (ItemGun.getAmmoCount(entityPlayer.getHeldItemMainhand()) <= 1 && itemGun.type.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                gunType.playClientSound(entityPlayer, WeaponSoundType.FireLast);
+            } else {
+                gunType.playClientSound(entityPlayer, WeaponSoundType.Fire);
+            }
         }
 
         if (gunType.weaponType == WeaponType.BoltSniper || gunType.weaponType == WeaponType.Shotgun) {
