@@ -5,12 +5,8 @@ import java.util.HashMap;
 
 import org.joml.*;
 
-import de.javagl.jgltf.model.NodeModel;
-
 public class DataNode {
     private static final String PARENT="###SCENE###";
-    
-    public NodeModel unsafeNode;
     
     public String name;
     public String parent=PARENT;

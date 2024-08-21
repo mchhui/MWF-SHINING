@@ -173,7 +173,6 @@ public class GltfDataModel {
             model.getNodeModels().forEach((nodeModel) -> {
                 gltfDataModel.lastPos = "nodes";
                 DataNode node = new DataNode();
-                node.unsafeNode = nodeModel;
                 if (gltfDataModel.nodes.containsKey(nodeModel.getName())) {
                     throw new RuntimeException("The same node name");
                 }

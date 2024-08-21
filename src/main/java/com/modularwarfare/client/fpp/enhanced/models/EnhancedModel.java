@@ -115,18 +115,6 @@ public class EnhancedModel implements IMWModel {
         return model.geoModel.nodes.containsKey(part);
     }
     
-    /**
-     * 兼容旧版 请勿使用
-     * */
-    @Deprecated
-    public NodeModel getPart(String part) {
-        DataNode node=model.geoModel.nodes.get(part);
-        if(node==null) {
-            return null;
-        }
-        return node.unsafeNode;
-    }
-    
     @Override
     public void renderPart(String part, float scale) {
         if (!initCal) {
