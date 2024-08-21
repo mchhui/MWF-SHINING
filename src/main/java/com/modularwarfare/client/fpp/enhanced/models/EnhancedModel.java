@@ -3,13 +3,8 @@ package com.modularwarfare.client.fpp.enhanced.models;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.IMWModel;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.utility.maths.MathUtils;
 
-import de.javagl.jgltf.model.AnimationModel;
-import de.javagl.jgltf.model.GltfModel;
-import de.javagl.jgltf.model.NodeModel;
 import mchhui.hegltf.DataAnimation;
 import mchhui.hegltf.DataAnimation.Transform;
 import mchhui.hegltf.DataNode;
@@ -18,27 +13,15 @@ import mchhui.hegltf.GltfRenderModel;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationMapper;
 import mchhui.hegltf.GltfRenderModel.NodeState;
-import mchhui.hegltf.ShaderGltf;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.Optional;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
-import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Quaternion;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
 
 public class EnhancedModel implements IMWModel {
     private static final FloatBuffer MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
