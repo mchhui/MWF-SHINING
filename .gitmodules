@@ -1,3 +1,0 @@
-[submodule "src/main/java/moe/komi/mwprotect/cipher"]
-	path = src/main/java/moe/komi/mwprotect/cipher
-	url = https://github.com/KomiMoe/MWProtectJava.git
