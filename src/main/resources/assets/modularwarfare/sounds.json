@@ -455,5 +455,11 @@
     "sounds": [
       "modularwarfare:knife/draw"
     ]
+  },
+  "melee.inspect": {
+    "category": "player",
+    "sounds": [
+      "modularwarfare:knife/draw"
+    ]
   }
 }
