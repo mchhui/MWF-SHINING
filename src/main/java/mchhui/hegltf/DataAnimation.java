@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.util.vector.Quaternion;
+
+import net.minecraft.util.math.MathHelper;
 
 public class DataAnimation {
     public ArrayList<DataKeyframe> posChannel = new ArrayList<DataAnimation.DataKeyframe>();

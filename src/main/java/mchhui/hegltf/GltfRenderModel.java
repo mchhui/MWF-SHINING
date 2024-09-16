@@ -1,6 +1,7 @@
 package mchhui.hegltf;
 
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,12 +13,18 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.util.vector.Quaternion;
 
 import com.modularwarfare.utility.OptifineHelper;
 
 import mchhui.hegltf.DataAnimation.Transform;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
 /**
  * @author Hueihuea
