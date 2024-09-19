@@ -623,6 +623,10 @@ public class AnimationController {
                 }
             }
         }else if(TAKEDOWN>0) {
+            if(inspectSound!=null) {
+                Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
+                inspectSound=null;
+            }
             this.playback.action = AnimationType.TAKEDOWN;
             if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
                 if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.TAKEDOWN_EMPTY)) {
