@@ -2346,7 +2346,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                             }
                             if (!node.name.equals("root") && !node.name.equals("sprint_lefthand")
                                 && !node.name.equals("sprint_righthand") && !node.name.equals("root_bone")
-                                && !node.name.equals("sprint_lefthand_bone") && !node.name.equals("sprint_righthand_bone")) {
+                                && !node.name.equals("sprint_lefthand_bone") && !node.name.equals("sprint_righthand_bone")
+                                && !node.name.endsWith("_sprint")) {
                                 break sprint;
                             }
                             Quaternionf quat = new Quaternionf();
