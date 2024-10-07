@@ -789,8 +789,10 @@ public class ClientProxy extends CommonProxy {
             if (gunType.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
             } else {
+                float recoilYawFactor = (float) (gunType.recoilYaw * 0.5);
+                float recoilRandomYawFactor = (float) (gunType.randomRecoilYaw * 0.5);
                 float rand=(float) Math.random();
-                ClientEventHandler.cemeraBobbing=lastBobbingParm*(0.3f+0.4f*Math.abs(rand))*((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
+                ClientEventHandler.cemeraBobbing=lastBobbingParm*(recoilRandomYawFactor + recoilYawFactor*Math.abs(rand))*((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
                 lastBobbingParm=-lastBobbingParm;
                 AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
