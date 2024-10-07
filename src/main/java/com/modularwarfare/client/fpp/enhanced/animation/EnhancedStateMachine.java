@@ -5,6 +5,7 @@ import java.util.Random;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.Passer;
 import com.modularwarfare.client.ClientProxy;
+import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.StateEntry;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
@@ -254,23 +255,66 @@ public class EnhancedStateMachine {
 
     public AnimationType getShootingAnimationType() {
         AnimationType aniType = AnimationType.PRE_FIRE;
-        if (shootingPhase == Phase.FIRST) {
-            if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST)) {
-                aniType = AnimationType.FIRE_LAST;
-            } else {
-                aniType = AnimationType.FIRE;
-            }
-        } else if (shootingPhase == Phase.POST) {
-            if (!ItemGun.hasNextShot(heldItemstStack) && ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_EMPTY)) {
-                aniType = AnimationType.POST_FIRE_EMPTY;
-            } else {
-                aniType = AnimationType.POST_FIRE;
-            }
+    
+        boolean isAiming = ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope;
+    
+        switch (shootingPhase) {
+            case FIRST:
+                aniType = getFirstPhaseAnimation(isAiming);
+                break;
+    
+            case POST:
+                aniType = getPostPhaseAnimation(isAiming);
+                break;
+            
+            case PRE:
+                aniType = getPrePhaseAnimation(isAiming);
+                break;
+    
+            default:
+                break;
         }
+    
         if (isFailedShoot && shootingPhase != Phase.PRE) {
             return AnimationType.DEFAULT;
         }
+    
         return aniType;
+    }
+    
+    private AnimationType getFirstPhaseAnimation(boolean isAiming) {
+        if (isAiming) {
+            return !ItemGun.hasNextShot(heldItemstStack) && 
+                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST_ADS)
+                   ? AnimationType.FIRE_LAST_ADS
+                   : AnimationType.FIRE_ADS;
+        } else {
+            return !ItemGun.hasNextShot(heldItemstStack) && 
+                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST)
+                   ? AnimationType.FIRE_LAST
+                   : AnimationType.FIRE;
+        }
+    }
+    
+    private AnimationType getPostPhaseAnimation(boolean isAiming) {
+        if (isAiming) {
+            return !ItemGun.hasNextShot(heldItemstStack) && 
+                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_ADS_EMPTY)
+                   ? AnimationType.POST_FIRE_ADS_EMPTY
+                   : AnimationType.POST_FIRE_ADS;
+        } else {
+            return !ItemGun.hasNextShot(heldItemstStack) && 
+                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_EMPTY)
+                   ? AnimationType.POST_FIRE_EMPTY
+                   : AnimationType.POST_FIRE;
+        }
+    }
+
+    private AnimationType getPrePhaseAnimation(boolean isAiming) {
+        if (isAiming) {
+            return AnimationType.PRE_FIRE_ADS;
+        }
+        return AnimationType.PRE_FIRE;
     }
     
     public float getReloadSppedFactor() {

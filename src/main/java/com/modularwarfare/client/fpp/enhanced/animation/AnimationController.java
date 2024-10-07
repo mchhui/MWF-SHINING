@@ -106,8 +106,8 @@ public class AnimationController {
             AnimationType.RELOAD_SECOND_QUICKLY, AnimationType.POST_RELOAD, AnimationType.POST_RELOAD_EMPTY,};
     
     private static AnimationType[] FIRE_TYPE=new AnimationType[] {
-            AnimationType.FIRE,AnimationType.FIRE_LAST,
-            AnimationType.PRE_FIRE, AnimationType.POST_FIRE,AnimationType.POST_FIRE_EMPTY, 
+            AnimationType.FIRE,AnimationType.FIRE_LAST, AnimationType.FIRE_ADS, AnimationType.FIRE_LAST_ADS,
+            AnimationType.PRE_FIRE, AnimationType.POST_FIRE, AnimationType.POST_FIRE_EMPTY, AnimationType.PRE_FIRE_ADS, AnimationType.POST_FIRE_ADS, AnimationType.POST_FIRE_ADS_EMPTY,
     };
 
     public AnimationController(EntityLivingBase player,GunEnhancedRenderConfig config){
