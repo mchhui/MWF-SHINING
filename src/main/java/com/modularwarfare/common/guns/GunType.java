@@ -85,9 +85,9 @@ public class GunType extends BaseType {
      */
     public int weaponMaxRange = 200;
     /**
-     * Weapon effective max block range
+     * 命中超过这个距离的实体开始产生伤害衰减
      */
-    public int weaponEffectiveRange = 50;
+    public int weaponEffectiveRange = 150;
     /**
      * The number of bullet entities created by each shot
      */

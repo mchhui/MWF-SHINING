@@ -51,6 +51,8 @@ public class PacketExpGunFire extends PacketBase {
     public float remainingPenetrate;
     public float remainingBlockPenetrate;
 
+    public double targetDistance;
+
     private double posX;
     private double posY;
     private double posZ;
@@ -59,11 +61,11 @@ public class PacketExpGunFire extends PacketBase {
     public PacketExpGunFire() {
     } // Don't delete
 
-    public PacketExpGunFire(int entityId, String internalname, String hitboxType, int fireTickDelay, float recoilPitch, float recoilYaw, float recoilAimReducer, float bulletSpread, float remainingPenetrate, float remainingBlockPenetrate, double x, double y, double z) {
-        this(entityId, internalname, hitboxType, fireTickDelay, recoilPitch, recoilYaw, recoilAimReducer, bulletSpread, remainingPenetrate, remainingBlockPenetrate, x, y, z, null);
+    public PacketExpGunFire(int entityId, String internalname, String hitboxType, int fireTickDelay, float recoilPitch, float recoilYaw, float recoilAimReducer, float bulletSpread, float remainingPenetrate, float remainingBlockPenetrate, double targetDistance, double x, double y, double z) {
+        this(entityId, internalname, hitboxType, fireTickDelay, recoilPitch, recoilYaw, recoilAimReducer, bulletSpread, remainingPenetrate, remainingBlockPenetrate, targetDistance, x, y, z, null);
     }
 
-    public PacketExpGunFire(int entityId, String internalname, String hitboxType, int fireTickDelay, float recoilPitch, float recoilYaw, float recoilAimReducer, float bulletSpread, float remainingPenetrate, float remainingBlockPenetrate, double x, double y, double z, EnumFacing facing) {
+    public PacketExpGunFire(int entityId, String internalname, String hitboxType, int fireTickDelay, float recoilPitch, float recoilYaw, float recoilAimReducer, float bulletSpread, float remainingPenetrate, float remainingBlockPenetrate,double targetDistance, double x, double y, double z, EnumFacing facing) {
         this.entityId = entityId;
         this.internalname = internalname;
         this.hitboxType = hitboxType;
@@ -75,6 +77,8 @@ public class PacketExpGunFire extends PacketBase {
         this.bulletSpread = bulletSpread;
         this.remainingPenetrate = remainingPenetrate;
         this.remainingBlockPenetrate = remainingBlockPenetrate;
+
+        this.targetDistance = targetDistance;
 
         this.posX = x;
         this.posY = y;
@@ -95,6 +99,8 @@ public class PacketExpGunFire extends PacketBase {
         data.writeFloat(this.bulletSpread);
         data.writeFloat(this.remainingPenetrate);
         data.writeFloat(this.remainingBlockPenetrate);
+
+        data.writeFloat((float) this.targetDistance);
 
         data.writeDouble(this.posX);
         data.writeDouble(this.posY);
@@ -119,6 +125,8 @@ public class PacketExpGunFire extends PacketBase {
         this.bulletSpread = data.readFloat();
         this.remainingPenetrate = data.readFloat();
         this.remainingBlockPenetrate = data.readFloat();
+
+        this.targetDistance = data.readFloat();
 
         this.posX = data.readDouble();
         this.posY = data.readDouble();
@@ -247,6 +255,13 @@ public class PacketExpGunFire extends PacketBase {
                     if (itemGun.type.gunPenetrateBlocksDamageFalloffFactor > 0 && remainingBlockPenetrate > 0 && remainingBlockPenetrate < 1) {
                         damage *= (remainingBlockPenetrate * itemGun.type.gunPenetrateBlocksDamageFalloffFactor);
                     }
+                    if (targetDistance > itemGun.type.weaponEffectiveRange) {
+                        damage *= (1 - (targetDistance - itemGun.type.weaponEffectiveRange) / (itemGun.type.weaponMaxRange - itemGun.type.weaponEffectiveRange));
+                    } else if (targetDistance >= itemGun.type.weaponMaxRange) {
+                        damage = 0;
+                    }
+
+                    System.out.println("实体距离_发包: "+ targetDistance);
                     
                     //BULLET END
                     boolean flag = false;

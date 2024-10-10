@@ -174,7 +174,7 @@ public class ShotManager {
          * recoil
          * */
 
-        RenderParameters.rate = Math.min(RenderParameters.rate + 0.07f, 1f);
+        RenderParameters.rate = Math.min(RenderParameters.rate + 0.03f, 1f);
 
         float recoilPitchGripFactor = 1.0f;
         float recoilYawGripFactor = 1.0f;
@@ -400,8 +400,10 @@ public class ShotManager {
                         }
 
                         // Weapon pre hit event
-                        WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre(entityPlayer, gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity);
+                        WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre(entityPlayer, gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
+                        System.out.println("实体距离S1: "+ bulletHit.distance);
                         MinecraftForge.EVENT_BUS.post(preHitEvent);
+                        System.out.println("实体距离S2: "+ preHitEvent.getDistance());
                         if (preHitEvent.isCanceled())
                             return;
 
@@ -413,6 +415,11 @@ public class ShotManager {
                         }
                         if (gunType.gunPenetrateBlocksDamageFalloffFactor > 0 && preHitEvent.getPenetrateBlockDamageFactor() > 0 && preHitEvent.getPenetrateBlockDamageFactor() < 1) {
                             preHitEvent.setDamage(preHitEvent.getDamage() * preHitEvent.getPenetrateBlockDamageFactor() * gunType.gunPenetrateBlocksDamageFalloffFactor);
+                        }
+                        if (preHitEvent.getDistance() > gunType.weaponEffectiveRange) {
+                            preHitEvent.setDamage((float) (preHitEvent.getDamage() * (1 - (preHitEvent.getDistance() - gunType.weaponEffectiveRange) / (gunType.weaponMaxRange - gunType.weaponEffectiveRange))));
+                        }  else if (preHitEvent.getDistance() >= gunType.weaponMaxRange) {
+                            preHitEvent.setDamage((float) (preHitEvent.getDamage() * 0));
                         }
 
                         if (targetEntity instanceof EntityLivingBase) {
@@ -509,11 +516,11 @@ public class ShotManager {
                     double posX=eye.x;
                     double posY=eye.y;
                     double posZ=eye.z;
-//                    if(ModularWarfare.isLoadedModularMovements) {
-//                        if (entity instanceof EntityPlayer) {
-//                            eye= ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, ClientProxy.renderHooks.partialTicks);
-//                        }
-//                    }
+                    // if(ModularWarfare.isLoadedModularMovements) {
+                    //     if (entity instanceof EntityPlayer) {
+                    //         eye= ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, ClientProxy.renderHooks.partialTicks);
+                    //     }
+                    // }
                     RayTraceResult r=getMouseOver(ClientProxy.renderHooks.partialTicks);
                     posX=r.hitVec.x-posX;
                     posY=r.hitVec.y-posY;
@@ -530,6 +537,7 @@ public class ShotManager {
                 List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, entityPlayer.world, pitch, yaw, entityPlayer, itemGun.type.weaponMaxRange, itemGun, false);
                 rayTraceList.addAll(rayTrace);
             }
+            
 
             ModularWarfare.NETWORK.sendToServer(new PacketExpShot(entityPlayer.getEntityId(), itemGun.type.internalName));
 
@@ -539,9 +547,10 @@ public class ShotManager {
                     final EntityLivingBase victim = ((OBBHit) rayTrace).entity;
                     if (victim != null) {
                         if (!victim.isDead && victim.getHealth() > 0.0f) {
+                            System.out.println("实体距离C1: "+ rayTrace.distance);
                             //Send server player hit + hitbox
                             //entityPlayer.sendMessage(new TextComponentString(((OBBHit) rayTrace).box.name));
-                            ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(victim.getEntityId(), itemGun.type.internalName, ((OBBHit) rayTrace).box.name, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
+                            ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(victim.getEntityId(), itemGun.type.internalName, ((OBBHit) rayTrace).box.name, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
                         }
                     }
                 } else {
@@ -550,10 +559,10 @@ public class ShotManager {
                             if(rayTrace.rayTraceResult.entityHit != null){
                                 //Normal entity hit
                                 headshot = ItemGun.canEntityGetHeadshot(rayTrace.rayTraceResult.entityHit) && rayTrace.rayTraceResult.hitVec.y >= rayTrace.rayTraceResult.entityHit.getPosition().getY() + rayTrace.rayTraceResult.entityHit.getEyeHeight() - 0.15f;
-                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, (headshot? "head":""), itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
+                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, (headshot? "head":""), itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
                             } else {
                                 //Crack hit block packet
-                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(-1, itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z,rayTrace.rayTraceResult.sideHit));                            }
+                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(-1, itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z,rayTrace.rayTraceResult.sideHit));                            }
                         }
                     }
                 }
