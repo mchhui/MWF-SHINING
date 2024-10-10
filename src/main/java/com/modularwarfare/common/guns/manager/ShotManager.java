@@ -401,9 +401,7 @@ public class ShotManager {
 
                         // Weapon pre hit event
                         WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre(entityPlayer, gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
-                        System.out.println("实体距离S1: "+ bulletHit.distance);
                         MinecraftForge.EVENT_BUS.post(preHitEvent);
-                        System.out.println("实体距离S2: "+ preHitEvent.getDistance());
                         if (preHitEvent.isCanceled())
                             return;
 
@@ -547,7 +545,6 @@ public class ShotManager {
                     final EntityLivingBase victim = ((OBBHit) rayTrace).entity;
                     if (victim != null) {
                         if (!victim.isDead && victim.getHealth() > 0.0f) {
-                            System.out.println("实体距离C1: "+ rayTrace.distance);
                             //Send server player hit + hitbox
                             //entityPlayer.sendMessage(new TextComponentString(((OBBHit) rayTrace).box.name));
                             ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(victim.getEntityId(), itemGun.type.internalName, ((OBBHit) rayTrace).box.name, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));

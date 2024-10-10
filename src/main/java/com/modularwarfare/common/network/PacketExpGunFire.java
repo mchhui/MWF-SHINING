@@ -260,8 +260,6 @@ public class PacketExpGunFire extends PacketBase {
                     } else if (targetDistance >= itemGun.type.weaponMaxRange) {
                         damage = 0;
                     }
-
-                    System.out.println("实体距离_发包: "+ targetDistance);
                     
                     //BULLET END
                     boolean flag = false;
