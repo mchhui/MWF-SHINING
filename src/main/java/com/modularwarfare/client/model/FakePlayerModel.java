@@ -4,8 +4,10 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.common.backpacks.ItemBackpack;
+import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAttachment;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 
@@ -47,12 +49,14 @@ public class FakePlayerModel extends ModelPlayer {
                 if (itemstack.getItem() instanceof ItemGun) {
                     BaseType type = ((BaseItem) itemstack.getItem()).baseType;
                     if (type.hasModel()) {
-                        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)type.enhancedModel.config;
-                        if(config.renderOffhandPart) {
-                            this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
-                            this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                            this.bipedLeftArmwear.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
-                            this.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                        if (((GunType)type).animationType.equals(WeaponAnimationType.ENHANCED)) {
+                            GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)type.enhancedModel.config;
+                            if(config.renderOffhandPart) {
+                                this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
+                                this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                                this.bipedLeftArmwear.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
+                                this.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                            }
                         }
                     }
                 }
