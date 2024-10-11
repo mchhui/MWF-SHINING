@@ -123,7 +123,6 @@ public class EnhancedStateMachine {
         if(!isFailed) {
             devotionSpeed+=gunType.devotionSpeed;
         }
-//        System.out.println(devotionSpeed);
         if(!isFailed&&this.controller.EJECTION_SMOKE==0) {
             this.controller.EJECTION_SMOKE=1;
         }
