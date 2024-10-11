@@ -170,30 +170,24 @@ public class KeyInputHandler extends ForgeEvent {
                 case AddAttachment:
                     if(!entityPlayer.isSpectator() && ClientEventHandler.serverAllowGunModifyGui) {
                         if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
-                            if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun
-                                    && ClientRenderHooks.currentGun != -1
-                                    && ClientRenderHooks.wannaSlot == -1
-                                    && (ClientProxy.gunEnhancedRenderer.getClientController() != null
-                                        && (ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT || ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT_EMPTY))) {
-                                /*if(((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.BASIC) {
+                            if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
+                                if (((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.BASIC) {
                                     AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
-                                    stateMachine.attachmentMode = !stateMachine.attachmentMode;
-                                    ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
-                                }*/
-                                
-                                
-                                
-                                if(false) {
-                                    AnimStateMachine stateMachine = ClientRenderHooks.getAnimMachine(entityPlayer);
-                                    stateMachine.attachmentMode = !stateMachine.attachmentMode;
-                                    ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
-                                }else {
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                                     Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
+                                } else if (((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.ENHANCED) {
+                                    if ((ClientRenderHooks.currentGun != -1 
+                                    && ClientRenderHooks.wannaSlot == -1 
+                                    && ClientProxy.gunEnhancedRenderer.getClientController() != null 
+                                    && (ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT 
+                                    || ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT_EMPTY))) {
+                                        ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
+                                        Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
+                                        }
+                                    }
                                 }
                             }
                         }  
-                    }
                     break;
                 case Flashlight:
                     if(!entityPlayer.isSpectator()) {
