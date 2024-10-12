@@ -254,16 +254,20 @@ public class EnhancedStateMachine {
 
     public AnimationType getShootingAnimationType() {
         AnimationType aniType = AnimationType.PRE_FIRE;
-    
+
+        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) currentModel.config;
+
         boolean isAiming = ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope;
+
+        boolean isLastShot = !ItemGun.hasNextShot(heldItemstStack);
     
         switch (shootingPhase) {
             case FIRST:
-                aniType = getFirstPhaseAnimation(isAiming);
+                aniType = getFirstPhaseAnimation(config, isAiming, isLastShot);
                 break;
     
             case POST:
-                aniType = getPostPhaseAnimation(isAiming);
+                aniType = getPostPhaseAnimation(config, isAiming, isLastShot);
                 break;
             
             case PRE:
@@ -281,37 +285,37 @@ public class EnhancedStateMachine {
         return aniType;
     }
     
-    private AnimationType getFirstPhaseAnimation(boolean isAiming) {
+    private AnimationType getFirstPhaseAnimation(GunEnhancedRenderConfig config, boolean isAiming, boolean isLastShot) {
         if (isAiming) {
-            return !ItemGun.hasNextShot(heldItemstStack) && 
-                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST_ADS)
-                   ? AnimationType.FIRE_LAST_ADS
-                   : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST)
-                   ? AnimationType.FIRE_LAST
-                   : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_ADS)
-                   ? AnimationType.FIRE_ADS
-                   : AnimationType.FIRE;
+            if (isLastShot && config.animations.containsKey(AnimationType.FIRE_LAST_ADS)) {
+                return AnimationType.FIRE_LAST_ADS;
+            } else if (isLastShot && config.animations.containsKey(AnimationType.FIRE_LAST)) {
+                return AnimationType.FIRE_LAST;
+            } else if (config.animations.containsKey(AnimationType.FIRE_ADS)) {
+                return AnimationType.FIRE_ADS;
+            } else {
+                return AnimationType.FIRE;
+            }
         } else {
-            return !ItemGun.hasNextShot(heldItemstStack) && 
-                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST)
+            return isLastShot && config.animations.containsKey(AnimationType.FIRE_LAST)
                    ? AnimationType.FIRE_LAST
                    : AnimationType.FIRE;
         }
     }
     
-    private AnimationType getPostPhaseAnimation(boolean isAiming) {
+    private AnimationType getPostPhaseAnimation(GunEnhancedRenderConfig config, boolean isAiming, boolean isLastShot) {
         if (isAiming) {
-            return !ItemGun.hasNextShot(heldItemstStack) && 
-                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_ADS_EMPTY)
-                   ? AnimationType.POST_FIRE_ADS_EMPTY
-                   : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_EMPTY)
-                   ? AnimationType.POST_FIRE_EMPTY
-                   : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_ADS)
-                   ? AnimationType.POST_FIRE_ADS
-                   : AnimationType.POST_FIRE;
+            if (isLastShot && config.animations.containsKey(AnimationType.POST_FIRE_ADS_EMPTY)) {
+                return AnimationType.POST_FIRE_ADS_EMPTY;
+            } else if (isLastShot && config.animations.containsKey(AnimationType.POST_FIRE_EMPTY)) {
+                return AnimationType.POST_FIRE_EMPTY;
+            } else if (config.animations.containsKey(AnimationType.POST_FIRE_ADS)) {
+                return AnimationType.POST_FIRE_ADS;
+            } else {
+                return AnimationType.POST_FIRE;
+            }
         } else {
-            return !ItemGun.hasNextShot(heldItemstStack) && 
-                   ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_EMPTY)
+            return isLastShot && config.animations.containsKey(AnimationType.POST_FIRE_EMPTY)
                    ? AnimationType.POST_FIRE_EMPTY
                    : AnimationType.POST_FIRE;
         }
