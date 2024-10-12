@@ -286,6 +286,8 @@ public class EnhancedStateMachine {
             return !ItemGun.hasNextShot(heldItemstStack) && 
                    ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST_ADS)
                    ? AnimationType.FIRE_LAST_ADS
+                   : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_LAST)
+                   ? AnimationType.FIRE_LAST
                    : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.FIRE_ADS)
                    ? AnimationType.FIRE_ADS
                    : AnimationType.FIRE;
@@ -302,6 +304,8 @@ public class EnhancedStateMachine {
             return !ItemGun.hasNextShot(heldItemstStack) && 
                    ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_ADS_EMPTY)
                    ? AnimationType.POST_FIRE_ADS_EMPTY
+                   : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_EMPTY)
+                   ? AnimationType.POST_FIRE_EMPTY
                    : ((GunEnhancedRenderConfig)currentModel.config).animations.containsKey(AnimationType.POST_FIRE_ADS)
                    ? AnimationType.POST_FIRE_ADS
                    : AnimationType.POST_FIRE;
