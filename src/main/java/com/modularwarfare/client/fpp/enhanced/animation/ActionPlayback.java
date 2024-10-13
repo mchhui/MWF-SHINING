@@ -8,6 +8,8 @@ import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.utility.maths.Interpolation;
 
+import net.minecraft.client.Minecraft;
+
 public class ActionPlayback {
 
     public AnimationType action;
@@ -54,29 +56,31 @@ public class ActionPlayback {
             this.time = Interpolation.LINEAR.interpolate(startTime, endTime, alpha);
             checkPlayed();
         }
-        /**
-         * 特殊帧触发器 BEGIN
-         * */
-        if(config.animations.get(this.action)!=null) {
-            if(this.lastTime!=this.time) {
-                if(this.lastAction!=this.action) {
-                    this.lastTime=config.animations.get(this.action).getStartTime(config.FPS);
-                }
-                if(config.specialEffect.ejectionGroups!=null) {
-                    config.specialEffect.ejectionGroups.forEach((group)->{
-                        double testTime=group.throwShellFrame/config.FPS;
-                        if(this.lastTime<=testTime&&this.time>testTime) {
-                            RenderGunEnhanced.addEjectShell(group,0.15f);
-                        }
-                    });
-                }
-            }  
+        if(animationController.player==Minecraft.getMinecraft().player) {
+            /**
+             * 特殊帧触发器 BEGIN
+             * */
+            if(config.animations.get(this.action)!=null) {
+                if(this.lastTime!=this.time) {
+                    if(this.lastAction!=this.action) {
+                        this.lastTime=config.animations.get(this.action).getStartTime(config.FPS);
+                    }
+                    if(config.specialEffect.ejectionGroups!=null) {
+                        config.specialEffect.ejectionGroups.forEach((group)->{
+                            double testTime=group.throwShellFrame/config.FPS;
+                            if(this.lastTime<=testTime&&this.time>testTime) {
+                                RenderGunEnhanced.addEjectShell(group,0.15f);
+                            }
+                        });
+                    }
+                }  
+            }
+            this.lastTime=time;
+            this.lastAction=action;
+            /**
+             * 特殊帧触发器 END
+             * */  
         }
-        this.lastTime=time;
-        this.lastAction=action;
-        /**
-         * 特殊帧触发器 END
-         * */
     }
     
     public boolean checkPlayed() {

@@ -219,7 +219,7 @@ public class OBBPlayerManager {
                     new ResourceLocation("modularwarfare:obb/player.obb.json"));
             playerOBBObjectMap.put(event.player.getName(), playerOBBObject);
         }
-        computePose(event,playerOBBObject, 1);
+        computePose(event,playerOBBObject, 1,false);
     }
     
     @SubscribeEvent
@@ -232,7 +232,7 @@ public class OBBPlayerManager {
                     new ResourceLocation("modularwarfare:obb/player.obb.json"));
             playerOBBObjectMap.put(event.getEntityPlayer().getName(), playerOBBObject);
         }
-        computePose(event,playerOBBObject, partialTick);
+        computePose(event,playerOBBObject, partialTick,false);
         if (Minecraft.getMinecraft().getRenderManager().isDebugBoundingBox()&&ModConfig.INSTANCE.dev_mode) {
             GlStateManager.pushMatrix();
             Entity entity = Minecraft.getMinecraft().getRenderViewEntity();
@@ -246,7 +246,7 @@ public class OBBPlayerManager {
         }
     }
     
-    public void computePose(Event event,PlayerOBBModelObject playerOBBObject,float partialTick) {
+    public static void computePose(Event event,PlayerOBBModelObject playerOBBObject,float partialTick,boolean forceServer) {
         if (!playerOBBObject.isSyncing && System.currentTimeMillis() >= playerOBBObject.nextSyncTime) {
             playerOBBObject.isSyncing = true;
             //playerOBBObject.nextSyncTime = System.currentTimeMillis() + 1000 / 60;
@@ -291,7 +291,7 @@ public class OBBPlayerManager {
                 modelPlayer.rightArmPose = offPose;
                 modelPlayer.leftArmPose = mainPose;
             }
-            if(FMLCommonHandler.instance().getEffectiveSide()==Side.CLIENT) {
+            if(FMLCommonHandler.instance().getEffectiveSide()==Side.CLIENT&&!forceServer) {
                 if(event instanceof RenderPlayerEvent) {
                     modelPlayer.copyFrom(((RenderPlayerEvent)event).getRenderer().getMainModel());
                 }

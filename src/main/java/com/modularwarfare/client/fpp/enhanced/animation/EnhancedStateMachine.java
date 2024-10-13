@@ -58,6 +58,7 @@ public class EnhancedStateMachine {
      * Shoot State Machine
      */
     public boolean shooting = false;
+    public boolean aimState=false;
     private float shootTime;
     public int flashCount = 0;
     public boolean isFailedShoot = false;
@@ -88,6 +89,7 @@ public class EnhancedStateMachine {
         gunSlide = 0;
         lastGunSlide = 0;
         shooting = false;
+        aimState=false;
         shootTime = 0;
         flashCount = 0;
         isFailedShoot = false;
@@ -108,6 +110,7 @@ public class EnhancedStateMachine {
 
         shooting = true;
         shootTime = fireTickDelay;
+        aimState=ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope;
         recoilSide = (float) (-1F + Math.random() * (1F - (-1F)));
         if (isFailed) {
             recoilSide = 0;
@@ -257,7 +260,7 @@ public class EnhancedStateMachine {
 
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) currentModel.config;
 
-        boolean isAiming = ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope;
+        boolean isAiming = aimState;
 
         boolean isLastShot = !ItemGun.hasNextShot(heldItemstStack);
     

@@ -199,7 +199,7 @@ public class GltfDataModel {
                     node.childlist.add(child.getName());
                 });
 
-                gltfDataModel.lastPos = "nodes(meshes)";
+                gltfDataModel.lastPos = "nodes(meshes) - "+node.name;
                 nodeModel.getMeshModels().forEach((meshGModel) -> {
                     meshGModel.getMeshPrimitiveModels().forEach((meshModel) -> {
                         DataMesh dataMesh = new DataMesh();
@@ -305,7 +305,7 @@ public class GltfDataModel {
             });
             gltfDataModel.loaded = true;
         } catch (Throwable e) {
-            ModularWarfare.LOGGER.warn("Something is wrong when loading:" + loc);
+            ModularWarfare.LOGGER.warn("Something is wrong when loading:" + loc +" "+gltfDataModel.lastPos);
             e.printStackTrace();
         }
 
