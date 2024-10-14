@@ -1,39 +1,28 @@
 package com.modularwarfare.common;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.SkinType;
 import com.modularwarfare.common.network.PacketParticle;
-import com.modularwarfare.common.network.PacketPlayerHit;
-import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.network.PacketParticle.ParticleType;
+import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.event.ForgeEvent;
-
-import mchhui.hebridge.HEBridge;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
-
-import com.modularwarfare.ModConfig;
 import net.minecraftforge.fml.relauncher.FMLInjectionData;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 import java.util.regex.Pattern;
-
-import static com.modularwarfare.ModularWarfare.MOD_VERSION;
 
 
 public class CommonProxy extends ForgeEvent {
@@ -111,7 +100,16 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public void load() {
-        HEBridge.init();
+        try {
+            final Class<?> bridge = Class.forName("mchhui.hebridge.HEBridge");
+            bridge.getDeclaredMethod("init").invoke(null);
+        }
+        catch (ClassNotFoundException e) {
+            ModularWarfare.LOGGER.info("HEBridge not found, skipping initialization");
+        }
+        catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            ModularWarfare.LOGGER.error("Failed to initialize HEBridge", e);
+        }
     }
 
     public void init() {
