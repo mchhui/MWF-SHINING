@@ -314,7 +314,7 @@ public class EntityItemNew extends Entity {
     }
 
     public String getName() {
-        return this.hasCustomName() ? this.getCustomNameTag() : I18n.translateToLocal("item." + this.getItem().getUnlocalizedName());
+        return this.hasCustomName() ? this.getCustomNameTag() : I18n.translateToLocal("item." + this.getItem().getTranslationKey());
     }
 
     public boolean canBeAttackedWithItem() {

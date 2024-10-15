@@ -29,7 +29,6 @@ import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
 import com.teamderpy.shouldersurfing.client.ShoulderHelper;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
-
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -51,12 +50,11 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.relauncher.Side;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-
-import javax.annotation.Nullable;
 
 public class ShotManager {
     public static boolean defemptyclickLock=true;
@@ -579,7 +577,7 @@ public class ShotManager {
             if (objectMouseOver != null)
               d1 = objectMouseOver.hitVec.distanceTo(vec3d);
             Vec3d vec3d1 = entity.getLook(1.0F);
-            Vec3d vec3d2 = vec3d.addVector(vec3d1.x * d1, vec3d1.y * d1, vec3d1.z * d1);
+            Vec3d vec3d2 = vec3d.add(vec3d1.x * d1, vec3d1.y * d1, vec3d1.z * d1);
             Entity pointedEntity = null;
             Vec3d vec3d3 = null;
             float f = 1.0F;

@@ -4,6 +4,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
@@ -14,19 +15,10 @@ import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.view.AutoSwitchToFirstView;
-import com.modularwarfare.common.guns.AttachmentPresetEnum;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemAttachment;
-import com.modularwarfare.common.guns.ItemGun;
-import com.modularwarfare.common.guns.WeaponAnimationType;
-import com.modularwarfare.common.guns.WeaponSoundType;
-import com.modularwarfare.utility.RayUtil;
+import com.modularwarfare.common.guns.*;
 import com.modularwarfare.utility.maths.Interpolation;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
-import net.minecraft.client.audio.MovingSound;
-import net.minecraft.client.audio.PositionedSound;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLivingBase;
@@ -36,12 +28,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
-
 import org.lwjgl.input.Mouse;
-
-import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.GUN_CHANGE_Y;
 
 public class AnimationController {
 
@@ -537,6 +524,7 @@ public class AnimationController {
             GunType type = ((ItemGun) item).type;
             if (!type.allowAimingSprint && ADS > 0.2f) {
                 player.setSprinting(false);
+                AnimStateMachine.disableSprinting(true);
             }
             if (!type.allowReloadingSprint && RELOAD > 0f) {
                 player.setSprinting(false);

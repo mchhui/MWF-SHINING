@@ -1,6 +1,5 @@
 package com.modularwarfare;
 
-import com.google.common.hash.Hashing;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -8,10 +7,7 @@ import com.google.gson.stream.JsonReader;
 import com.modularwarfare.addon.AddonLoaderManager;
 import com.modularwarfare.addon.LibClassLoader;
 import com.modularwarfare.api.ItemRegisterEvent;
-import com.modularwarfare.api.TypeRegisterEvent;
-import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.customplayer.CPEventHandler;
-import com.modularwarfare.client.customplayer.CustomPlayer;
 import com.modularwarfare.client.customplayer.CustomPlayerConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
 import com.modularwarfare.common.CommonProxy;
@@ -21,9 +17,9 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.commands.CommandClear;
 import com.modularwarfare.common.commands.CommandDebug;
-import com.modularwarfare.common.commands.kits.CommandKit;
 import com.modularwarfare.common.commands.CommandNBT;
 import com.modularwarfare.common.commands.CommandPlay;
+import com.modularwarfare.common.commands.kits.CommandKit;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
 import com.modularwarfare.common.entity.decals.EntityBulletHole;
 import com.modularwarfare.common.entity.decals.EntityShell;
@@ -50,29 +46,28 @@ import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.ZipContentPack;
-
 import mchhui.modularmovements.ModularMovements;
-import mchhui.modularmovements.ModularMovementsConfig;
-import moe.komi.mwprotect.*;
-import net.lingala.zip4j.core.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.io.ZipInputStream;
-import net.lingala.zip4j.model.FileHeader;
+import moe.komi.mwprotect.IZip;
+import moe.komi.mwprotect.IZipEntry;
+import moe.komi.mwprotect.LegacyZip;
 import net.minecraft.item.Item;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.*;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
+import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.*;
-import net.minecraftforge.fml.common.eventhandler.EventBus;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.common.registry.EntityRegistry;
+import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,15 +76,10 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.modularwarfare.common.CommonProxy.zipJar;
 
@@ -125,28 +115,28 @@ public class ModularWarfare {
 
     // The ModularWarfare directory
     public static File MOD_DIR;
-    public static List<File> contentPacks = new ArrayList<File>();
+    public static List<File> contentPacks = new ArrayList<>();
 
     // Arrays for the varied types
-    public static HashMap<String, ItemGun> gunTypes = new HashMap<String, ItemGun>();
-    public static HashMap<String, ItemAmmo> ammoTypes = new HashMap<String, ItemAmmo>();
-    public static HashMap<String, ItemAttachment> attachmentTypes = new HashMap<String, ItemAttachment>();
-    public static LinkedHashMap<String, ItemMWArmor> armorTypes = new LinkedHashMap<String, ItemMWArmor>();
-    public static LinkedHashMap<String, ItemSpecialArmor> specialArmorTypes = new LinkedHashMap<String, ItemSpecialArmor>();
-    public static HashMap<String, ItemBullet> bulletTypes = new HashMap<String, ItemBullet>();
-    public static HashMap<String, ItemSpray> sprayTypes = new HashMap<String, ItemSpray>();
-    public static HashMap<String, ItemBackpack> backpackTypes = new HashMap<String, ItemBackpack>();
-    public static HashMap<String, ItemGrenade> grenadeTypes = new HashMap<String, ItemGrenade>();
-    public static HashMap<String, TextureType> textureTypes = new HashMap<String, TextureType>();
+    public static HashMap<String, ItemGun> gunTypes = new HashMap<>();
+    public static HashMap<String, ItemAmmo> ammoTypes = new HashMap<>();
+    public static HashMap<String, ItemAttachment> attachmentTypes = new HashMap<>();
+    public static LinkedHashMap<String, ItemMWArmor> armorTypes = new LinkedHashMap<>();
+    public static LinkedHashMap<String, ItemSpecialArmor> specialArmorTypes = new LinkedHashMap<>();
+    public static HashMap<String, ItemBullet> bulletTypes = new HashMap<>();
+    public static HashMap<String, ItemSpray> sprayTypes = new HashMap<>();
+    public static HashMap<String, ItemBackpack> backpackTypes = new HashMap<>();
+    public static HashMap<String, ItemGrenade> grenadeTypes = new HashMap<>();
+    public static HashMap<String, TextureType> textureTypes = new HashMap<>();
 
-    public static ArrayList<BaseType> baseTypes = new ArrayList<BaseType>();
+    public static ArrayList<BaseType> baseTypes = new ArrayList<>();
     
-    public static ArrayList<String> contentPackHashList=new ArrayList<String>();
+    public static ArrayList<String> contentPackHashList= new ArrayList<>();
     public static boolean usingDirectoryContentPack=false;
 
-    public static HashMap<String, MWTab> MODS_TABS = new HashMap<String, MWTab>();
+    public static HashMap<String, MWTab> MODS_TABS = new HashMap<>();
     
-    public static ArrayList<Runnable> preloadTasklist=new ArrayList<Runnable>();
+    public static ArrayList<Runnable> preloadTasklist= new ArrayList<>();
 
     /**
      * Custom RayCasting
@@ -163,19 +153,18 @@ public class ModularWarfare {
     public static boolean isLoadedModularMovements=false;
 
     public static IZip getiZip(File file) throws IOException {
-        IZip izip;
         try {
             Class<?> protectorClass = Class.forName("moe.komi.mwprotect.cipher.ProtectZip");
             Constructor<?> constructor = protectorClass.getConstructor(File.class);
-            izip = (IZip) constructor.newInstance(file);
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException |
-                 IllegalAccessException | InvocationTargetException e) {
-            if (e instanceof InvocationTargetException) {
-                ((InvocationTargetException) e).getTargetException().printStackTrace();
-            }
-            izip = new LegacyZip(file);
+            return (IZip) constructor.newInstance(file);
         }
-        return izip;
+        catch (InvocationTargetException e) {
+            LOGGER.error("Failed to construct ProtectZip", e);
+        }
+        catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException ignored) {
+            // Pass
+        }
+        return new LegacyZip(file);
     }
 
 
@@ -307,8 +296,6 @@ public class ModularWarfare {
 
     /**
      * Gets all type files from the content packs
-     *
-     * @param contentPacks
      */
     private static void getTypeFiles(List<File> contentPacks) {
         ScriptHost.INSTANCE.reset();
@@ -343,9 +330,9 @@ public class ModularWarfare {
                             }
                         }
                     }
-                    /**
+                    /*
                      * LOAD SCRIPT START
-                     * */
+                     */
                     File scriptFolder = new File(file, "/sciprt/");
                     if (scriptFolder.exists()) {
                         for (File typeFile : scriptFolder.listFiles()) {
@@ -366,12 +353,12 @@ public class ModularWarfare {
                             }
                         }
                     }
-                    /**
+                    /*
                      * LOAD SCRIPT END
-                     * */
-                    /**
+                     */
+                    /*
                      * LOAD CUSTOM PLAYER START
-                     * */
+                     */
                     CPEventHandler.cpConfig.clear();
                     File cpFolder = new File(file, "/customplayer/");
                     if (cpFolder.exists()) {
@@ -395,9 +382,9 @@ public class ModularWarfare {
                             }
                         }
                     }
-                    /**
+                    /*
                      * LOAD CUSTOM PLAYER END
-                     * */
+                     */
                 } else {
                     if (zipContentsPack.containsKey(file.getName())) {
                         for (IZipEntry fileHeader : zipContentsPack.get(file.getName()).fileHeaders) {
@@ -431,9 +418,9 @@ public class ModularWarfare {
                                     }
                                 }
                             }
-                            /**
+                            /*
                              * LOAD SCRIPT START
-                             * */
+                             */
                             String zipName = fileHeader.getFileName();
                             if(zipName.startsWith("script/")&&zipName.endsWith(".js")) {
                                 String typeFile=zipName.replaceFirst("script/", "").replace(".js", "");
@@ -452,12 +439,12 @@ public class ModularWarfare {
                                     e.printStackTrace();
                                 }
                             }
-                            /**
+                            /*
                              * LOAD SCRIPT END
-                             * */
-                            /**
+                             */
+                            /*
                              * LOAD CUSTOM PLAYER START
-                             * */
+                             */
                             zipName = fileHeader.getFileName();
                             if(zipName.startsWith("customplayer/")&&zipName.endsWith(".json")) {
                                 String typeFile=zipName.replaceFirst("customplayer/", "").replace(".json", "");
@@ -477,9 +464,9 @@ public class ModularWarfare {
                                     e.printStackTrace();
                                 }
                             }
-                            /**
+                            /*
                              * LOAD CUSTOM PLAYER END
-                             * */
+                             */
                         }
                     }
                 }
@@ -489,8 +476,6 @@ public class ModularWarfare {
 
     /**
      * Registers items, blocks, renders, etc
-     *
-     * @param event
      */
     @EventHandler
     public void onPreInitialization(FMLPreInitializationEvent event) {
@@ -501,7 +486,6 @@ public class ModularWarfare {
         if (getClass().getClassLoader() instanceof LaunchClassLoader) {
             LaunchClassLoader loader = (LaunchClassLoader) getClass().getClassLoader();
             loader.addTransformerExclusion("com.fasterxml.jackson.");
-            Method add;
             try {
                 Field f = LaunchClassLoader.class.getDeclaredField("invalidClasses");
                 f.setAccessible(true);
@@ -533,7 +517,7 @@ public class ModularWarfare {
         NetworkRegistry.INSTANCE.newEventDrivenChannel("MWF_sync_allowGunModifyGui_" + (ModConfig.INSTANCE.general.allowGunModifyGui ? "enabled" : "disabled"));
 
         registerRayCasting(new DefaultRayCasting());
-        this.loaderManager.preInitAddons(event);
+        loaderManager.preInitAddons(event);
 
         // Loads Content Packs
         ContentTypes.registerTypes();
@@ -568,42 +552,38 @@ public class ModularWarfare {
         
         PROXY.load();
         
-        boolean bukkitOnline=false;
+        boolean bukkitOnline;
         try {
             Class.forName("org.bukkit.Bukkit");
-            bukkitOnline=true;
+            bukkitOnline = true;
         } catch (ClassNotFoundException e) {
+            bukkitOnline = false;
         }
-        if(Boolean.valueOf(System.getProperty("mwf.banbukkit","false"))) {
-            bukkitOnline=false;
+        if (Boolean.valueOf(System.getProperty("mwf.banbukkit","false"))) {
+            bukkitOnline = false;
         }
-//        bukkitOnline=true;
-        if(bukkitOnline) {
+        if (bukkitOnline) {
             MinecraftForge.EVENT_BUS.register(BukkitHelper.class);
         }
 
         NETWORK = new NetworkHandler();
         NETWORK.initialise();
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularWarfare.INSTANCE, new GuiHandler());
-        this.loaderManager.initAddons(event);
+        loaderManager.initAddons(event);
     }
 
     /**
      * Last loading things
-     *
-     * @param event
      */
     @EventHandler
     public void onPostInitialization(FMLPostInitializationEvent event) {
         NETWORK.postInitialise();
         PROXY.init();
-        this.loaderManager.postInitAddons(event);
+        loaderManager.postInitAddons(event);
     }
 
     /**
      * Registers commands and server sided regions
-     *
-     * @param event
      */
     @EventHandler
     public void onServerStarting(FMLServerStartingEvent event) {
@@ -616,31 +596,30 @@ public class ModularWarfare {
 
     /**
      * Registers protected content-pack before preInit, to allow making a custom ResourcePackLoader allowing protected .zip
-     *
-     * @param event
      */
-    @Mod.EventHandler
+    @EventHandler
     public void constructionEvent(FMLConstructionEvent event) {
         LOGGER = LogManager.getLogger(ModularWarfare.MOD_ID);
-        /**
+        /*
          * Create & Check Addon System
          */
 
-        this.addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
+        addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
 
-        if (!this.addonDir.exists())
-            this.addonDir.mkdirs();
-        this.loaderManager = new AddonLoaderManager();
-        this.loaderManager.constructAddons(this.addonDir, event.getSide());
+        if (!addonDir.exists() && !addonDir.mkdirs()) {
+            LOGGER.error("Failed to create Addon Directory");
+        }
+        loaderManager = new AddonLoaderManager();
+        loaderManager.constructAddons(addonDir, event.getSide());
 
-        /**
+        /*
          * Load the addon from the gradle project compilation (.class folder) instead of final .jar
          * in order to allow HotSwap changes
          */
-        if(ModUtil.isIDE()) {
+        if(FMLLaunchHandler.isDeobfuscatedEnvironment()) {
             File file = new File(ModUtil.getGameFolder()).getParentFile().getParentFile();
             String folder = file.toString().replace("\\", "/");
-            this.loaderManager.constructDevAddons(new File(folder + "/melee-addon/build/classes/java/main"), "com.modularwarfare.melee.ModularWarfareMelee", event.getSide());
+            loaderManager.constructDevAddons(new File(folder + "/melee-addon/build/classes/java/main"), "com.modularwarfare.melee.ModularWarfareMelee", event.getSide());
         }
 
         PROXY.construction(event);
@@ -649,7 +628,7 @@ public class ModularWarfare {
     @SubscribeEvent
     public void registerItems(RegistryEvent.Register<Item> event) {
         for (File file : contentPacks) {
-            List<Item> tabOrder = new ArrayList<Item>();
+            List<Item> tabOrder = new ArrayList<>();
             for (ItemGun itemGun : gunTypes.values()) {
                 if (itemGun.type.contentPack.equals(file.getName())) {
                     event.getRegistry().register(itemGun);
@@ -715,20 +694,20 @@ public class ModularWarfare {
             itemRegisterEvent.tabOrder.forEach((item)->{
                 if(item instanceof ItemGun){
                     for(SkinType skin: ((ItemGun) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemGun) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemGun) item).type);
                     }
-                    PROXY.preloadFlashTex.add(((ItemGun) item).type.flashType);
+                    CommonProxy.preloadFlashTex.add(((ItemGun) item).type.flashType);
                 }
                 
                 if(item instanceof ItemBullet){
                     for(SkinType skin: ((ItemBullet) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
                     }
                 }
                 
                 if(item instanceof ItemMWArmor) {
                     for(SkinType skin: ((ItemMWArmor) item).type.modelSkins) {
-                        PROXY.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
+                        CommonProxy.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
                     }
                 }
 

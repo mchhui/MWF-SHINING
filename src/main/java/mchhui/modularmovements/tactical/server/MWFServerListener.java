@@ -2,7 +2,6 @@ package mchhui.modularmovements.tactical.server;
 
 import com.modularwarfare.api.PlayerSnapshotCreateEvent;
 import com.modularwarfare.api.WeaponFireEvent;
-
 import mchhui.modularmovements.tactical.PlayerState;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.math.Vec3d;
@@ -33,7 +32,7 @@ public class MWFServerListener {
             if (ServerListener.playerStateMap.containsKey(event.player.getEntityId())) {
                 PlayerState state = ServerListener.playerStateMap.get(event.player.getEntityId());
                 if (state.probeOffset != 0) {
-                    Vec3d vec3d = Vec3d.ZERO.addVector(state.probeOffset * -0.5, 0, 0)
+                    Vec3d vec3d = Vec3d.ZERO.add(state.probeOffset * -0.5, 0, 0)
                             .rotateYaw(-(event.player.rotationYaw * 3.14f / 180));
                     event.pos.x+=vec3d.x;
                     event.pos.z+=vec3d.z;

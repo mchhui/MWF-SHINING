@@ -3,7 +3,6 @@ package mchhui.modularmovements.tactical.client;
 import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.api.PlayerSnapshotCreateEvent;
 import com.modularwarfare.api.RenderBonesEvent;
-
 import mchhui.modularmovements.tactical.PlayerState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.Vec3d;
@@ -30,7 +29,7 @@ public class MWFClientListener {
             if (ClientLitener.ohterPlayerStateMap.containsKey(event.player.getEntityId())) {
                 PlayerState state = ClientLitener.ohterPlayerStateMap.get(event.player.getEntityId());
                 if (state.probeOffset != 0) {
-                    Vec3d vec3d = Vec3d.ZERO.addVector(state.probeOffset * -0.5, 0, 0)
+                    Vec3d vec3d = Vec3d.ZERO.add(state.probeOffset * -0.5, 0, 0)
                             .rotateYaw(-(event.player.rotationYaw * 3.14f / 180));
                     event.pos.x+=vec3d.x;
                     event.pos.z+=vec3d.z;

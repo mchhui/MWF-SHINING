@@ -18,6 +18,7 @@ import net.minecraft.world.EnumSkyBlock;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.pipeline.LightUtil;
 import net.minecraftforge.fml.relauncher.FMLInjectionData;
+import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -91,10 +92,6 @@ public class ModUtil {
         for (int j = quads.size(); i < j; ++i) {
             LightUtil.renderQuadColor(renderer, quads.get(i), argb);
         }
-    }
-
-    public static boolean isIDE() {
-        return (Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
     }
 
     @Nonnull

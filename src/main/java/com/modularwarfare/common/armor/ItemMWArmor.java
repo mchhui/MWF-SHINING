@@ -31,7 +31,7 @@ public class ItemMWArmor extends ItemArmor implements ISpecialArmor {
         super(ItemArmor.ArmorMaterial.LEATHER, 0, EntityEquipmentSlot.fromString(armorSlot.name().toLowerCase()));
         type.initializeArmor(armorSlot.name().toLowerCase());
         type.loadExtraValues();
-        this.setUnlocalizedName(this.internalName = type.armorTypes.get(armorSlot).internalName);
+        this.setTranslationKey(this.internalName = type.armorTypes.get(armorSlot).internalName);
         this.setRegistryName(this.internalName);
         setCreativeTab(ModularWarfare.MODS_TABS.get(type.contentPack));
         if (type.durability != null) {

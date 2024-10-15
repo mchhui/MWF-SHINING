@@ -1,34 +1,19 @@
 package mchhui.modularmovements.tactical.client;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.modularwarfare.client.model.FakeRenderPlayer;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.type.BaseItem;
 import mchhui.modularmovements.ModularMovements;
-import mchhui.modularmovements.ModularMovementsConfig;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
 import mchhui.modularmovements.tactical.server.ServerListener;
-import net.minecraftforge.fml.common.Loader;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-
-import com.modularwarfare.common.type.BaseItem;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
-import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.entity.EntityPlayerSPHelper;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.RenderLivingBase;
-import net.minecraft.client.renderer.entity.RenderManager;
-import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -42,12 +27,13 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
-import net.minecraftforge.event.entity.PlaySoundAtEntityEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.PlayerSPPushOutOfBlocksEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
+import net.minecraftforge.event.entity.PlaySoundAtEntityEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -60,6 +46,13 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.RenderTickEvent;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 @SideOnly(Side.CLIENT)
 public class ClientLitener {
@@ -323,7 +316,7 @@ public class ClientLitener {
 
     public static void onMouseMove(MouseHelper mouseHelper) {
         if (clientPlayerState.probe != 0 && ModularMovements.REMOTE_CONFIG.lean.mouseCorrection) {
-            Vec3d vec = Vec3d.ZERO.addVector(mouseHelper.deltaX, 0, mouseHelper.deltaY);
+            Vec3d vec = Vec3d.ZERO.add(mouseHelper.deltaX, 0, mouseHelper.deltaY);
             vec = vec.rotateYaw((float) (cameraProbeOffset * 10 * Math.PI / 180d));
             mouseHelper.deltaX = Math.round((float) vec.x);
             mouseHelper.deltaY = Math.round((float) vec.z);
