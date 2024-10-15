@@ -28,7 +28,7 @@ archivesBaseName = 'modularwarfare-shining'
 sourceCompatibility = targetCompatibility = '1.8'
 compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
-        compileJava.options.encoding = 'UTF-8'
+compileJava.options.encoding = 'UTF-8'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -80,12 +80,12 @@ minecraft {
 repositories {
     mavenCentral()
     maven {
-        name = "Sponge Maven"
+        name "Sponge Maven"
         url "https://repo.spongepowered.org/maven"
     }
     maven {
-        name = "Songoda"
-        url = "https://repo.songoda.com/repository/public/"
+        name "Songoda"
+        url "https://repo.songoda.com/repository/public/"
     }
     maven {
         name 'Curse Maven'
