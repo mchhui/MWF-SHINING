@@ -3,7 +3,6 @@ buildscript {
         maven { url = 'https://files.minecraftforge.net/maven' }
         maven { url = 'https://repo.spongepowered.org/maven' }
 
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -25,9 +24,11 @@ version = mod_version
 group = 'com.modularwarfare' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'modularwarfare-shining'
 
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+// Need this here so eclipse task generates correctly.
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
-compileJava.options.encoding = 'UTF-8'
+        compileJava.options.encoding = 'UTF-8'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -76,12 +77,19 @@ minecraft {
     }
 }
 
-
 repositories {
     mavenCentral()
-    jcenter()
     maven {
+        name = "Sponge Maven"
         url "https://repo.spongepowered.org/maven"
+    }
+    maven {
+        name = "Songoda"
+        url = "https://repo.songoda.com/repository/public/"
+    }
+    maven {
+        name 'Curse Maven'
+        url "https://cursemaven.com"
     }
 }
 
@@ -98,12 +106,15 @@ dependencies {
     }
 
     // https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
-    embed 'net.lingala.zip4j:zip4j:1.2.4'
-
-    compile fileTree(dir: 'libs', include: '*.jar')
-    compileOnly fileTree(dir: 'optifine', include: '*.jar')
+    embed group: 'net.lingala.zip4j', name: 'zip4j', version: '1.2.4'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.0-rc2'
+    compile group: 'org.joml', name: 'joml', version: '1.10.5'
+    compileOnly group: 'org.spigotmc', name: 'spigot', version: '1.12.2'
+    // https://www.curseforge.com/minecraft/mc-mods/shoulder-surfing-reloaded/files/4876004
+    implementation fg.deobf("curse.maven:shoulder-surfing-reloaded-243190:4876004")
+    compileOnly files('libs/OptiFine_1.12.2_HD_U_G5.jar')
+    compile files('libs/Nashorn.jar')
 }
-
 
 idea {
     module {
