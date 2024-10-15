@@ -20,8 +20,6 @@ build
 # other
 eclipse
 run/*
-libs/*
-/optifine/*
 build.bat
 
 # Files from Forge MDK
