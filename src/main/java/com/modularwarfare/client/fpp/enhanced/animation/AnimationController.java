@@ -4,7 +4,6 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
@@ -14,6 +13,7 @@ import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Ex
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.input.KeyBindingUtil;
 import com.modularwarfare.client.view.AutoSwitchToFirstView;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.utility.maths.Interpolation;
@@ -521,15 +521,14 @@ public class AnimationController {
         int currentItem=((EntityPlayer)player).inventory.currentItem;
         Item item = stack.getItem();
         if (item instanceof ItemGun) {
-            GunType type = ((ItemGun) item).type;
-            if (!type.allowAimingSprint && ADS > 0.2f) {
-                player.setSprinting(false);
-                AnimStateMachine.disableSprinting(true);
-            }
-            if (!type.allowReloadingSprint && RELOAD > 0f) {
-                player.setSprinting(false);
-            }
-            if (!type.allowFiringSprint && FIRE > 0f) {
+            final GunType type = ((ItemGun) item).type;
+            final boolean shouldDisableSprint = (
+                !type.allowAimingSprint && ADS > 0.2F
+                || !type.allowReloadingSprint && RELOAD > 0.0F
+                || !type.allowFiringSprint && FIRE > 0.0F
+            );
+            KeyBindingUtil.disableSprinting(shouldDisableSprint);
+            if (shouldDisableSprint) {
                 player.setSprinting(false);
             }
             if (ADS == 1) {
