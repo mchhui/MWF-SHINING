@@ -9,44 +9,42 @@ import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 
+import javax.annotation.Nonnull;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public class CommandKit extends CommandBase {
 
     public Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    public File KIT_FILE = new File(ModularWarfare.MOD_DIR, "kits.json");
+    public File KIT_FILE = new File(ModularWarfare.CONTENT_DIR, "kits.json");
 
     public int getRequiredPermissionLevel() {
         return 2;
     }
 
+    @Nonnull
     public String getName() {
         return "mw-kit";
     }
 
-    public String getUsage(ICommandSender sender) {
+    @Nonnull
+    public String getUsage(@Nonnull ICommandSender sender) {
         return "/mw-kit <save/delete/give> <name> [player]";
     }
 
 
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (!KIT_FILE.exists()) {
-            try (Writer writer = new OutputStreamWriter(new FileOutputStream(KIT_FILE), "UTF-8")) {
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(KIT_FILE), StandardCharsets.UTF_8)) {
                 gson.toJson(new Kits(), writer);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -129,16 +127,12 @@ public class CommandKit extends CommandBase {
                         kit.data = compound.toString();
 
                         IExtraItemHandler extra = player.getCapability(CapabilityExtra.CAPABILITY, null);
-                        /**
-                         * Backpack saving
-                         */
+                        // Backpack saving
                         if(extra.getStackInSlot(0) != null){
                             kit.backpack = extra.getStackInSlot(0).serializeNBT().toString();
                         }
 
-                        /**
-                         * Vest saving
-                         */
+                        // Vest saving
                         if(extra.getStackInSlot(1) != null){
                             kit.vest = extra.getStackInSlot(1).serializeNBT().toString();
                         }

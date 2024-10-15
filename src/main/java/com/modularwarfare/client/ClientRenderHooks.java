@@ -6,16 +6,16 @@ import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.api.RenderHandFisrtPersonEvent;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.configs.ArmorRenderConfig;
+import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
+import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
-import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.model.ModelCustomArmor;
-import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
-import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
+import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
@@ -27,7 +27,6 @@ import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.OptifineHelper;
 import com.modularwarfare.utility.RenderHelperMW;
-import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -53,8 +52,8 @@ import net.minecraftforge.client.event.*;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.optifine.shaders.Shaders;
-
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.glu.Project;
@@ -62,7 +61,8 @@ import org.lwjgl.util.glu.Project;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 
-public class ClientRenderHooks extends ForgeEvent {
+@SideOnly(Side.CLIENT)
+public class ClientRenderHooks {
 
     public static HashMap<EntityLivingBase, AnimStateMachine> weaponBasicAnimations = new HashMap<EntityLivingBase, AnimStateMachine>();
     public static IdentityHashMap<EntityLivingBase, EnhancedStateMachine> weaponEnhancedAnimations = new IdentityHashMap<EntityLivingBase, EnhancedStateMachine>();
@@ -114,7 +114,7 @@ public class ClientRenderHooks extends ForgeEvent {
     }
 
     @SubscribeEvent
-    public void renderTick(TickEvent.RenderTickEvent event) {
+    void renderTick(TickEvent.RenderTickEvent event) {
         switch (event.phase) {
             case START: {
                 RenderParameters.smoothing = event.renderTickTime;
@@ -160,7 +160,7 @@ public class ClientRenderHooks extends ForgeEvent {
     }
     
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onRender(RenderPlayerEvent.Pre event) {
+    void onRender(RenderPlayerEvent.Pre event) {
         boolean aim = AnimationUtils.isAiming.containsKey(event.getEntityPlayer().getUniqueID());
         if (!aim) {
             return;
@@ -169,7 +169,7 @@ public class ClientRenderHooks extends ForgeEvent {
     }
 
     @SubscribeEvent
-    public void renderItemFrame(RenderItemInFrameEvent event) {
+    void renderItemFrame(RenderItemInFrameEvent event) {
         Item item = event.getItem().getItem();
         if (item instanceof ItemGun) {
             BaseType type = ((BaseItem) event.getItem().getItem()).baseType;
@@ -201,7 +201,7 @@ public class ClientRenderHooks extends ForgeEvent {
     }
 
     @SubscribeEvent
-    public void onWorldRenderLast(RenderWorldLastEvent event) {
+    void onWorldRenderLast(RenderWorldLastEvent event) {
         //For each entity loaded, process with layers
         for (Object o : mc.world.getLoadedEntityList()) {
             Entity givenEntity = (Entity) o;
@@ -217,15 +217,13 @@ public class ClientRenderHooks extends ForgeEvent {
         }
     }
 
-    @SuppressWarnings("unused")
     @SubscribeEvent
-    public void onRenderHeldItem(RenderSpecificHandEvent event) {
+    void onRenderHeldItem(RenderSpecificHandEvent event) {
         event.setCanceled(renderHeldItem(event.getItemStack(), event.getHand(), event.getPartialTicks(),getFOVModifier(event.getPartialTicks())));
     }
     
     public boolean renderHeldItem(ItemStack stack,EnumHand hand,float partialTicksTime,float fov) {
-        EntityPlayer player = mc.player;
-        boolean result=false;
+        boolean result = false;
         if(mc.currentScreen instanceof GuiGunModify) {
         	return true;
         }
@@ -234,12 +232,12 @@ public class ClientRenderHooks extends ForgeEvent {
             BaseItem item = ((BaseItem) stack.getItem());
 
             if (hand != EnumHand.MAIN_HAND) {
-                result=true;
-                return result;
+                return true;
             }
 
-            if (type.id > customRenderers.length)
+            if (type.id > customRenderers.length) {
                 return result;
+            }
 
             if (item.render3d && customRenderers[type.id] != null && type.hasModel() && !type.getAssetDir().equalsIgnoreCase("attachments")) {
                 result=true;
@@ -247,8 +245,7 @@ public class ClientRenderHooks extends ForgeEvent {
                 float partialTicks = partialTicksTime;
                 EntityRenderer renderer = mc.entityRenderer;
                 float farPlaneDistance = mc.gameSettings.renderDistanceChunks * 16F;
-                ItemRenderer itemRenderer = mc.getItemRenderer();
-                
+
                 GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
                 
                 GlStateManager.matrixMode(GL11.GL_PROJECTION);
@@ -264,9 +261,7 @@ public class ClientRenderHooks extends ForgeEvent {
                 GlStateManager.loadIdentity();
                 GlStateManager.scale(1 / zFar, 1 / zFar, 1 / zFar);
                 
-                /**
-                 * Fixed the bug gun renders bug
-                 * */
+                // Fixed the bug gun renders bug
                 if(Double.isNaN(RenderParameters.collideFrontDistance)) {
                     RenderParameters.collideFrontDistance=0;
                 }
@@ -280,7 +275,7 @@ public class ClientRenderHooks extends ForgeEvent {
                     float f3 = entityplayersp.prevRotationPitch + (entityplayersp.rotationPitch - entityplayersp.prevRotationPitch) * partialTicks;
                     float f4 = entityplayersp.prevRotationYaw + (entityplayersp.rotationYaw - entityplayersp.prevRotationYaw) * partialTicks;
 
-                    //Setup lighting
+                    // Setup lighting
                     GlStateManager.disableLighting();
                     GlStateManager.pushMatrix();
                     GlStateManager.rotate(f3, 1.0F, 0.0F, 0.0F);
@@ -288,12 +283,12 @@ public class ClientRenderHooks extends ForgeEvent {
                     RenderHelper.enableStandardItemLighting();
                     GlStateManager.popMatrix();
 
-                    //Do lighting
+                    // Do lighting
                     int i = this.mc.world.getCombinedLight(new BlockPos(entityplayersp.posX, entityplayersp.posY + (double) entityplayersp.getEyeHeight(), entityplayersp.posZ), 0);
                     OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) (i & 65535), (float) (i >> 16));
 
 
-                    //Do hand rotations
+                    // Do hand rotations
                     float f5 = entityplayersp.prevRenderArmPitch + (entityplayersp.renderArmPitch - entityplayersp.prevRenderArmPitch) * partialTicks;
                     float f6 = entityplayersp.prevRenderArmYaw + (entityplayersp.renderArmYaw - entityplayersp.prevRenderArmYaw) * partialTicks;
                     GlStateManager.rotate((entityplayersp.rotationPitch - f5) * 0.1F, 1.0F, 0.0F, 0.0F);
@@ -302,7 +297,7 @@ public class ClientRenderHooks extends ForgeEvent {
                     GlStateManager.enableRescaleNormal();
                     GlStateManager.pushMatrix();
 
-                    //Do vanilla weapon swing
+                    // Do vanilla weapon swing
                     float f7 = -0.4F * MathHelper.sin(MathHelper.sqrt(f2) * (float) Math.PI);
                     float f8 = 0.2F * MathHelper.sin(MathHelper.sqrt(f2) * (float) Math.PI * 2.0F);
                     float f9 = -0.2F * MathHelper.sin(f2 * (float) Math.PI);
@@ -320,8 +315,8 @@ public class ClientRenderHooks extends ForgeEvent {
                     
                     if(debug) {
                         System.out.println(new float[] {
-                                f1,f2,f3,f4,f5,f6,f7,f8,f9,
-                                f10,f11
+                            f1,f2,f3,f4,f5,f6,f7,f8,f9,
+                            f10,f11
                         });
                     }
                     
@@ -521,7 +516,7 @@ public class ClientRenderHooks extends ForgeEvent {
     }
 
     @SubscribeEvent
-    public void renderThirdPose(RenderLivingEvent.Pre event) {
+    public void renderThirdPose(RenderLivingEvent.Pre<?> event) {
         if (!(event.getEntity() instanceof AbstractClientPlayer)) {
             return;
         }

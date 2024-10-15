@@ -97,22 +97,18 @@ public class DataMesh {
             FloatBuffer tex_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 2);
             FloatBuffer normal_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 3);
 
-            IntBuffer joint_intBuffer = BufferUtils.createIntBuffer(vertexCount * 4);
-            FloatBuffer weight_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 4);
+//            IntBuffer joint_intBuffer = BufferUtils.createIntBuffer(vertexCount * 4);
+//            FloatBuffer weight_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 4);
 
-            int count = 0;
-            for (int i = 0; i < geoList.size(); i++) {
-                if (count == 8) {
-                    count = 0;
-                }
-                if (count < 3) {
-                    pos_floatBuffer.put(geoList.get(i));
-                } else if (count < 5) {
-                    tex_floatBuffer.put(geoList.get(i));
-                } else if (count < 8) {
-                    normal_floatBuffer.put(geoList.get(i));
-                }
-                count++;
+            for (int i = 0, size = geoList.size(); i + 8 <= size; i += 8) {
+                pos_floatBuffer.put(geoList.get(i));
+                pos_floatBuffer.put(geoList.get(i + 1));
+                pos_floatBuffer.put(geoList.get(i + 2));
+                tex_floatBuffer.put(geoList.get(i + 3));
+                tex_floatBuffer.put(geoList.get(i + 4));
+                normal_floatBuffer.put(geoList.get(i + 5));
+                normal_floatBuffer.put(geoList.get(i + 6));
+                normal_floatBuffer.put(geoList.get(i + 7));
             }
             pos_floatBuffer.flip();
             tex_floatBuffer.flip();
@@ -204,7 +200,7 @@ public class DataMesh {
             this.compiled = true;
             this.compiling = false;
         }
-        
+
         //内存优化
         if(geoList != null) {
             geoList.clear();
@@ -213,12 +209,12 @@ public class DataMesh {
         if(geoBuffer != null) {
             if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() != null) {
                 ((sun.nio.ch.DirectBuffer)geoBuffer).cleaner().clean();
-            }  
+            }
         }
         if(elementBuffer!=null) {
             if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() != null) {
                 ((sun.nio.ch.DirectBuffer)elementBuffer).cleaner().clean();
-            }  
+            }
         }
     }
 

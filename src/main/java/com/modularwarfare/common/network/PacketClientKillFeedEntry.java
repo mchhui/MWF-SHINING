@@ -51,7 +51,7 @@ public class PacketClientKillFeedEntry extends PacketBase {
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
         Minecraft.getMinecraft().addScheduledTask(() -> {
-            ((ClientProxy) (ModularWarfare.PROXY)).getKillChatManager().add(new KillFeedEntry(text, timeLiving, weaponInternalName));
+            ClientProxy.killFeedManager.add(new KillFeedEntry(text, timeLiving, weaponInternalName));
         });
     }
 }

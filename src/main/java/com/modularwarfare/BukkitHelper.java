@@ -1,19 +1,16 @@
 package com.modularwarfare;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-
-import org.bukkit.Bukkit;
+import com.modularwarfare.api.EntityHeadShotEvent;
+import com.modularwarfare.api.WeaponAttachmentEvent;
+import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
-import com.modularwarfare.api.EntityHeadShotEvent;
-import com.modularwarfare.api.WeaponAttachmentEvent;
-
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 
 public class BukkitHelper {
     public static ScriptEngine scriptEngine = new NashornScriptEngineFactory().getScriptEngine();
@@ -54,7 +51,7 @@ public class BukkitHelper {
         try {
             scriptEngine.eval(
                 "    var bukkitEvent=new BukkitEntityHeadShotEvent(toBukkitEntity(event.getVictim()),toBukkitEntity(event.getShooter()));\r\n"
-                    + "    Bukkit.getPluginManager().callEvent(bukkitEvent);");
+                + "    Bukkit.getPluginManager().callEvent(bukkitEvent);");
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -69,9 +66,9 @@ public class BukkitHelper {
         try {
             scriptEngine.eval(
                 "       var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),false,false,null,toBukkitItemstack(event.gun),toBukkitItemstack(event.attach));\r\n"
-                    + "       Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n"
-                    + "       if(bukkitEvent.isCanceled){\r\n" + "                event.setCanceled(true);\r\n"
-                    + "       }\r\n" + "       event.attach=toForgeItemstack(bukkitEvent.loadAttach);");
+                + "       Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n"
+                + "       if(bukkitEvent.isCanceled){\r\n" + "                event.setCanceled(true);\r\n"
+                + "       }\r\n" + "       event.attach=toForgeItemstack(bukkitEvent.loadAttach);");
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -90,8 +87,8 @@ public class BukkitHelper {
         try {
             scriptEngine.eval(
                 "var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),true,event.unloadAll,event.type,toBukkitItemstack(event.gun),null);\r\n"
-                    + "Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n" + "if(bukkitEvent.isCanceled){\r\n"
-                    + "    event.setCanceled(true);\r\n" + "}");
+                + "Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n" + "if(bukkitEvent.isCanceled){\r\n"
+                + "    event.setCanceled(true);\r\n" + "}");
         } catch (ScriptException e) {
             e.printStackTrace();
         }
@@ -123,7 +120,6 @@ public class BukkitHelper {
         public static HandlerList getHandlerList() {
             return handlerList;
         }
-
     }
 
     @Cancelable
@@ -157,6 +153,5 @@ public class BukkitHelper {
         public static HandlerList getHandlerList() {
             return handlerList;
         }
-
     }
 }
