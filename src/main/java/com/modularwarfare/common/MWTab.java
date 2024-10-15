@@ -37,7 +37,7 @@ public class MWTab extends CreativeTabs {
     }
 
     @Override
-    public ItemStack getTabIconItem() {
+    public ItemStack createIcon() {
         final ItemStack[] itemStack = {new ItemStack(Items.IRON_AXE)};
 
         ModularWarfare.gunTypes.forEach((s, gun) -> {

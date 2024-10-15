@@ -1,17 +1,11 @@
 package com.modularwarfare.common.entity.grenades;
 
-import java.util.List;
-import java.util.Set;
-
-import com.google.common.collect.Sets;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.init.ModSounds;
-
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.MoverType;
@@ -28,6 +22,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 public class EntityGrenade extends Entity {
 
@@ -192,7 +188,7 @@ public class EntityGrenade extends Entity {
                         }
                     }
                     for (int i = 1; i <= 3; i++) {
-                        Vec3d entityPos = entity.getPositionVector().addVector(0, entity.getEyeHeight() / 3 * i, 0);
+                        Vec3d entityPos = entity.getPositionVector().add(0, entity.getEyeHeight() / 3 * i, 0);
                         if (world.rayTraceBlocks(getPositionVector(), entityPos, false, true, false) == null) {
                             entity.attackEntityFrom(DamageSource.causeExplosionDamage(explosion),
                                     grenadeType.explosionParamA * (float) Math.max(0,

@@ -1,10 +1,7 @@
 package com.modularwarfare.common.type;
 
-import java.util.List;
-
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.script.ScriptHost;
-
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -14,6 +11,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import java.util.List;
+
 public class BaseItem extends Item {
 
     public BaseType baseType;
@@ -21,7 +20,7 @@ public class BaseItem extends Item {
     public ResourceLocation tooltipScript;
 
     public BaseItem(BaseType type) {
-        setUnlocalizedName(type.internalName);
+        setTranslationKey(type.internalName);
         setRegistryName(type.internalName);
         setCreativeTab(ModularWarfare.MODS_TABS.get(type.contentPack));
 

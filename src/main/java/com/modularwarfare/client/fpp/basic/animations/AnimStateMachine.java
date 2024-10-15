@@ -2,8 +2,7 @@ package com.modularwarfare.client.fpp.basic.animations;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.WeaponAnimations;
-import com.modularwarfare.client.input.KeyBindingDisable;
-import com.modularwarfare.client.input.KeyBindingEnable;
+import com.modularwarfare.client.input.KeyBindingUtil;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
@@ -90,16 +89,6 @@ public class AnimStateMachine {
     private StateEntry currentShootState;
     private int shootStateIndex = 0;
 
-    public static void disableSprinting(boolean bool) {
-        if (bool) {
-            if (!(Minecraft.getMinecraft().gameSettings.keyBindSprint instanceof KeyBindingDisable)) {
-                Minecraft.getMinecraft().gameSettings.keyBindSprint = new KeyBindingDisable(Minecraft.getMinecraft().gameSettings.keyBindSprint);
-            }
-        } else if (Minecraft.getMinecraft().gameSettings.keyBindSprint instanceof KeyBindingDisable) {
-            Minecraft.getMinecraft().gameSettings.keyBindSprint = new KeyBindingEnable(Minecraft.getMinecraft().gameSettings.keyBindSprint);
-        }
-    }
-
     public void onTickUpdate() {
         ItemGun gun = null;
         if (Minecraft.getMinecraft().player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null) {
@@ -108,7 +97,7 @@ public class AnimStateMachine {
             }
         }
         if (reloading) {
-            disableSprinting(true);
+            KeyBindingUtil.disableSprinting(true);
             Minecraft.getMinecraft().player.setSprinting(false);
             if (currentReloadState == null)
                 currentReloadState = reloadStateEntries.get(0);
@@ -128,7 +117,7 @@ public class AnimStateMachine {
 
             reloadProgress += 1F / reloadTime;
             if (reloadProgress >= 0.8F) {
-                disableSprinting(false);
+                KeyBindingUtil.disableSprinting(false);
                 Minecraft.getMinecraft().player.setSprinting(wasSprinting);
             }
             if (reloadProgress >= 1F) {

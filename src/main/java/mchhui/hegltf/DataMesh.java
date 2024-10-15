@@ -1,44 +1,24 @@
 package mchhui.hegltf;
 
+import com.modularwarfare.client.gui.GuiGunModify;
+import com.modularwarfare.loader.api.model.ObjModelRenderer;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
+
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.MemoryUtil;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL45;
-
-import com.modularwarfare.client.gui.GuiGunModify;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
-
-import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.GlStateManager.DestFactor;
-import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 
 public class DataMesh {
-    private static final int SIZE_OF_FLOAT = 4;
-    private static final int SIZE_OF_INT = 4;
     public String material;
     public boolean skin;
 
-    protected List<Float> geoList = new ArrayList<Float>();
+    protected List<Float> geoList = new ArrayList<>();
     protected int geoCount;
     protected ByteBuffer geoBuffer;
     protected IntBuffer elementBuffer;
@@ -71,7 +51,7 @@ public class DataMesh {
         }
         /*
          * 如果需要 可加入纹理处理内容
-         * */
+         */
         callVAO();
         
         if(ObjModelRenderer.glowTxtureMode) {
@@ -181,15 +161,15 @@ public class DataMesh {
             GL20.glEnableVertexAttribArray(5);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, geoBuffer, GL15.GL_STATIC_DRAW);
-            int step = 17 * SIZE_OF_FLOAT;
+            int step = 17 * Float.BYTES;
             GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, step, 0);
-            GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, step, 3 * SIZE_OF_FLOAT);
-            GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, step, 5 * SIZE_OF_FLOAT);
+            GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, step, 3 * Float.BYTES);
+            GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, step, 5 * Float.BYTES);
             // in fact it is u_int:
-            GL20.glVertexAttribPointer(3, 4, GL11.GL_FLOAT, false, step, 8 * SIZE_OF_FLOAT);
-            GL20.glVertexAttribPointer(4, 4, GL11.GL_FLOAT, false, step, 12 * SIZE_OF_FLOAT);
+            GL20.glVertexAttribPointer(3, 4, GL11.GL_FLOAT, false, step, 8 * Float.BYTES);
+            GL20.glVertexAttribPointer(4, 4, GL11.GL_FLOAT, false, step, 12 * Float.BYTES);
             // in fact it is u_int:
-            GL20.glVertexAttribPointer(5, 1, GL11.GL_FLOAT, false, step, 16 * SIZE_OF_FLOAT);
+            GL20.glVertexAttribPointer(5, 1, GL11.GL_FLOAT, false, step, 16 * Float.BYTES);
 
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
             GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, elementBuffer, GL15.GL_STATIC_DRAW);
@@ -205,9 +185,9 @@ public class DataMesh {
             GL11.glEnableClientState(GL11.GL_NORMAL_ARRAY);
 
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, ssbo);
-            GL11.glVertexPointer(3, GL11.GL_FLOAT, 8 * SIZE_OF_FLOAT, 0);
-            GL11.glNormalPointer(GL11.GL_FLOAT, 8 * SIZE_OF_FLOAT, 3 * SIZE_OF_FLOAT);
-            GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 8 * SIZE_OF_FLOAT, 6 * SIZE_OF_FLOAT);
+            GL11.glVertexPointer(3, GL11.GL_FLOAT, 8 * Float.BYTES, 0);
+            GL11.glNormalPointer(GL11.GL_FLOAT, 8 * Float.BYTES, 3 * Float.BYTES);
+            GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 8 * Float.BYTES, 6 * Float.BYTES);
             
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
 
@@ -226,17 +206,17 @@ public class DataMesh {
         }
         
         //内存优化
-        if(geoList!=null) {
+        if(geoList != null) {
             geoList.clear();
-            geoList=null;  
+            geoList = null;
         }
-        if(geoBuffer!=null) {
-            if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() !=null) {
+        if(geoBuffer != null) {
+            if(((sun.nio.ch.DirectBuffer)geoBuffer).cleaner() != null) {
                 ((sun.nio.ch.DirectBuffer)geoBuffer).cleaner().clean();
             }  
         }
         if(elementBuffer!=null) {
-            if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() !=null) {
+            if(((sun.nio.ch.DirectBuffer)elementBuffer).cleaner() != null) {
                 ((sun.nio.ch.DirectBuffer)elementBuffer).cleaner().clean();
             }  
         }

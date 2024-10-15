@@ -3,7 +3,6 @@ buildscript {
         maven { url = 'https://files.minecraftforge.net/maven' }
         maven { url = 'https://repo.spongepowered.org/maven' }
 
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -25,7 +24,9 @@ version = mod_version
 group = 'com.modularwarfare' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'modularwarfare-shining'
 
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+// Need this here so eclipse task generates correctly.
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 compileJava.options.encoding = 'UTF-8'
 
@@ -45,7 +46,7 @@ minecraft {
     // Use non-default mappings at your own risk. they may not always work.
     // Simply re-run your setup task after changing the mappings to update your workspace.
     //mappings channel: 'snapshot', version: '20171003-1.12'
-    mappings channel: 'snapshot', version: '20171003-1.12'
+    mappings channel: 'stable', version: '39-1.12'
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
     
     // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
@@ -76,12 +77,19 @@ minecraft {
     }
 }
 
-
 repositories {
     mavenCentral()
-    jcenter()
     maven {
+        name "Sponge Maven"
         url "https://repo.spongepowered.org/maven"
+    }
+    maven {
+        name "Songoda"
+        url "https://repo.songoda.com/repository/public/"
+    }
+    maven {
+        name 'Curse Maven'
+        url "https://cursemaven.com"
     }
 }
 
@@ -89,7 +97,7 @@ dependencies {
     // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
     // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
-    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2855'
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
 
     embed('org.spongepowered:mixin:0.8-SNAPSHOT') {
         exclude module: 'guava'
@@ -98,14 +106,21 @@ dependencies {
     }
 
     // https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
-    embed 'net.lingala.zip4j:zip4j:1.2.4'
-
-    compile fileTree(dir: 'libs', include: '*.jar')
-    compileOnly fileTree(dir: 'optifine', include: '*.jar')
+    embed group: 'net.lingala.zip4j', name: 'zip4j', version: '1.2.4'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.0-rc2'
+    compile group: 'org.joml', name: 'joml', version: '1.10.5'
+    compileOnly group: 'org.spigotmc', name: 'spigot', version: '1.12.2'
+    // https://www.curseforge.com/minecraft/mc-mods/shoulder-surfing-reloaded/files/4876004
+    implementation fg.deobf("curse.maven:shoulder-surfing-reloaded-243190:4876004")
+    compileOnly files('libs/OptiFine_1.12.2_HD_U_G5.jar')
+    compile files('libs/Nashorn.jar')
 }
 
-
-idea { module { inheritOutputDirs = true } }
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
 
 mixin {
     add sourceSets.main, "mixins.modularwarfare.refmap.json"
@@ -141,39 +156,38 @@ jar {
     }
     manifest {
         attributes([
-                "Built-By": "Protoxy",
-                "Specification-Title": "modularwarfare",
-                "Specification-Vendor": "modularwarfare",
-                "Specification-Version": "1", // We are version 1 of ourselves
-                "Implementation-Title": project.name,
-                "Implementation-Version": "${version}",
-                "Implementation-Vendor" :"protoxy",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                "FMLCorePluginContainsFMLMod": true,
-                "FMLCorePlugin": "com.modularwarfare.mixin.MixinCore",
-                "ForceLoadAsMod": true,
-                "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
-                "TweakOrder": 0,
-                "MixinConfigs": "mixins.modularwarfare.json",
+            "Built-By": "Protoxy",
+            "Specification-Title": "modularwarfare",
+            "Specification-Vendor": "modularwarfare",
+            "Specification-Version": "1", // We are version 1 of ourselves
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"protoxy",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+            "FMLCorePluginContainsFMLMod": true,
+            "FMLCorePlugin": "com.modularwarfare.mixin.MixinCore",
+            "ForceLoadAsMod": true,
+            "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+            "TweakOrder": 0,
+            "MixinConfigs": "mixins.modularwarfare.json",
         ])
     }
 }
 
 /* Dev build */
-/*
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier = 'dev'
-}
+//task deobfJar(type: Jar) {
+//    from sourceSets.main.output
+//    classifier = 'dev'
+//}
+//
+//task sourcesJar(type: Jar) {
+//    from sourceSets.main.allJava
+//    classifier = 'sources'
+//}
+//
+//artifacts {
+//    archives deobfJar
+//    archives sourcesJar
+//}
 
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-    classifier = 'sources'
-}
-
-artifacts {
-    archives deobfJar
-    archives sourcesJar
-}
-*/
 jar.finalizedBy('reobfJar')

@@ -5,15 +5,12 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
-import com.modularwarfare.common.network.PacketGunTrail;
 import com.modularwarfare.common.network.PacketGunTrailAskServer;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
-
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.GameSettings;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -21,11 +18,9 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -223,7 +218,7 @@ public class RayUtil {
     {
         Vec3d vec3d = entity.getPositionEyes(partialTicks);
         Vec3d vec3d1 = entity.getLook(partialTicks);
-        Vec3d vec3d2 = vec3d.addVector(vec3d1.x * blockReachDistance, vec3d1.y * blockReachDistance, vec3d1.z * blockReachDistance);
+        Vec3d vec3d2 = vec3d.add(vec3d1.x * blockReachDistance, vec3d1.y * blockReachDistance, vec3d1.z * blockReachDistance);
 
         if(ModularWarfare.isLoadedModularMovements) {
             if (entity instanceof EntityPlayer) {
