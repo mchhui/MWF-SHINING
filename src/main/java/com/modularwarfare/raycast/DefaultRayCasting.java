@@ -4,14 +4,10 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.ballistics.GetLivingAABBEvent;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
-import com.modularwarfare.common.hitbox.PlayerHitbox;
-import com.modularwarfare.common.hitbox.PlayerSnapshot;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.hitbox.hits.OBBHit;
 import com.modularwarfare.common.hitbox.hits.PlayerHit;
-import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.hitbox.playerdata.PlayerData;
-import com.modularwarfare.common.network.PacketPlaySound;
 import com.modularwarfare.common.vector.Matrix4f;
 import com.modularwarfare.common.vector.Vector3f;
 import com.modularwarfare.raycast.obb.OBBModelBox;
@@ -29,14 +25,11 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 import javax.annotation.Nullable;
-import java.awt.geom.RectangularShape;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -159,7 +152,7 @@ public class DefaultRayCasting extends RayCasting {
                             OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin.x+rayVec.x*t, origin.y+rayVec.y*t, origin.z+rayVec.z*t)));
                         }
                         if (finalBox != null) {
-                            PlayerData data = ModularWarfare.PLAYERHANDLER.getPlayerData((EntityPlayer) obj);
+                            PlayerData data = ModularWarfare.PLAYER_HANDLER.getPlayerData((EntityPlayer) obj);
                             RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
 
                             allHits.add(new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept, intercept.hitVec.distanceTo(origin), 0, 0));

@@ -11,6 +11,7 @@ import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nonnull;
 import java.util.Comparator;
 import java.util.List;
 
@@ -25,8 +26,10 @@ public class MWTab extends CreativeTabs {
         this.contentPack = contentPack;
     }
 
+    @Nonnull
+    @Override
     @SideOnly(Side.CLIENT)
-    public String getTranslatedTabLabel() {
+    public String getTranslationKey() {
         String name = contentPack;
         if (name.endsWith(".zip")) {
             name = name.replace(".zip", "");
@@ -36,7 +39,9 @@ public class MWTab extends CreativeTabs {
         return TextFormatting.RED + "[MW] " + TextFormatting.WHITE + name;
     }
 
+    @Nonnull
     @Override
+    @SideOnly(Side.CLIENT)
     public ItemStack createIcon() {
         final ItemStack[] itemStack = {new ItemStack(Items.IRON_AXE)};
 
@@ -50,7 +55,8 @@ public class MWTab extends CreativeTabs {
     }
 
     @Override
-    public void displayAllRelevantItems(NonNullList<ItemStack> items) {
+    @SideOnly(Side.CLIENT)
+    public void displayAllRelevantItems(@Nonnull NonNullList<ItemStack> items) {
         super.displayAllRelevantItems(items);
         items.sort(tabSorter);
     }
@@ -58,5 +64,4 @@ public class MWTab extends CreativeTabs {
     public void preInitialize(List<Item> order) {
         tabSorter = Ordering.explicit(order).onResultOf(ItemStack::getItem);
     }
-
 }

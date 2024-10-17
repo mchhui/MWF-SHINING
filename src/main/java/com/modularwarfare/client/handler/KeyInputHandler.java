@@ -1,26 +1,23 @@
 package com.modularwarfare.client.handler;
 
-import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.HandleKeyEvent;
 import com.modularwarfare.client.ClientEventHandler;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
+import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
-import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
 import com.modularwarfare.common.network.PacketGunUnloadAttachment;
-import com.modularwarfare.common.network.PacketOpenGui;
 import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.MWSound;
-import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.KeyBinding;
@@ -29,18 +26,23 @@ import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 
-public class KeyInputHandler extends ForgeEvent {
+@SideOnly(Side.CLIENT)
+@Mod.EventBusSubscriber(modid = ModularWarfare.MOD_ID, value = Side.CLIENT)
+public final class KeyInputHandler {
 
-    private ArrayList<KeyEntry> keyBinds;
+    private static final ArrayList<KeyEntry> keyBinds;
     public static KeyBinding jetpackFire;
 
-    public KeyInputHandler() {
-        keyBinds = new ArrayList<KeyEntry>();
+    static  {
+        keyBinds = new ArrayList<>();
         keyBinds.add(new KeyEntry(KeyType.GunReload));
         keyBinds.add(new KeyEntry(KeyType.ClientReload));
         keyBinds.add(new KeyEntry(KeyType.FireMode));
@@ -66,12 +68,12 @@ public class KeyInputHandler extends ForgeEvent {
         for (KeyEntry keyEntry : keyBinds) {
             ClientRegistry.registerKeyBinding(keyEntry.keyBinding);
         }
-        jetpackFire=new KeyBinding(KeyType.Jetpack.displayName, KeyType.Jetpack.keyCode, "ModularWarfare");
+        jetpackFire = new KeyBinding(KeyType.Jetpack.displayName, KeyType.Jetpack.keyCode, "ModularWarfare");
         ClientRegistry.registerKeyBinding(jetpackFire);
     }
 
     @SubscribeEvent
-    public void onKeyInput(InputEvent.KeyInputEvent event) {
+    static void onKeyInput(InputEvent.KeyInputEvent event) {
         for (KeyEntry keyEntry : keyBinds) {
             if (keyEntry.keyBinding.isPressed()) {
                 handleKeyInput(keyEntry.keyType);
@@ -80,7 +82,7 @@ public class KeyInputHandler extends ForgeEvent {
         }
     }
 
-    public void handleKeyInput(KeyType keyType) {
+    private static void handleKeyInput(KeyType keyType) {
         if (Minecraft.getMinecraft().player != null) {
             EntityPlayerSP entityPlayer = Minecraft.getMinecraft().player;
             HandleKeyEvent event = new HandleKeyEvent(keyType);
@@ -124,7 +126,7 @@ public class KeyInputHandler extends ForgeEvent {
                             PacketGunSwitchMode.switchClient(entityPlayer);
                             ModularWarfare.NETWORK.sendToServer(new PacketGunSwitchMode());
                             ModularWarfare.PROXY.onModeChangeAnimation(entityPlayer, gunType.internalName);
-                        }  
+                        }
                     }
                     break;
                 case Inspect:
@@ -133,7 +135,7 @@ public class KeyInputHandler extends ForgeEvent {
                             if(ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null)!=null) {
                                 ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).INSPECT=0;
                             }
-                        }  
+                        }
                     }
                     break;
                 case GunReload:
@@ -154,7 +156,7 @@ public class KeyInputHandler extends ForgeEvent {
                         if (unloadStack != null && (unloadStack.getItem() instanceof ItemGun || unloadStack.getItem() instanceof ItemAmmo)) {
                             if (ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null) == null
                                 || ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).isCouldReload()) {
-                                ModularWarfare.NETWORK.sendToServer(new PacketGunReload(true));  
+                                ModularWarfare.NETWORK.sendToServer(new PacketGunReload(true));
                             }
                         }
                     }
@@ -176,10 +178,10 @@ public class KeyInputHandler extends ForgeEvent {
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                                     Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
                                 } else if (((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.ENHANCED) {
-                                    if ((ClientRenderHooks.currentGun != -1 
-                                    && ClientRenderHooks.wannaSlot == -1 
-                                    && ClientProxy.gunEnhancedRenderer.getClientController() != null 
-                                    && (ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT 
+                                    if ((ClientRenderHooks.currentGun != -1
+                                    && ClientRenderHooks.wannaSlot == -1
+                                    && ClientProxy.gunEnhancedRenderer.getClientController() != null
+                                    && (ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT
                                     || ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT_EMPTY))) {
                                         ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                                         Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
@@ -187,7 +189,7 @@ public class KeyInputHandler extends ForgeEvent {
                                     }
                                 }
                             }
-                        }  
+                        }
                     break;
                 case Flashlight:
                     if(!entityPlayer.isSpectator()) {
@@ -202,7 +204,7 @@ public class KeyInputHandler extends ForgeEvent {
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
                                 }
                             }
-                        }  
+                        }
                     }
                     break;
 
@@ -233,5 +235,8 @@ public class KeyInputHandler extends ForgeEvent {
                     break;
             }
         }
+    }
+
+    private KeyInputHandler() {
     }
 }

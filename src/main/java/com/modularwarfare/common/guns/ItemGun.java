@@ -1,20 +1,18 @@
 package com.modularwarfare.common.guns;
 
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset.Entry;
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.entity.decals.EntityDecal;
 import com.modularwarfare.common.guns.manager.ShotManager;
 import com.modularwarfare.common.handler.ServerTickHandler;
-import com.modularwarfare.common.network.*;
+import com.modularwarfare.common.network.PacketDecal;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -27,30 +25,22 @@ import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.ItemAir;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 
 public class ItemGun extends BaseItem {
 
-    public static final Function<GunType, ItemGun> factory = type -> {
-        return new ItemGun((type));
-    };
     protected static final UUID MOVEMENT_SPEED_MODIFIER = UUID.fromString("99999999-4180-4865-B01B-BCCE9785ACA3");
     public static boolean canDryFire = true;
     public static boolean fireButtonHeld = false;

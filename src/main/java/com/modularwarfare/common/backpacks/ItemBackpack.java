@@ -20,13 +20,9 @@ import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
-import java.util.function.Function;
 
 public class ItemBackpack extends BaseItem {
 
-    public static final Function<BackpackType, ItemBackpack> factory = type -> {
-        return new ItemBackpack(type);
-    };
     public BackpackType type;
 
     public ItemBackpack(BackpackType type) {

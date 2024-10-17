@@ -7,21 +7,20 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.animations.StateEntry;
+import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.hud.FlashSystem;
+import com.modularwarfare.client.hud.GunUI;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.ModelGun;
-import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.ItemSpray;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.guns.WeaponSoundType;
-import com.modularwarfare.common.network.PacketOpenGui;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.RayUtil;
-import com.modularwarfare.utility.event.ForgeEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLivingBase;
@@ -29,14 +28,14 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.FMLClientHandler;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-
-import org.lwjgl.input.Keyboard;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.input.Mouse;
 
 import java.util.UUID;
@@ -44,32 +43,30 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
-public class ClientTickHandler extends ForgeEvent {
+@SideOnly(Side.CLIENT)
+@Mod.EventBusSubscriber(modid = ModularWarfare.MOD_ID, value = Side.CLIENT)
+public final class ClientTickHandler {
 
-    private static final int SPS=60;
+    private static final int SPS = 60;
 
-//    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<UUID, Integer>();
-    public static ConcurrentHashMap<UUID, Long> playerNextTime = new ConcurrentHashMap<UUID, Long>();
-    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<UUID, Integer>();
+//    public static ConcurrentHashMap<UUID, Integer> playerShootCooldown = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<UUID, Long> playerNextTime = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<UUID, Integer> playerReloadCooldown = new ConcurrentHashMap<>();
     public static ItemStack reloadEnhancedPrognosisAmmo = ItemStack.EMPTY;
     public static ItemStack reloadEnhancedPrognosisAmmoRendering = ItemStack.EMPTY;
-    public static boolean reloadEnhancedIsQuickly=false;
-    public static boolean reloadEnhancedIsQuicklyRendering=false;
+    public static boolean reloadEnhancedIsQuickly = false;
+    public static boolean reloadEnhancedIsQuicklyRendering = false;
 
     public static int oldCurrentItem;
     public static ItemStack oldItemStack = ItemStack.EMPTY;
     public static ItemStack lastItemStack = ItemStack.EMPTY;
     public static World lastWorld;
     public static long startAntiRecoilTime = 0;
-    int i = 0;
 
     private static long lastSyncTime;
 
-    public ClientTickHandler() {
-    }
-
     @SubscribeEvent
-    public void clientTick(TickEvent.ClientTickEvent event) {
+    static void clientTick(TickEvent.ClientTickEvent event) {
         switch (event.phase) {
             case START:
 
@@ -98,7 +95,6 @@ public class ClientTickHandler extends ForgeEvent {
 
                 // Player reload cooldown
                 for (UUID uuid : playerReloadCooldown.keySet()) {
-                    i += 1;
                     int value = playerReloadCooldown.get(uuid) - 1;
                     if (value <= 0) {
                         playerReloadCooldown.remove(uuid);
@@ -114,21 +110,19 @@ public class ClientTickHandler extends ForgeEvent {
     }
 
     @SubscribeEvent
-    public void renderTick(TickEvent.RenderTickEvent event) {
+    static void renderTick(TickEvent.RenderTickEvent event) {
         switch (event.phase) {
             case START: {
                 //System.out.println(ClientTickHandler.reloadEnhancedPrognosisAmmoRendering);
                 float renderTick = event.renderTickTime;
-                renderTick *= 60d / (double) Minecraft.getDebugFPS();
+                renderTick *= 60.0F / Minecraft.getDebugFPS();
                 StateEntry.smoothing = renderTick;
                 onRenderTickStart(Minecraft.getMinecraft(), renderTick);
-                /**
-                 * EnhancedGunRendered Updates
-                 */
+                // EnhancedGunRendered Updates
                 long time = System.currentTimeMillis();
                 if (time > lastSyncTime + 1000 / 144) {
                     if (lastSyncTime > 0) {
-                        
+
                         final float stepTick = (time - lastSyncTime) / (1000/(float)SPS);
                         if (ClientProxy.gunEnhancedRenderer.getClientController() != null) {
                             if (Minecraft.getMinecraft().player != null) {
@@ -166,15 +160,15 @@ public class ClientTickHandler extends ForgeEvent {
         }
     }
 
-    public void onRenderTickStart(Minecraft minecraft, float renderTick) {
+    private static void onRenderTickStart(Minecraft minecraft, float renderTick) {
         if (minecraft.player == null || minecraft.world == null)
             return;
 
         if (minecraft.mouseHelper.deltaY > 0 || -minecraft.mouseHelper.deltaY > 1) {
-            antiRecoilPitch *= 0.25;
+            antiRecoilPitch *= 0.25F;
         }
         if (minecraft.mouseHelper.deltaX > 2 || -minecraft.mouseHelper.deltaX > 2) {
-            antiRecoilYaw *= 0.25;
+            antiRecoilYaw *= 0.25F;
         }
         EntityPlayerSP player = minecraft.player;
 
@@ -331,11 +325,11 @@ public class ClientTickHandler extends ForgeEvent {
     }
 
 
-    public void onClientTickStart(Minecraft minecraft) {
+    private static void onClientTickStart(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)
             return;
 
-        ModularWarfare.PLAYERHANDLER.clientTick();
+        ModularWarfare.PLAYER_HANDLER.clientTick();
 
         GUN_ROT_X_LAST = GUN_ROT_X;
         GUN_ROT_Y_LAST = GUN_ROT_Y;
@@ -373,11 +367,11 @@ public class ClientTickHandler extends ForgeEvent {
             GUN_ROT_Y = -20;
         }
 
-        this.processGunChange();
+        processGunChange();
         ItemGun.fireButtonHeld = Mouse.isButtonDown(0);
 
-        if (ClientProxy.gunUI.bulletSnapFade > 0) {
-            ClientProxy.gunUI.bulletSnapFade -= 0.01F;
+        if (GunUI.bulletSnapFade > 0) {
+            GunUI.bulletSnapFade -= 0.01F;
         }
         //Client Flash Grenade
         if (FlashSystem.flashValue > 0) {
@@ -387,7 +381,7 @@ public class ClientTickHandler extends ForgeEvent {
         }
     }
 
-    private void doRecoil(EntityPlayerSP player) {
+    private static void doRecoil(EntityPlayerSP player) {
         if (playerRecoilPitch != 0.f)
             playerRecoilPitch *= 0.8F;
 
@@ -403,7 +397,7 @@ public class ClientTickHandler extends ForgeEvent {
         antiRecoilYaw += playerRecoilYaw;
     }
 
-    private void doAntiRecoil(EntityPlayerSP player) {
+    private static void doAntiRecoil(EntityPlayerSP player) {
         if (playerAntiRecoilFactor == 0) {
             antiRecoilPitch = antiRecoilYaw = 0;
             return;
@@ -431,7 +425,7 @@ public class ClientTickHandler extends ForgeEvent {
         antiRecoilYaw -= currentAntiYaw;
     }
 
-    public void onClientTickEnd(Minecraft minecraft) {
+    private static void onClientTickEnd(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)
             return;
 
@@ -439,8 +433,9 @@ public class ClientTickHandler extends ForgeEvent {
         doRecoil(player);
         doAntiRecoil(player);
 
-        if(!ItemGun.fireButtonHeld)
-        RenderParameters.rate = Math.max(RenderParameters.rate - 0.05f , 0f);
+        if(!ItemGun.fireButtonHeld) {
+            RenderParameters.rate = Math.max(RenderParameters.rate - 0.05F, 0.0F);
+        }
 
         for (AnimStateMachine stateMachine : ClientRenderHooks.weaponBasicAnimations.values()) {
             stateMachine.onTickUpdate();
@@ -454,12 +449,12 @@ public class ClientTickHandler extends ForgeEvent {
     }
 
 
-    public void processGunChange() {
+    private static void processGunChange() {
         final EntityPlayer player = Minecraft.getMinecraft().player;
-        if (player.inventory.currentItem != this.oldCurrentItem) {
+        if (player.inventory.currentItem != oldCurrentItem) {
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 GunType type=((ItemGun)player.getHeldItemMainhand().getItem()).type;
-                if (type.animationType!=WeaponAnimationType.ENHANCED&&type.allowEquipSounds) {
+                if (type.animationType!=WeaponAnimationType.ENHANCED && type.allowEquipSounds) {
                     type.playClientSound(player, WeaponSoundType.Equip);
                 }
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemSpray) {
@@ -467,10 +462,8 @@ public class ClientTickHandler extends ForgeEvent {
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemGrenade) {
                 ModularWarfare.PROXY.playSound(new MWSound(player.getPosition(), "human.equip.extra", 1f, 1f));
             }
-        }
-        if (this.oldCurrentItem != player.inventory.currentItem) {
-            this.oldCurrentItem = player.inventory.currentItem;
-            this.oldItemStack = player.getHeldItemMainhand();
+            oldCurrentItem = player.inventory.currentItem;
+            oldItemStack = player.getHeldItemMainhand();
         }
     }
 }

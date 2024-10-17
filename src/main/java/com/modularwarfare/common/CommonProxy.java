@@ -8,7 +8,6 @@ import com.modularwarfare.common.network.PacketParticle.ParticleType;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.MWSound;
-import com.modularwarfare.utility.event.ForgeEvent;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
@@ -23,36 +22,26 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
-public class CommonProxy extends ForgeEvent {
+public class CommonProxy {
 
-    public static Pattern zipJar = Pattern.compile("(.+).(zip|jar)$");
+    public static final Pattern zipJar = Pattern.compile("(.+).(zip|jar)$");
 
-    public static File modularWarfareDir;
-
-    public static HashMap<SkinType,BaseType> preloadSkinTypes = new HashMap<SkinType,BaseType>();
-    public static HashSet<TextureType> preloadFlashTex = new HashSet<TextureType>();
+    public static HashMap<SkinType,BaseType> preloadSkinTypes = new HashMap<>();
+    public static HashSet<TextureType> preloadFlashTex = new HashSet<>();
 
     public void construction(FMLConstructionEvent event) {
         //Production-environment
-        this.modularWarfareDir = new File(getGameFolder(),"ModularWarfare");
-        File modFile = null;
-
-        // Creates directory if doesn't exist
-        ModularWarfare.MOD_DIR = modularWarfareDir;
-        if (!ModularWarfare.MOD_DIR.exists()) {
-            ModularWarfare.MOD_DIR.mkdir();
+        // Creates directory if it doesn't exist
+        ModularWarfare.CONTENT_DIR = new File(getGameFolder(),"ModularWarfare");;
+        if (!ModularWarfare.CONTENT_DIR.exists() && !ModularWarfare.CONTENT_DIR.mkdir()) {
+            ModularWarfare.LOGGER.error("Failed to create content directory");
         }
-        new ModConfig(new File(ModularWarfare.MOD_DIR, "mod_config.json"));
+        new ModConfig(new File(ModularWarfare.CONTENT_DIR, "mod_config.json"));
 
         ModularWarfare.DEV_ENV = ModConfig.INSTANCE.dev_mode;
-
-        for (File source : new File(modularWarfareDir.getParentFile(), "mods").listFiles()) {
-            if(source.getName().contains("modularwarfare")){
-                modFile = source;
-            }
-        }
 
 //        /**
 //         * Prototype pack extraction
@@ -124,16 +113,25 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public List<File> getContentList() {
-        List<File> contentPacks = new ArrayList<File>();
-        for (File file : ModularWarfare.MOD_DIR.listFiles()) {
-            if (!file.getName().contains("cache") && !file.getName().contains("officialmw") && !file.getName().contains("highres")) {
+        final File[] files = ModularWarfare.CONTENT_DIR.listFiles();
+        final List<File> contentPacks = (
+            Arrays.stream(Objects.requireNonNull(files))
+            .filter(file -> {
+                final String fname = file.getName();
+                return (
+                    !fname.contains("cache")
+                    && !fname.contains("officialmw")
+                    && !fname.contains("highres")
+                );
+            })
+            .map(file -> {
                 if (file.isDirectory()) {
-                    contentPacks.add(file);
+                    return Optional.of(file);
                 } else if (zipJar.matcher(file.getName()).matches()) {
                     try {
                         ZipFile zipFile = new ZipFile(file);
                         if (!zipFile.isEncrypted()) {
-                            contentPacks.add(file);
+                            return Optional.of(file);
                         } else {
                             ModularWarfare.LOGGER.info("[WARNING] ModularWarfare can't load encrypted content-packs in server-side (" + file.getName() + ") !");
                         }
@@ -141,8 +139,12 @@ public class CommonProxy extends ForgeEvent {
                         e.printStackTrace();
                     }
                 }
-            }
-        }
+                return Optional.<File>empty();
+            })
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toList())
+        );
         ModularWarfare.LOGGER.info("Loaded content pack list server side.");
         return contentPacks;
     }
@@ -152,13 +154,13 @@ public class CommonProxy extends ForgeEvent {
     }
 
     public void spawnExplosionParticle(World world, double x, double y, double z) {
-        if(!world.isRemote) {
+        if (!world.isRemote) {
             ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
         }
     }
     
     public void spawnRocketParticle(World world, double x, double y, double z) {
-        if(!world.isRemote) {
+        if (!world.isRemote) {
             ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 64));
         }
     }
@@ -215,5 +217,4 @@ public class CommonProxy extends ForgeEvent {
 
     public void playFlashSound(EntityPlayer player) {
     }
-
 }

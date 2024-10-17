@@ -6,19 +6,20 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GenerateJsonModelsEvent;
 import com.modularwarfare.api.WeaponAnimations;
-import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.commands.CommandMWClient;
 import com.modularwarfare.client.customplayer.CPEventHandler;
 import com.modularwarfare.client.export.ItemModelExport;
+import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.anims.*;
-import com.modularwarfare.client.fpp.basic.configs.*;
+import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
-import com.modularwarfare.client.handler.*;
+import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.handler.SmoothSwingTicker;
 import com.modularwarfare.client.hud.AttachmentUI;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.hud.GunUI;
@@ -26,10 +27,6 @@ import com.modularwarfare.client.killchat.KillFeedManager;
 import com.modularwarfare.client.killchat.KillFeedRender;
 import com.modularwarfare.client.model.FakeRenderPlayer;
 import com.modularwarfare.client.model.ModelGun;
-import com.modularwarfare.client.model.layers.RenderLayerBackpack;
-import com.modularwarfare.client.model.layers.RenderLayerBody;
-import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
-import com.modularwarfare.client.model.layers.ResetHiddenModelLayer;
 import com.modularwarfare.client.patch.customnpc.CustomNPCListener;
 import com.modularwarfare.client.patch.galacticraft.GCCompatInterop;
 import com.modularwarfare.client.patch.galacticraft.GCDummyInterop;
@@ -62,27 +59,23 @@ import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.particle.EntityBloodFX;
 import com.modularwarfare.common.particle.ParticleExplosion;
 import com.modularwarfare.common.particle.ParticleRocket;
-import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.objects.SoundEntry;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.utility.MWResourcePack;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.ModUtil;
-import mchhui.modularmovements.tactical.client.ClientLitener;
 import moe.komi.mwprotect.IZip;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.entity.MWFRenderHelper;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.resources.IReloadableResourceManager;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
@@ -97,7 +90,10 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
-import net.minecraftforge.fml.common.*;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.FMLModContainer;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.MetadataCollection;
 import net.minecraftforge.fml.common.discovery.ContainerType;
 import net.minecraftforge.fml.common.discovery.ModCandidate;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
@@ -110,15 +106,15 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
@@ -127,7 +123,6 @@ public class ClientProxy extends CommonProxy {
 
     public static String modelDir = "com.modularwarfare.client.model.";
 
-    //Renderes
     public static RenderGunStatic gunStaticRenderer;
     public static RenderGunEnhanced gunEnhancedRenderer;
 
@@ -155,21 +150,17 @@ public class ClientProxy extends CommonProxy {
     
     /**
      * Patches
-     **/
+     */
     public static GCCompatInterop galacticraftInterop;
     public static ObfuscateCompatInterop obfuscateInterop;
     
-    private static int lastBobbingParm=1;
-
-    public KillFeedManager getKillChatManager() {
-        return this.killFeedManager;
-    }
+    private static int lastBobbingParm = 1;
 
     @Override
     public void construction(FMLConstructionEvent event) {
         super.construction(event);
 
-        for (File file : modularWarfareDir.listFiles()) {
+        for (File file : ModularWarfare.CONTENT_DIR.listFiles()) {
             if (!file.getName().contains("cache") && !file.getName().contains("officialmw") && !file.getName().contains("highres")) {
                 if (zipJar.matcher(file.getName()).matches()) {
                     try {
@@ -228,7 +219,7 @@ public class ClientProxy extends CommonProxy {
         }
         if (Loader.isModLoaded("galacticraftcore")) {
             try {
-                ClientProxy.galacticraftInterop = (GCCompatInterop) Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
+                ClientProxy.galacticraftInterop = Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
                 ModularWarfare.LOGGER.info("Galatic Craft has been detected! Will attempt to patch.");
                 ClientProxy.galacticraftInterop.applyFix();
             } catch (Exception e) {
@@ -243,31 +234,27 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void load() {
         super.load();
-        new KeyInputHandler();
-        new ClientTickHandler();
-        new ClientGunHandler();
-        new RenderGuiHandler();
 
-        this.renderHooks = new ClientRenderHooks();
-        MinecraftForge.EVENT_BUS.register(this.renderHooks);
+        renderHooks = new ClientRenderHooks();
+        MinecraftForge.EVENT_BUS.register(renderHooks);
 
-        this.scopeUtils = new ScopeUtils();
-        MinecraftForge.EVENT_BUS.register(this.scopeUtils);
+        scopeUtils = new ScopeUtils();
+        MinecraftForge.EVENT_BUS.register(scopeUtils);
 
-        this.flashImage = new FlashSystem();
-        MinecraftForge.EVENT_BUS.register(this.flashImage);
+        flashImage = new FlashSystem();
+        MinecraftForge.EVENT_BUS.register(flashImage);
 
-        this.attachmentUI = new AttachmentUI();
-        MinecraftForge.EVENT_BUS.register(this.attachmentUI);
+        attachmentUI = new AttachmentUI();
+        MinecraftForge.EVENT_BUS.register(attachmentUI);
 
-        this.gunUI = new GunUI();
-        MinecraftForge.EVENT_BUS.register(this.gunUI);
+        gunUI = new GunUI();
+        MinecraftForge.EVENT_BUS.register(gunUI);
 
-        this.killFeedManager = new KillFeedManager();
-        MinecraftForge.EVENT_BUS.register(new KillFeedRender(this.killFeedManager));
+        killFeedManager = new KillFeedManager();
+        MinecraftForge.EVENT_BUS.register(new KillFeedRender(killFeedManager));
 
-        this.autoSwitchToFirstView = new AutoSwitchToFirstView();
-        MinecraftForge.EVENT_BUS.register(this.autoSwitchToFirstView);
+        autoSwitchToFirstView = new AutoSwitchToFirstView();
+        MinecraftForge.EVENT_BUS.register(autoSwitchToFirstView);
 
         WeaponAnimations.registerAnimation("rifle", new AnimationRifle());
         WeaponAnimations.registerAnimation("rifle2", new AnimationRifle2());
@@ -472,7 +459,7 @@ public class ClientProxy extends CommonProxy {
             if (type.contentPack == null)
                 continue;
 
-            File contentPackDir = new File(ModularWarfare.MOD_DIR, type.contentPack);
+            File contentPackDir = new File(ModularWarfare.CONTENT_DIR, type.contentPack);
 
             if (zipJar.matcher(contentPackDir.getName()).matches())
                 continue;
@@ -575,11 +562,11 @@ public class ClientProxy extends CommonProxy {
 
         for (String contentPack : cpSounds.keySet()) {
             try {
-                File contentPackDir = new File(ModularWarfare.MOD_DIR, contentPack);
+                File contentPackDir = new File(ModularWarfare.CONTENT_DIR, contentPack);
                 if (contentPackDir.exists() && contentPackDir.isDirectory()) {
                     ArrayList<String> soundEntries = cpSounds.get(contentPack);
                     if (soundEntries != null && !soundEntries.isEmpty()) {
-                        Path assetsDir = Paths.get(ModularWarfare.MOD_DIR.getAbsolutePath() + "/" + contentPack + "/assets/modularwarfare/");
+                        Path assetsDir = Paths.get(ModularWarfare.CONTENT_DIR.getAbsolutePath() + "/" + contentPack + "/assets/modularwarfare/");
                         if (!Files.exists(assetsDir))
                             Files.createDirectories(assetsDir);
                         Path soundsFile = Paths.get(assetsDir + "/sounds.json");
@@ -640,11 +627,11 @@ public class ClientProxy extends CommonProxy {
 
         for (String contentPack : langEntryMap.keySet()) {
             try {
-                File contentPackDir = new File(ModularWarfare.MOD_DIR, contentPack);
+                File contentPackDir = new File(ModularWarfare.CONTENT_DIR, contentPack);
                 if (contentPackDir.exists() && contentPackDir.isDirectory()) {
                     ArrayList<BaseType> langEntries = langEntryMap.get(contentPack);
                     if (langEntries != null && !langEntries.isEmpty()) {
-                        Path langDir = Paths.get(ModularWarfare.MOD_DIR.getAbsolutePath() + "/" + contentPack + "/assets/modularwarfare/lang/");
+                        Path langDir = Paths.get(ModularWarfare.CONTENT_DIR.getAbsolutePath() + "/" + contentPack + "/assets/modularwarfare/lang/");
                         if (!Files.exists(langDir))
                             Files.createDirectories(langDir);
                         Path langPath = Paths.get(langDir + "/en_US.lang");
