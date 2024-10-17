@@ -12,20 +12,15 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumHand;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.function.Function;
 
 public class ItemAmmo extends BaseItem {
 
-    public static final Function<AmmoType, ItemAmmo> factory = type -> {
-        return new ItemAmmo(type);
-    };
     public AmmoType type;
 
     public ItemAmmo(AmmoType type) {

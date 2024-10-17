@@ -12,6 +12,7 @@ import com.modularwarfare.client.customplayer.CustomPlayerConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
 import com.modularwarfare.common.CommonProxy;
 import com.modularwarfare.common.MWTab;
+import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
@@ -66,6 +67,7 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.common.registry.EntityRegistry;
 import net.minecraftforge.fml.relauncher.FMLLaunchHandler;
+import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,6 +79,7 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.modularwarfare.common.CommonProxy.zipJar;
 
@@ -320,11 +323,8 @@ public class ModularWarfare {
                                         textureTypes.put(parsedType.internalName, (TextureType) parsedType);
                                     }
                                 }
-                            } catch (com.google.gson.JsonParseException ex) {
+                            } catch (JsonParseException | FileNotFoundException ex) {
                                 ex.printStackTrace();
-                                continue;
-                            } catch (FileNotFoundException exception) {
-                                exception.printStackTrace();
                             }
                         }
                     }
@@ -409,8 +409,7 @@ public class ModularWarfare {
                                         if(parsedType instanceof TextureType){
                                             textureTypes.put(parsedType.internalName, (TextureType) parsedType);
                                         }
-                                    } catch (com.google.gson.JsonParseException ex) {
-                                        continue;
+                                    } catch (JsonParseException ignored) {
                                     }
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -605,97 +604,60 @@ public class ModularWarfare {
     }
 
     @SubscribeEvent
-    void registerItems(RegistryEvent.Register<Item> event) {
-        for (File file : contentPacks) {
-            List<Item> tabOrder = new ArrayList<>();
-            for (ItemGun itemGun : gunTypes.values()) {
-                if (itemGun.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemGun);
-                    tabOrder.add(itemGun);
-                }
-            }
-            for (ItemAmmo itemAmmo : ammoTypes.values()) {
-                if (itemAmmo.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemAmmo);
-                    tabOrder.add(itemAmmo);
-                }
-            }
-            for (ItemBullet itemBullet : bulletTypes.values()) {
-                if (itemBullet.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemBullet);
-                    tabOrder.add(itemBullet);
-                }
-            }
-            for (ItemMWArmor itemArmor : armorTypes.values()) {
-                if (itemArmor.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemArmor);
-                    tabOrder.add(itemArmor);
-                }
-            }
-            for (ItemAttachment itemAttachment : attachmentTypes.values()) {
-                if (itemAttachment.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemAttachment);
-                    tabOrder.add(itemAttachment);
-                }
-            }
+    void registerItems(RegistryEvent.Register<Item> evt) {
+        final IForgeRegistry<Item> registry = evt.getRegistry();
+        contentPacks.forEach(file -> {
+            final String fname = file.getName();
+            final List<Item> tabOrder = new ArrayList<>();
 
-            for (ItemSpecialArmor itemSpecialArmor : specialArmorTypes.values()) {
-                if (itemSpecialArmor.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemSpecialArmor);
-                    tabOrder.add(itemSpecialArmor);
-                }
-            }
+            Stream.of(gunTypes, ammoTypes, bulletTypes, attachmentTypes, specialArmorTypes, sprayTypes, backpackTypes, grenadeTypes)
+                .map(HashMap::values)
+                .flatMap(Collection::stream)
+                .filter(it -> it.baseType.contentPack.equals(fname))
+                .forEachOrdered(it -> {
+                    registry.register(it);
+                    tabOrder.add(it);
+                });
 
-            for (ItemSpray itemSpray : sprayTypes.values()) {
-                if (itemSpray.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemSpray);
-                    tabOrder.add(itemSpray);
-                }
-            }
+            armorTypes.values().stream()
+                .filter(it -> it.type.contentPack.equals(fname))
+                .forEachOrdered(it -> {
+                    registry.register(it);
+                    tabOrder.add(it);
+                });
 
-            for (ItemBackpack itemBackpack : backpackTypes.values()) {
-                if (itemBackpack.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemBackpack);
-                    tabOrder.add(itemBackpack);
-                }
-            }
-
-            for (ItemGrenade itemGrenade : grenadeTypes.values()) {
-                if (itemGrenade.type.contentPack.equals(file.getName())) {
-                    event.getRegistry().register(itemGrenade);
-                    tabOrder.add(itemGrenade);
-                }
-            }
-
-            ItemRegisterEvent itemRegisterEvent = new ItemRegisterEvent(event.getRegistry(), tabOrder);
+            ItemRegisterEvent itemRegisterEvent = new ItemRegisterEvent(registry, tabOrder);
             MinecraftForge.EVENT_BUS.post(itemRegisterEvent);
 
-            itemRegisterEvent.tabOrder.forEach((item)->{
-                if(item instanceof ItemGun){
-                    for(SkinType skin: ((ItemGun) item).type.modelSkins) {
-                        CommonProxy.preloadSkinTypes.put(skin, ((ItemGun) item).type);
+            itemRegisterEvent.tabOrder.forEach(item -> {
+                if (item instanceof ItemGun) {
+                    final ItemGun itemGun = (ItemGun) item;
+                    final GunType type = itemGun.type;
+                    for(SkinType skin: type.modelSkins) {
+                        CommonProxy.preloadSkinTypes.put(skin, type);
                     }
-                    CommonProxy.preloadFlashTex.add(((ItemGun) item).type.flashType);
+                    CommonProxy.preloadFlashTex.add(type.flashType);
                 }
-                
-                if(item instanceof ItemBullet){
-                    for(SkinType skin: ((ItemBullet) item).type.modelSkins) {
-                        CommonProxy.preloadSkinTypes.put(skin, ((ItemBullet) item).type);
-                    }
-                }
-                
-                if(item instanceof ItemMWArmor) {
-                    for(SkinType skin: ((ItemMWArmor) item).type.modelSkins) {
-                        CommonProxy.preloadSkinTypes.put(skin, ((ItemMWArmor) item).type);
+                else if (item instanceof ItemBullet) {
+                    final ItemBullet itemBullet = (ItemBullet) item;
+                    final BulletType type = itemBullet.type;
+                    for(SkinType skin: type.modelSkins) {
+                        CommonProxy.preloadSkinTypes.put(skin, type);
                     }
                 }
-
+                else if (item instanceof ItemMWArmor) {
+                    final ItemMWArmor itemArmor = (ItemMWArmor) item;
+                    final ArmorType type = itemArmor.type;
+                    for(SkinType skin: type.modelSkins) {
+                        CommonProxy.preloadSkinTypes.put(skin, type);
+                    }
+                }
             });
 
-            MODS_TABS.get(file.getName()).preInitialize(tabOrder);
-        }
+            MODS_TABS.get(fname).preInitialize(tabOrder);
+        });
 
-        event.getRegistry().register(new ItemLight("light"));
+        registry.register(new ItemLight("light"));
     }
 
     @SubscribeEvent

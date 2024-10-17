@@ -7,13 +7,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
-import java.util.function.Function;
-
 public class ItemAttachment extends BaseItem {
 
-    public static final Function<AttachmentType, ItemAttachment> factory = type -> {
-        return new ItemAttachment(type);
-    };
     public AttachmentType type;
 
     public ItemAttachment(AttachmentType type) {

@@ -14,13 +14,8 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.world.World;
 
-import java.util.function.Function;
-
 public class ItemGrenade extends BaseItem {
 
-    public static final Function<GrenadeType, ItemGrenade> factory = type -> {
-        return new ItemGrenade(type);
-    };
     public GrenadeType type;
 
     public ItemGrenade(GrenadeType type) {

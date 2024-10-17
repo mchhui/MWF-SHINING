@@ -1,10 +1,8 @@
 package com.modularwarfare.common.type;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.api.MWArmorType;
 import com.modularwarfare.api.TypeRegisterEvent;
-import com.modularwarfare.client.customplayer.CustomPlayer;
 import com.modularwarfare.client.fpp.basic.configs.*;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.model.*;
@@ -37,7 +35,7 @@ public class ContentTypes {
         });
 
         registerType("guns", GunType.class, (type, reload) -> {
-            ContentTypes.<GunType, ItemGun>assignType(ModularWarfare.gunTypes, ItemGun.factory, (GunType) type, reload);
+            ContentTypes.assignType(ModularWarfare.gunTypes, ItemGun::new, (GunType) type, reload);
 
             if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
                 if(((GunType)type).animationType.equals(WeaponAnimationType.ENHANCED)){
@@ -49,7 +47,7 @@ public class ContentTypes {
         });
 
         registerType("ammo", AmmoType.class, (type, reload) -> {
-            ContentTypes.<AmmoType, ItemAmmo>assignType(ModularWarfare.ammoTypes, ItemAmmo.factory, (AmmoType) type, reload);
+            ContentTypes.assignType(ModularWarfare.ammoTypes, ItemAmmo::new, (AmmoType) type, reload);
 
             if (FMLCommonHandler.instance().getSide() == Side.CLIENT)
                 if (((AmmoType) type).isDynamicAmmo) {
@@ -58,7 +56,7 @@ public class ContentTypes {
         });
 
         registerType("attachments", AttachmentType.class, (type, reload) -> {
-            ContentTypes.<AttachmentType, ItemAttachment>assignType(ModularWarfare.attachmentTypes, ItemAttachment.factory, (AttachmentType) type, reload);
+            ContentTypes.assignType(ModularWarfare.attachmentTypes, ItemAttachment::new, (AttachmentType) type, reload);
 
             if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
                 ((ModelAttachment) (type.model)).config = ModularWarfare.getRenderConfig(type, AttachmentRenderConfig.class);
@@ -98,21 +96,21 @@ public class ContentTypes {
         });
 
         registerType("bullets", BulletType.class, (type, reload) -> {
-            ContentTypes.<BulletType, ItemBullet>assignType(ModularWarfare.bulletTypes, ItemBullet.factory, (BulletType) type, reload);
+            ContentTypes.assignType(ModularWarfare.bulletTypes, ItemBullet::new, (BulletType) type, reload);
         });
 
         registerType("sprays", SprayType.class, (type, reload) -> {
-            ContentTypes.<SprayType, ItemSpray>assignType(ModularWarfare.sprayTypes, ItemSpray.factory, (SprayType) type, reload);
+            ContentTypes.assignType(ModularWarfare.sprayTypes, ItemSpray::new, (SprayType) type, reload);
         });
         registerType("backpacks", BackpackType.class, (type, reload) -> {
-            ContentTypes.<BackpackType, ItemBackpack>assignType(ModularWarfare.backpackTypes, ItemBackpack.factory, (BackpackType) type, reload);
+            ContentTypes.assignType(ModularWarfare.backpackTypes, ItemBackpack::new, (BackpackType) type, reload);
 
             if (FMLCommonHandler.instance().getSide() == Side.CLIENT)
                 ((ModelBackpack) (type.model)).config = ModularWarfare.getRenderConfig(type, BackpackRenderConfig.class);
         });
 
         registerType("grenades", GrenadeType.class, (type, reload) -> {
-            ContentTypes.<GrenadeType, ItemGrenade>assignType(ModularWarfare.grenadeTypes, ItemGrenade.factory, (GrenadeType) type, reload);
+            ContentTypes.assignType(ModularWarfare.grenadeTypes, ItemGrenade::new, (GrenadeType) type, reload);
 
             if (FMLCommonHandler.instance().getSide() == Side.CLIENT)
                 ((ModelGrenade) (type.model)).config = ModularWarfare.getRenderConfig(type, GrenadeRenderConfig.class);
