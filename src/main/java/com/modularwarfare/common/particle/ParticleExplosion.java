@@ -2,6 +2,8 @@ package com.modularwarfare.common.particle;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.common.guns.BulletType;
+import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.utility.RenderHelperMW;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.IParticleFactory;
@@ -11,6 +13,8 @@ import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.world.World;
@@ -84,7 +88,25 @@ public class ParticleExplosion extends Particle {
             this.alpha_rubble = 0;
         }
 
-        RenderHelperMW.renderSmoke(new ResourceLocation(ModularWarfare.MOD_ID, "textures/particles/explosion.png"),
+        Minecraft mc = Minecraft.getMinecraft();
+        ItemStack stack = mc.player.getHeldItem(EnumHand.MAIN_HAND);
+        if (stack != null) {}
+        ItemStack bulletStack = new ItemStack(stack.getTagCompound().getCompoundTag("bullet"));
+        ResourceLocation texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/particles/explosion.png");
+        String model = null;
+        if (bulletStack.getItem() instanceof ItemBullet) {
+            BulletType bulletType = ((ItemBullet) bulletStack.getItem()).type;
+            if (bulletType.customExplosionModel!=null) {
+                model = "modularwarfare:explosion/obj/" + bulletType.customExplosionModel;
+            }
+            if (bulletType.customExplosionTexture!=null) {
+                texture = new ResourceLocation(ModularWarfare.MOD_ID, "explosion/texture/" + bulletType.customExplosionTexture);
+            }
+        }
+
+        RenderHelperMW.renderSmoke(
+                texture,
+                model, 
                 this.posX,
                 this.posY + (this.particleAge / 100),
                 this.posZ,
