@@ -90,8 +90,10 @@ public class ParticleExplosion extends Particle {
 
         Minecraft mc = Minecraft.getMinecraft();
         ItemStack stack = mc.player.getHeldItem(EnumHand.MAIN_HAND);
-        if (stack != null) {}
-        ItemStack bulletStack = new ItemStack(stack.getTagCompound().getCompoundTag("bullet"));
+        ItemStack bulletStack = ItemStack.EMPTY;
+        if (stack.hasTagCompound() && stack.getTagCompound().hasKey("bullet", 10)) {
+            bulletStack = new ItemStack(stack.getTagCompound().getCompoundTag("bullet"));
+        }
         ResourceLocation texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/particles/explosion.png");
         String model = null;
         if (bulletStack.getItem() instanceof ItemBullet) {

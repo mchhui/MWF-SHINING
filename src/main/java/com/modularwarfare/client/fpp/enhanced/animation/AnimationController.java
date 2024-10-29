@@ -192,10 +192,12 @@ public class AnimationController {
                     takedownSpeed = config.animations.get(AnimationType.TAKEDOWN_EMPTY).getSpeed(config.FPS) * stepTick;
                 }  
             }
-            if(DRAW<1) {
-                takedownSpeed=0;  
+            GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
+            if(type.drawForce) {
+                if(DRAW<1) {
+                    takedownSpeed=0;  
+                }
             }
-            
             TAKEDOWN-=takedownSpeed;
             if(TAKEDOWN<=0) {
                 TAKEDOWN=0;
