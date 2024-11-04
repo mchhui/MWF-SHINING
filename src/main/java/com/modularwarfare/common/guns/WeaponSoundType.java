@@ -211,8 +211,13 @@ public enum WeaponSoundType {
     @SerializedName("meleeAttackHeavySecond") MeleeAttackHeavySecond("meleeAttackHeavySecond", 5, "melee.attack"),
     @SerializedName("meleePostAttackHeavy") MeleePostAttackHeavy("meleePostAttackHeavy", 5, "melee.attack"),
     @SerializedName("meleeBouncedHeavy") MeleeBouncedHeavy("meleeBouncedHeavy", 5, "melee.attack"),
-    @SerializedName("meleeHit") MeleeHit("meleeHit", 5, "melee.attack");
+    @SerializedName("meleeHit") MeleeHit("meleeHit", 5, "melee.attack"),
 
+    //配件音效
+    @SerializedName("attFovChange") AttFOVChange("attFovChange", 8, "defweaponmodeswitch"),
+    @SerializedName("attFovStage") Att_FOVStage("attFovStage", 8, "defweaponmodeswitch"),
+
+    ;
 
     public String eventName;
     public Integer defaultRange;

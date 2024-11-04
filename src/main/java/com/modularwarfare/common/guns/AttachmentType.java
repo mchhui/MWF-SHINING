@@ -10,6 +10,7 @@ import com.modularwarfare.common.type.BaseType;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
 
+
 public class AttachmentType extends BaseType {
 
     public AttachmentPresetEnum attachmentType;
@@ -43,6 +44,7 @@ public class AttachmentType extends BaseType {
                 sight.overlayType.initDefaultTextures(TextureEnumType.Overlay);
             }
         }
+        loadWeaponSoundMap();
     }
 
     @Override

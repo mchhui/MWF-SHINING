@@ -1,9 +1,15 @@
 package com.modularwarfare.client.fpp.basic.configs;
 
 
+import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.WeaponSoundType;
+import com.modularwarfare.objects.SoundEntry;
 import org.lwjgl.util.vector.Vector3f;
 
 import net.minecraft.util.ResourceLocation;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class AttachmentRenderConfig {
 
@@ -21,7 +27,21 @@ public class AttachmentRenderConfig {
     }
 
     public static class Sight {
-        public float fovZoom = 3.5f;
+        //cache
+        private transient float[] stageFovZoomRange = null;
+
+
+        //倍率切换(滚轮切换) 默认关闭 可以指定初始倍率
+        public float[] fovZoomStage = null;
+        public int fovZoomStageIndex = 0;
+
+
+        //无极倍率(滚轮切换) 默认关闭
+        public float fovZoomMin = -1F;
+        public float fovZoomMax = -1F;
+
+        public float fovZoom = 1f;
+
         public float mouseSensitivityFactor = 1.0f;
         public float rectileScale = 1.0f;
         
@@ -34,6 +54,20 @@ public class AttachmentRenderConfig {
         public float uniformScaleRangeY=1f;
         public float uniformScaleStrengthY=1f;
         public float uniformVerticality=0f;
+
+        public float[] GetStageFovZoomRange()
+        {
+            if(stageFovZoomRange!=null)return stageFovZoomRange;
+            float max = Float.MIN_VALUE , min = Float.MAX_VALUE;
+            for(float v : fovZoomStage)
+            {
+                max = Math.max(v,max);
+                min = Math.min(min,v);
+            }
+            stageFovZoomRange = new float[]{min,max};
+            return stageFovZoomRange;
+        }
+
     }
 
     public static class Grip {

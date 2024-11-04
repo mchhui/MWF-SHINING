@@ -1,6 +1,12 @@
 package com.modularwarfare.client;
 
+import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
+import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.model.ModelAttachment;
+import com.modularwarfare.common.guns.*;
+import com.modularwarfare.utility.maths.MathUtils;
 import net.minecraft.network.play.INetHandlerPlayClient;
+import net.minecraft.util.SoundEvent;
 import org.lwjgl.input.Keyboard;
 
 import com.modularwarfare.ModConfig;
@@ -14,7 +20,6 @@ import com.modularwarfare.common.backpacks.BackpackType;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
-import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.network.PacketBackpackElytraStart;
@@ -113,6 +118,51 @@ public class ClientEventHandler {
     public void onMouse(MouseEvent event) {
         mouseDX=event.getDx();
         mouseDY=event.getDy();
+
+
+        if(event.getDwheel()!=0)
+        {
+            ItemStack sightItem = GunType.getAttachment(Minecraft.getMinecraft().player.getHeldItemMainhand(), AttachmentPresetEnum.Sight);
+
+            if (ClientRenderHooks.isAimingScope && sightItem!=null && sightItem.getItem() instanceof ItemAttachment) {
+                ItemAttachment itemAttachment = ((ItemAttachment) sightItem.getItem());
+                AttachmentRenderConfig cfg = ((ModelAttachment) itemAttachment.baseType.model)    .config;
+                AttachmentRenderConfig.Sight sight = cfg.sight;
+
+                SoundEvent se = null;
+
+                if(sight.fovZoomStage!=null){
+                    int dump = sight.fovZoomStageIndex;
+
+                    sight.fovZoomStageIndex+=event.getDwheel()>0?1:-1;
+                    if(sight.fovZoomStageIndex<0)                                  sight.fovZoomStageIndex=sight.fovZoomStage.length-1;
+                    else if(sight.fovZoomStageIndex>=sight.fovZoomStage.length-1)  sight.fovZoomStageIndex=0;
+
+                    sight.fovZoom = sight.fovZoomStage[sight.fovZoomStageIndex];
+
+                    se = (dump == sight.fovZoomStageIndex) ? null : itemAttachment.type.getSound(Minecraft.getMinecraft().player, WeaponSoundType.AttFOVChange);
+
+                    event.setCanceled(true);
+                }else if(sight.fovZoomMax>1F) {
+                    float dump = sight.fovZoom;
+                    sight.fovZoom = MathUtils.clamp(
+                            sight.fovZoom + event.getDwheel()/500F,
+                            sight.fovZoomMin,
+                            sight.fovZoomMax
+                    );
+
+                    se =    (dump==sight.fovZoom) ? null : itemAttachment.type.getSound(Minecraft.getMinecraft().player, WeaponSoundType.Att_FOVStage);
+
+                    event.setCanceled(true);
+                }
+
+                if(se!=null)
+                {
+                    PositionedSoundRecord sound = PositionedSoundRecord.getRecord(se, 1F, 1F);
+                    Minecraft.getMinecraft().getSoundHandler().playSound(sound);
+                }
+            }
+        }
     }
     
     @SubscribeEvent(priority = EventPriority.HIGH)

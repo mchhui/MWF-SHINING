@@ -5,6 +5,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.RenderAmmoCountEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
@@ -30,6 +31,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -125,11 +127,14 @@ public class GunUI {
                                                 } else {
                                                     ResourceLocation overlayToRender = itemAttachment.type.sight.overlayType.resourceLocations.get(0);
 
-                                                    float factor = 1;
-                                                    if (width < 700) {
-                                                        factor = 2;
-                                                    }
-                                                    int size = (32 * 2 / (int) (event.getResolution().getScaleFactor() * factor)) + ((int) (crouchSwitch) * 5);
+                                                    float factor = Minecraft.getMinecraft().displayWidth/2560F * 0.75F;
+//                                                    float factor = 1;
+//                                                    if (width < 700) {
+//                                                        factor = 2;
+//                                                    }
+                                                    int size = (int) (32 * 2 / event.getResolution().getScaleFactor() * factor) + ((int) (crouchSwitch) * 5);
+
+
                                                     float scale=Math.abs(playerRecoilYaw)+Math.abs(playerRecoilPitch);
                                                     scale*=((ModelAttachment) itemAttachment.type.model).config.sight.factorCrossScale;
                                                     size = (int) (((size * (1 + (scale > 0.8 ? scale : 0) * 0.2))) * ((ModelAttachment) itemAttachment.type.model).config.sight.rectileScale);
@@ -139,7 +144,8 @@ public class GunUI {
                                                     }
                                                     GL11.glTranslatef(-size, -size, 0);
                                                     GL11.glTranslatef((VAL2 / 10), (VAL / 10), 0);
-                                                    RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
+//                                                    RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
+                                                    RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f);
                                                 }
 
                                                 GL11.glPopMatrix();
