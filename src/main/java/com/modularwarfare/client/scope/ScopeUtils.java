@@ -43,6 +43,7 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.optifine.shaders.MWFOptifineShadesHelper;
 import net.optifine.shaders.Shaders;
 
+import org.lwjgl.Sys;
 import org.lwjgl.opengl.*;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.CROSS_ROTATE;
@@ -571,8 +572,17 @@ public class ScopeUtils {
                         if (GunType.getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight) != null) {
                             final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight).getItem();
                             if (itemAttachment != null) {
-                                if (itemAttachment.type != null) {
-                                    mc.gameSettings.mouseSensitivity = mouseSensitivityBackup * ((ModelAttachment) itemAttachment.type.model).config.sight.mouseSensitivityFactor;
+                                if (itemAttachment.type != null)
+                                {
+                                    Sight sightCFG = ((ModelAttachment) itemAttachment.type.model).config.sight;
+                                    float fovScale;
+
+                                    if(sightCFG.fovZoomStage !=null)  fovScale = sightCFG.fovZoom / sightCFG.GetStageFovZoomRange()[1];
+                                    else                              fovScale = sightCFG.fovZoomMax > 1F ? sightCFG.fovZoom/sightCFG.fovZoomMax : 1F;
+
+                                    float mouseSensitivity = sightCFG.mouseSensitivityFactor * (1F-fovScale+1F);
+
+                                    mc.gameSettings.mouseSensitivity = mouseSensitivityBackup * mouseSensitivity;
                                     hasBeenReseted = false;
                                 }
                             }
