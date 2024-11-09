@@ -74,7 +74,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
             if (ModularWarfare.bulletTypes.containsKey(this.getBulletName())) {
                 ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());
                 MWFExplosion explosion = new MWFExplosion(this.world, this.player, posX, posY, posZ,
-                        itemBullet.type.explosionStrength, false, itemBullet.type.damageWorld);
+                        itemBullet.type.explosionStrength, false, itemBullet.type.damageWorld, itemBullet.type.allowBlockDrops);
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
                 ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);

@@ -47,9 +47,13 @@ public class BulletType extends BaseType {
     public boolean isSmoke = true;
     public boolean isExplosion = true;
     public boolean damageWorld = true;
+    public boolean allowBlockDrops = true;
     
     public boolean isDynamicBullet=false;
     public boolean sameTextureAsGun=false;
+
+    public String customExplosionModel;
+    public String customExplosionTexture;
     
     /**
      * Custom Bullet Trail
