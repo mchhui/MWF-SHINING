@@ -27,12 +27,14 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class MWFExplosion
 {
     private final boolean causesFire;
+    private final boolean allowBlockDrops;
     private final boolean damagesTerrain;
     private final Random random;
     private final World world;
@@ -49,18 +51,18 @@ public class MWFExplosion
     @SideOnly(Side.CLIENT)
     public MWFExplosion(World worldIn, Entity entityIn, double x, double y, double z, float size, List<BlockPos> affectedPositions)
     {
-        this(worldIn, entityIn, x, y, z, size, false, true, affectedPositions);
+        this(worldIn, entityIn, x, y, z, size, false, true, true, affectedPositions);
     }
 
     @SideOnly(Side.CLIENT)
-    public MWFExplosion(World worldIn, Entity entityIn, double x, double y, double z, float size, boolean causesFire, boolean damagesTerrain, List<BlockPos> affectedPositions)
+    public MWFExplosion(World worldIn, Entity entityIn, double x, double y, double z, float size, boolean causesFire, boolean damagesTerrain, boolean allowBlockDrops, List<BlockPos> affectedPositions)
     {
-        this(worldIn, entityIn, x, y, z, size, causesFire, damagesTerrain);
+        this(worldIn, entityIn, x, y, z, size, causesFire, damagesTerrain, allowBlockDrops);
         this.affectedBlockPositions.addAll(affectedPositions);
         this.explosion.getAffectedBlockPositions().addAll(affectedPositions);
     }
 
-    public MWFExplosion(World worldIn, Entity entityIn, double x, double y, double z, float size, boolean flaming, boolean damagesTerrain)
+    public MWFExplosion(World worldIn, Entity entityIn, double x, double y, double z, float size, boolean flaming, boolean damagesTerrain, boolean allowBlockDrops)
     {
         this.random = new Random();
         this.world = worldIn;
@@ -70,6 +72,7 @@ public class MWFExplosion
         this.y = y;
         this.z = z;
         this.causesFire = flaming;
+        this.allowBlockDrops = allowBlockDrops;
         this.damagesTerrain = damagesTerrain;
         this.position = new Vec3d(this.x, this.y, this.z);
         this.explosion=new Explosion(worldIn, entityIn, x, y, z, size, flaming, damagesTerrain);
@@ -225,13 +228,17 @@ public class MWFExplosion
                     d3 = d3 * d7;
                     d4 = d4 * d7;
                     d5 = d5 * d7;
-                    this.world.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, (d0 + this.x) / 2.0D, (d1 + this.y) / 2.0D, (d2 + this.z) / 2.0D, d3, d4, d5);
-                    this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0, d1, d2, d3, d4, d5);
+                    if(!this.world.isRemote && this.world instanceof WorldServer) {
+                        WorldServer worldServer = (WorldServer) this.world;
+                        worldServer.spawnParticle(EnumParticleTypes.EXPLOSION_NORMAL, (d0 + this.x) / 2.0D, (d1 + this.y) / 2.0D, (d2 + this.z) / 2.0D, d3, d4, d5);
+                        worldServer.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, d0, d1, d2, d3, d4, d5);
+                    }
+                    
                 }
 
                 if (iblockstate.getMaterial() != Material.AIR)
                 {
-                    if (block.canDropFromExplosion(this.explosion))
+                    if (this.allowBlockDrops && block.canDropFromExplosion(this.explosion))
                     {
                         block.dropBlockAsItemWithChance(this.world, blockpos, this.world.getBlockState(blockpos), 1.0F / this.size, 0);
                     }

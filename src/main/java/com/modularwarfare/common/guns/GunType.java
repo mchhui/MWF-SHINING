@@ -242,6 +242,8 @@ public class GunType extends BaseType {
     // Misc Settings
     public boolean allowEquipSounds = true;
     // Misc Settings
+    public boolean drawForce = false;
+    // Misc Settings
     public boolean allowSprintFiring = true;
 
     //Only Enhanced ASM

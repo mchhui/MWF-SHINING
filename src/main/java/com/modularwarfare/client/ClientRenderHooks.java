@@ -80,6 +80,7 @@ public class ClientRenderHooks {
     public static int wannaSlot=-1;
 
     public static final ResourceLocation grenade_smoke = new ResourceLocation("modularwarfare", "textures/particles/smoke.png");
+    public static final ResourceLocation grenade_smoke_model = null;
 
 
     public ClientRenderHooks() {
@@ -210,7 +211,7 @@ public class ClientRenderHooks {
                 EntitySmokeGrenade smokeGrenade = (EntitySmokeGrenade) givenEntity;
                 if (smokeGrenade.exploded) {
                     if (smokeGrenade.smokeTime <= 220) {
-                        RenderHelperMW.renderSmoke(grenade_smoke, smokeGrenade.posX, smokeGrenade.posY + 1, smokeGrenade.posZ, partialTicks, 600, 600, "0xFFFFFF", 0.8f);
+                        RenderHelperMW.renderSmoke(grenade_smoke, null, smokeGrenade.posX, smokeGrenade.posY + 1, smokeGrenade.posZ, partialTicks, 600, 600, "0xFFFFFF", 0.8f);
                     }
                 }
             }
