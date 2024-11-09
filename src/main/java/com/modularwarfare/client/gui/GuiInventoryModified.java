@@ -117,4 +117,18 @@ public class GuiInventoryModified extends InventoryEffectRenderer {
         this.mc.getTextureManager().bindTexture(GuiInventoryModified.ICONS);
         this.drawTexturedModalRect(x, y, 0, 0, 18, 18);
     }
+    
+    @Override
+    public void handleKeyboardInput() throws IOException {
+        if (Loader.isModLoaded("mwinventorytweak")) {
+            final int manageKeyInput = Keyboard.getEventKey();
+            if (MwInventoryTweakAPI.getInvTweak().getKeyCode() == manageKeyInput) {
+                MwInventoryTweakAPI.tweakInventory();
+            }
+            if (MwInventoryTweakAPI.getBackpackTweak().getKeyCode() == manageKeyInput) {
+                MwInventoryTweakAPI.tweakBackpack();
+            }
+            super.handleKeyboardInput();
+        }
+    }
 }
