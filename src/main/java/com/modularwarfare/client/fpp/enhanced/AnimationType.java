@@ -73,6 +73,12 @@ public enum AnimationType {
         if(this==FIRE_LAST) {
             return true;
         }
+        if(this==FIRE_ADS) {
+            return true;
+        }
+        if(this==FIRE_LAST_ADS) {
+            return true;
+        }
         return false;
     }
     

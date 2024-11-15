@@ -17,11 +17,6 @@ public class MWFClientListener {
         }
     }
     
-    @SubscribeEvent
-    public void onRenderBonesEvent(RenderBonesEvent.RotationAngles event) {
-        ClientLitener.setRotationAngles(event.bones, event.limbSwing, event.limbSwingAmount, event.ageInTicks, event.netHeadYaw,
-                event.headPitch, event.scaleFactor, event.entityIn);
-    }
 
     @SubscribeEvent
     public void onPlayerSnapshotCreate(PlayerSnapshotCreateEvent.Pre event) {
