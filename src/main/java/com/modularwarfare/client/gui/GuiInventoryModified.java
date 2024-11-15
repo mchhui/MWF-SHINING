@@ -1,8 +1,14 @@
 package com.modularwarfare.client.gui;
 
+import java.io.IOException;
+
+import org.lwjgl.input.Keyboard;
+
+import com.github.ginirohikocha.mwinventorytweak.api.MwInventoryTweakAPI;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.container.ContainerInventoryModified;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.GlStateManager;
@@ -13,6 +19,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
