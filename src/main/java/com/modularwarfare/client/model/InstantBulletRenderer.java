@@ -31,6 +31,8 @@ import java.util.Random;
 public class InstantBulletRenderer {
     private static TextureManager textureManager;
     private static ArrayList<InstantShotTrail> trails = new ArrayList<>();
+    // 添加静态模型缓存
+    private static final HashMap<String, ObjModel> MODEL_CACHE = new HashMap<>();
 
     public static void AddTrail(InstantShotTrail trail) {
         trails.add(trail);
@@ -51,7 +53,6 @@ public class InstantBulletRenderer {
     }
 
     public static class InstantShotTrail {
-        private HashMap<String, ObjModel> modelCache=new HashMap<String, ObjModel>();
         private Vector3f origin;
         private Vector3f hitPos;
         private float width;
@@ -207,10 +208,10 @@ public class InstantBulletRenderer {
                 GlStateManager.rotate(yaw, 0, 1, 0);
                 GlStateManager.rotate(pitch, -1, 0, 0);
                 
-                ObjModel obj=modelCache.get(model);
-                if(obj==null) {
-                    modelCache.put(model, ObjModelLoader.load(new ResourceLocation(model)));
-                    obj=modelCache.get(model);
+                ObjModel obj = MODEL_CACHE.get(model);
+                if(obj == null) {
+                    MODEL_CACHE.put(model, ObjModelLoader.load(new ResourceLocation(model)));
+                    obj = MODEL_CACHE.get(model);
                 }
                 obj.renderAll(1);
                 GlStateManager.popMatrix();
