@@ -1062,11 +1062,40 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                     if(attachment==AttachmentPresetEnum.Sight) {
                                         renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
                                     }
+                                    AnimationType currentAction = null;
+                                    if (anim != null && anim.controller != null) {
+                                        currentAction = anim.controller.getPlayingAnimation();
+                                    }
                                     if(attachment==AttachmentPresetEnum.Laser && laserEnabled) {
                                         AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
                                         renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale);
                                         if(!applySprint && RenderParameters.collideFrontDistance <= 0.2f) {
-                                            renderLaserDot(laserConfig, player);
+                                            boolean isInAction = currentAction == AnimationType. PRE_RELOAD
+                                                || currentAction == AnimationType.RELOAD_FIRST
+                                                || currentAction == AnimationType.RELOAD_SECOND
+                                                || currentAction == AnimationType.POST_RELOAD
+                                                || currentAction == AnimationType.PRE_LOAD
+                                                || currentAction == AnimationType.LOAD
+                                                || currentAction == AnimationType.POST_LOAD
+                                                || currentAction == AnimationType.PRE_UNLOAD
+                                                || currentAction == AnimationType.UNLOAD
+                                                || currentAction == AnimationType.POST_UNLOAD
+                                                || currentAction == AnimationType.PRE_RELOAD_EMPTY
+                                                || currentAction == AnimationType.RELOAD_FIRST_EMPTY
+                                                || currentAction == AnimationType.RELOAD_SECOND_EMPTY
+                                                || currentAction == AnimationType.POST_RELOAD_EMPTY
+                                                || currentAction == AnimationType.RELOAD_FIRST_QUICKLY
+                                                || currentAction == AnimationType.RELOAD_SECOND_QUICKLY
+                                                || currentAction == AnimationType.DRAW
+                                                || currentAction == AnimationType.DRAW_EMPTY
+                                                || currentAction == AnimationType.TAKEDOWN
+                                                || currentAction == AnimationType.TAKEDOWN_EMPTY
+                                                || currentAction == AnimationType.INSPECT
+                                                || currentAction == AnimationType.INSPECT_EMPTY;
+
+                                            if(!isInAction) {
+                                                renderLaserDot(laserConfig, player);
+                                            }
                                         }
                                     }
                                     ObjModelRenderer.glowTxtureMode=true;
@@ -1383,15 +1412,21 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             GlStateManager.loadIdentity();
 
             // 设置渲染状态
-            GlStateManager.enableDepth(); // 启用深度测试
-            GlStateManager.depthFunc(GL11.GL_LEQUAL); // 设置深度测试函数
+            GlStateManager.enableDepth();
+            GlStateManager.depthFunc(GL11.GL_LEQUAL);
             GlStateManager.enableBlend();
+            
+            // 使用加法混合模式使点更亮
             GlStateManager.tryBlendFuncSeparate(
                 SourceFactor.SRC_ALPHA, 
-                DestFactor.ONE,
+                DestFactor.ONE,  // 使用ONE使其更亮
                 SourceFactor.ONE, 
                 DestFactor.ZERO
             );
+            
+            // 设置最大亮度
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+            GlStateManager.disableLighting();
             GlStateManager.disableTexture2D();
 
             // 计算激光点大小
@@ -1406,10 +1441,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             GL11.glPointSize(dotSize);
             
             // 设置深度写入
-            GlStateManager.depthMask(true); // 允许写入深度缓冲
+            GlStateManager.depthMask(true);
             GlStateManager.colorMask(true, true, true, true);
             
-            float brightness = 1.2f;
+            // 增加亮度
+            float brightness = 1.5f;
             GlStateManager.color(
                 Math.min(laserConfig.laserColor[0] * brightness, 1.0f),
                 Math.min(laserConfig.laserColor[1] * brightness, 1.0f),
@@ -1428,6 +1464,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             // 恢复渲染状态
             GL11.glDisable(GL11.GL_POINT_SMOOTH);
             GlStateManager.enableTexture2D();
+            GlStateManager.enableLighting();
             GlStateManager.depthMask(true);
             GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
             GlStateManager.tryBlendFuncSeparate(
