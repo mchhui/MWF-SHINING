@@ -39,11 +39,12 @@ import java.util.ArrayList;
 @Mod.EventBusSubscriber(modid = ModularWarfare.MOD_ID, value = Side.CLIENT)
 public final class KeyInputHandler {
 
-    private static final ArrayList<KeyEntry> keyBinds;
+    private static final ArrayList<KeyEntry> keyBinds = new ArrayList<>();
     public static KeyBinding jetpackFire;
 
-    static  {
-        keyBinds = new ArrayList<>();
+    public static void registerKeys() {
+        keyBinds.clear();
+
         keyBinds.add(new KeyEntry(KeyType.GunReload));
         keyBinds.add(new KeyEntry(KeyType.ClientReload));
         keyBinds.add(new KeyEntry(KeyType.FireMode));
@@ -52,11 +53,6 @@ public final class KeyInputHandler {
         keyBinds.add(new KeyEntry(KeyType.AddAttachment));
         keyBinds.add(new KeyEntry(KeyType.Flashlight));
         keyBinds.add(new KeyEntry(KeyType.LaserToggle));
-
-        // Deprecated.
-//        if (!ModConfig.INSTANCE.general.customInventory) {
-//            keyBinds.add(new KeyEntry(KeyType.Backpack));
-//        }
 
         keyBinds.add(new KeyEntry(KeyType.Left));
         keyBinds.add(new KeyEntry(KeyType.Right));

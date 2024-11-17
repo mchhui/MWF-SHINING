@@ -19,6 +19,7 @@ import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.handler.SmoothSwingTicker;
 import com.modularwarfare.client.hud.AttachmentUI;
 import com.modularwarfare.client.hud.FlashSystem;
@@ -835,6 +836,7 @@ public class ClientProxy extends CommonProxy {
         super.registerEventHandlers();
         MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
         MinecraftForge.EVENT_BUS.register(new OBBPlayerManager());
+        KeyInputHandler.registerKeys();
     }
 
 
