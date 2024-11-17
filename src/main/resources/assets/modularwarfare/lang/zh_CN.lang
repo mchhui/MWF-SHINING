@@ -12,6 +12,7 @@ mwf.dictionary.charm=饰品
 mwf.dictionary.skin=喷漆
 mwf.dictionary.barrel=枪管
 mwf.dictionary.stock=枪托
+mwf.dictionary.laser=镭射
 
 mwf:gui.tooltip.basicinfo=§9§l[基本属性]
 mwf:gui.tooltip.attachmentinfo=§9§l[装载配件]

@@ -23,6 +23,8 @@ public class AttachmentType extends BaseType {
     
     public Stock stock = new Stock();
 
+    public Laser laser = new Laser();
+
     public boolean sameTextureAsGun = false;
     
 
@@ -89,6 +91,16 @@ public class AttachmentType extends BaseType {
     	public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f; 
         public float aimSpeedFactor = 1.0f;
+    }
+
+    public static class Laser {
+        // 准确度影响因子
+        public float accuracyFactor = 1.0f;
+        // 瞄准速度影响因子
+        public float aimSpeedFactor = 1.0f;
+        // 后坐力影响因子
+        public float recoilPitchFactor = 1.0f;
+        public float recoilYawFactor = 1.0f;
     }
 
 }

@@ -183,6 +183,9 @@ public class ShotManager {
         float recoilPitchStockFactor = 1.0f;
         float recoilYawStockFactor = 1.0f;
 
+        float recoilPitchLaserFactor = 1.0f;
+        float recoilYawLaserFactor = 1.0f;
+
         if (GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Grip) != null) {
             ItemAttachment gripAttachment = (ItemAttachment) GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Grip).getItem();
             recoilPitchGripFactor = gripAttachment.type.grip.recoilPitchFactor;
@@ -201,6 +204,12 @@ public class ShotManager {
             recoilYawStockFactor = stockAttachment.type.stock.recoilYawFactor;
         }
 
+        if (GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Laser) != null) {
+            ItemAttachment laserAttachment = (ItemAttachment) GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Laser).getItem();
+            recoilPitchLaserFactor = laserAttachment.type.laser.recoilPitchFactor;
+            recoilYawLaserFactor = laserAttachment.type.laser.recoilYawFactor;
+        }
+
         boolean isCrawling = false;
         if(ModularWarfare.isLoadedModularMovements){
             if(ClientLitener.clientPlayerState.isCrawling){
@@ -212,24 +221,24 @@ public class ShotManager {
         if (!(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope)) {
             offsetPitch = gunType.recoilPitch;
             offsetPitch += ((gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch);
-            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor);
+            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor * recoilPitchLaserFactor);
 
 
             offsetYaw = gunType.recoilYaw;
             offsetYaw *= new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw;
-            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor;
+            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor * recoilYawLaserFactor;
             offsetYaw *= RenderParameters.rate * (isCrawling ? 0.2f : 1.0f);
             offsetYaw *= RenderParameters.phase ? 1 : -1;
         } else {
             //offsetYaw *= RenderParameters.phase ? 1 : -1;
             offsetPitch = gunType.recoilPitch;
             offsetPitch += ((gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch);
-            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor);
+            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor * recoilPitchLaserFactor);
             offsetPitch *= gunType.recoilAimReducer;
 
             offsetYaw = gunType.recoilYaw;
             offsetYaw *= new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw;
-            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor;
+            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor * recoilYawLaserFactor;
             offsetYaw *= RenderParameters.rate * (isCrawling ? 0.2f : 1.0f);
             offsetYaw *= gunType.recoilAimReducer;
             offsetYaw *= RenderParameters.phase ? 1 : -1;

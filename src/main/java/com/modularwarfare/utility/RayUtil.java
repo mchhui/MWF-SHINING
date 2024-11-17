@@ -52,7 +52,13 @@ public class RayUtil {
             ItemAttachment barrelAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Barrel).getItem();
             accuracyBarrelFactor = barrelAttachment.type.barrel.accuracyFactor;
         };
-        float acc = gun.bulletSpread * accuracyBarrelFactor;
+        //新增激光散射影响
+        float accuracyLaserFactor = 1.0f;
+        if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Laser) != null) {
+            ItemAttachment laserAttachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Laser).getItem();
+            accuracyLaserFactor = laserAttachment.type.laser.accuracyFactor;
+        };
+        float acc = gun.bulletSpread * accuracyBarrelFactor * accuracyLaserFactor;
             
         if (player.posX != player.lastTickPosX || player.posZ != player.lastTickPosZ) {
             acc += gun.accuracyMoveOffset;

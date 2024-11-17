@@ -9,6 +9,7 @@ import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
@@ -50,6 +51,7 @@ public final class KeyInputHandler {
         keyBinds.add(new KeyEntry(KeyType.GunUnload));
         keyBinds.add(new KeyEntry(KeyType.AddAttachment));
         keyBinds.add(new KeyEntry(KeyType.Flashlight));
+        keyBinds.add(new KeyEntry(KeyType.LaserToggle));
 
         // Deprecated.
 //        if (!ModConfig.INSTANCE.general.customInventory) {
@@ -202,6 +204,24 @@ public final class KeyInputHandler {
                                         RenderGunStatic.isLightOn = !RenderGunStatic.isLightOn;
                                     }
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
+                                }
+                            }
+                        }
+                    }
+                    break;
+
+                case LaserToggle:
+                    if(!entityPlayer.isSpectator()) {
+                        if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
+                            if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
+                                final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+                                if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Laser) != null) {
+                                    final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(gunStack, AttachmentPresetEnum.Laser).getItem();
+                                    if (itemAttachment != null) {
+                                        RenderGunEnhanced renderer = (RenderGunEnhanced)ClientRenderHooks.customRenderers[0];
+                                        renderer.laserEnabled = !renderer.laserEnabled;
+                                        ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
+                                    }
                                 }
                             }
                         }

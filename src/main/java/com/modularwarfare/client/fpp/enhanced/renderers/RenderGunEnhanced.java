@@ -10,6 +10,7 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.model.ModelCustomArmor;
+import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
@@ -61,6 +62,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
@@ -83,6 +85,8 @@ import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Timer;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
@@ -153,6 +157,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     public FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(16);
 
     private boolean renderingMagazine = true;
+
+    public boolean laserEnabled = false;
 
     private float linearInterpolation(float start, float end, float alpha) {
         return start + (end - start) * alpha;
@@ -1056,6 +1062,13 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                     if(attachment==AttachmentPresetEnum.Sight) {
                                         renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
                                     }
+                                    if(attachment==AttachmentPresetEnum.Laser && laserEnabled) {
+                                        AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
+                                        renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale);
+                                        if(!applySprint && RenderParameters.collideFrontDistance <= 0.2f) {
+                                            renderLaserDot(laserConfig, player);
+                                        }
+                                    }
                                     ObjModelRenderer.glowTxtureMode=true;
                                 });
                             });
@@ -1278,12 +1291,121 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.disableBlend();
     }
 
+    private void renderLaserModel(AttachmentRenderConfig.Laser laserConfig, ModelAttachment attachmentModel, float bx, float by, float worldScale) {
+        GlStateManager.pushMatrix();
+        try {
+            // 设置渲染状态
+            GlStateManager.enableBlend();
+            GlStateManager.depthMask(false);
+            GlStateManager.disableLighting();
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+            GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
+                    SourceFactor.ONE, DestFactor.ZERO);
+
+            // 设置光照和材质
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
+            ObjModelRenderer.glowTxtureMode = true;
+            GlStateManager.enableLighting();
+            bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/white.png"));
+            
+            // 设置颜色并渲染
+            GlStateManager.color(
+                laserConfig.laserColor[0],
+                laserConfig.laserColor[1],
+                laserConfig.laserColor[2],
+                laserConfig.laserAlpha
+            );
+            attachmentModel.renderPart("laserModel", worldScale);
+
+            // 恢复渲染状态
+            GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+            GlStateManager.depthMask(true);
+            GlStateManager.disableLighting();
+            ObjModelRenderer.glowTxtureMode = false;
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+            
+        } finally {
+            GlStateManager.popMatrix();
+        }
+    }
+
+    private void renderLaserDot(AttachmentRenderConfig.Laser laserConfig, EntityPlayer player) {
+        RayTraceResult ray = player.rayTrace(laserConfig.maxDistance, 1.0F);
+        if (ray == null) {
+            return;
+        }
+        double distance = player.getDistance(ray.hitVec.x, ray.hitVec.y, ray.hitVec.z);
+
+        if (distance > laserConfig.maxDistance) {
+            return;
+        }
+        GlStateManager.pushMatrix();
+        try {
+            // 设置正交投影
+            ScaledResolution scaledResolution = new ScaledResolution(Minecraft.getMinecraft());
+            GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.loadIdentity();
+            GlStateManager.ortho(0.0D, scaledResolution.getScaledWidth_double(), 
+                    scaledResolution.getScaledHeight_double(), 0.0D, -1.0D, 1.0D);
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.loadIdentity();
+
+            // 设置渲染状态
+            GlStateManager.disableDepth();
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GlStateManager.disableTexture2D();
+
+            // 计算激光点大小
+            float dotSize = (float)((2.0f * (1.0f - distance / laserConfig.maxDistance) + 1.0f)*laserConfig.dotSize);
+
+            if (dotSize <= 0.01f) {
+                return;
+            }
+
+            // 渲染激光点
+            GL11.glEnable(GL11.GL_POINT_SMOOTH);
+            GL11.glPointSize(dotSize);
+            GlStateManager.color(
+                laserConfig.laserColor[0],
+                laserConfig.laserColor[1],
+                laserConfig.laserColor[2],
+                laserConfig.laserAlpha
+            );
+
+            // 绘制点
+            GL11.glBegin(GL11.GL_POINTS);
+            GL11.glVertex2f(
+                scaledResolution.getScaledWidth() / 2.0f + 0.5f,
+                scaledResolution.getScaledHeight() / 2.0f
+            );
+            GL11.glEnd();
+
+            // 恢复渲染状态
+            GL11.glDisable(GL11.GL_POINT_SMOOTH);
+            GlStateManager.enableTexture2D();
+            GlStateManager.enableDepth();
+            GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+
+        } finally {
+            // 恢复投影矩阵
+            GlStateManager.matrixMode(GL11.GL_PROJECTION);
+            GlStateManager.loadIdentity();
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            GlStateManager.loadIdentity();
+            GlStateManager.popMatrix();
+        }
+    }
+
     private static FloatBuffer buf(float x, float y, float z, float w) {
         lightBuf.clear();
         lightBuf.put(x).put(y).put(z).put(w);
         lightBuf.flip();
         return lightBuf;
     }
+
+
 
     public static void addEjectShell(EjectionGroup group, float acc) {
         for (int i = shellEffects.length - 1; i > 0; i--) {

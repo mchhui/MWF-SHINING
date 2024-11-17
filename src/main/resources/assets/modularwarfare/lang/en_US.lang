@@ -12,6 +12,8 @@ mwf.dictionary.charm=Charm
 mwf.dictionary.skin=Spray
 mwf.dictionary.barrel=Brarrel
 mwf.dictionary.stock=Stock
+mwf:dictionary.laser=Laser
+
 
 mwf:gui.tooltip.basicinfo=§9§l[Basic Info]
 mwf:gui.tooltip.attachmentinfo=§9§l[Loaded Attachments]
