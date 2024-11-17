@@ -190,7 +190,6 @@ public class GunUI {
                                 int xPos = width / 2;
                                 int yPos = height / 2;
 
-
                                 GlStateManager.translate(xPos, yPos, 0f);
                                 if(ModularWarfare.isLoadedModularMovements) {
                                     GL11.glRotatef(15F * ClientLitener.cameraProbeOffset, 0, 0, 1);
@@ -198,7 +197,11 @@ public class GunUI {
                                 GlStateManager.enableBlend();
                                 GlStateManager.color(1f, 1f, 1f, 1f);
                                 GL11.glColor4f(1, 1, 1, 1);
-                                Gui.drawModalRectWithCustomSizedTexture(0, 0, 1.0f, 1.0f, 1, 1, 16.0f, 16.0f);
+                                
+                                if (!ClientProxy.gunEnhancedRenderer.laserEnabled) {
+                                    Gui.drawModalRectWithCustomSizedTexture(0, 0, 1.0f, 1.0f, 1, 1, 16.0f, 16.0f);
+                                }
+                                
                                 Gui.drawModalRectWithCustomSizedTexture(0, 0 + move, 1.0f, 1.0f, 1, 4, 16.0f, 16.0f);
                                 Gui.drawModalRectWithCustomSizedTexture(0, 0 - move - 3, 1.0f, 1.0f, 1, 4, 16.0f, 16.0f);
                                 Gui.drawModalRectWithCustomSizedTexture(0 + move, 0, 1.0f, 1.0f, 4, 1, 16.0f, 16.0f);
