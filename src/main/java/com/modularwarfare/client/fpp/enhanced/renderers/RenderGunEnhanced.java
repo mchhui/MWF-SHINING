@@ -1298,31 +1298,50 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             GlStateManager.enableBlend();
             GlStateManager.depthMask(false);
             GlStateManager.disableLighting();
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
-            GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
-                    SourceFactor.ONE, DestFactor.ZERO);
+            
+            // 设置最大亮度
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+            
+            // 设置混合模式为加法混合，使其看起来更亮
+            GlStateManager.tryBlendFuncSeparate(
+                SourceFactor.SRC_ALPHA, 
+                DestFactor.ONE,  // 改为ONE使其更亮
+                SourceFactor.ONE, 
+                DestFactor.ZERO
+            );
 
-            // 设置光照和材质
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
+            // 禁用光照以实现自发光效果
+            GlStateManager.disableLighting();
             ObjModelRenderer.glowTxtureMode = true;
-            GlStateManager.enableLighting();
+            
+            // 绑定白色纹理
             bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/white.png"));
             
             // 设置颜色并渲染
+            // 稍微提高颜色值以增强发光效果
+            float brightness = 1.2f; // 亮度增强因子
             GlStateManager.color(
-                laserConfig.laserColor[0],
-                laserConfig.laserColor[1],
-                laserConfig.laserColor[2],
+                Math.min(laserConfig.laserColor[0] * brightness, 1.0f),
+                Math.min(laserConfig.laserColor[1] * brightness, 1.0f),
+                Math.min(laserConfig.laserColor[2] * brightness, 1.0f),
                 laserConfig.laserAlpha
             );
+            
+            // 渲染激光模型
             attachmentModel.renderPart("laserModel", worldScale);
 
             // 恢复渲染状态
             GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
             GlStateManager.depthMask(true);
-            GlStateManager.disableLighting();
+            GlStateManager.enableLighting();
+            GlStateManager.tryBlendFuncSeparate(
+                SourceFactor.SRC_ALPHA, 
+                DestFactor.ONE_MINUS_SRC_ALPHA,
+                SourceFactor.ONE, 
+                DestFactor.ZERO
+            );
             ObjModelRenderer.glowTxtureMode = false;
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
             
         } finally {
             GlStateManager.popMatrix();
@@ -1339,11 +1358,23 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if (distance > laserConfig.maxDistance) {
             return;
         }
+
+        // 处理Optifine shader
+        if (OptifineHelper.isShadersEnabled()) {
+            Shaders.pushProgram();
+            if (ModConfig.INSTANCE.client.gunSmokeCorrectForBSL) {
+                Shaders.useProgram(Shaders.ProgramNone);
+            }
+        }
+
         GlStateManager.pushMatrix();
         try {
+            // 保存当前的GL状态
+            GL11.glPushAttrib(GL11.GL_VIEWPORT_BIT);
+            GL11.glDepthRange(0,1);
+
             // 设置正交投影
             ScaledResolution scaledResolution = new ScaledResolution(Minecraft.getMinecraft());
-            GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
             GlStateManager.matrixMode(GL11.GL_PROJECTION);
             GlStateManager.loadIdentity();
             GlStateManager.ortho(0.0D, scaledResolution.getScaledWidth_double(), 
@@ -1352,9 +1383,15 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             GlStateManager.loadIdentity();
 
             // 设置渲染状态
-            GlStateManager.disableDepth();
+            GlStateManager.enableDepth(); // 启用深度测试
+            GlStateManager.depthFunc(GL11.GL_LEQUAL); // 设置深度测试函数
             GlStateManager.enableBlend();
-            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GlStateManager.tryBlendFuncSeparate(
+                SourceFactor.SRC_ALPHA, 
+                DestFactor.ONE,
+                SourceFactor.ONE, 
+                DestFactor.ZERO
+            );
             GlStateManager.disableTexture2D();
 
             // 计算激光点大小
@@ -1367,10 +1404,16 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             // 渲染激光点
             GL11.glEnable(GL11.GL_POINT_SMOOTH);
             GL11.glPointSize(dotSize);
+            
+            // 设置深度写入
+            GlStateManager.depthMask(true); // 允许写入深度缓冲
+            GlStateManager.colorMask(true, true, true, true);
+            
+            float brightness = 1.2f;
             GlStateManager.color(
-                laserConfig.laserColor[0],
-                laserConfig.laserColor[1],
-                laserConfig.laserColor[2],
+                Math.min(laserConfig.laserColor[0] * brightness, 1.0f),
+                Math.min(laserConfig.laserColor[1] * brightness, 1.0f),
+                Math.min(laserConfig.laserColor[2] * brightness, 1.0f),
                 laserConfig.laserAlpha
             );
 
@@ -1385,16 +1428,30 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             // 恢复渲染状态
             GL11.glDisable(GL11.GL_POINT_SMOOTH);
             GlStateManager.enableTexture2D();
-            GlStateManager.enableDepth();
+            GlStateManager.depthMask(true);
             GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+            GlStateManager.tryBlendFuncSeparate(
+                SourceFactor.SRC_ALPHA, 
+                DestFactor.ONE_MINUS_SRC_ALPHA,
+                SourceFactor.ONE, 
+                DestFactor.ZERO
+            );
 
         } finally {
+            // 恢复GL状态
+            GL11.glPopAttrib();
+            
             // 恢复投影矩阵
             GlStateManager.matrixMode(GL11.GL_PROJECTION);
             GlStateManager.loadIdentity();
             GlStateManager.matrixMode(GL11.GL_MODELVIEW);
             GlStateManager.loadIdentity();
             GlStateManager.popMatrix();
+            
+            // 恢复Optifine shader
+            if (OptifineHelper.isShadersEnabled()) {
+                Shaders.popProgram();
+            }
         }
     }
 
