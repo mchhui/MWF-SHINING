@@ -393,6 +393,13 @@ public class AnimationController {
                         AttachmentPresetEnum.Stock).getItem();
                 adsSpeed*=stockAttachment.type.stock.aimSpeedFactor;
             }
+            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                AttachmentPresetEnum.Laser) != null) {
+                ItemAttachment stockAttachment =
+                    (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                        AttachmentPresetEnum.Laser).getItem();
+                adsSpeed*=stockAttachment.type.laser.aimSpeedFactor;
+            }
         }
         if (player.getHeldItemMainhand().getItem() instanceof ItemGun && player instanceof EntityPlayer) {
             GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;

@@ -44,4 +44,8 @@ public class ModelAttachment extends MWModelBase {
         renderPart("overlaySolidModel", f);
     }
 
+    public void renderLaser(float f) {
+        renderPart("laserModel", f);
+    }
+
 }

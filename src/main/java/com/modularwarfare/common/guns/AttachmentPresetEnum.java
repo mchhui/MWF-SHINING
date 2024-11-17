@@ -12,7 +12,8 @@ public enum AttachmentPresetEnum {
     @SerializedName("charm") Charm("charm"),
     @SerializedName("skin") Skin("skin"),
     @SerializedName("barrel") Barrel("barrel"),
-    @SerializedName("stock") Stock("stock");
+    @SerializedName("stock") Stock("stock"),
+    @SerializedName("laser") Laser("laser");
 
     public String typeName;
 

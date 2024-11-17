@@ -20,6 +20,7 @@ public class AttachmentRenderConfig {
     public AttachmentRenderConfig.Sight sight = new AttachmentRenderConfig.Sight();
     public AttachmentRenderConfig.Grip grip = new AttachmentRenderConfig.Grip();
     public AttachmentRenderConfig.Stock stock = new AttachmentRenderConfig.Stock();
+    public AttachmentRenderConfig.Laser laser = new AttachmentRenderConfig.Laser();
 
     public static class Extra {
 
@@ -78,6 +79,13 @@ public class AttachmentRenderConfig {
         public float modelRecoilBackwardsFactor = 1.0f;
         public float modelRecoilUpwardsFactor = 1.0f;
         public float modelRecoilShakeFactor = 1.0f;
+    }
+
+    public static class Laser {
+        public float[] laserColor = {1.0f, 0.0f, 0.0f};
+        public float laserAlpha = 1.0f;
+        public float maxDistance = 100f;
+        public float dotSize = 2.0f;
     }
 
     

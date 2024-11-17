@@ -210,8 +210,8 @@ public class InstantBulletRenderer {
                 
                 ObjModel obj = MODEL_CACHE.get(model);
                 if(obj == null) {
-                    MODEL_CACHE.put(model, ObjModelLoader.load(new ResourceLocation(model)));
-                    obj = MODEL_CACHE.get(model);
+                    obj = ObjModelLoader.load(new ResourceLocation(model));
+                    MODEL_CACHE.put(model, obj);
                 }
                 obj.renderAll(1);
                 GlStateManager.popMatrix();

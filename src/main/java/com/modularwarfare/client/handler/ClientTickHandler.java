@@ -293,13 +293,14 @@ public final class ClientTickHandler {
             if(Mouse.isButtonDown(1)) {
                 recover=0.8f;
             }
+            //枪械长度计算
             if(rayTraceResult != null) {
                 if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
                     if (rayTraceResult.hitVec != null) {
                         double d = vecStart.distanceTo(rayTraceResult.hitVec);
-                        double testD=1.5;
-                        if (d <= testD) {
-                            RenderParameters.collideFrontDistance = (float) (RenderParameters.collideFrontDistance + ((testD - d) - RenderParameters.collideFrontDistance) * renderTick * 0.5f);
+                        double length = gun.type.gunHoldLength;
+                        if (d <= length) {
+                            RenderParameters.collideFrontDistance = (float) (RenderParameters.collideFrontDistance + ((length - d) - RenderParameters.collideFrontDistance) * renderTick * 0.5f);
                         } else {
                             RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
                         }

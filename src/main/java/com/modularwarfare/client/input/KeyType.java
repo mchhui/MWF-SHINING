@@ -14,7 +14,7 @@ public enum KeyType {
     Flashlight("Flashlight", 0x23), // H
     // Backpack("Backpack Inventory", 0x30), // B // Deprecated
     Jetpack("Jetpack fire", Keyboard.KEY_X), 
-
+    LaserToggle("Laser Toggle", Keyboard.KEY_L),
 
     Left("Left (Attach mode)", 203), // H
     Right("Right (Attach mode)", 205), // H

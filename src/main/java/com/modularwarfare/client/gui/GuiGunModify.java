@@ -125,6 +125,7 @@ public class GuiGunModify extends GuiScreen {
 	public static final ResourceLocation sight = new ResourceLocation("modularwarfare", "textures/modifygui/sight.png");
 	public static final ResourceLocation sprays = new ResourceLocation("modularwarfare", "textures/modifygui/sprays.png");
 	public static final ResourceLocation stock = new ResourceLocation("modularwarfare", "textures/modifygui/stock.png");
+	public static final ResourceLocation laser = new ResourceLocation("modularwarfare", "textures/modifygui/laser.png");
 	public static final ResourceLocation slot = new ResourceLocation("modularwarfare", "textures/modifygui/slot.png");
 	public static final ResourceLocation quit = new ResourceLocation("modularwarfare", "textures/modifygui/quit.png");
 	public static final ResourceLocation statu = new ResourceLocation("modularwarfare", "textures/modifygui/statu.png");
@@ -197,6 +198,7 @@ public class GuiGunModify extends GuiScreen {
 		this.buttonList.add(new TextureButton(4,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Sight).setType(TypeEnum.Slot));
 		this.buttonList.add(new TextureButton(5,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Skin).setType(TypeEnum.Slot));
 		this.buttonList.add(new TextureButton(6,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Stock).setType(TypeEnum.Slot));
+		this.buttonList.add(new TextureButton(7,9999,9999,buttonSize,buttonSize,slot).setAttachment(AttachmentPresetEnum.Laser).setType(TypeEnum.Slot));
 		this.buttonList.add(new TextureButton(0+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
 		this.buttonList.add(new TextureButton(1+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
 		this.buttonList.add(new TextureButton(2+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
@@ -204,6 +206,7 @@ public class GuiGunModify extends GuiScreen {
 		this.buttonList.add(new TextureButton(4+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
 		this.buttonList.add(new TextureButton(5+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
 		this.buttonList.add(new TextureButton(6+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
+		this.buttonList.add(new TextureButton(7+sideButtonIdOffset,9999,9999,buttonSize/3,buttonSize,decal_1).setType(TypeEnum.SideButton));
 		
 		updateButtonItem();
 	}
@@ -746,11 +749,11 @@ public class GuiGunModify extends GuiScreen {
 		case Skin:
 			mc.renderEngine.bindTexture(sprays);
 			break;
-		case Slide:
-			
-			break;
 		case Stock:
 			mc.renderEngine.bindTexture(stock);
+			break;
+		case Laser:
+			mc.renderEngine.bindTexture(laser);
 			break;
 		default:
 			break;
