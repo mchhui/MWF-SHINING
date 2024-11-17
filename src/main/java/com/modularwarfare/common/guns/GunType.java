@@ -104,6 +104,11 @@ public class GunType extends BaseType {
      */
     public float bulletSpread;
 
+    /**
+     * 枪械手持长度影响
+     */
+    
+    public float gunHoldLength = 1.5f;
     
     /**
      * The fire rate of the gun in RPM, 1200 = MAX
