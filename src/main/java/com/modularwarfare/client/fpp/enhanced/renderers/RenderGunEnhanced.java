@@ -29,6 +29,7 @@ import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.laser.LaserRenderManager;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.shader.Programs;
 import com.modularwarfare.common.armor.ItemMWArmor;
@@ -80,6 +81,7 @@ import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.v1_12_R1.EntityIllagerWizard.c;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
@@ -1068,35 +1070,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                     }
                                     if(attachment==AttachmentPresetEnum.Laser && laserEnabled) {
                                         AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
-                                        renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale);
-                                        if(!applySprint && RenderParameters.collideFrontDistance <= 0.2f) {
-                                            boolean isInAction = currentAction == AnimationType. PRE_RELOAD
-                                                || currentAction == AnimationType.RELOAD_FIRST
-                                                || currentAction == AnimationType.RELOAD_SECOND
-                                                || currentAction == AnimationType.POST_RELOAD
-                                                || currentAction == AnimationType.PRE_LOAD
-                                                || currentAction == AnimationType.LOAD
-                                                || currentAction == AnimationType.POST_LOAD
-                                                || currentAction == AnimationType.PRE_UNLOAD
-                                                || currentAction == AnimationType.UNLOAD
-                                                || currentAction == AnimationType.POST_UNLOAD
-                                                || currentAction == AnimationType.PRE_RELOAD_EMPTY
-                                                || currentAction == AnimationType.RELOAD_FIRST_EMPTY
-                                                || currentAction == AnimationType.RELOAD_SECOND_EMPTY
-                                                || currentAction == AnimationType.POST_RELOAD_EMPTY
-                                                || currentAction == AnimationType.RELOAD_FIRST_QUICKLY
-                                                || currentAction == AnimationType.RELOAD_SECOND_QUICKLY
-                                                || currentAction == AnimationType.DRAW
-                                                || currentAction == AnimationType.DRAW_EMPTY
-                                                || currentAction == AnimationType.TAKEDOWN
-                                                || currentAction == AnimationType.TAKEDOWN_EMPTY
-                                                || currentAction == AnimationType.INSPECT
-                                                || currentAction == AnimationType.INSPECT_EMPTY;
-
-                                            if(!isInAction) {
-                                                renderLaserDot(laserConfig, player);
-                                            }
-                                        }
+                                        renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale ,currentAction);
                                     }
                                     ObjModelRenderer.glowTxtureMode=true;
                                 });
@@ -1320,35 +1294,28 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.disableBlend();
     }
 
-    private void renderLaserModel(AttachmentRenderConfig.Laser laserConfig, ModelAttachment attachmentModel, float bx, float by, float worldScale) {
+    private void renderLaserModel(AttachmentRenderConfig.Laser laserConfig, ModelAttachment attachmentModel, float bx, float by, float worldScale, AnimationType currentAction) {
         GlStateManager.pushMatrix();
         try {
-            // 设置渲染状态
             GlStateManager.enableBlend();
             GlStateManager.depthMask(false);
             GlStateManager.disableLighting();
             
-            // 设置最大亮度
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
             
-            // 设置混合模式为加法混合，使其看起来更亮
             GlStateManager.tryBlendFuncSeparate(
                 SourceFactor.SRC_ALPHA, 
-                DestFactor.ONE,  // 改为ONE使其更亮
+                DestFactor.ONE,  
                 SourceFactor.ONE, 
                 DestFactor.ZERO
             );
 
-            // 禁用光照以实现自发光效果
             GlStateManager.disableLighting();
             ObjModelRenderer.glowTxtureMode = true;
             
-            // 绑定白色纹理
             bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/white.png"));
             
-            // 设置颜色并渲染
-            // 稍微提高颜色值以增强发光效果
-            float brightness = 1.2f; // 亮度增强因子
+            float brightness = 1.2f; 
             GlStateManager.color(
                 Math.min(laserConfig.laserColor[0] * brightness, 1.0f),
                 Math.min(laserConfig.laserColor[1] * brightness, 1.0f),
@@ -1356,10 +1323,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 laserConfig.laserAlpha
             );
             
-            // 渲染激光模型
             attachmentModel.renderPart("laserModel", worldScale);
 
-            // 恢复渲染状态
             GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
             GlStateManager.depthMask(true);
             GlStateManager.enableLighting();
@@ -1375,122 +1340,23 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         } finally {
             GlStateManager.popMatrix();
         }
-    }
 
-    private void renderLaserDot(AttachmentRenderConfig.Laser laserConfig, EntityPlayer player) {
-        RayTraceResult ray = player.rayTrace(laserConfig.maxDistance, 1.0F);
-        if (ray == null) {
-            return;
-        }
-        double distance = player.getDistance(ray.hitVec.x, ray.hitVec.y, ray.hitVec.z);
-
-        if (distance > laserConfig.maxDistance) {
-            return;
-        }
-
-        // 处理Optifine shader
-        if (OptifineHelper.isShadersEnabled()) {
-            Shaders.pushProgram();
-            if (ModConfig.INSTANCE.client.gunSmokeCorrectForBSL) {
-                Shaders.useProgram(Shaders.ProgramNone);
-            }
-        }
-
-        GlStateManager.pushMatrix();
-        try {
-            // 保存当前的GL状态
-            GL11.glPushAttrib(GL11.GL_VIEWPORT_BIT);
-            GL11.glDepthRange(0,1);
-
-            // 设置正交投影
-            ScaledResolution scaledResolution = new ScaledResolution(Minecraft.getMinecraft());
-            GlStateManager.matrixMode(GL11.GL_PROJECTION);
-            GlStateManager.loadIdentity();
-            GlStateManager.ortho(0.0D, scaledResolution.getScaledWidth_double(), 
-                    scaledResolution.getScaledHeight_double(), 0.0D, -1.0D, 1.0D);
-            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager.loadIdentity();
-
-            // 设置渲染状态
-            GlStateManager.enableDepth();
-            GlStateManager.depthFunc(GL11.GL_LEQUAL);
-            GlStateManager.enableBlend();
-            
-            // 使用加法混合模式使点更亮
-            GlStateManager.tryBlendFuncSeparate(
-                SourceFactor.SRC_ALPHA, 
-                DestFactor.ONE,  // 使用ONE使其更亮
-                SourceFactor.ONE, 
-                DestFactor.ZERO
+        if(laserEnabled) {
+            EntityPlayerSP player = Minecraft.getMinecraft().player;
+            LaserRenderManager.getInstance().addLaserDot(
+                laserConfig.laserColor,
+                laserConfig.laserAlpha,
+                laserConfig.dotSize,
+                laserConfig.maxDistance,
+                true,
+                player.getUniqueID(),
+                player.isSprinting(),
+                collideFrontDistance,
+                currentAction
             );
-            
-            // 设置最大亮度
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
-            GlStateManager.disableLighting();
-            GlStateManager.disableTexture2D();
-
-            // 计算激光点大小
-            float dotSize = (float)((2.0f * (1.0f - distance / laserConfig.maxDistance) + 1.0f)*laserConfig.dotSize);
-
-            if (dotSize <= 0.01f) {
-                return;
-            }
-
-            // 渲染激光点
-            GL11.glEnable(GL11.GL_POINT_SMOOTH);
-            GL11.glPointSize(dotSize);
-            
-            // 设置深度写入
-            GlStateManager.depthMask(true);
-            GlStateManager.colorMask(true, true, true, true);
-            
-            // 增加亮度
-            float brightness = 1.5f;
-            GlStateManager.color(
-                Math.min(laserConfig.laserColor[0] * brightness, 1.0f),
-                Math.min(laserConfig.laserColor[1] * brightness, 1.0f),
-                Math.min(laserConfig.laserColor[2] * brightness, 1.0f),
-                laserConfig.laserAlpha
-            );
-
-            // 绘制点
-            GL11.glBegin(GL11.GL_POINTS);
-            GL11.glVertex2f(
-                scaledResolution.getScaledWidth() / 2.0f + 0.5f,
-                scaledResolution.getScaledHeight() / 2.0f
-            );
-            GL11.glEnd();
-
-            // 恢复渲染状态
-            GL11.glDisable(GL11.GL_POINT_SMOOTH);
-            GlStateManager.enableTexture2D();
-            GlStateManager.enableLighting();
-            GlStateManager.depthMask(true);
-            GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-            GlStateManager.tryBlendFuncSeparate(
-                SourceFactor.SRC_ALPHA, 
-                DestFactor.ONE_MINUS_SRC_ALPHA,
-                SourceFactor.ONE, 
-                DestFactor.ZERO
-            );
-
-        } finally {
-            // 恢复GL状态
-            GL11.glPopAttrib();
-            
-            // 恢复投影矩阵
-            GlStateManager.matrixMode(GL11.GL_PROJECTION);
-            GlStateManager.loadIdentity();
-            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-            GlStateManager.loadIdentity();
-            GlStateManager.popMatrix();
-            
-            // 恢复Optifine shader
-            if (OptifineHelper.isShadersEnabled()) {
-                Shaders.popProgram();
-            }
         }
     }
+    
 
     private static FloatBuffer buf(float x, float y, float z, float w) {
         lightBuf.clear();
@@ -2168,6 +2034,16 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                         ClientProxy.gunEnhancedRenderer.renderScopeGlass(attachmentType,
                                                 attachmentModel, false, worldScale);
                                         ObjModelRenderer.glowTxtureMode = true;
+                                    }
+                                    AnimationType currentAction = null;
+                                    if (anim != null && anim.controller != null) {
+                                        currentAction = anim.controller.getPlayingAnimation();
+                                    }
+                                    if(attachment==AttachmentPresetEnum.Laser && laserEnabled) {
+                                        AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
+                                        float bx = OpenGlHelper.lastBrightnessX;
+                                        float by = OpenGlHelper.lastBrightnessY;
+                                        ClientProxy.gunEnhancedRenderer.renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale, currentAction);
                                     }
                                 });
                     });

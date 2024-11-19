@@ -15,6 +15,7 @@ import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.hud.FlashSystem;
+import com.modularwarfare.client.laser.LaserDotRenderer;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.common.backpacks.BackpackType;
 import com.modularwarfare.common.backpacks.ItemBackpack;
@@ -191,6 +192,7 @@ public class ClientEventHandler {
     @SubscribeEvent
     public void renderWorld(RenderWorldLastEvent event) {
         InstantBulletRenderer.RenderAllTrails(event.getPartialTicks());
+        LaserDotRenderer.renderLaserDots();
     }
     
     @SubscribeEvent

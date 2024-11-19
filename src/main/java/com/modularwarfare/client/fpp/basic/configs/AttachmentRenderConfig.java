@@ -84,7 +84,7 @@ public class AttachmentRenderConfig {
     public static class Laser {
         public float[] laserColor = {1.0f, 0.0f, 0.0f};
         public float laserAlpha = 1.0f;
-        public float maxDistance = 100f;
+        public double maxDistance = 100f;
         public float dotSize = 2.0f;
     }
 

@@ -13,6 +13,7 @@ import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
+import com.modularwarfare.client.laser.LaserRenderManager;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
@@ -208,7 +209,7 @@ public final class KeyInputHandler {
 
                 case LaserToggle:
                     if(!entityPlayer.isSpectator()) {
-                        if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
+                        if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null) {
                             if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                                 final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
                                 if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Laser) != null) {
@@ -216,6 +217,7 @@ public final class KeyInputHandler {
                                     if (itemAttachment != null) {
                                         RenderGunEnhanced renderer = (RenderGunEnhanced)ClientRenderHooks.customRenderers[0];
                                         renderer.laserEnabled = !renderer.laserEnabled;
+                                        LaserRenderManager.getInstance().toggleLaserState(entityPlayer.getUniqueID());
                                         ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
                                     }
                                 }
