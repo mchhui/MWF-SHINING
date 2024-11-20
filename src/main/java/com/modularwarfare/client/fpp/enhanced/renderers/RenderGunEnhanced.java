@@ -2039,11 +2039,14 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                     if (anim != null && anim.controller != null) {
                                         currentAction = anim.controller.getPlayingAnimation();
                                     }
-                                    if(attachment==AttachmentPresetEnum.Laser && laserEnabled) {
-                                        AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
-                                        float bx = OpenGlHelper.lastBrightnessX;
-                                        float by = OpenGlHelper.lastBrightnessY;
-                                        ClientProxy.gunEnhancedRenderer.renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale, currentAction);
+                                    if(attachment==AttachmentPresetEnum.Laser) {
+                                        // 使用LaserRenderManager检查玩家的激光状态
+                                        if(LaserRenderManager.getInstance().getLaserState(player.getUniqueID())) {
+                                            AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
+                                            float bx = OpenGlHelper.lastBrightnessX;
+                                            float by = OpenGlHelper.lastBrightnessY;
+                                            ClientProxy.gunEnhancedRenderer.renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale, currentAction);
+                                        }
                                     }
                                 });
                     });
