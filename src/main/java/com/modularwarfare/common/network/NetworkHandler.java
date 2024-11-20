@@ -214,6 +214,9 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
 
         registerPacket(PacketCustomAnimation.class);
         registerPacket(PacketPlayerState.class);
+        
+        registerPacket(PacketLaserToggle.class);
+        registerPacket(PacketLaserToggleClient.class);
 
     }
 

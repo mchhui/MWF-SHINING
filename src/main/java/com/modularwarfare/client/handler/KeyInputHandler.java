@@ -18,6 +18,7 @@ import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
 import com.modularwarfare.common.network.PacketGunUnloadAttachment;
+import com.modularwarfare.common.network.PacketLaserToggle;
 import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.MWSound;
 import net.minecraft.client.Minecraft;
@@ -218,6 +219,7 @@ public final class KeyInputHandler {
                                         RenderGunEnhanced renderer = (RenderGunEnhanced)ClientRenderHooks.customRenderers[0];
                                         renderer.laserEnabled = !renderer.laserEnabled;
                                         LaserRenderManager.getInstance().toggleLaserState(entityPlayer.getUniqueID());
+                                        ModularWarfare.NETWORK.sendToServer(new PacketLaserToggle(renderer.laserEnabled));
                                         ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
                                     }
                                 }
