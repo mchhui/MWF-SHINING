@@ -115,6 +115,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
@@ -2040,8 +2041,15 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                         currentAction = anim.controller.getPlayingAnimation();
                                     }
                                     if(attachment==AttachmentPresetEnum.Laser) {
-                                        // 使用LaserRenderManager检查玩家的激光状态
-                                        if(LaserRenderManager.getInstance().getLaserState(player.getUniqueID())) {
+                                        boolean shouldRenderLaser = false;
+                                        if(player != null) {
+                                            UUID playerID = player.getUniqueID();
+                                            shouldRenderLaser = LaserRenderManager.getInstance().getLaserState(playerID);
+                                        } else {
+                                            shouldRenderLaser = ((ItemGun)demoStack.getItem()).getLaserEnabled(demoStack);
+                                        }
+                                        
+                                        if(shouldRenderLaser) {
                                             AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
                                             float bx = OpenGlHelper.lastBrightnessX;
                                             float by = OpenGlHelper.lastBrightnessY;

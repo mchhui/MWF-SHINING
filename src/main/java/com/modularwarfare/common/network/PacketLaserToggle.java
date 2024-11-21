@@ -1,11 +1,13 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.ItemGun;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 public class PacketLaserToggle extends PacketBase {
@@ -30,6 +32,10 @@ public class PacketLaserToggle extends PacketBase {
     
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
+        ItemStack gunStack = entityPlayer.getHeldItemMainhand();
+        if(gunStack.getItem() instanceof ItemGun) {
+            ((ItemGun)gunStack.getItem()).setLaserEnabled(gunStack, laserEnabled);
+        }
         ModularWarfare.NETWORK.sendToAllAround(
             new PacketLaserToggleClient(entityPlayer.getUniqueID(), laserEnabled),
             new NetworkRegistry.TargetPoint(
@@ -40,10 +46,15 @@ public class PacketLaserToggle extends PacketBase {
                 128
             )
         );
+
+        ModularWarfare.NETWORK.sendTo(new PacketLaserToggleClient(entityPlayer.getUniqueID(), laserEnabled), entityPlayer);
     }
 
     @Override 
     public void handleClientSide(EntityPlayer entityPlayer) {
-        // 客户端不需要处理
+        ItemStack gunStack = entityPlayer.getHeldItemMainhand();
+        if(gunStack.getItem() instanceof ItemGun) {
+            ((ItemGun)gunStack.getItem()).setLaserEnabled(gunStack, laserEnabled);
+        }
     }
 }
