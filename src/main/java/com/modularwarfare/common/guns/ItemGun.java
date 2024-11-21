@@ -45,6 +45,7 @@ public class ItemGun extends BaseItem {
     public static boolean canDryFire = true;
     public static boolean fireButtonHeld = false;
     public static boolean lastFireButtonHeld = false;
+    public static final String LASER_ENABLED_NBT = "laser_enabled";
     public GunType type;
 
     public ItemGun(GunType type) {
@@ -504,5 +505,19 @@ public class ItemGun extends BaseItem {
     @Override
     public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity) {
         return true;
+    }
+
+    public void setLaserEnabled(ItemStack stack, boolean enabled) {
+        if(!stack.hasTagCompound()) {
+            stack.setTagCompound(new NBTTagCompound());
+        }
+        stack.getTagCompound().setBoolean(LASER_ENABLED_NBT, enabled);
+    }
+    
+    public boolean getLaserEnabled(ItemStack stack) {
+        if(!stack.hasTagCompound()) {
+            return false;
+        }
+        return stack.getTagCompound().getBoolean(LASER_ENABLED_NBT);
     }
 }

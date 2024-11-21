@@ -210,18 +210,17 @@ public final class KeyInputHandler {
 
                 case LaserToggle:
                     if(!entityPlayer.isSpectator()) {
-                        if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null) {
-                            if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
-                                final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-                                if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Laser) != null) {
-                                    final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(gunStack, AttachmentPresetEnum.Laser).getItem();
-                                    if (itemAttachment != null) {
-                                        RenderGunEnhanced renderer = (RenderGunEnhanced)ClientRenderHooks.customRenderers[0];
-                                        renderer.laserEnabled = !renderer.laserEnabled;
-                                        LaserRenderManager.getInstance().toggleLaserState(entityPlayer.getUniqueID());
-                                        ModularWarfare.NETWORK.sendToServer(new PacketLaserToggle(renderer.laserEnabled));
-                                        ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
-                                    }
+                        if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
+                            final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+                            if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Laser) != null) {
+                                final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(gunStack, AttachmentPresetEnum.Laser).getItem();
+                                if (itemAttachment != null) {
+                                    RenderGunEnhanced renderer = (RenderGunEnhanced)ClientRenderHooks.customRenderers[0];
+                                    renderer.laserEnabled = !renderer.laserEnabled;
+                                    ((ItemGun)gunStack.getItem()).setLaserEnabled(gunStack, renderer.laserEnabled);
+                                    LaserRenderManager.getInstance().toggleLaserState(entityPlayer.getUniqueID());
+                                    ModularWarfare.NETWORK.sendToServer(new PacketLaserToggle(renderer.laserEnabled));
+                                    ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
                                 }
                             }
                         }
