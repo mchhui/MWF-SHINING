@@ -199,6 +199,34 @@ public class ItemGun extends BaseItem {
                                 new ItemStack(ModularWarfare.attachmentTypes.get(e.getValue())));
                         }
                     }
+
+
+                    if(gunType.defaultBullet!=null)
+                    {
+                        ItemBullet itemBullet = ModularWarfare.bulletTypes.get(gunType.defaultBullet);
+                        if(itemBullet!=null)
+                        {
+                            ItemStack bullet = new ItemStack(itemBullet);
+
+                            if(gunType.acceptedAmmo!=null&&gunType.acceptedAmmo.length>0&&gunType.defaultAmmo!=null)
+                            {
+
+                                ItemAmmo itemAmmo = ModularWarfare.ammoTypes.get(gunType.defaultAmmo);
+                                if(itemAmmo!=null)
+                                {
+                                    ItemStack ammo = new ItemStack(itemAmmo);  if(ammo.getTagCompound()==null) ammo.setTagCompound(new NBTTagCompound());
+
+                                    ammo.getTagCompound().setInteger("ammocount",itemAmmo.type.ammoCapacity);
+                                    ammo.getTagCompound().setTag("bullet",bullet.writeToNBT(new NBTTagCompound()));
+                                    nbtTagCompound.setTag("ammo",ammo.writeToNBT(new NBTTagCompound()));
+                                }
+
+                            }else if(gunType.acceptedBullets!=null&&gunType.acceptedBullets.length>0){
+                                nbtTagCompound.setInteger("ammocount",gunType.internalAmmoStorage);
+                                nbtTagCompound.setTag("bullet",bullet.writeToNBT(new NBTTagCompound()));
+                            }
+                        }
+                    }
                 }
             }
         }

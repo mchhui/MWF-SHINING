@@ -210,6 +210,12 @@ public class GunType extends BaseType {
     
     public HashMap<AttachmentPresetEnum, String> defaultAttachments;
 
+    /**
+     * 物品创建时自带的默认弹药或弹匣
+     */
+    public String defaultBullet;
+    public String defaultAmmo;
+
     // Reload Variables
     /**
      * The time (in ticks) it takes to reload this gun
