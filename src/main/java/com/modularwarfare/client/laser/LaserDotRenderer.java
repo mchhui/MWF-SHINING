@@ -99,6 +99,9 @@ public class LaserDotRenderer {
         float dotSize = (float) (dot.dotSize * (1.0f - (float)(distance / dot.maxDistance)));
         
         GL11.glEnable(GL11.GL_POINT_SMOOTH);
+
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+        
         //外圈
         GL11.glPointSize(dotSize * 1.25f);
         GlStateManager.color(
