@@ -161,8 +161,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
     private boolean renderingMagazine = true;
 
-    public boolean laserEnabled = false;
-
     private float linearInterpolation(float start, float end, float alpha) {
         return start + (end - start) * alpha;
     }
@@ -225,6 +223,16 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
             return thirdPersonModels.get(key);
         }
+    }
+
+    public void resetModels() {
+        // 清空所有缓存的模型
+        this.firstPersonModel = null;
+        this.thirdPersonModels.clear();
+        
+        // 重置控制器
+        this.resetClientController();
+        this.otherControllers.clear();
     }
 
     public void resetClientController() {
@@ -1087,9 +1095,15 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                     if (anim != null && anim.controller != null) {
                                         currentAction = anim.controller.getPlayingAnimation();
                                     }
-                                    if(attachment==AttachmentPresetEnum.Laser && laserEnabled) {
-                                        AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
-                                        renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale ,currentAction);
+                                    if(attachment==AttachmentPresetEnum.Laser) {
+                                        ItemStack heldStack = player.getHeldItemMainhand();
+                                            if (heldStack.getItem() instanceof ItemGun) {
+                                                boolean laserEnabled = ((ItemGun) heldStack.getItem()).getLaserEnabled(heldStack);
+                                                if(laserEnabled) {
+                                                    AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
+                                                    ClientProxy.gunEnhancedRenderer.renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale, currentAction, laserEnabled);
+                                                }
+                                            }
                                     }
                                     ObjModelRenderer.glowTxtureMode=true;
                                 });
@@ -1313,7 +1327,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.disableBlend();
     }
 
-    private void renderLaserModel(AttachmentRenderConfig.Laser laserConfig, ModelAttachment attachmentModel, float bx, float by, float worldScale, AnimationType currentAction) {
+    private void renderLaserModel(AttachmentRenderConfig.Laser laserConfig, ModelAttachment attachmentModel, float bx, float by, float worldScale, AnimationType currentAction, boolean laserEnabled) {
         GlStateManager.pushMatrix();
         try {
             GlStateManager.enableBlend();
@@ -2083,7 +2097,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                             AttachmentRenderConfig.Laser laserConfig = attachmentModel.config.laser;
                                             float bx = OpenGlHelper.lastBrightnessX;
                                             float by = OpenGlHelper.lastBrightnessY;
-                                            ClientProxy.gunEnhancedRenderer.renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale, currentAction);
+                                            ClientProxy.gunEnhancedRenderer.renderLaserModel(laserConfig, attachmentModel, bx, by, worldScale, currentAction, shouldRenderLaser);
                                         }
                                     }
                                 });

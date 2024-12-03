@@ -11,6 +11,7 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.hud.GunUI;
+import com.modularwarfare.client.laser.LaserRenderManager;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.grenades.ItemGrenade;
@@ -194,7 +195,12 @@ public final class ClientTickHandler {
             }
         }
 
+        if (player.getHeldItemMainhand().isEmpty()) {
+            LaserRenderManager.getInstance().setLaserState(player.getUniqueID(), false);
+        }
+
         if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+            LaserRenderManager.getInstance().updateLaserState(player.getUniqueID(), player.getHeldItemMainhand());
             float adsSpeed = 0F;
             ItemGun gun=(ItemGun)player.getHeldItemMainhand().getItem();
             gun.onUpdateClient(player, player.world, player.getHeldItemMainhand(), gun, gun.type);
@@ -280,6 +286,7 @@ public final class ClientTickHandler {
                     }
                     RenderParameters.GUN_CHANGE_Y = 1.0f-RenderParameters.GUN_CHANGE_Y;
                 }
+                LaserRenderManager.getInstance().updateLaserState(player.getUniqueID(), player.getHeldItemMainhand());
             }
             if(GUN_CHANGE_Y<0.5) {
                 lastItemStack = ItemStack.EMPTY;

@@ -48,15 +48,15 @@ public class LaserRenderManager {
     
     public void addLaserDot(float[] color, float alpha, float dotSize, double maxDistance, boolean visible, UUID playerId, boolean applySprint, float collideFrontDistance, AnimationType currentAction) {
         EntityPlayerSP player = Minecraft.getMinecraft().player;
-        if(player != null && player.getUniqueID().equals(playerId)) {
-            ItemStack heldItem = player.getHeldItemMainhand();
-            if(heldItem.getItem() instanceof ItemGun) {
-                boolean laserEnabled = ((ItemGun)heldItem.getItem()).getLaserEnabled(heldItem);
-                if(!laserEnabled) {
-                    return;
+            if (player != null && player.getUniqueID().equals(playerId)) {
+                ItemStack heldItem = player.getHeldItemMainhand();
+                if (heldItem.getItem() instanceof ItemGun) {
+                    boolean laserEnabled = ((ItemGun) heldItem.getItem()).getLaserEnabled(heldItem);
+                    if (!laserEnabled) {
+                        return;
+                    }
                 }
             }
-        }
         if(getLaserState(playerId)) {
             boolean isInAction = currentAction == AnimationType.PRE_RELOAD
                 || currentAction == AnimationType.RELOAD_FIRST
@@ -98,5 +98,12 @@ public class LaserRenderManager {
     public void toggleLaserState(UUID playerId) {
         boolean currentState = getLaserState(playerId);
         setLaserState(playerId, !currentState);
+    }
+
+    public void updateLaserState(UUID playerId, ItemStack gunStack) {
+        if(gunStack.getItem() instanceof ItemGun) {
+            boolean laserEnabled = ((ItemGun)gunStack.getItem()).getLaserEnabled(gunStack);
+            setLaserState(playerId, laserEnabled);
+        }
     }
 }

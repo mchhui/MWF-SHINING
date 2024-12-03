@@ -197,9 +197,13 @@ public class GunUI {
                                 GlStateManager.enableBlend();
                                 GlStateManager.color(1f, 1f, 1f, 1f);
                                 GL11.glColor4f(1, 1, 1, 1);
-                                
-                                if (!ClientProxy.gunEnhancedRenderer.laserEnabled || GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Laser) == null) {
-                                    Gui.drawModalRectWithCustomSizedTexture(0, 0, 1.0f, 1.0f, 1, 1, 16.0f, 16.0f);
+
+                                if (mc.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                                    ItemStack heldStack = mc.player.getHeldItemMainhand();
+                                    boolean laserEnabled = ((ItemGun) heldStack.getItem()).getLaserEnabled(heldStack);
+                                    if (!laserEnabled) {
+                                        Gui.drawModalRectWithCustomSizedTexture(0, 0, 1.0f, 1.0f, 1, 1, 16.0f, 16.0f);
+                                    }
                                 }
                                 
                                 Gui.drawModalRectWithCustomSizedTexture(0, 0 + move, 1.0f, 1.0f, 1, 4, 16.0f, 16.0f);
