@@ -208,6 +208,25 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         public Vector3f rot = new Vector3f();
     }
 
+    private HashMap<String, ModelEnhancedGun> thirdPersonModels = new HashMap<>();
+    private ModelEnhancedGun firstPersonModel;
+    
+    private ModelEnhancedGun getOrCreateModel(GunType gunType, boolean isFirstPerson, UUID playerId) {
+        if(isFirstPerson) {
+            if(firstPersonModel == null || firstPersonModel.baseType != gunType) {
+                firstPersonModel = new ModelEnhancedGun((GunEnhancedRenderConfig)gunType.enhancedModel.config, gunType);
+            }
+            return firstPersonModel;
+        } else {
+            String key = playerId != null ? playerId.toString() : "default";
+            if(!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
+                ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig)gunType.enhancedModel.config, gunType);
+                thirdPersonModels.put(key, newModel);
+            }
+            return thirdPersonModels.get(key);
+        }
+    }
+
     public void resetClientController() {
         controller = new AnimationController(null, null);
     }
@@ -241,6 +260,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     }
 
     public void renderItem(CustomItemRenderType type, EnumHand hand, ItemStack item, Object... data) {
+        EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().player;
         if (!(item.getItem() instanceof ItemGun))
             return;
 
@@ -248,7 +268,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if (gunType == null)
             return;
 
-        ModelEnhancedGun model = (ModelEnhancedGun)gunType.enhancedModel;
+        ModelEnhancedGun model = getOrCreateModel(gunType, true, player.getUniqueID());
         if(!(Minecraft.getMinecraft().getRenderViewEntity() instanceof AbstractClientPlayer)) {
             return;
         }
@@ -275,8 +295,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         
         float partialTicks = this.timer.renderPartialTicks;
         shellModel=null;
-        
-        EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().player;
 
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
 
@@ -536,7 +554,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 }      
             }
         }
-        if(model.model.geoModel.nodes.get("mwf_camera")!=null) {
+        if(model.model.geoModel.nodes.get("mwf_camera")!=null && model == firstPersonModel) {
             Matrix4f cameraMat=model.getGlobalTransform("mwf_camera");
             AxisAngle4d cam_aa=mwf_camera_rot;
             Vector3f cam_pos=mwf_camera_pos;
@@ -1357,8 +1375,8 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             );
         }
     }
-    
 
+    
     private static FloatBuffer buf(float x, float y, float z, float w) {
         lightBuf.clear();
         lightBuf.put(x).put(y).put(z).put(w);
@@ -1703,9 +1721,21 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         if (!(demoStack.getItem() instanceof ItemGun))
             return;
         GunType gunType = ((ItemGun) demoStack.getItem()).type;
-        if (gunType == null)
+        if (gunType == null) {
             return;
-        EnhancedModel model = gunType.enhancedModel;
+        }
+        ModelEnhancedGun model;
+            if (renderType == RenderType.ITEMFRAME || renderType == RenderType.ITEMLOOT) {
+                String key = renderType.serializedName;
+                if(!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
+                    ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig)gunType.enhancedModel.config, gunType);
+                    newModel.model = gunType.enhancedModel.model;
+                    thirdPersonModels.put(key, newModel);
+                }
+                model = thirdPersonModels.get(key);
+            } else {
+                model = getOrCreateModel(gunType, false, player != null ? player.getUniqueID() : null);
+            }
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
         AnimationController controller;
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);

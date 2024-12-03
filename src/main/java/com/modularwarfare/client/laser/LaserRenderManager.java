@@ -1,12 +1,15 @@
 package com.modularwarfare.client.laser;
 
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.item.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.UUID;
 
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.common.guns.ItemGun;
 
 public class LaserRenderManager {
     private static LaserRenderManager INSTANCE = new LaserRenderManager();
@@ -44,6 +47,16 @@ public class LaserRenderManager {
     }
     
     public void addLaserDot(float[] color, float alpha, float dotSize, double maxDistance, boolean visible, UUID playerId, boolean applySprint, float collideFrontDistance, AnimationType currentAction) {
+        EntityPlayerSP player = Minecraft.getMinecraft().player;
+        if(player != null && player.getUniqueID().equals(playerId)) {
+            ItemStack heldItem = player.getHeldItemMainhand();
+            if(heldItem.getItem() instanceof ItemGun) {
+                boolean laserEnabled = ((ItemGun)heldItem.getItem()).getLaserEnabled(heldItem);
+                if(!laserEnabled) {
+                    return;
+                }
+            }
+        }
         if(getLaserState(playerId)) {
             boolean isInAction = currentAction == AnimationType.PRE_RELOAD
                 || currentAction == AnimationType.RELOAD_FIRST
