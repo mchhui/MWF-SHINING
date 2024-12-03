@@ -42,36 +42,49 @@ public class LaserRenderManager {
     public boolean getLaserState(UUID playerId) {
         return laserStates.getOrDefault(playerId, false);
     }
-    
     public void addLaserDot(float[] color, float alpha, float dotSize, double maxDistance, boolean visible, UUID playerId, boolean applySprint, float collideFrontDistance, AnimationType currentAction) {
-        if(getLaserState(playerId)) {
-            boolean isInAction = currentAction == AnimationType.PRE_RELOAD
-                || currentAction == AnimationType.RELOAD_FIRST
-                || currentAction == AnimationType.RELOAD_SECOND
-                || currentAction == AnimationType.POST_RELOAD
-                || currentAction == AnimationType.PRE_LOAD
-                || currentAction == AnimationType.LOAD
-                || currentAction == AnimationType.POST_LOAD
-                || currentAction == AnimationType.PRE_UNLOAD
-                || currentAction == AnimationType.UNLOAD
-                || currentAction == AnimationType.POST_UNLOAD
-                || currentAction == AnimationType.PRE_RELOAD_EMPTY
-                || currentAction == AnimationType.RELOAD_FIRST_EMPTY
-                || currentAction == AnimationType.RELOAD_SECOND_EMPTY
-                || currentAction == AnimationType.POST_RELOAD_EMPTY
-                || currentAction == AnimationType.RELOAD_FIRST_QUICKLY
-                || currentAction == AnimationType.RELOAD_SECOND_QUICKLY
-                || currentAction == AnimationType.DRAW
-                || currentAction == AnimationType.DRAW_EMPTY
-                || currentAction == AnimationType.TAKEDOWN
-                || currentAction == AnimationType.TAKEDOWN_EMPTY
-                || currentAction == AnimationType.INSPECT
-                || currentAction == AnimationType.INSPECT_EMPTY;
-    
-            if(!applySprint && collideFrontDistance <= 0.2f && !isInAction) {
-                laserDots.add(new LaserDotInfo(color, alpha, dotSize, maxDistance, visible, playerId));
-            }
+        if(!getLaserState(playerId)) {
+            return;
         }
+        
+        // 检查动作状态
+        if(isInAction(currentAction)) {
+            return;
+        }
+        
+        // 检查碰撞距离
+        if(applySprint || collideFrontDistance > 0.2f) {
+            return;
+        }
+        
+        // 添加激光点
+        synchronized(laserDots) {
+            laserDots.add(new LaserDotInfo(color, alpha, dotSize, maxDistance, visible, playerId));
+        }
+    }
+    private boolean isInAction(AnimationType currentAction) {
+        return currentAction == AnimationType.PRE_RELOAD
+            || currentAction == AnimationType.RELOAD_FIRST
+            || currentAction == AnimationType.RELOAD_SECOND
+            || currentAction == AnimationType.POST_RELOAD
+            || currentAction == AnimationType.PRE_LOAD
+            || currentAction == AnimationType.LOAD
+            || currentAction == AnimationType.POST_LOAD
+            || currentAction == AnimationType.PRE_UNLOAD
+            || currentAction == AnimationType.UNLOAD
+            || currentAction == AnimationType.POST_UNLOAD
+            || currentAction == AnimationType.PRE_RELOAD_EMPTY
+            || currentAction == AnimationType.RELOAD_FIRST_EMPTY
+            || currentAction == AnimationType.RELOAD_SECOND_EMPTY
+            || currentAction == AnimationType.POST_RELOAD_EMPTY
+            || currentAction == AnimationType.RELOAD_FIRST_QUICKLY
+            || currentAction == AnimationType.RELOAD_SECOND_QUICKLY
+            || currentAction == AnimationType.DRAW
+            || currentAction == AnimationType.DRAW_EMPTY
+            || currentAction == AnimationType.TAKEDOWN
+            || currentAction == AnimationType.TAKEDOWN_EMPTY
+            || currentAction == AnimationType.INSPECT
+            || currentAction == AnimationType.INSPECT_EMPTY;
     }
     
     public void clearLaserDots() {
