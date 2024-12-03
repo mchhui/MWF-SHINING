@@ -198,7 +198,7 @@ public class GunUI {
                                 GlStateManager.color(1f, 1f, 1f, 1f);
                                 GL11.glColor4f(1, 1, 1, 1);
                                 
-                                if (mc.player.getHeldItemMainhand().getTagCompound() != null && !mc.player.getHeldItemMainhand().getTagCompound().getBoolean("laserEnabled")) {
+                                if (!ClientProxy.gunEnhancedRenderer.laserEnabled || GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Laser) == null) {
                                     Gui.drawModalRectWithCustomSizedTexture(0, 0, 1.0f, 1.0f, 1, 1, 16.0f, 16.0f);
                                 }
                                 
