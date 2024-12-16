@@ -94,7 +94,7 @@ public class ModularWarfare {
     // Mod Info
     public static final String MOD_ID = "modularwarfare";
     public static final String MOD_NAME = "ModularWarfare";
-    public static final String MOD_VERSION = "2024.2.4.5f";
+    public static final String MOD_VERSION = "2024.2.4.6f";
     public static final String MOD_PREFIX = TextFormatting.GRAY+"["+TextFormatting.RED+"ModularWarfare"+TextFormatting.GRAY+"]"+TextFormatting.GRAY;
 
     // Main instance
