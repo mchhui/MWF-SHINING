@@ -10,6 +10,7 @@ import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraft.entity.player.EntityPlayer;
@@ -71,11 +72,19 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                     model.render("elytraOffModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                 }
                 if (AnimationUtils.isJet.getOrDefault(player.getUniqueID(), 0L) > System.currentTimeMillis()) {
+
+                    float lastBrightnessX = OpenGlHelper.lastBrightnessX;
+                    float lastBrightnessY = OpenGlHelper.lastBrightnessY;
+
+                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+
                     if(!player.isElytraFlying()) {
                         model.render("jetOnModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                     }else {
                         model.render("jetBoostModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                     }
+
+                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lastBrightnessX, lastBrightnessY);
                 } else {
                     model.render("jetOffModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                 }
