@@ -135,7 +135,7 @@ public class GuiInventoryModified extends InventoryEffectRenderer {
             if (MwInventoryTweakAPI.getBackpackTweak().getKeyCode() == manageKeyInput) {
                 MwInventoryTweakAPI.tweakBackpack();
             }
-            super.handleKeyboardInput();
         }
+        super.handleKeyboardInput();
     }
 }
