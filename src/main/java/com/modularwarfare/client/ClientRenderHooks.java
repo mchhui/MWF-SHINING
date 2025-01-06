@@ -333,15 +333,15 @@ public class ClientRenderHooks {
                             customRenderers[1].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, (ClientTickHandler.lastItemStack.isEmpty() ? stack : ClientTickHandler.lastItemStack), mc.world, mc.player);
                         } else{
                             //客户端预测需要 必须是即时物品
-                            ItemStack heldStack=mc.player.getHeldItemMainhand();
-                            if(currentGun==-1) {
-                                currentGun=mc.player.inventory.currentItem;
-                            }
+                            ItemStack heldStack = mc.player.getHeldItemMainhand();
+                            // 总是更新currentGun为当前选中的槽位
+                            currentGun = mc.player.inventory.currentItem;
+                            
+                            // 确保使用当前槽位的物品
                             if(mc.player.inventory.getStackInSlot(currentGun).getItem() instanceof ItemGun) {
-                                heldStack=mc.player.inventory.getStackInSlot(currentGun);
-                            }else {
-                                currentGun=mc.player.inventory.currentItem;
+                                heldStack = mc.player.inventory.getStackInSlot(currentGun);
                             }
+                            
                             if (GunType.getAttachment(heldStack, AttachmentPresetEnum.Sight) != null) {
                                 final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(heldStack, AttachmentPresetEnum.Sight).getItem();
                                 if(itemAttachment.type.sight.modeType.insideGunRendering) {

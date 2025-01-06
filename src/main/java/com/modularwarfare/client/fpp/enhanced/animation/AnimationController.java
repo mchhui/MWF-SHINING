@@ -185,11 +185,15 @@ public class AnimationController {
         if(TAKEDOWN>0) {
             double takedownSpeed = 1;
             if(config.animations.get(AnimationType.TAKEDOWN)!=null) {
-                takedownSpeed = config.animations.get(AnimationType.TAKEDOWN).getSpeed(config.FPS) * stepTick;
+                if(!isDrawing()) {
+                    takedownSpeed = config.animations.get(AnimationType.TAKEDOWN).getSpeed(config.FPS) * stepTick;
+                }
             }
             if(config.animations.get(AnimationType.TAKEDOWN_EMPTY)!=null) {
                 if(playback.action==AnimationType.TAKEDOWN_EMPTY) {
-                    takedownSpeed = config.animations.get(AnimationType.TAKEDOWN_EMPTY).getSpeed(config.FPS) * stepTick;
+                    if(!isDrawing()) {
+                        takedownSpeed = config.animations.get(AnimationType.TAKEDOWN_EMPTY).getSpeed(config.FPS) * stepTick;
+                    }
                 }  
             }
             GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
@@ -416,7 +420,7 @@ public class AnimationController {
             RenderParameters.adsSwitch = (float)ADS;  
         }
         
-        if(!isDrawing()) {
+        if(!isDrawing() && !isTakedown()) {
             ADS = Math.max(0, Math.min(1, val));
         }else {
             ADS = 0;
@@ -766,9 +770,19 @@ public class AnimationController {
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                //因为takedown是下一把枪draw的序幕 所以也算drawing罢
-                return this.playback.action == AnimationType.DRAW||this.playback.action == AnimationType.DRAW_EMPTY||this.playback.action==AnimationType.TAKEDOWN;
+                return this.playback.action == AnimationType.DRAW||this.playback.action == AnimationType.DRAW_EMPTY;
             }
+        }
+        return false;
+    }
+
+    public boolean isTakedown() {
+        if(player==null) {
+            return false;
+        }
+        Item item = player.getHeldItemMainhand().getItem();
+        if (item instanceof ItemGun) {
+            return this.playback.action == AnimationType.TAKEDOWN;
         }
         return false;
     }
@@ -780,7 +794,7 @@ public class AnimationController {
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                if (isDrawing()) {
+                if (isDrawing() && !isTakedown()) {
                     return false;
                 }
                 if(ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
@@ -806,7 +820,7 @@ public class AnimationController {
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                if (isDrawing()) {
+                if (isDrawing() && !isTakedown()) {
                     return false;
                 }
                 if(ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {
