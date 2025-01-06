@@ -13,6 +13,7 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
+import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.laser.LaserDotRenderer;
@@ -40,6 +41,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.client.CPacketEntityAction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -186,7 +188,7 @@ public class ClientEventHandler {
                 }
             }
         }
-        GlStateManager.rotate((float) cemeraBobbing * 5, 0, 0, 1);
+        GlStateManager.rotate(cemeraBobbing, 0, 0, 1);
     }
     
     @SubscribeEvent

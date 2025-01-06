@@ -773,15 +773,42 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void onShootAnimation(EntityPlayer player, String wepType, int fireTickDelay, float recoilPitch, float recoilYaw) {
         GunType gunType = ModularWarfare.gunTypes.get(wepType).type;
+        float targetRoll = 0;
+        float recoilStrength = Math.abs(RenderParameters.playerRecoilPitch) + Math.abs(RenderParameters.playerRecoilYaw);
         if (gunType != null) {
             if (gunType.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType, fireTickDelay);
             } else {
-                float recoilYawFactor = (float) (gunType.recoilYaw * 0.5);
-                float recoilRandomYawFactor = (float) (gunType.randomRecoilYaw * 0.5);
-                float rand=(float) Math.random();
-                ClientEventHandler.cemeraBobbing=lastBobbingParm*(recoilRandomYawFactor + recoilYawFactor*Math.abs(rand))*((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
-                lastBobbingParm=-lastBobbingParm;
+                if(recoilStrength > 0.01f) {
+                    float direction = Math.signum(RenderParameters.playerRecoilYaw);
+                    if(direction == 0) {
+                        direction = RenderParameters.phase ? 1 : -1;
+                    }
+                    targetRoll += RenderParameters.playerRecoilPitch * 0.3f * direction;
+                    targetRoll += RenderParameters.playerRecoilYaw * 0.6f;
+                    float oscillation = (float)Math.cos(System.currentTimeMillis() / 80.0) * 0.5f;
+                    targetRoll += recoilStrength * oscillation * direction;
+                    float minEffect = 0.8f;
+                    if(Math.abs(targetRoll) < minEffect) {
+                        targetRoll = minEffect * direction;
+                    }
+                    targetRoll *= ((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
+                }
+                float transitionSpeed;
+                if(Math.abs(targetRoll) < 0.01f) {
+                    transitionSpeed = 0.25f;
+                } else {
+                    transitionSpeed = 0.2f;
+                }
+                ClientEventHandler.cemeraBobbing += (targetRoll - ClientEventHandler.cemeraBobbing) * transitionSpeed;
+                
+                if(Math.abs(ClientEventHandler.cemeraBobbing) < 0.01f) {
+                    ClientEventHandler.cemeraBobbing = 0;
+                }
+                
+                
+                float maxRoll = 12f * ((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
+                ClientEventHandler.cemeraBobbing = MathHelper.clamp(ClientEventHandler.cemeraBobbing, -maxRoll, maxRoll);
                 AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
                         gunType, fireTickDelay);
