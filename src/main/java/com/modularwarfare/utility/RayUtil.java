@@ -7,6 +7,7 @@ import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.network.PacketGunTrailAskServer;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
+import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import mchhui.modularmovements.tactical.client.ClientLitener;
 import mchhui.modularmovements.tactical.server.ServerListener;
@@ -31,17 +32,99 @@ import java.util.Random;
 
 public class RayUtil {
 
+    // 存储当前位置和目标位置的静态变量
+    private static double currentX = 0;
+    private static double currentY = 0;
+    private static double targetX = 0;
+    private static double targetY = 0;
+    private static double startX = 0;
+    private static double startY = 0;
+    private static float lastAccuracy = 0;
+    private static long accuracyChangeTime = 0;
+    private static final long ACCURACY_TRANSITION_TIME = 100; // 100ms的过渡时间
+    
     public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
+        // 使用原有的随机系统作为默认值和后备方案
+        Vec3d defaultVec = getDefaultAccuracy(pitch, yaw, accuracy, rand);
+        
+        // 如果在客户端且玩家不为空
+        if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().player != null) {
+            EntityPlayer player = Minecraft.getMinecraft().player;
+            ItemStack heldItem = player.getHeldItemMainhand();
+            
+            // 检查是否持有枪械且枪械类型不为空
+            if(!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
+                ItemGun itemGun = (ItemGun)heldItem.getItem();
+                if(itemGun.type != null && itemGun.type.useEnhancedAiming) {
+                    try {
+                        long currentTime = System.currentTimeMillis();
+                        
+                        // 计算后坐力影响
+                        float recoilX = RenderParameters.playerRecoilYaw * 0.5f;
+                        float recoilY = RenderParameters.playerRecoilPitch * 0.5f;
+                        
+                        // 基于当前位置计算下一个点
+                        // 缩短更新间隔到200ms,使移动更频繁
+                        if(Math.abs(lastAccuracy - accuracy) > 0.0001f || currentTime - accuracyChangeTime > 200) {
+                            accuracyChangeTime = currentTime;
+                            lastAccuracy = accuracy;
+                            
+                            // 保存当前位置作为起始点
+                            startX = currentX;
+                            startY = currentY;
+                            
+                            // 在当前位置的基础上,计算新的目标位置
+                            // 增大角度变化范围,使移动更剧烈
+                            double angle = Math.atan2(currentY, currentX) + (rand.nextDouble() - 0.5) * Math.PI * 1.5;
+                            double currentRadius = Math.sqrt(currentX * currentX + currentY * currentY);
+                            // 增大半径变化量,使移动幅度更大
+                            double newRadius = Math.min(accuracy, currentRadius + (rand.nextDouble() - 0.3) * accuracy * 0.8);
+                            
+                            targetX = Math.cos(angle) * newRadius;
+                            targetY = Math.sin(angle) * newRadius;
+                        }
+                        
+                        // 计算从当前位置到目标位置的插值
+                        // 缩短移动时间到150ms,使移动更快
+                        float moveProgress = (currentTime - accuracyChangeTime) / 150.0f;
+                        moveProgress = Math.min(1.0f, moveProgress);
+                        
+                        // 使用更快的easeInOutQuad曲线
+                        moveProgress = moveProgress < 0.5f ? 
+                            2.0f * moveProgress * moveProgress : 
+                            -1.0f + (4.0f - 2.0f * moveProgress) * moveProgress;
+                        
+                        // 更新当前位置
+                        currentX = startX + (targetX - startX) * moveProgress;
+                        currentY = startY + (targetY - startY) * moveProgress;
+                        
+                        // 将后坐力影响添加到最终位置
+                        double finalX = currentX + recoilX;
+                        double finalY = currentY + recoilY;
+                        
+                        // 创建射击向量并应用旋转
+                        Vec3d vec3d = new Vec3d(finalX, finalY, 100).normalize();
+                        return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
+                                  .rotateYaw((float)(-yaw * Math.PI / 180));
+                    } catch(Exception e) {
+                        return defaultVec;
+                    }
+                }
+            }
+        }
+        
+        return defaultVec;
+    }
+    
+    // 将原有的随机系统抽取为单独的方法
+    private static Vec3d getDefaultAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
         final float randAccPitch = rand.nextFloat() * accuracy;
         final float randAccYaw = rand.nextFloat() * accuracy;
-        /*
-         * 2023/8/5
-         * 修复万向轴死锁带来的bug
-         * */
-        Vec3d vec3d = new Vec3d(rand.nextBoolean() ? randAccYaw : (-randAccYaw), rand.nextBoolean() ? randAccPitch : (-randAccPitch), 100).normalize();
-        vec3d = vec3d.rotatePitch((float)(-pitch * Math.PI / 180));
-        vec3d = vec3d.rotateYaw((float)(-yaw * Math.PI / 180));
-        return vec3d;
+        Vec3d vec3d = new Vec3d(rand.nextBoolean() ? randAccYaw : (-randAccYaw), 
+                               rand.nextBoolean() ? randAccPitch : (-randAccPitch), 
+                               100).normalize();
+        return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
+                   .rotateYaw((float)(-yaw * Math.PI / 180));
     }
 
     public static float calculateAccuracy(final ItemGun item, final EntityLivingBase player) {
@@ -270,66 +353,98 @@ public class RayUtil {
      */
     @Nullable
     public static List<BulletHit> standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item, boolean isPunched) {
+        // 基础检查
+        if (world == null || player == null || item == null || item.type == null) {
+            return null;
+        }
+
+        // 检查玩家手持物品
+        ItemStack heldItem = player.getHeldItemMainhand();
+        if (heldItem.isEmpty() || !(heldItem.getItem() instanceof ItemGun)) {
+            return null;
+        }
 
         HashSet<Entity> hashset = new HashSet<Entity>(1);
         hashset.add(player);
 
-        float accuracy = calculateAccuracy(item, player);
-        float penetrate = item.type.gunPenetrateSize;
-        float maxPenetrateBlockResistance = item.type.gunMaxPenetrateBlockResistance;
-        float penetrateBlocksResistance = item.type.gunPenetrateBlocksResistance;
+        try {
+            float accuracy = calculateAccuracy(item, player);
+            float penetrate = item.type.gunPenetrateSize;
+            float maxPenetrateBlockResistance = item.type.gunMaxPenetrateBlockResistance;
+            float penetrateBlocksResistance = item.type.gunPenetrateBlocksResistance;
 
-        ItemBullet usedBullet = ItemAmmo.getUsedBullet(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND));
-        if (usedBullet != null) {
-            penetrate *= usedBullet.type.bulletPenetrateFactor;
-            maxPenetrateBlockResistance *= usedBullet.type.bulletBlockPenetrateFactor;
-            penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
-        }
-        Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, player.world.rand);
+            ItemBullet usedBullet = ItemAmmo.getUsedBullet(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND));
+            if (usedBullet != null) {
+                penetrate *= usedBullet.type.bulletPenetrateFactor;
+                maxPenetrateBlockResistance *= usedBullet.type.bulletBlockPenetrateFactor;
+                penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
+            }
+            Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand);
 
-        if(side.isServer()) {
-//            ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(item.type,player.posX, player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched), player.world.provider.getDimension());
-        } else {
-            ItemStack gunStack=player.getHeldItemMainhand();
-            ItemStack bulletStack=null;
-            String model=null;
-            String tex=null;
-            boolean glow=false;
-            if(gunStack.getItem() instanceof ItemGun) {
-                GunType gunType=((ItemGun)gunStack.getItem()).type;
-                if (gunType.acceptedBullets != null) {
-                    bulletStack= new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
-                }else {
-                    ItemStack stackAmmo = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
-                    if(stackAmmo!=null&&!stackAmmo.isEmpty()&&stackAmmo.hasTagCompound()) {
-                        bulletStack= new ItemStack(stackAmmo.getTagCompound().getCompoundTag("bullet"));  
+            if(side.isServer()) {
+                // Server side code...
+            } else {
+                // 只在实际射击时发送尾迹数据
+                if(isPunched) {
+                    ItemStack gunStack = player.getHeldItemMainhand();
+                    ItemStack bulletStack = null;
+                    String model = null;
+                    String tex = null;
+                    boolean glow = false;
+
+                    if (!gunStack.isEmpty() && gunStack.hasTagCompound()) {
+                        if(gunStack.getItem() instanceof ItemGun) {
+                            GunType gunType = ((ItemGun)gunStack.getItem()).type;
+                            if (gunType != null) {
+                                if (gunType.acceptedBullets != null) {
+                                    if (gunStack.getTagCompound().hasKey("bullet")) {
+                                        bulletStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
+                                    }
+                                } else {
+                                    if (gunStack.getTagCompound().hasKey("ammo")) {
+                                        ItemStack stackAmmo = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
+                                        if(stackAmmo != null && !stackAmmo.isEmpty() && stackAmmo.hasTagCompound() && stackAmmo.getTagCompound().hasKey("bullet")) {
+                                            bulletStack = new ItemStack(stackAmmo.getTagCompound().getCompoundTag("bullet"));  
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
+
+                    if (bulletStack != null && !bulletStack.isEmpty() && bulletStack.getItem() instanceof ItemBullet) {
+                        BulletType bulletType = ((ItemBullet)bulletStack.getItem()).type;
+                        if (bulletType != null) {
+                            model = bulletType.trailModel;
+                            tex = bulletType.trailTex;
+                            glow = bulletType.trailGlow;
+                        }
+                    }
+
+                    ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(item.type, model, tex, glow, player.posX,
+                            player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612,
+                            player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
                 }
             }
-            if (bulletStack != null) {
-                if (bulletStack.getItem() instanceof ItemBullet) {
-                    BulletType bulletType = ((ItemBullet)bulletStack.getItem()).type;
-                    model = bulletType.trailModel;
-                    tex = bulletType.trailTex;
-                    glow = bulletType.trailGlow;
+
+            int ping = 0;
+            if (player instanceof EntityPlayerMP) {
+                final EntityPlayerMP entityPlayerMP = (EntityPlayerMP) player;
+                ping = entityPlayerMP.ping;
+            }
+
+            Vec3d origin = player.getPositionEyes(1.0f);
+            if(ModularWarfare.isLoadedModularMovements) {
+                if (player instanceof EntityPlayer) {
+                    origin = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, 1.0f);
                 }
             }
-            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(item.type,model,tex,glow,player.posX,player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612, player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
-        }
 
-        int ping = 0;
-        if (player instanceof EntityPlayerMP) {
-            final EntityPlayerMP entityPlayerMP = (EntityPlayerMP) player;
-            ping = entityPlayerMP.ping;
+            return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
+                    maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
+        } catch (Exception e) {
+            // 如果发生任何错误，返回null
+            return null;
         }
-
-        Vec3d origin = player.getPositionEyes(1.0f);
-        if(ModularWarfare.isLoadedModularMovements) {
-            if (player instanceof EntityPlayer) {
-                origin = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, 1.0f);
-            }
-        }
-
-        return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate, maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
     }
 }

@@ -216,7 +216,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public float modelGuiScale=1f;
         public Vector2f modelGuiRotateCenter=new Vector2f(0,0);
         
-        public float bobbingFactor=1;
+        public float bobbingFactor=1.0f;
         
         /**
          * shell offset

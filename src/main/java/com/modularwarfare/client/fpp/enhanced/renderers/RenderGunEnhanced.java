@@ -149,6 +149,28 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     private int lastWidth;
     private int lastHeight;
 
+    
+    // 后坐力动画相关参数
+    private static final float RECOIL_COMPLETE_TIME = 0.35f; // 完成时间(秒)
+    private static final float RECOIL_RECOVER_TIME = 0.55f; // 恢复时间(秒)
+    private static final float RECOIL_FAST_RECOVER_THRESHOLD = 3.0f; // 快速恢复阈值
+    private static final float RECOIL_FAST_RECOVER_FACTOR = 2.5f; // 快速恢复系数
+    private static final float RECOIL_BOUNCE_FACTOR = 0.2f; // 弹跳系数
+    private static final float ADS_RECOIL_FACTOR = 0.2f; // 瞄准时后坐力系数
+    
+    // 当前后坐力状态
+    private static float currentRecoilX = 0f;
+    private static float currentRecoilY = 0f;
+    private static float currentRecoilZ = 0f;
+    private static float targetRecoilX = 0f;
+    private static float targetRecoilY = 0f;
+    private static float targetRecoilZ = 0f;
+    private static float bounceRecoilX = 0f;
+    private static float bounceRecoilY = 0f;
+    private static float bounceRecoilZ = 0f;
+    private static long lastRecoilTime = 0L;
+    private static boolean isRecovering = false;
+
     private static FloatBuffer lightBuf = BufferUtils.createFloatBuffer(4);
 
     private Timer timer;
@@ -476,20 +498,58 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float max = 1.5f;
         float randomNum = new Random().nextFloat();
         float randomShake = min + (randomNum * (max - min));
-
         float alpha = anim.lastGunRecoil + (anim.gunRecoil - anim.lastGunRecoil) * partialTicks;
-        // float bounce = Interpolation.BOUNCE_INOUT.interpolate(0F, 1F, alpha);
-        // float elastic = Interpolation.ELASTIC_OUT.interpolate(0F, 1F, alpha);
-
-        // 使用线性插值替换弹跳插值
-        float linearRecoil = Interpolation.LINEAR.interpolate(0F, 1F, alpha);
-
-        // float sin = MathHelper.sin((float) (2 * Math.PI * alpha));
-        // float sin10 = MathHelper.sin((float) (2 * Math.PI * alpha)) * 0.05f;
-
-        // 调整正弦函数的效果，让它更加平滑
-        float sin = MathHelper.sin((float) (2 * Math.PI * linearRecoil));
-        float sin10 = MathHelper.sin((float) (2 * Math.PI * linearRecoil)) * 0.05f;
+         // 计算后坐力动画
+        
+        long currentTime = System.currentTimeMillis();
+        float timeDelta = (currentTime - lastRecoilTime) / 1000f;
+        lastRecoilTime = currentTime;
+        
+        // 更新目标后坐力值
+        if(anim.shooting) {
+            isRecovering = false;
+            // 使用playerRecoilYaw影响左右旋转
+            targetRecoilX = RenderParameters.playerRecoilYaw * 1.2f;
+            // 使用playerRecoilPitch影响上下位移和旋转
+            targetRecoilY = RenderParameters.playerRecoilPitch * 0.5f;
+            targetRecoilZ = RenderParameters.playerRecoilPitch * 0.4f;
+            
+            // 添加弹跳效果
+            bounceRecoilX = targetRecoilX * RECOIL_BOUNCE_FACTOR;
+            bounceRecoilY = targetRecoilY * RECOIL_BOUNCE_FACTOR;
+            bounceRecoilZ = targetRecoilZ * RECOIL_BOUNCE_FACTOR;
+        } else {
+            isRecovering = true;
+            float recoverTime = RECOIL_RECOVER_TIME;
+            // 如果超过阈值，加快恢复
+            if(Math.abs(currentRecoilX) > RECOIL_FAST_RECOVER_THRESHOLD || 
+               Math.abs(currentRecoilY) > RECOIL_FAST_RECOVER_THRESHOLD ||
+               Math.abs(currentRecoilZ) > RECOIL_FAST_RECOVER_THRESHOLD) {
+                recoverTime /= RECOIL_FAST_RECOVER_FACTOR;
+            }
+            
+            float recovery = timeDelta / recoverTime;
+            targetRecoilX *= (1f - recovery);
+            targetRecoilY *= (1f - recovery);
+            targetRecoilZ *= (1f - recovery);
+            
+            // 弹跳效果衰减
+            bounceRecoilX *= (1f - recovery * 2f);
+            bounceRecoilY *= (1f - recovery * 2f);
+            bounceRecoilZ *= (1f - recovery * 2f);
+        }
+        
+        // 计算当前值到目标值的插值
+        float lerpFactor = isRecovering ? 
+            timeDelta / RECOIL_RECOVER_TIME : 
+            timeDelta / RECOIL_COMPLETE_TIME;
+        lerpFactor = Math.min(1f, lerpFactor);
+        
+        // 添加弹跳到当前值
+        float bounceSin = (float)Math.sin(currentTime * 0.02f);
+        currentRecoilX = targetRecoilX + bounceRecoilX * bounceSin;
+        currentRecoilY = targetRecoilY + bounceRecoilY * bounceSin;
+        currentRecoilZ = targetRecoilZ + bounceRecoilZ * bounceSin;
         
         //枪托抖动影响参数
         float modelBackwardsFactor = 1.0f;
@@ -508,19 +568,25 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             }
         }
 
-        mat.translate(new Vector3f(-(linearRecoil) * config.extra.modelRecoilBackwards * (float)(1-controller.ADS) * modelBackwardsFactor, 0F, 0F));
-        mat.translate(new Vector3f(0F, (-(linearRecoil) * config.extra.modelRecoilBackwards * modelBackwardsFactor) * 0.05F, 0F));
-
-        mat.translate(new Vector3f(0F, 0F, sin10 * anim.recoilSide * config.extra.modelRecoilUpwards * modelUpwardsFactor));
+        // 应用后坐力效果
+        float aimFactor = (float)(1.0 - controller.ADS * (1.0 - ADS_RECOIL_FACTOR)); // 瞄准时减少但不完全消除后坐力
         
-        mat.rotate(toRadians(sin * anim.recoilSide * config.extra.modelRecoilUpwards * modelUpwardsFactor), new Vector3f(0F, 0F, 1F));
-        mat.rotate(toRadians(5F * sin10 * anim.recoilSide * config.extra.modelRecoilUpwards * modelUpwardsFactor), new Vector3f(0F, 0F, 1F));
-
-        mat.rotate(toRadians((linearRecoil) * config.extra.modelRecoilUpwards), new Vector3f(0F, 0F, 1F));
-
+        // 后坐力位移
+        //前后
+        mat.translate(new Vector3f(-currentRecoilZ * config.extra.modelRecoilBackwards * aimFactor * modelBackwardsFactor, 0F, 0F));
+        mat.translate(new Vector3f(0F, -currentRecoilZ * config.extra.modelRecoilBackwards * modelBackwardsFactor * 0.05F, 0F));
+        //上下
+        mat.translate(new Vector3f(0f,currentRecoilY * modelUpwardsFactor * 0.025F,0f));
+        //左右
+        mat.translate(new Vector3f(0f,0f,currentRecoilX * modelShakeFactor * 0.025F));
+        
+        // 后坐力旋转 - 瞄准时保留部分效果
+        mat.rotate(toRadians(currentRecoilX * aimFactor * modelShakeFactor * 2f), new Vector3f(0F, 1F, 0F)); // 左右摇摆
+        mat.rotate(toRadians(currentRecoilY * aimFactor * modelUpwardsFactor * 2f), new Vector3f(0F, 0F, 1F)); // 上下摇摆
+        //抖动
         mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake * modelShakeFactor)), new Vector3f(0.0f, 1.0f, 0.0f));
         mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake * modelShakeFactor)), new Vector3f(1.0f, 0.0f, 0.0f));
-        
+
         if(ScopeUtils.isIndsideGunRendering) {
             mat.translate(new Vector3f(-renderInsideGunOffset, 0, 0));
         }
@@ -532,6 +598,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 shouldRenderFlash1 = !attachmentType.barrel.hideFlash;
             }
         }
+
         /**
          * 不支持光影
          * */

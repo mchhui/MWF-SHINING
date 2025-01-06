@@ -40,6 +40,14 @@ import java.util.List;
  * It can be overwritten by your own RayCasting
  */
 public class DefaultRayCasting extends RayCasting {
+    private static boolean shouldRenderShot = false; // 控制射线渲染的标记
+    private static long lastShotTime = 0; // 记录上次射击时间
+    private static final long RENDER_DURATION = 1; // 渲染持续时间(毫秒)
+
+    public static void onShot() {
+        shouldRenderShot = true;
+        lastShotTime = System.currentTimeMillis();
+    }
 
     //在未来应当考虑穿透
     @Override
@@ -87,10 +95,15 @@ public class DefaultRayCasting extends RayCasting {
         ray.axisNormal.y=Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
         ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
 
-        if(OBBPlayerManager.debug) {
-            System.out.println("test0:"+ origin +"|"+Minecraft.getMinecraft().player.getPositionVector());
-            OBBPlayerManager.lines.add(new OBBDebugObject(ray));
-            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin), new Vector3f(endVec)));
+        // 检查是否应该渲染射线
+        if(OBBPlayerManager.debug && shouldRenderShot) {
+            // 检查渲染时间是否已过期
+            if(System.currentTimeMillis() - lastShotTime > RENDER_DURATION) {
+                shouldRenderShot = false;
+            } else {
+                OBBPlayerManager.lines.add(new OBBDebugObject(ray));
+                OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin), new Vector3f(endVec)));
+            }
         }
         //Iterate over all entities
         for (int i = 0; i < world.loadedEntityList.size(); i++) {

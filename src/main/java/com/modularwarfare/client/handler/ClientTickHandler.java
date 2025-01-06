@@ -22,6 +22,7 @@ import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.RayUtil;
+import com.modularwarfare.common.guns.manager.ShotManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLivingBase;
@@ -42,6 +43,7 @@ import org.lwjgl.input.Mouse;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.modularwarfare.ModularWarfare.gunTypes;
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
 @SideOnly(Side.CLIENT)
@@ -172,6 +174,13 @@ public final class ClientTickHandler {
             antiRecoilYaw *= 0.25F;
         }
         EntityPlayerSP player = minecraft.player;
+
+        // 更新瞄准数据
+        ItemStack stack = player.getHeldItemMainhand();
+        if (stack != null && stack.getItem() instanceof ItemGun) {
+            ItemGun itemGun = (ItemGun) stack.getItem();
+            ShotManager.getAimingData(player).update(player, itemGun);
+        }
 
         reloadEnhancedPrognosisAmmoRendering=reloadEnhancedPrognosisAmmo;
         reloadEnhancedIsQuicklyRendering=reloadEnhancedIsQuickly;
@@ -389,15 +398,72 @@ public final class ClientTickHandler {
         }
     }
 
+    // private static void doRecoil(EntityPlayerSP player) {
+    //     if (playerRecoilPitch != 0.f)
+    //         playerRecoilPitch *= 0.8F;
+
+    //     if (playerRecoilYaw != 0.f)
+    //         playerRecoilYaw *= 0.8F;
+
+    //     player.rotationPitch -= playerRecoilPitch;
+    //     player.rotationYaw -= playerRecoilYaw;
+    //     antiRecoilPitch += playerRecoilPitch;
+    //     if (antiRecoilPitch >= 10f) {
+    //         antiRecoilPitch *= 0.8f;
+    //     }
+    //     antiRecoilYaw += playerRecoilYaw;
+    // }
+
+    // private static void doAntiRecoil(EntityPlayerSP player) {
+    //     if (playerAntiRecoilFactor == 0) {
+    //         antiRecoilPitch = antiRecoilYaw = 0;
+    //         return;
+    //     }
+    //     long currentMillis = System.currentTimeMillis();
+    //     long intervalTime = currentMillis - startAntiRecoilTime;
+    //     if (startAntiRecoilTime == 0 || intervalTime < playerAntiRecoilStartTime) {
+    //         return;
+    //     }
+    //     float currentFac = (float) Math.log(intervalTime * intervalTime + 1) * (1 / playerAntiRecoilFactor) + 1;
+    //     if (antiRecoilPitch < 0.01F) {
+    //         antiRecoilPitch = 0;
+    //     }
+    //     if (antiRecoilYaw < 0.01F) {
+    //         antiRecoilYaw = 0;
+    //     }
+
+    //     float currentAntiPitch = antiRecoilPitch / currentFac;
+    //     float currentAntiYaw = antiRecoilYaw / currentFac;
+
+    //     player.rotationPitch += currentAntiPitch;
+    //     player.rotationYaw += currentAntiYaw;
+    //     //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+player.rotationPitch+" "+antiRecoilPitch+" "+totalPitchAngle+" "+playerRecoilPitch));
+    //     antiRecoilPitch -= currentAntiPitch;
+    //     antiRecoilYaw -= currentAntiYaw;
+    // }
+
     private static void doRecoil(EntityPlayerSP player) {
+        ItemStack stack = player.getHeldItemMainhand();
+        
         if (playerRecoilPitch != 0.f)
             playerRecoilPitch *= 0.8F;
 
         if (playerRecoilYaw != 0.f)
             playerRecoilYaw *= 0.8F;
 
-        player.rotationPitch -= playerRecoilPitch;
-        player.rotationYaw -= playerRecoilYaw;
+        
+        if (stack != null && stack.getItem() instanceof ItemGun) {
+            ItemGun itemGun = (ItemGun) stack.getItem();
+            GunType gunType = itemGun.type;
+            if (gunType.useNewRecoilSystem) {
+                player.rotationPitch -= playerRecoilPitch * 0.1;
+                player.rotationYaw -= playerRecoilYaw * 0.1;
+            } else {
+                player.rotationPitch -= playerRecoilPitch;
+                player.rotationYaw -= playerRecoilYaw;
+            }
+        }
+        
         antiRecoilPitch += playerRecoilPitch;
         if (antiRecoilPitch >= 10f) {
             antiRecoilPitch *= 0.8f;
@@ -406,6 +472,7 @@ public final class ClientTickHandler {
     }
 
     private static void doAntiRecoil(EntityPlayerSP player) {
+        ItemStack stack = player.getHeldItemMainhand();
         if (playerAntiRecoilFactor == 0) {
             antiRecoilPitch = antiRecoilYaw = 0;
             return;
@@ -426,8 +493,19 @@ public final class ClientTickHandler {
         float currentAntiPitch = antiRecoilPitch / currentFac;
         float currentAntiYaw = antiRecoilYaw / currentFac;
 
-        player.rotationPitch += currentAntiPitch;
-        player.rotationYaw += currentAntiYaw;
+
+        if (stack != null && stack.getItem() instanceof ItemGun) {
+            ItemGun itemGun = (ItemGun) stack.getItem();
+            GunType gunType = itemGun.type;
+            if (gunType.useNewRecoilSystem) {
+                player.rotationPitch += currentAntiPitch * 0.1;
+                player.rotationYaw += currentAntiYaw * 0.1;
+            } else {
+                player.rotationPitch += currentAntiPitch;
+                player.rotationYaw += currentAntiYaw;
+            }
+        }
+
         //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+player.rotationPitch+" "+antiRecoilPitch+" "+totalPitchAngle+" "+playerRecoilPitch));
         antiRecoilPitch -= currentAntiPitch;
         antiRecoilYaw -= currentAntiYaw;
@@ -473,5 +551,10 @@ public final class ClientTickHandler {
             oldCurrentItem = player.inventory.currentItem;
             oldItemStack = player.getHeldItemMainhand();
         }
+    }
+
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        // 移除这个方法,因为我们已经在renderTick中更新了
     }
 }

@@ -100,6 +100,8 @@ public class ScopeUtils {
         if (this.renderEndNanoTime != null) {
             this.renderEndNanoTime.setAccessible(true);
         }
+        // 初始化鼠标灵敏度备份
+        this.mouseSensitivityBackup = mc.gameSettings.mouseSensitivity;
     }
 
 
@@ -431,6 +433,10 @@ public class ScopeUtils {
             float height=config.maskSize*resolution.getScaledHeight();
             GlStateManager.translate(resolution.getScaledWidth()/2f, resolution.getScaledHeight()/2f, 0);
             GlStateManager.rotate(CROSS_ROTATE,0,0,1);  
+            // 添加后坐力影响
+            float recoilOffsetX = -RenderParameters.playerRecoilYaw * config.factorRecoilScale * config.fovZoom;
+            float recoilOffsetY = -RenderParameters.playerRecoilPitch * config.factorRecoilScale * config.fovZoom;
+            GlStateManager.translate(recoilOffsetX, recoilOffsetY, 0);
             GlStateManager.translate(-width/2f, -height/2f, 0);
             ClientProxy.gunStaticRenderer.bindTexture("mask", config.maskTexture);
             ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1,(int)width,(int)height, 1, 1);
