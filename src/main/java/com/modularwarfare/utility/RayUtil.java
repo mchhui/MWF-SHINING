@@ -44,65 +44,55 @@ public class RayUtil {
     private static final long ACCURACY_TRANSITION_TIME = 100; // 100ms的过渡时间
     
     public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
-        // 使用原有的随机系统作为默认值和后备方案
+
         Vec3d defaultVec = getDefaultAccuracy(pitch, yaw, accuracy, rand);
         
-        // 如果在客户端且玩家不为空
         if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().player != null) {
             EntityPlayer player = Minecraft.getMinecraft().player;
             ItemStack heldItem = player.getHeldItemMainhand();
             
-            // 检查是否持有枪械且枪械类型不为空
+
             if(!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
                 ItemGun itemGun = (ItemGun)heldItem.getItem();
                 if(itemGun.type != null && itemGun.type.useEnhancedAiming) {
                     try {
                         long currentTime = System.currentTimeMillis();
                         
-                        // 计算后坐力影响
+
                         float recoilX = RenderParameters.playerRecoilYaw * 0.5f;
                         float recoilY = RenderParameters.playerRecoilPitch * 0.5f;
                         
-                        // 基于当前位置计算下一个点
-                        // 缩短更新间隔到200ms,使移动更频繁
+
                         if(Math.abs(lastAccuracy - accuracy) > 0.0001f || currentTime - accuracyChangeTime > 200) {
                             accuracyChangeTime = currentTime;
                             lastAccuracy = accuracy;
                             
-                            // 保存当前位置作为起始点
                             startX = currentX;
                             startY = currentY;
                             
-                            // 在当前位置的基础上,计算新的目标位置
-                            // 增大角度变化范围,使移动更剧烈
+
                             double angle = Math.atan2(currentY, currentX) + (rand.nextDouble() - 0.5) * Math.PI * 1.5;
                             double currentRadius = Math.sqrt(currentX * currentX + currentY * currentY);
-                            // 增大半径变化量,使移动幅度更大
+
                             double newRadius = Math.min(accuracy, currentRadius + (rand.nextDouble() - 0.3) * accuracy * 0.8);
                             
                             targetX = Math.cos(angle) * newRadius;
                             targetY = Math.sin(angle) * newRadius;
                         }
                         
-                        // 计算从当前位置到目标位置的插值
-                        // 缩短移动时间到150ms,使移动更快
                         float moveProgress = (currentTime - accuracyChangeTime) / 150.0f;
                         moveProgress = Math.min(1.0f, moveProgress);
                         
-                        // 使用更快的easeInOutQuad曲线
                         moveProgress = moveProgress < 0.5f ? 
                             2.0f * moveProgress * moveProgress : 
                             -1.0f + (4.0f - 2.0f * moveProgress) * moveProgress;
                         
-                        // 更新当前位置
                         currentX = startX + (targetX - startX) * moveProgress;
                         currentY = startY + (targetY - startY) * moveProgress;
                         
-                        // 将后坐力影响添加到最终位置
                         double finalX = currentX + recoilX;
                         double finalY = currentY + recoilY;
                         
-                        // 创建射击向量并应用旋转
                         Vec3d vec3d = new Vec3d(finalX, finalY, 100).normalize();
                         return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
                                   .rotateYaw((float)(-yaw * Math.PI / 180));

@@ -274,8 +274,7 @@ public class BaseType {
                                 //Increases pitch slighty towards end of mag if enabled
 
                                 float customPitch = soundEntry.soundPitch + (random.nextFloat() * soundEntry.soundRandomPitch);
-                                float emptyPitch = 0.05F;
-                                float modifyPitch = ItemGun.getMagazineBullets(gunStack) <= 5 && emptyPitch != 0F ? 0.30f - (emptyPitch * ItemGun.getMagazineBullets(gunStack)) : 0f;
+                                float modifyPitch = ItemGun.getMagazineBullets(gunStack) <= 5 && soundEntry.emptyPitch != 0F ? 0.30f - (soundEntry.emptyPitch * ItemGun.getMagazineBullets(gunStack)) : 0f;
                                 customPitch += modifyPitch;
                                 ModularWarfare.NETWORK.sendTo(new PacketPlaySound(originPos, soundName, volume, customPitch), (EntityPlayerMP) hearingPlayer);
                             }

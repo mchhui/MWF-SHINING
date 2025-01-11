@@ -27,6 +27,9 @@ public class EntitySmokeGrenade extends EntityGrenade {
     private static final DataParameter GRENADE_NAME = EntityDataManager.createKey(EntitySmokeGrenade.class, DataSerializers.STRING);
 
     public float smokeTime = 12 * 20;
+    private float smokeScale = 0.0f;
+    private static final float SMOKE_SCALE_SPEED = 0.05f;
+    private static final float MAX_SMOKE_SCALE = 1.0f;
 
     public EntitySmokeGrenade(World worldIn) {
         super(worldIn);
@@ -39,6 +42,7 @@ public class EntitySmokeGrenade extends EntityGrenade {
         this.isImmuneToFire = true;
         this.setSize(0.35f, 0.35f);
         this.setEntityInvulnerable(false);
+        this.smokeScale = 0.0f;
     }
 
     @Override
@@ -90,6 +94,10 @@ public class EntitySmokeGrenade extends EntityGrenade {
         }
 
         if(this.exploded){
+            if(smokeScale < MAX_SMOKE_SCALE) {
+                smokeScale = Math.min(MAX_SMOKE_SCALE, smokeScale + SMOKE_SCALE_SPEED);
+            }
+            
             --this.smokeTime;
             if(this.smokeTime <= 0){
                 setDead();
@@ -104,6 +112,7 @@ public class EntitySmokeGrenade extends EntityGrenade {
             this.exploded = true;
             this.fuse = 0;
             this.smokeTime = 220;
+            this.smokeScale = 0.0f;
         }
     }
 
@@ -158,5 +167,9 @@ public class EntitySmokeGrenade extends EntityGrenade {
         motionZ = compound.getDouble("motionZ");
         fuse = compound.getFloat("fuse");
         smokeTime = compound.getFloat("smokeTime");
+    }
+
+    public float getSmokeScale() {
+        return this.smokeScale;
     }
 }

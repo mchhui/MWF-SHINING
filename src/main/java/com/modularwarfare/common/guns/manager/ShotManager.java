@@ -662,6 +662,38 @@ public class ShotManager {
             // 强制更新瞄准数据,确保使用最新的数据
             aimData.updateForced(entityPlayer, itemGun);
             
+            Vec3d origin = entityPlayer.getPositionEyes(ClientProxy.renderHooks.partialTicks);
+            Vec3d endVec = null;
+            
+            // 获取最近的命中点作为尾迹终点
+            if(!aimData.rayTraceList.isEmpty()) {
+                BulletHit firstHit = aimData.rayTraceList.get(0);
+                if(firstHit.rayTraceResult != null && firstHit.rayTraceResult.hitVec != null) {
+                    endVec = firstHit.rayTraceResult.hitVec;
+                }
+            }
+            
+            // 如果没有命中点，使用最大射程
+            if(endVec == null) {
+                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, 0, entityPlayer.world.rand);
+                endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
+            }
+            
+            // 发送尾迹渲染请求
+            Vec3d direction = endVec.subtract(origin).normalize();
+            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(
+                itemGun.type,
+                itemGun.type.customTrailModel,
+                itemGun.type.customTrailTexture,
+                itemGun.type.customTrailGlow,
+                origin.x, origin.y, origin.z,
+                entityPlayer.motionX, entityPlayer.motionZ,
+                direction.x, direction.y, direction.z,
+                origin.distanceTo(endVec),
+                10,
+                false
+            ));
+
             ModularWarfare.NETWORK.sendToServer(new PacketExpShot(entityPlayer.getEntityId(), itemGun.type.internalName));
 
             boolean headshot = false;

@@ -159,6 +159,12 @@ public class CommonProxy {
         }
     }
     
+    public void spawnExplosionParticle(World world, double x, double y, double z, String modelPath, String texturePath) {
+        if (!world.isRemote) {
+            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z,modelPath,texturePath),new TargetPoint(world.provider.getDimension(), x, y, z, 256));
+        }
+    }
+    
     public void spawnRocketParticle(World world, double x, double y, double z) {
         if (!world.isRemote) {
             ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 256));

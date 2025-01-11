@@ -12,7 +12,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 
 public class EntityExplosiveProjectile extends EntityBullet implements IProjectile {
@@ -74,10 +73,23 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
             if (ModularWarfare.bulletTypes.containsKey(this.getBulletName())) {
                 ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());
                 MWFExplosion explosion = new MWFExplosion(this.world, this.player, posX, posY, posZ,
-                        itemBullet.type.explosionStrength, false, itemBullet.type.damageWorld, itemBullet.type.allowBlockDrops);
+                        itemBullet.type.explosionRange, itemBullet.type.explosionDamage, itemBullet.type.explosionKnockback,
+                        false, itemBullet.type.damageWorld, itemBullet.type.allowBlockDrops);
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
-                ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);
+                
+                String modelPath = null;
+                String texturePath = null;
+                
+                if(itemBullet.type.customExplosionModel != null && !itemBullet.type.customExplosionModel.isEmpty()) {
+                    modelPath = "modularwarfare:explosion/obj/" + itemBullet.type.customExplosionModel;
+                }
+                
+                if(itemBullet.type.customExplosionTexture != null && !itemBullet.type.customExplosionTexture.isEmpty()) {
+                    texturePath = "modularwarfare:explosion/texture/" + itemBullet.type.customExplosionTexture;
+                }
+                
+                ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ, modelPath, texturePath);
             }
         }
         this.setDead();

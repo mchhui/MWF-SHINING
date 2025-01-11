@@ -12,6 +12,8 @@ public class PacketParticle extends PacketBase {
     public double posX;
     public double posY;
     public double posZ;
+    public String modelPath;
+    public String texturePath;
 
     public static enum ParticleType {
         UNKOWN, EXPLOSION, ROCKET
@@ -21,6 +23,10 @@ public class PacketParticle extends PacketBase {
     }  // Don't delete
 
     public PacketParticle(ParticleType particleType, double posX, double posY, double posZ) {
+        this(particleType, posX, posY, posZ, null, null);
+    }
+
+    public PacketParticle(ParticleType particleType, double posX, double posY, double posZ, String modelPath, String texturePath) {
         this.particleType = particleType;
         if (this.particleType == null) {
             this.particleType = ParticleType.UNKOWN;
@@ -28,6 +34,8 @@ public class PacketParticle extends PacketBase {
         this.posX = posX;
         this.posY = posY;
         this.posZ = posZ;
+        this.modelPath = modelPath;
+        this.texturePath = texturePath;
     }
 
     @Override
@@ -36,6 +44,14 @@ public class PacketParticle extends PacketBase {
         data.writeDouble(posX);
         data.writeDouble(posY);
         data.writeDouble(posZ);
+        data.writeBoolean(modelPath != null);
+        if(modelPath != null) {
+            writeUTF(data, modelPath);
+        }
+        data.writeBoolean(texturePath != null);
+        if(texturePath != null) {
+            writeUTF(data, texturePath);
+        }
     }
 
     @Override
@@ -44,21 +60,25 @@ public class PacketParticle extends PacketBase {
         this.posX = data.readDouble();
         this.posY = data.readDouble();
         this.posZ = data.readDouble();
+        if(data.readBoolean()) {
+            this.modelPath = readUTF(data);
+        }
+        if(data.readBoolean()) {
+            this.texturePath = readUTF(data);
+        }
     }
 
     @Override
     public void handleServerSide(EntityPlayerMP playerEntity) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
         if (this.particleType == ParticleType.EXPLOSION) {
-            ModularWarfare.PROXY.spawnExplosionParticle(clientPlayer.world, this.posX, this.posY, this.posZ);
+            ModularWarfare.PROXY.spawnExplosionParticle(clientPlayer.world, this.posX, this.posY, this.posZ, this.modelPath, this.texturePath);
         } else if (this.particleType == ParticleType.ROCKET) {
             ModularWarfare.PROXY.spawnRocketParticle(clientPlayer.world, this.posX, this.posY, this.posZ);
         }
     }
-
 }

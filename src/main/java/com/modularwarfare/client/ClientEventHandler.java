@@ -63,6 +63,15 @@ public class ClientEventHandler {
     public static int mouseDY;
 
     public static float cemeraBobbing=0f;
+    public static float cemeraBobTarget=0f;
+    public static float cemeraBobVelocity=0f;
+    public static float cemeraBobDamping=0.945f;
+    public static float cemeraBobSpringForce=0.45f;
+    public static float cemeraBobOscillationSpeed=1.2f;
+    public static float cemeraBobReturnForce=0.035f;
+    public static long lastFrameTime = System.currentTimeMillis();
+    public static float averageDeltaTime = 1.0f / 60.0f; // 新增：用于平滑帧率变化
+    public static final float ALPHA = 0.2f; // 新增：平滑系数
     public boolean lastJump;
     public static boolean isJetFly=false;
     public static float jetPower=0;
@@ -188,7 +197,73 @@ public class ClientEventHandler {
                 }
             }
         }
-        GlStateManager.rotate(cemeraBobbing, 0, 0, 1);
+
+        // 计算实际的帧间时间
+        long currentTime = System.currentTimeMillis();
+        float actualDeltaTime = (currentTime - lastFrameTime) / 1000.0f;
+        
+        // 如果时间步长过大，说明可能发生了卡顿
+        if (actualDeltaTime > 0.1f) {
+            lastFrameTime = currentTime;
+            return;
+        }
+        
+        // 使用指数移动平均来平滑帧率变化
+        if (actualDeltaTime > 0) {
+            averageDeltaTime = averageDeltaTime * (1 - ALPHA) + actualDeltaTime * ALPHA;
+        }
+        
+        // 将平均帧率限制在合理范围内（30fps到240fps之间）
+        float clampedDeltaTime = Math.min(Math.max(averageDeltaTime, 1.0f/240.0f), 1.0f/30.0f);
+        
+        // 根据实际帧率调整模拟步长
+        float simulationSteps = Math.round(clampedDeltaTime / (1.0f/120.0f));
+        float deltaTime = clampedDeltaTime / Math.max(simulationSteps, 1);
+        
+        lastFrameTime = currentTime;
+
+        float springForce, returnForce, distanceToTarget, oscillation, totalForce, movement;
+        
+        // 进行多次物理更新以保持稳定性
+        for(int i = 0; i < simulationSteps; i++) {
+            // 计算弹簧力
+            springForce = (cemeraBobTarget - cemeraBobbing) * cemeraBobSpringForce;
+            
+            // 计算返回中心的力
+            returnForce = -cemeraBobbing * cemeraBobReturnForce;
+            
+            // 添加震荡效果
+            distanceToTarget = Math.abs(cemeraBobTarget - cemeraBobbing);
+            oscillation = (float)Math.sin(currentTime * 0.02f * cemeraBobOscillationSpeed)
+                          * distanceToTarget * 0.2f
+                          * Math.max(0, 1 - Math.abs(cemeraBobVelocity) * 0.4f);
+            
+            // 合并所有力并限制最大力的大小
+            totalForce = springForce + returnForce + oscillation;
+            totalForce = Math.max(Math.min(totalForce, 0.9f), -0.9f);
+            
+            // 更新速度，并限制最大速度
+            cemeraBobVelocity += totalForce * deltaTime * 85;
+            cemeraBobVelocity *= cemeraBobDamping;
+            cemeraBobVelocity = Math.max(Math.min(cemeraBobVelocity, 0.9f), -0.9f);
+            
+            // 更新位置
+            movement = cemeraBobVelocity * deltaTime * 85;
+            movement = Math.max(Math.min(movement, 0.09f), -0.09f);
+            cemeraBobbing += movement;
+            
+            // 缓慢衰减目标值
+            cemeraBobTarget *= 0.965f;
+        }
+        
+        // 如果运动几乎停止且接近中心位置，重置所有值
+        if (Math.abs(cemeraBobVelocity) < 0.00001f && Math.abs(cemeraBobbing) < 0.00001f) {
+            cemeraBobbing = 0;
+            cemeraBobTarget = 0;
+            cemeraBobVelocity = 0;
+        }
+        
+        GlStateManager.rotate(cemeraBobbing * 5, 0, 0, 1);
     }
     
     @SubscribeEvent
