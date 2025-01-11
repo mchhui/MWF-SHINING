@@ -56,6 +56,9 @@ public class AttachmentRenderConfig {
         public float uniformScaleStrengthY=1f;
         public float uniformVerticality=0f;
 
+        // 后坐力影响瞄准镜位置的系数
+        public float factorRecoilScale = 1.0f;
+
         public float[] GetStageFovZoomRange()
         {
             if(stageFovZoomRange!=null)return stageFovZoomRange;

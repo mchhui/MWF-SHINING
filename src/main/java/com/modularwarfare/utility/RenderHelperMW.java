@@ -17,9 +17,14 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 import net.minecraft.util.text.TextFormatting;
+import net.optifine.shaders.Shaders;
+import net.optifine.shaders.MWFOptifineShadesHelper;
+
 import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
 
 import java.awt.*;
 import java.text.DecimalFormat;
@@ -828,86 +833,144 @@ public class RenderHelperMW {
         GlStateManager.popMatrix();
     }
 
-
-    public static void renderSmoke(ResourceLocation texture, String model, double par3, double par4, double par5, float par6, int width, int height, String color, double alpha) {
+    /**
+     * 渲染烟雾或特效
+     * @param textureLocation 特效使用的贴图资源位置
+     * @param modelPath 自定义模型的路径（如果为null则使用默认的平面渲染）
+     * @param worldX 世界X坐标
+     * @param worldY 世界Y坐标
+     * @param worldZ 世界Z坐标
+     * @param partialTicks 渲染帧插值时间
+     * @param effectWidth 特效宽度
+     * @param effectHeight 特效高度
+     * @param colorTint 特效的颜色色调
+     * @param opacity 特效的不透明度
+     */
+    public static void renderSmoke(ResourceLocation textureLocation, String modelPath, 
+            double worldX, double worldY, double worldZ, 
+            float partialTicks, int effectWidth, int effectHeight, 
+            String colorTint, double opacity) {
 
         EntityPlayer player = Minecraft.getMinecraft().player;
         HashMap<String, ObjModel> modelCache=new HashMap<String, ObjModel>();
 
+        // 保存当前激活的纹理单元
+        int activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+        int boundTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+
         GL11.glPushMatrix();
+        
+        // 保存当前的OpenGL状态
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+
+        boolean shadersEnabled = OptifineHelper.isShadersEnabled();
+        int prevProgram = -1;
+        if(shadersEnabled) {
+            prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        }
+        
+        // 设置渲染状态
         GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glDisable(GL11.GL_ALPHA_TEST); // 禁用alpha测试以获得更好的混合效果
+        
+        // 确保烟雾在其他透明物体之后渲染
+        GL11.glDepthMask(false);
+        GL11.glDepthFunc(GL11.GL_LEQUAL);
 
         float scale2 = 0.02F;
 
-        float d0 = (float) (player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) par6);
-        float d1 = (float) (player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) par6);
-        float d2 = (float) (player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) par6);
+        // 计算相对于玩家的位置偏移
+        float playerOffsetX = (float) (player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) partialTicks);
+        float playerOffsetY = (float) (player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) partialTicks);
+        float playerOffsetZ = (float) (player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) partialTicks);
 
-        GL11.glTranslatef((float) par3, (float) par4, (float) par5);
-        GL11.glTranslatef(-d0, -d1, -d2);
+        GL11.glTranslatef((float) worldX, (float) worldY, (float) worldZ);
+        GL11.glTranslatef(-playerOffsetX, -playerOffsetY, -playerOffsetZ);
         GL11.glNormal3f(0.0F, 1.0F, 0.0F);
 
-        //Scaling and fitting for the text above item
         GL11.glScalef(-scale2, -scale2, scale2);
-        GL11.glDepthMask(false);
 
         float realTick = RenderParameters.SMOOTH_SWING;
 
-        // Render the custom model
-        if (model != null) {
+        // 确保纹理管理器存在
+        if (textureManager == null) {
+            textureManager = Minecraft.getMinecraft().renderEngine;
+        }
+
+        // 激活纹理单元0并绑定纹理
+        GlStateManager.setActiveTexture(GL13.GL_TEXTURE0);
+        textureManager.bindTexture(textureLocation);
+
+        // 如果有自定义模型，渲染模型
+        if (modelPath != null) {
             GL11.glPushMatrix();
 
             GL11.glRotatef(180, 1, 0, 0);
             GL11.glTranslatef(0, 0, 0);
             GL11.glScalef(100F, 100F, 100F);
-
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            GL11.glEnable(GL11.GL_ALPHA_TEST);
             
+            ObjModel obj = modelCache.get(modelPath);
+            if(obj == null) {
+                obj = ObjModelLoader.load(new ResourceLocation(modelPath));
+                modelCache.put(modelPath, obj);
+            }
 
-            ObjModel obj=modelCache.get(model);
-                if(obj==null) {
-                    modelCache.put(model, ObjModelLoader.load(new ResourceLocation(model)));
-                    obj=modelCache.get(model);
-                }
-                // Bind the texture
-                if (textureManager == null)
-                    textureManager = Minecraft.getMinecraft().renderEngine;
+            // 设置适当的混合模式
+            GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA, 
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE, 
+                GlStateManager.DestFactor.ZERO);
 
-                textureManager.bindTexture(texture);
+            obj.renderAll(1);
 
-                obj.renderAll(1);
-
-            GL11.glDisable(GL11.GL_ALPHA_TEST);
-            GL11.glPopMatrix(); // Restore the previous matrix
+            GL11.glPopMatrix();
         } else {
-            for (int i1 = 0; i1 < 4; i1++) {
+            // 渲染默认的平面特效
+            for (int layer = 0; layer < 4; layer++) {
+                float swingOffset = (float) (Math.sin(realTick / 100) * 3);
 
-                float val = (float) (Math.sin(realTick / 100) * 3);
-    
-                if (i1 % 2 == 0) {
-                    val = -val;
+                if (layer % 2 == 0) {
+                    swingOffset = -swingOffset;
                 }
-    
-                for (int i = 0; i < 9; i++) {
-    
-                    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                    GL11.glEnable(GL11.GL_ALPHA_TEST);
-    
-                    renderImageAlpha(-width / 2, -height / 2, texture, width, height, alpha);
-    
-                    GL11.glDisable(GL11.GL_ALPHA_TEST);
+
+                for (int rotation = 0; rotation < 9; rotation++) {
+                    // 每次渲染前重新绑定纹理
+                    textureManager.bindTexture(textureLocation);
+                    
+                    // 使用新的混合模式
+                    GlStateManager.tryBlendFuncSeparate(
+                        GlStateManager.SourceFactor.SRC_ALPHA, 
+                        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                        GlStateManager.SourceFactor.ONE, 
+                        GlStateManager.DestFactor.ZERO);
+                        
+                    renderImageAlpha(-effectWidth / 2, -effectHeight / 2, textureLocation, effectWidth, effectHeight, opacity);
+                    
                     GL11.glRotatef(64, 0, 1, 0);
-                    GL11.glRotatef(val, 1, 0, 0);
+                    GL11.glRotatef(swingOffset, 1, 0, 0);
                 }
-    
+
                 GL11.glRotatef(90, 1, 0, 0);
             }
         }
+        if(shadersEnabled) {
+            GL20.glUseProgram(prevProgram);
+            
+            if(OptifineHelper.isRenderingDfb()) {
+                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, MWFOptifineShadesHelper.getDFB());
+                Shaders.setDrawBuffers(MWFOptifineShadesHelper.getDFBDrawBuffers());
+            }
+        }
 
-        GL11.glDepthMask(true);
-        GL11.glDisable(GL11.GL_BLEND);
+        // 恢复OpenGL状态
+        GL11.glPopAttrib();
         GL11.glPopMatrix();
+
+        // 恢复之前的纹理状态
+        GlStateManager.setActiveTexture(activeTexture);
+        GlStateManager.bindTexture(boundTexture);
     }
 
     public static void renderPositionedImageInViewWithDepth(ResourceLocation img, double x, double y, double z, float width, float height, float givenAlpha) {

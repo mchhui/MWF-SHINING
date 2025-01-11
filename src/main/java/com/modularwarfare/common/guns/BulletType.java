@@ -42,7 +42,9 @@ public class BulletType extends BaseType {
      */
     public float impactDamage = 0.5f;
     public float projectileVelocity= 3f;
-    public float explosionStrength = 4f;
+    public float explosionDamage = 30f;
+    public float explosionRange = 6f;
+    public float explosionKnockback = 1f;
     public float gravity = -0.01f;
     public boolean isSmoke = true;
     public boolean isExplosion = true;
@@ -63,6 +65,8 @@ public class BulletType extends BaseType {
     //trailModel trailTex至少有一个不为null trailGlow才生效
     public boolean trailGlow=false;
     
+    /** 粒子特效的生命周期（单位：tick） */
+    public int particleMaxAge = 110;
 
     @Override
     public void loadExtraValues() {

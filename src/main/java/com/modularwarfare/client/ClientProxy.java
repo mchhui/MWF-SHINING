@@ -780,7 +780,16 @@ public class ClientProxy extends CommonProxy {
                 float recoilYawFactor = (float) (gunType.recoilYaw * 0.5);
                 float recoilRandomYawFactor = (float) (gunType.randomRecoilYaw * 0.5);
                 float rand=(float) Math.random();
-                ClientEventHandler.cemeraBobbing=lastBobbingParm*(recoilRandomYawFactor + recoilYawFactor*Math.abs(rand))*((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
+                float newBobTarget = lastBobbingParm*(recoilRandomYawFactor + recoilYawFactor*Math.abs(rand))*((GunEnhancedRenderConfig)gunType.enhancedModel.config).extra.bobbingFactor;
+                
+                // 平滑过渡到新的目标值
+                float blendFactor = 0.6f; // 新旧值的混合系数
+                ClientEventHandler.cemeraBobTarget = ClientEventHandler.cemeraBobTarget * (1 - blendFactor) + newBobTarget * blendFactor;
+                
+                // 给一个与当前运动方向相关的初始速度
+                float velocityFactor = Math.signum(newBobTarget - ClientEventHandler.cemeraBobbing) * 0.15f;
+                ClientEventHandler.cemeraBobVelocity += newBobTarget * velocityFactor;
+                
                 lastBobbingParm=-lastBobbingParm;
                 AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
@@ -889,6 +898,16 @@ public class ClientProxy extends CommonProxy {
             return;
         }
         final Particle explosionParticle = new ParticleExplosion(world, x, y, z);
+        Minecraft.getMinecraft().effectRenderer.addEffect(explosionParticle);
+    }
+
+    @Override
+    public void spawnExplosionParticle(World world, double x, double y, double z, String modelPath, String texturePath) {
+        if(!world.isRemote) {
+            super.spawnExplosionParticle(world, x, y, z, modelPath, texturePath);
+            return;
+        }
+        final Particle explosionParticle = new ParticleExplosion(world, x, y, z, modelPath, texturePath);
         Minecraft.getMinecraft().effectRenderer.addEffect(explosionParticle);
     }
 

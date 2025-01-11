@@ -34,6 +34,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import net.minecraft.client.gui.ScaledResolution;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
@@ -143,9 +144,14 @@ public class GunUI {
                                                         GlStateManager.rotate(CROSS_ROTATE,0,0,1);
                                                     }
                                                     GL11.glTranslatef(-size, -size, 0);
-                                                    GL11.glTranslatef((VAL2 / 10), (VAL / 10), 0);
-//                                                    RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
-                                                    RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f);
+                                                    ModelAttachment modelAttachment = (ModelAttachment)itemAttachment.type.model;
+                                                    float rotateRad = (float)Math.toRadians(CROSS_ROTATE);
+                                                    ScaledResolution resolution = new ScaledResolution(mc);
+                                                    float resolutionScale = mc.displayHeight / (720f * resolution.getScaleFactor());
+                                                    float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * modelAttachment.config.sight.factorRecoilScale * resolutionScale;
+                                                    float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * modelAttachment.config.sight.factorRecoilScale * resolutionScale;
+                                                    GL11.glTranslatef(recoilOffsetX, -recoilOffsetY, 0);
+                                                    RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
                                                 }
 
                                                 GL11.glPopMatrix();

@@ -9,6 +9,7 @@ import com.modularwarfare.loader.ObjModel;
 import com.modularwarfare.loader.ObjModelBuilder;
 import com.modularwarfare.loader.api.ObjModelLoader;
 import com.modularwarfare.utility.RayUtil;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -20,8 +21,12 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.optifine.shaders.MWFOptifineShadesHelper;
+import net.optifine.shaders.Shaders;
+import com.modularwarfare.utility.OptifineHelper;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,6 +131,12 @@ public class InstantBulletRenderer {
             float x_ = OpenGlHelper.lastBrightnessX;
             float y_ = OpenGlHelper.lastBrightnessY;
 
+            boolean shadersEnabled = OptifineHelper.isShadersEnabled();
+            int prevProgram = -1;
+            if(shadersEnabled) {
+                prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+            }
+
 
             //Make sure we actually have the renderEngine
             if (textureManager == null)
@@ -225,6 +236,15 @@ public class InstantBulletRenderer {
             GL11.glDisable(2832);
 
             GlStateManager.disableRescaleNormal();
+
+            if(shadersEnabled) {
+                GL20.glUseProgram(prevProgram);
+                
+                if(OptifineHelper.isRenderingDfb()) {
+                    OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, MWFOptifineShadesHelper.getDFB());
+                    Shaders.setDrawBuffers(MWFOptifineShadesHelper.getDFBDrawBuffers());
+                }
+            }
 
             GlStateManager.popMatrix();
         }

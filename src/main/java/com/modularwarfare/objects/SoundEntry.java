@@ -10,7 +10,8 @@ public class SoundEntry {
     public float soundVolumeMultiplier = 1f;
     public float soundFarVolumeMultiplier = 1f;
     public float soundPitch = 1f;
-    public float soundRandomPitch = 5f;
+    public float soundRandomPitch = 0.2f;
+    public float emptyPitch = 0.05f;
     public Integer soundRange = 16;
 
     public String soundNameDistant;

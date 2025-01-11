@@ -221,7 +221,7 @@ public class BaseType {
                     for (EntityPlayer hearingPlayer : world.getEntities(EntityPlayer.class, e -> e.getPosition().getDistance(pos.getX(), pos.getY(), pos.getZ()) <= soundRange)) {
                         //Send sound packet for simple sounds (no distant sound effect)
                         if (!(hearingPlayer.equals(excluded))) {
-                            ModularWarfare.NETWORK.sendTo(new PacketPlaySound(pos, soundEntry.soundName, (soundRange / 16) * soundEntry.soundVolumeMultiplier * volume, (random.nextFloat() / soundEntry.soundRandomPitch) + soundEntry.soundPitch), (EntityPlayerMP) hearingPlayer);
+                            ModularWarfare.NETWORK.sendTo(new PacketPlaySound(pos, soundEntry.soundName, (soundRange / 16) * soundEntry.soundVolumeMultiplier * volume, soundEntry.soundPitch + (random.nextFloat() * soundEntry.soundRandomPitch)), (EntityPlayerMP) hearingPlayer);
                         }
                     }
                 }
@@ -233,7 +233,7 @@ public class BaseType {
                     for (EntityPlayer hearingPlayer : world.getEntities(EntityPlayer.class, e -> e.getPosition().getDistance(pos.getX(), pos.getY(), pos.getZ()) <= soundRange)) {
                         //Send sound packet for simple sounds (no distant sound effect)
                         if (!(hearingPlayer.equals(excluded))) {
-                            ModularWarfare.NETWORK.sendTo(new PacketPlaySound(pos, soundName, (soundRange / 16) * 1f, (random.nextFloat() / 5) + 1), (EntityPlayerMP) hearingPlayer);
+                            ModularWarfare.NETWORK.sendTo(new PacketPlaySound(pos, soundName, (soundRange / 16) * 1f, 1f + (random.nextFloat() * 0.2f)), (EntityPlayerMP) hearingPlayer);
                         }
                     }
                 }
@@ -273,9 +273,8 @@ public class BaseType {
                                 //Send sound packet for guns using advanced audio settings
                                 //Increases pitch slighty towards end of mag if enabled
 
-                                float customPitch = ((random.nextFloat() / soundEntry.soundRandomPitch) + soundEntry.soundPitch);
-                                float emptyPitch = 0.05F;
-                                float modifyPitch = ItemGun.getMagazineBullets(gunStack) <= 5 && emptyPitch != 0F ? 0.30f - (emptyPitch * ItemGun.getMagazineBullets(gunStack)) : 0f;
+                                float customPitch = soundEntry.soundPitch + (random.nextFloat() * soundEntry.soundRandomPitch);
+                                float modifyPitch = ItemGun.getMagazineBullets(gunStack) <= 5 && soundEntry.emptyPitch != 0F ? 0.30f - (soundEntry.emptyPitch * ItemGun.getMagazineBullets(gunStack)) : 0f;
                                 customPitch += modifyPitch;
                                 ModularWarfare.NETWORK.sendTo(new PacketPlaySound(originPos, soundName, volume, customPitch), (EntityPlayerMP) hearingPlayer);
                             }
@@ -284,7 +283,7 @@ public class BaseType {
                         for (EntityPlayer hearingPlayer : world.getEntities(EntityPlayer.class, e -> e.getPosition().getDistance(originPos.getX(), originPos.getY(), originPos.getZ()) <= soundRange)) {
                             if (!hearingPlayer.equals(excluded)) {
                                 //Send sound packet for simple sounds (no distant sound effect)
-                                ModularWarfare.NETWORK.sendTo(new PacketPlaySound(originPos, soundEntry.soundName, (soundRange / 16) * soundEntry.soundVolumeMultiplier, (random.nextFloat() / soundEntry.soundRandomPitch) + soundEntry.soundPitch), (EntityPlayerMP) hearingPlayer);
+                                ModularWarfare.NETWORK.sendTo(new PacketPlaySound(originPos, soundEntry.soundName, (soundRange / 16) * soundEntry.soundVolumeMultiplier, soundEntry.soundPitch + (random.nextFloat() * soundEntry.soundRandomPitch)), (EntityPlayerMP) hearingPlayer);
                             }
                         }
                     }
@@ -300,7 +299,7 @@ public class BaseType {
 
                     for (EntityPlayer hearingPlayer : world.getEntities(EntityPlayer.class, e -> e.getPosition().getDistance(originPos.getX(), originPos.getY(), originPos.getZ()) <= soundRange)) {
                         //Send sound packet for simple sounds (no distant sound effect)
-                        ModularWarfare.NETWORK.sendTo(new PacketPlaySound(originPos, soundName, (soundRange / 16) * 1f, (random.nextFloat() / 5) + 1), (EntityPlayerMP) hearingPlayer);
+                        ModularWarfare.NETWORK.sendTo(new PacketPlaySound(originPos, soundName, (soundRange / 16) * 1f, 1f + (random.nextFloat() * 0.2f)), (EntityPlayerMP) hearingPlayer);
                     }
                 }
             }

@@ -257,6 +257,9 @@ public class GunType extends BaseType {
     // Misc Settings
     public boolean allowSprintFiring = true;
 
+    //是否启用新后坐力反馈
+    public boolean useNewRecoilSystem = false;
+
     //Only Enhanced ASM
     public boolean allowReloadFiring = false;
 
@@ -268,6 +271,9 @@ public class GunType extends BaseType {
 
     //Only Enhanced ASM
     public boolean allowAimingSprint = true;
+
+    /** 是否使用增强瞄准系统 */
+    public boolean useEnhancedAiming = true;
 
     /**
      * Custom flash textures
@@ -296,8 +302,6 @@ public class GunType extends BaseType {
     public String customTrailTexture;
     public String customTrailModel;
     public boolean customTrailGlow;
-    
-    
 
     public static boolean isPackAPunched(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {

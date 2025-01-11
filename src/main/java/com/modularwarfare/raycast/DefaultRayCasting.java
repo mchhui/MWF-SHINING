@@ -40,12 +40,24 @@ import java.util.List;
  * It can be overwritten by your own RayCasting
  */
 public class DefaultRayCasting extends RayCasting {
+    private static boolean shouldRenderShot = false; // 控制射线渲染的标记
+    private static long lastShotTime = 0; // 记录上次射击时间
+    private static final long RENDER_DURATION = 1; // 渲染持续时间(毫秒)
+
+    public static void onShot() {
+        shouldRenderShot = true;
+        lastShotTime = System.currentTimeMillis();
+    }
 
     //在未来应当考虑穿透
+    //2025.01.08 豆:现在穿透了
     @Override
     public List<BulletHit> computeDetection(World world, Vec3d origin, Vec3d forward, double maxDistance, float borderSize, float penetrateSize, float maxPenetrateBlockResistance, float penetrateBlocksResistance, HashSet<Entity> excluded, boolean collideablesOnly, int ping) {
         // Vec3d lookVec = new Vec3d(tx-x, ty-y, tz-z);
+        // 确保forward向量是单位向量
+        forward = forward.normalize();
         Vec3d endVec = origin.add(forward.scale(maxDistance));
+
         AxisAlignedBB bb = new AxisAlignedBB(new BlockPos(origin), new BlockPos(endVec)).grow(borderSize);
 
         /*
@@ -55,43 +67,80 @@ public class DefaultRayCasting extends RayCasting {
         final float originPenetrateSize = penetrateSize;
         final float originBlockPenetrate = penetrateBlocksResistance;
         List<BulletHit> allHits = new ArrayList<>();
-        List<RayTraceResult> blockHits = rayTraceBlocks(world, origin, endVec, maxPenetrateBlockResistance, penetrateBlocksResistance, true, true, false);
+        
+        // 进行方块检测
+        List<RayTraceResult> blockHits = rayTraceBlocks(world, origin, endVec, maxPenetrateBlockResistance, penetrateBlocksResistance, true, false, false);
         if (blockHits != null && !blockHits.isEmpty()) {
-            int lastHitIndex = blockHits.size() - 1;
-            RayTraceResult lastHitResult = blockHits.get(lastHitIndex);
-            maxDistance = lastHitResult.hitVec.distanceTo(origin);
-        	endVec = lastHitResult.hitVec;
-            for (RayTraceResult blockHit : blockHits) {
-                allHits.add(new BulletHit(blockHit, blockHit.hitVec.distanceTo(origin), 0.f, 0.f));
+            // 获取第一个命中的方块
+            RayTraceResult firstHit = blockHits.get(0);
+            double hitDistance = firstHit.hitVec.distanceTo(origin);
+            
+            // 如果不能穿透方块(穿透参数为0)或者方块的爆炸阻力大于最大可穿透阻力
+            BlockPos blockPos = firstHit.getBlockPos();
+            IBlockState blockState = world.getBlockState(blockPos);
+            float blockResistance = blockState.getBlock().getExplosionResistance(world, blockPos, null, new Explosion(world, null, blockPos.getX(), blockPos.getY(), blockPos.getZ(), 1.f, false, false));
+            
+            if (maxPenetrateBlockResistance <= 0 || blockResistance > maxPenetrateBlockResistance) {
+
+                allHits.add(new BulletHit(firstHit, hitDistance, 0.f, 0.f));
+                maxDistance = hitDistance;
+                endVec = firstHit.hitVec;
+            } else {
+
+                for (RayTraceResult blockHit : blockHits) {
+                    allHits.add(new BulletHit(blockHit, blockHit.hitVec.distanceTo(origin), 0.f, 0.f));
+                }
+
+                RayTraceResult lastHit = blockHits.get(blockHits.size() - 1);
+                maxDistance = lastHit.hitVec.distanceTo(origin);
+                endVec = lastHit.hitVec;
             }
         }
 
-        Vector3f rayVec=new Vector3f(endVec.subtract(origin));
-        Vector3f normaliseVec=rayVec.normalise(null);
-        OBBModelBox ray=new OBBModelBox();
-        float pitch=(float) Math.asin(normaliseVec.y);
-        normaliseVec.y=0;
-        normaliseVec=normaliseVec.normalise(null);
-        float yaw=(float)Math.asin(normaliseVec.x);
-        if(normaliseVec.z<0) {
-            yaw=(float) (Math.PI-yaw);
+        // 计算射线向量
+        Vector3f rayVec = new Vector3f((float)(endVec.x - origin.x), 
+                                     (float)(endVec.y - origin.y), 
+                                     (float)(endVec.z - origin.z));
+        float rayLength = rayVec.length();
+        if(rayLength > 0) {
+            rayVec.scale(1.0f / rayLength);
         }
-        Matrix4f matrix=new Matrix4f();
-        matrix.rotate(yaw, new Vector3f(0, 1, 0));
-        matrix.rotate(pitch, new Vector3f(-1, 0, 0));
-        ray.center=new Vector3f(origin.add(endVec).scale(0.5));
-        ray.axis.x=new Vector3f(0, 0, 0);
-        ray.axis.y=new Vector3f(0, 0, 0);
-        ray.axis.z=Matrix4f.transform(matrix, new Vector3f(0, 0, maxDistance/2), null);
-        ray.axisNormal.x=Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
-        ray.axisNormal.y=Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
-        ray.axisNormal.z=Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
 
-        if(OBBPlayerManager.debug) {
-            System.out.println("test0:"+ origin +"|"+Minecraft.getMinecraft().player.getPositionVector());
-            OBBPlayerManager.lines.add(new OBBDebugObject(ray));
-            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin), new Vector3f(endVec)));
+        // 创建OBB射线
+        OBBModelBox ray = new OBBModelBox();
+        ray.center = new Vector3f((float)(origin.x + endVec.x) * 0.5f,
+                                (float)(origin.y + endVec.y) * 0.5f,
+                                (float)(origin.z + endVec.z) * 0.5f);
+        ray.axis.x = new Vector3f(0, 0, 0);
+        ray.axis.y = new Vector3f(0, 0, 0);
+        ray.axis.z = new Vector3f(rayVec.x * maxDistance * 0.5f,
+                                rayVec.y * maxDistance * 0.5f,
+                                rayVec.z * maxDistance * 0.5f);
+        
+        // 计算法线向量
+        Vector3f up = new Vector3f(0, 1, 0);
+        Vector3f right = Vector3f.cross(rayVec, up, null);
+        if(right.lengthSquared() < 1e-6f) {
+            right = new Vector3f(1, 0, 0);
         }
+        right.normalise();
+        Vector3f upCross = Vector3f.cross(right, rayVec, null);
+        upCross.normalise();
+        
+        ray.axisNormal.x = right;
+        ray.axisNormal.y = upCross;
+        ray.axisNormal.z = new Vector3f(rayVec);
+
+        // 渲染调试射线
+        if(OBBPlayerManager.debug && shouldRenderShot) {
+            if(System.currentTimeMillis() - lastShotTime > RENDER_DURATION) {
+                shouldRenderShot = false;
+            } else {
+                OBBPlayerManager.lines.add(new OBBDebugObject(ray));
+                OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin), new Vector3f(endVec)));
+            }
+        }
+
         //Iterate over all entities
         for (int i = 0; i < world.loadedEntityList.size(); i++) {
             Entity obj = world.loadedEntityList.get(i);
@@ -276,7 +325,6 @@ public class DefaultRayCasting extends RayCasting {
 
                 if ((!ignoreBlockWithoutBoundingBox || iblockstate.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) && block.canCollideCheck(iblockstate, stopOnLiquid)) {
                     RayTraceResult raytraceresult = iblockstate.collisionRayTrace(world, blockpos, vec31, vec32);
-
                     if (raytraceresult != null) {
                         result.add(raytraceresult);
                         return result;
@@ -336,6 +384,11 @@ public class DefaultRayCasting extends RayCasting {
                     double d7 = vec32.y - vec31.y;
                     double d8 = vec32.z - vec31.z;
 
+                    // 确保水平射线也能正确检测
+                    if (Math.abs(d7) < 1.0E-7) {
+                        d7 = 1.0E-7;
+                    }
+
                     if (flag2) {
                         d3 = (d0 - vec31.x) / d6;
                     }
@@ -362,10 +415,16 @@ public class DefaultRayCasting extends RayCasting {
 
                     EnumFacing enumfacing;
 
-                    if (d3 < d4 && d3 < d5) {
+                    // 修改射线步进逻辑，确保水平射线也能正确检测
+                    double minT = Math.min(Math.min(d3, d4), d5);
+                    if (minT < 0) {
+                        return null;
+                    }
+
+                    if (d3 == minT) {
                         enumfacing = i > l ? EnumFacing.WEST : EnumFacing.EAST;
                         vec31 = new Vec3d(d0, vec31.y + d7 * d3, vec31.z + d8 * d3);
-                    } else if (d4 < d5) {
+                    } else if (d4 == minT) {
                         enumfacing = j > i1 ? EnumFacing.DOWN : EnumFacing.UP;
                         vec31 = new Vec3d(vec31.x + d6 * d4, d1, vec31.z + d8 * d4);
                     } else {
@@ -379,29 +438,12 @@ public class DefaultRayCasting extends RayCasting {
                     blockpos = new BlockPos(l, i1, j1);
                     IBlockState iblockstate1 = world.getBlockState(blockpos);
                     Block block1 = iblockstate1.getBlock();
-                    float blockExplosionResistance = block1.getExplosionResistance(world, blockpos, null, new Explosion(world, null, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 1.f, false, false));
-
-//                    if (ModConfig.INSTANCE.shots.shot_break_glass) {
-//                        if (block1 instanceof BlockGlass || block1 instanceof BlockStainedGlassPane || block1 instanceof BlockStainedGlass) {
-//                            world.setBlockToAir(blockpos);
-//                            ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.glass", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));
-//                            continue;
-//                        }
-//                    }
-//
-//                    if (block1 instanceof BlockPane) {
-//                        ModularWarfare.NETWORK.sendToAllAround(new PacketPlaySound(blockpos, "impact.iron", 1f, 1f), new NetworkRegistry.TargetPoint(0, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 25));
-//                        continue;
-//                    }
-//
-//                    if (block1 instanceof BlockDoor || block1 instanceof BlockLeaves) {
-//                        continue;
-//                    }
 
                     if (!ignoreBlockWithoutBoundingBox || iblockstate1.getMaterial() == Material.BARRIER || iblockstate1.getMaterial() == Material.PORTAL || iblockstate1.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) {
                         if (block1.canCollideCheck(iblockstate1, stopOnLiquid)) {
                             RayTraceResult raytraceresult1 = iblockstate1.collisionRayTrace(world, blockpos, vec31, vec32);
                             if (raytraceresult1 != null) {
+                                float blockExplosionResistance = block1.getExplosionResistance(world, blockpos, null, new Explosion(world, null, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 1.f, false, false));
                                 result.add(raytraceresult1);
                                 if (blockExplosionResistance < maxPenetrateBlockResistance && penetrateBlocksResistance > blockExplosionResistance) {
                                     penetrateBlocksResistance -= blockExplosionResistance;
@@ -415,16 +457,13 @@ public class DefaultRayCasting extends RayCasting {
                     }
                 }
 
-                if (!returnLastUncollidableBlock || raytraceresult2 == null) {
-                    return null;
+                if (returnLastUncollidableBlock && raytraceresult2 != null) {
+                    result.add(raytraceresult2);
+                    return result;
                 }
-                result.add(raytraceresult2);
-                return result;
-            } else {
-                return null;
+                return result.isEmpty() ? null : result;
             }
-        } else {
-            return null;
         }
+        return null;
     }
 }

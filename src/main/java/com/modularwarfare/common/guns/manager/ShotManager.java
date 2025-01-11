@@ -42,6 +42,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.EntitySelectors;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
@@ -49,12 +50,21 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.relauncher.Side;
+import com.modularwarfare.common.vector.Matrix4f;
+import com.modularwarfare.common.vector.Vector3f;
+import com.modularwarfare.raycast.obb.OBBModelBox;
+import com.modularwarfare.raycast.obb.OBBPlayerManager;
+import com.modularwarfare.raycast.obb.OBBPlayerManager.OBBDebugObject;
+import com.modularwarfare.raycast.DefaultRayCasting;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ShotManager {
     public static boolean defemptyclickLock=true;
@@ -87,7 +97,6 @@ public class ShotManager {
             if (!ItemGun.hasNextShot(gunStack)) {
                 if (fireMode == WeaponFireMode.BURST) gunStack.getTagCompound().setInteger("shotsremaining", 0);
                 if(defemptyclickLock) {
-                    //((ClientProxy)ModularWarfare.PROXY).playSound(new MWSound(entityPlayer.getPosition(), "defemptyclick", 1.0f, 1.0f));
                     gunType.playClientSound(entityPlayer, WeaponSoundType.DryFire);
                     ModularWarfare.PROXY.onShootFailedAnimation(entityPlayer, gunType.internalName);
                     defemptyclickLock=false;
@@ -137,7 +146,6 @@ public class ShotManager {
         
         ClientTickHandler.playerNextTime.put(entityPlayer.getUniqueID(), System.currentTimeMillis()+(long)((60f*1000/gunType.roundsPerMin)/PlayerStateManager.clientPlayerState.roundsPerMinFactor/PlayerStateManager.clientPlayerState.devetionRoundsPerMinFactor));
 
-
         if ((gunType.dropBulletCasing)) {
             /**
              * Drop casing
@@ -165,6 +173,7 @@ public class ShotManager {
         if (gunType.weaponType == WeaponType.Launcher) {
             ModularWarfare.NETWORK.sendToServer(new PacketGunFire(gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread, entityPlayer.rotationPitch, entityPlayer.rotationYaw));
         } else {
+            DefaultRayCasting.onShot();
             fireClientSide(entityPlayer, itemGun);
         }
         
@@ -230,7 +239,6 @@ public class ShotManager {
             offsetYaw *= RenderParameters.rate * (isCrawling ? 0.2f : 1.0f);
             offsetYaw *= RenderParameters.phase ? 1 : -1;
         } else {
-            //offsetYaw *= RenderParameters.phase ? 1 : -1;
             offsetPitch = gunType.recoilPitch;
             offsetPitch += ((gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch);
             offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor * recoilPitchLaserFactor);
@@ -499,74 +507,209 @@ public class ShotManager {
         }
     }
 
+    public static class AimingData {
+        public float pitch;
+        public float yaw;
+        public List<BulletHit> rayTraceList = new ArrayList<>();
+        public long lastUpdateTime;
+        private static boolean showBulletTrajectory = true; // 是否显示弹道-调试用
+        
+        public void update(EntityPlayer player, ItemGun itemGun) {
+            if(System.currentTimeMillis() - lastUpdateTime < 50) {
 
-    public static void fireClientSide(EntityPlayer entityPlayer, ItemGun itemGun){
-        if (entityPlayer.world.isRemote) {
-            int numBullets = itemGun.type.numBullets;
-            ItemBullet bulletItem = ItemGun.getUsedBullet(entityPlayer.getHeldItemMainhand(), itemGun.type);
-            if (bulletItem != null) {
-                if (bulletItem.type.isSlug) {
-                    numBullets = 1;
+                if(OBBPlayerManager.debug && showBulletTrajectory && player.world.isRemote) {
+                    renderDebugLine(player, itemGun);
+                }
+                return;
+            }
+            updateForced(player, itemGun);
+        }
+
+        private void renderDebugLine(EntityPlayer player, ItemGun itemGun) {
+            if(!player.world.isRemote) return;
+
+            if(!showBulletTrajectory) return;
+            
+            List<OBBDebugObject> lines = new ArrayList<>();
+            Vec3d origin = player.getPositionEyes(ClientProxy.renderHooks.partialTicks);
+            
+            // 渲染所有命中点的射线
+            for(BulletHit hit : rayTraceList) {
+                if(hit.rayTraceResult != null && hit.rayTraceResult.hitVec != null) {
+                    addRayRender(lines, origin, hit.rayTraceResult.hitVec, (float)hit.distance);
+                    
+                    // 添加命中点标记
+                    lines.add(new OBBDebugObject(new Vector3f(hit.rayTraceResult.hitVec)));
+                    
+                    // 如果是OBB命中,显示命中的OBB
+                    if(hit instanceof OBBHit) {
+                        lines.add(new OBBDebugObject(((OBBHit)hit).box));
+                    }
                 }
             }
 
 
-            Minecraft mc = Minecraft.getMinecraft();
-            Entity entity = mc.getRenderViewEntity();
-            float pitch=entityPlayer.prevRotationPitch+(entityPlayer.rotationPitch-entityPlayer.prevRotationPitch)*ClientProxy.renderHooks.partialTicks;
-            float yaw=entityPlayer.prevRotationYaw+(entityPlayer.rotationYaw-entityPlayer.prevRotationYaw)*ClientProxy.renderHooks.partialTicks;
-            if(ClientProxy.shoulderSurfingLoaded) {
-                if(ShoulderInstance.getInstance().doShoulderSurfing()) {
-                    Vec3d eye=entity.getPositionEyes(ClientProxy.renderHooks.partialTicks);
-                    double posX=eye.x;
-                    double posY=eye.y;
-                    double posZ=eye.z;
-                    // if(ModularWarfare.isLoadedModularMovements) {
-                    //     if (entity instanceof EntityPlayer) {
-                    //         eye= ModularMovementsHooks.onGetPositionEyes((EntityPlayer) entity, ClientProxy.renderHooks.partialTicks);
-                    //     }
-                    // }
-                    RayTraceResult r=getMouseOver(ClientProxy.renderHooks.partialTicks);
-                    posX=r.hitVec.x-posX;
-                    posY=r.hitVec.y-posY;
-                    posZ=r.hitVec.z-posZ;
-                    pitch=(float)-Math.toDegrees(Math.atan(posY/Math.sqrt(posX*posX+posZ*posZ)));
-                    yaw=(float)Math.toDegrees(Math.acos((posX*0+posZ*1)/Math.sqrt(posX*posX+posZ*posZ)));
-                    if(posX>0) {
-                        yaw=-yaw;
-                    }  
-                }
+            if(rayTraceList.isEmpty()) {
+                Vec3d forward = RayUtil.getGunAccuracy(pitch, yaw, 0, player.world.rand);
+                Vec3d endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
+                addRayRender(lines, origin, endVec, (float)itemGun.type.weaponMaxRange);
             }
-            ArrayList<BulletHit> rayTraceList = new ArrayList<BulletHit>();
-            for (int i = 0; i < numBullets; i++) {
-                List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, entityPlayer.world, pitch, yaw, entityPlayer, itemGun.type.weaponMaxRange, itemGun, false);
-                rayTraceList.addAll(rayTrace);
+
+            // 更新渲染列表
+            OBBPlayerManager.lines.clear();
+            OBBPlayerManager.lines.addAll(lines);
+        }
+
+        private void addRayRender(List<OBBDebugObject> lines, Vec3d origin, Vec3d end, float distance) {
+            Vector3f rayVec = new Vector3f((float)(end.x - origin.x), (float)(end.y - origin.y), (float)(end.z - origin.z));
+            Vector3f normaliseVec = rayVec.normalise(null);
+            
+
+            OBBModelBox ray = new OBBModelBox();
+            float pitchRad = (float) Math.asin(normaliseVec.y);
+            normaliseVec.y = 0;
+            normaliseVec = normaliseVec.normalise(null);
+            float yawRad = (float)Math.asin(normaliseVec.x);
+            if(normaliseVec.z < 0) {
+                yawRad = (float) (Math.PI-yawRad);
             }
             
+            Matrix4f matrix = new Matrix4f();
+            matrix.rotate(yawRad, new Vector3f(0, 1, 0));
+            matrix.rotate(pitchRad, new Vector3f(-1, 0, 0));
+            
+            ray.center = new Vector3f((float)(origin.x + end.x) * 0.5f, (float)(origin.y + end.y) * 0.5f, (float)(origin.z + end.z) * 0.5f);
+            ray.axis.x = new Vector3f(0, 0, 0);
+            ray.axis.y = new Vector3f(0, 0, 0);
+            ray.axis.z = Matrix4f.transform(matrix, new Vector3f(0, 0, distance/2), null);
+            ray.axisNormal.x = Matrix4f.transform(matrix, new Vector3f(1, 0, 0), null);
+            ray.axisNormal.y = Matrix4f.transform(matrix, new Vector3f(0, 1, 0), null);
+            ray.axisNormal.z = Matrix4f.transform(matrix, new Vector3f(0, 0, 1), null);
+
+            lines.add(new OBBDebugObject(ray));
+            lines.add(new OBBDebugObject(new Vector3f((float)origin.x, (float)origin.y, (float)origin.z), 
+                                       new Vector3f((float)end.x, (float)end.y, (float)end.z)));
+        }
+
+        private void updateForced(EntityPlayer player, ItemGun itemGun) {
+            lastUpdateTime = System.currentTimeMillis();
+            if(player.world.isRemote) {
+
+                ItemStack heldItem = player.getHeldItemMainhand();
+                if(heldItem.isEmpty() || !(heldItem.getItem() instanceof ItemGun)) {
+                    rayTraceList.clear();
+                    return;
+                }
+                
+                Minecraft mc = Minecraft.getMinecraft();
+                Entity entity = mc.getRenderViewEntity();
+                pitch = player.prevRotationPitch + (player.rotationPitch-player.prevRotationPitch) * ClientProxy.renderHooks.partialTicks;
+                yaw = player.prevRotationYaw + (player.rotationYaw-player.prevRotationYaw) * ClientProxy.renderHooks.partialTicks;
+                
+                if(ClientProxy.shoulderSurfingLoaded) {
+                    if(ShoulderInstance.getInstance().doShoulderSurfing()) {
+                        Vec3d eye = entity.getPositionEyes(ClientProxy.renderHooks.partialTicks);
+                        double posX = eye.x;
+                        double posY = eye.y;
+                        double posZ = eye.z;
+                        RayTraceResult r = getMouseOver(ClientProxy.renderHooks.partialTicks);
+                        posX = r.hitVec.x-posX;
+                        posY = r.hitVec.y-posY;
+                        posZ = r.hitVec.z-posZ;
+                        pitch = (float)-Math.toDegrees(Math.atan(posY/Math.sqrt(posX*posX+posZ*posZ)));
+                        yaw = (float)Math.toDegrees(Math.acos((posX*0+posZ*1)/Math.sqrt(posX*posX+posZ*posZ)));
+                        if(posX>0) {
+                            yaw = -yaw;
+                        }
+                    }
+                }
+                
+                int numBullets = itemGun.type.numBullets;
+                ItemBullet bulletItem = ItemGun.getUsedBullet(heldItem, itemGun.type);
+                if (bulletItem != null && bulletItem.type.isSlug) {
+                    numBullets = 1;
+                }
+                
+                rayTraceList.clear();
+                for (int i = 0; i < numBullets; i++) {
+                    List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, player.world, pitch, yaw, player, itemGun.type.weaponMaxRange, itemGun, false);
+                    if(rayTrace != null) {
+                        rayTraceList.addAll(rayTrace);
+                    }
+                }
+
+                // 添加调试渲染
+                if(OBBPlayerManager.debug) {
+                    renderDebugLine(player, itemGun);
+                }
+            }
+        }
+    }
+
+    private static Map<UUID, AimingData> playerAimingData = new HashMap<>();
+
+    public static AimingData getAimingData(EntityPlayer player) {
+        UUID id = player.getUniqueID();
+        if(!playerAimingData.containsKey(id)) {
+            playerAimingData.put(id, new AimingData());
+        }
+        return playerAimingData.get(id);
+    }
+
+    public static void fireClientSide(EntityPlayer entityPlayer, ItemGun itemGun) {
+        if (entityPlayer.world.isRemote) {
+            AimingData aimData = getAimingData(entityPlayer);
+            // 强制更新瞄准数据,确保使用最新的数据
+            aimData.updateForced(entityPlayer, itemGun);
+            
+            Vec3d origin = entityPlayer.getPositionEyes(ClientProxy.renderHooks.partialTicks);
+            Vec3d endVec = null;
+            
+            // 获取最近的命中点作为尾迹终点
+            if(!aimData.rayTraceList.isEmpty()) {
+                BulletHit firstHit = aimData.rayTraceList.get(0);
+                if(firstHit.rayTraceResult != null && firstHit.rayTraceResult.hitVec != null) {
+                    endVec = firstHit.rayTraceResult.hitVec;
+                }
+            }
+            
+            // 如果没有命中点，使用最大射程
+            if(endVec == null) {
+                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, 0, entityPlayer.world.rand);
+                endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
+            }
+            
+            // 发送尾迹渲染请求
+            Vec3d direction = endVec.subtract(origin).normalize();
+            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(
+                itemGun.type,
+                itemGun.type.customTrailModel,
+                itemGun.type.customTrailTexture,
+                itemGun.type.customTrailGlow,
+                origin.x, origin.y, origin.z,
+                entityPlayer.motionX, entityPlayer.motionZ,
+                direction.x, direction.y, direction.z,
+                origin.distanceTo(endVec),
+                10,
+                false
+            ));
 
             ModularWarfare.NETWORK.sendToServer(new PacketExpShot(entityPlayer.getEntityId(), itemGun.type.internalName));
 
             boolean headshot = false;
-            for (BulletHit rayTrace : rayTraceList) {
+            for (BulletHit rayTrace : aimData.rayTraceList) {
                 if (rayTrace instanceof OBBHit) {
                     final EntityLivingBase victim = ((OBBHit) rayTrace).entity;
-                    if (victim != null) {
-                        if (!victim.isDead && victim.getHealth() > 0.0f) {
-                            //Send server player hit + hitbox
-                            //entityPlayer.sendMessage(new TextComponentString(((OBBHit) rayTrace).box.name));
-                            ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(victim.getEntityId(), itemGun.type.internalName, ((OBBHit) rayTrace).box.name, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
-                        }
+                    if (victim != null && !victim.isDead && victim.getHealth() > 0.0f) {
+                        ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(victim.getEntityId(), itemGun.type.internalName, ((OBBHit) rayTrace).box.name, itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
                     }
                 } else {
-                    if (rayTrace.rayTraceResult != null) {
-                        if (rayTrace.rayTraceResult.hitVec != null) {
-                            if(rayTrace.rayTraceResult.entityHit != null){
-                                //Normal entity hit
-                                headshot = ItemGun.canEntityGetHeadshot(rayTrace.rayTraceResult.entityHit) && rayTrace.rayTraceResult.hitVec.y >= rayTrace.rayTraceResult.entityHit.getPosition().getY() + rayTrace.rayTraceResult.entityHit.getEyeHeight() - 0.15f;
-                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, (headshot? "head":""), itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
-                            } else {
-                                //Crack hit block packet
-                                ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(-1, itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z,rayTrace.rayTraceResult.sideHit));                            }
+                    if (rayTrace.rayTraceResult != null && rayTrace.rayTraceResult.hitVec != null) {
+                        if(rayTrace.rayTraceResult.entityHit != null) {
+                            headshot = ItemGun.canEntityGetHeadshot(rayTrace.rayTraceResult.entityHit) && rayTrace.rayTraceResult.hitVec.y >= rayTrace.rayTraceResult.entityHit.getPosition().getY() + rayTrace.rayTraceResult.entityHit.getEyeHeight() - 0.15f;
+                            ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(rayTrace.rayTraceResult.entityHit.getEntityId(), itemGun.type.internalName, (headshot? "head":""), itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z));
+                        } else {
+                            ModularWarfare.NETWORK.sendToServer(new PacketExpGunFire(-1, itemGun.type.internalName, "", itemGun.type.fireTickDelay, itemGun.type.recoilPitch, itemGun.type.recoilYaw, itemGun.type.recoilAimReducer, itemGun.type.bulletSpread, rayTrace.remainingPenetrate, rayTrace.remainingBlockPenetrate, rayTrace.distance, rayTrace.rayTraceResult.hitVec.x, rayTrace.rayTraceResult.hitVec.y, rayTrace.rayTraceResult.hitVec.z,rayTrace.rayTraceResult.sideHit));
                         }
                     }
                 }

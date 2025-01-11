@@ -11,12 +11,9 @@ public class GrenadeType extends BaseType {
     public GrenadesEnumType grenadeType = GrenadesEnumType.Frag;
     public float fuseTime = 5.0f;
     public boolean damageWorld = false;
-    public int explosionPower = 8;
-    /**
-     * damage=explosionParamA*(explosionParamK*distance+1)
-     * */
-    public float explosionParamA=30f;
-    public float explosionParamK=-1/8f;
+    public float explosionDamage = 30f;
+    public float explosionRange = 6f;
+    public float explosionKnockback = 1f;
     public float throwStrength = 1f;
     public boolean throwerVulnerable = false;
 

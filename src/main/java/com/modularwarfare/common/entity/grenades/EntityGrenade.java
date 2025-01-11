@@ -3,6 +3,7 @@ package com.modularwarfare.common.entity.grenades;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.init.ModSounds;
+import com.modularwarfare.common.world.MWFExplosion;
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -143,61 +144,11 @@ public class EntityGrenade extends Entity {
         if (!this.world.isRemote && !exploded) {
             this.world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.EXPLOSIONS_CLOSE, SoundCategory.BLOCKS, 2.0f, 1.0f);
             if (grenadeType != null) {
-
-                Explosion explosion = new Explosion(this.world, grenadeType.throwerVulnerable ? null : thrower, posX,
-                        posY, posZ, grenadeType.explosionPower, false, grenadeType.damageWorld);
-                /*
+                MWFExplosion explosion = new MWFExplosion(this.world, grenadeType.throwerVulnerable ? null : thrower, posX,
+                        posY, posZ, grenadeType.explosionRange, grenadeType.explosionDamage, grenadeType.explosionKnockback,
+                        false, grenadeType.damageWorld, grenadeType.damageWorld);
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
-                */
-                if(grenadeType.damageWorld) {
-                    float f = grenadeType.explosionPower * (0.7F + this.world.rand.nextFloat() * 0.6F);
-                    for (int x = -grenadeType.explosionPower; x <= grenadeType.explosionPower; x++) {
-                        for (int y = -grenadeType.explosionPower; y <= grenadeType.explosionPower; y++) {
-                            for (int z = -grenadeType.explosionPower; z <= grenadeType.explosionPower; z++) {
-                                BlockPos blockPos = new BlockPos(posX + x, posY + y, posZ + z);
-                                if (world.getBlockState(blockPos).getMaterial() != Material.AIR) {
-                                    if (f - (world.getBlockState(blockPos).getBlock().getExplosionResistance(world,
-                                            blockPos, this, explosion) + 0.3) * 0.3f > 0) {
-                                        if (Math.sqrt(x * x + y * y + z * z) <= grenadeType.explosionPower) {
-                                            Block block = world.getBlockState(blockPos).getBlock();
-                                            if (block.canDropFromExplosion(explosion)) {
-                                                block.dropBlockAsItemWithChance(this.world, blockPos,
-                                                        this.world.getBlockState(blockPos),
-                                                        1.0F / grenadeType.explosionPower, 0);
-                                            }
-                                            block.onBlockExploded(world, blockPos, explosion);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }  
-                }
-
-                List<Entity> entities = world.getEntitiesInAABBexcluding(this,
-                        new AxisAlignedBB(posX - 1 / grenadeType.explosionParamK,
-                                posY - 1 / grenadeType.explosionParamK, posZ - 1 / grenadeType.explosionParamK,
-                                posX + 1 / grenadeType.explosionParamK, posY + 1 / grenadeType.explosionParamK,
-                                posZ + 1 / grenadeType.explosionParamK),
-                        null);
-                for (Entity entity : entities) {
-                    if(!grenadeType.throwerVulnerable) {
-                        if(entity==thrower) {
-                            continue;
-                        }
-                    }
-                    for (int i = 1; i <= 3; i++) {
-                        Vec3d entityPos = entity.getPositionVector().add(0, entity.getEyeHeight() / 3 * i, 0);
-                        if (world.rayTraceBlocks(getPositionVector(), entityPos, false, true, false) == null) {
-                            entity.attackEntityFrom(DamageSource.causeExplosionDamage(explosion),
-                                    grenadeType.explosionParamA * (float) Math.max(0,
-                                            (grenadeType.explosionParamK * entityPos.distanceTo(getPositionVector())
-                                                    + 1)));
-                            break;
-                        }
-                    }
-                }
                 ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);
             }
         }
