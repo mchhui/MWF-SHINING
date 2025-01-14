@@ -29,7 +29,7 @@ public class ItemBullet extends BaseItem {
 
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-
+        // Remove hardcoded strings
         tooltip.add(generateLoreListEntry(I18n.format("mwf:gui.tooltip.damage"), type.bulletDamageFactor + "x"));
 
         if (type.bulletProperties != null) {
