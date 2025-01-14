@@ -2,6 +2,7 @@ package com.modularwarfare.common.guns;
 
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -29,15 +30,15 @@ public class ItemBullet extends BaseItem {
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
 
-        tooltip.add(generateLoreListEntry("Damage", type.bulletDamageFactor + "x"));
+        tooltip.add(generateLoreListEntry(I18n.format("mwf:gui.tooltip.damage"), type.bulletDamageFactor + "x"));
 
         if (type.bulletProperties != null) {
             for (String key : type.bulletProperties.keySet()) {
-                tooltip.add(generateLoreHeader("Modifiers"));
+                tooltip.add(generateLoreHeader(I18n.format("mwf:gui.tooltip.modifiers")));
                 BulletProperty bulletProperty = type.bulletProperties.get(key);
 
                 if (bulletProperty.potionEffects != null) {
-                    tooltip.add(generateLoreHeader("Effects"));
+                    tooltip.add(generateLoreHeader(I18n.format("mwf:gui.tooltip.effects")));
                     for (PotionEntry potionEntry : bulletProperty.potionEffects) {
                         if (bulletProperty.potionEffects != null) {
                             tooltip.add(generateLoreListEntry(potionEntry.potionEffect.name(), ""));
