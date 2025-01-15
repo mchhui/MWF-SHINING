@@ -107,7 +107,7 @@ public class ScopeUtils {
 
     @SubscribeEvent
     public void renderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
+        if (event.phase != TickEvent.Phase.START) {
 
             if (mc.player != null && mc.currentScreen == null) {
                 //If player has gun, update scope
@@ -331,7 +331,7 @@ public class ScopeUtils {
     }
     
     public void renderPostScope(float renderTickTime,boolean isDepthMode,boolean isInsideRendering,boolean isOverlayRendering,float alpha) {
-        if (RenderParameters.adsSwitch > 0) {
+        if (RenderParameters.adsSwitch > 0  && mc.gameSettings.thirdPersonView == 0) {
             ScaledResolution resolution = new ScaledResolution(mc);
             ItemAttachment attachment=null;
             
