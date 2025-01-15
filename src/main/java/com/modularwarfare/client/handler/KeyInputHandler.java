@@ -21,6 +21,8 @@ import com.modularwarfare.common.network.PacketGunUnloadAttachment;
 import com.modularwarfare.common.network.PacketLaserToggle;
 import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.MWSound;
+import com.teamderpy.shouldersurfing.client.ShoulderInstance;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.settings.KeyBinding;
@@ -60,6 +62,7 @@ public final class KeyInputHandler {
         keyBinds.add(new KeyEntry(KeyType.Right));
         keyBinds.add(new KeyEntry(KeyType.Up));
         keyBinds.add(new KeyEntry(KeyType.Down));
+        keyBinds.add(new KeyEntry(KeyType.QuickViewToggle));
 
         if (ModularWarfare.DEV_ENV) {
             keyBinds.add(new KeyEntry(KeyType.DebugMode));
@@ -195,6 +198,7 @@ public final class KeyInputHandler {
                             }
                         }
                     break;
+
                 case Flashlight:
                     if(!entityPlayer.isSpectator()) {
                         if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
@@ -230,6 +234,28 @@ public final class KeyInputHandler {
                     }
                     break;
 
+                case QuickViewToggle:
+                    if(!entityPlayer.isSpectator()) {
+                        if(ClientProxy.shoulderSurfingLoaded) {
+                            if(Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
+                                Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+                            } else {
+                                Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
+                                ShoulderInstance.getInstance().setShoulderSurfing(true);
+                            }
+                            Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
+                        } else {
+                            if(Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
+                                Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+                            } else {
+                                Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
+                            }
+                            Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
+                        }
+                    }
+                    break;
+
+
                     // Deprecated
 //                case Backpack:
 //                    if (!ModConfig.INSTANCE.general.customInventory) {
@@ -251,7 +277,6 @@ public final class KeyInputHandler {
                 case Down:
                     ClientProxy.attachmentUI.processKeyInput(KeyType.Down);
                     break;
-
                 default:
                     ModularWarfare.LOGGER.warn("Default case called on handleKeyInput for " + keyType.toString());
                     break;
