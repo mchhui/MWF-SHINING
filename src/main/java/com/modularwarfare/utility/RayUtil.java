@@ -44,25 +44,25 @@ public class RayUtil {
     private static final long ACCURACY_TRANSITION_TIME = 100; // 100ms的过渡时间
     
     public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
-
         Vec3d defaultVec = getDefaultAccuracy(pitch, yaw, accuracy, rand);
         
-        if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().player != null) {
-            EntityPlayer player = Minecraft.getMinecraft().player;
-            ItemStack heldItem = player.getHeldItemMainhand();
-            
 
+        if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().world != null && Minecraft.getMinecraft().world.isRemote) {
+            EntityPlayer player = Minecraft.getMinecraft().player;
+            if(player == null) return defaultVec;
+            
+            ItemStack heldItem = player.getHeldItemMainhand();
             if(!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
                 ItemGun itemGun = (ItemGun)heldItem.getItem();
+
                 if(itemGun.type != null && itemGun.type.useEnhancedAiming) {
+                    // 使用种子来确保客户端和服务端生成相同的随机数
+                    long seed = (long)(pitch * 10000) + (long)(yaw * 10000) + (long)(accuracy * 10000);
+                    rand.setSeed(seed);
+                    
                     try {
                         long currentTime = System.currentTimeMillis();
                         
-
-                        float recoilX = RenderParameters.playerRecoilYaw * 0.5f;
-                        float recoilY = RenderParameters.playerRecoilPitch * 0.5f;
-                        
-
                         if(Math.abs(lastAccuracy - accuracy) > 0.0001f || currentTime - accuracyChangeTime > 200) {
                             accuracyChangeTime = currentTime;
                             lastAccuracy = accuracy;
@@ -70,10 +70,9 @@ public class RayUtil {
                             startX = currentX;
                             startY = currentY;
                             
-
                             double angle = Math.atan2(currentY, currentX) + (rand.nextDouble() - 0.5) * Math.PI * 1.5;
                             double currentRadius = Math.sqrt(currentX * currentX + currentY * currentY);
-
+                            
                             double newRadius = Math.min(accuracy, currentRadius + (rand.nextDouble() - 0.3) * accuracy * 0.8);
                             
                             targetX = Math.cos(angle) * newRadius;
@@ -90,8 +89,9 @@ public class RayUtil {
                         currentX = startX + (targetX - startX) * moveProgress;
                         currentY = startY + (targetY - startY) * moveProgress;
                         
-                        double finalX = currentX + recoilX;
-                        double finalY = currentY + recoilY;
+                        // 只在客户端添加后坐力效果
+                        double finalX = currentX + RenderParameters.playerRecoilYaw * 0.5f;
+                        double finalY = currentY + RenderParameters.playerRecoilPitch * 0.5f;
                         
                         Vec3d vec3d = new Vec3d(finalX, finalY, 100).normalize();
                         return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
@@ -105,8 +105,8 @@ public class RayUtil {
         
         return defaultVec;
     }
-    
-    // 将原有的随机系统抽取为单独的方法
+
+
     private static Vec3d getDefaultAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
         final float randAccPitch = rand.nextFloat() * accuracy;
         final float randAccYaw = rand.nextFloat() * accuracy;
@@ -373,48 +373,6 @@ public class RayUtil {
 
             if(side.isServer()) {
                 // Server side code...
-            } else {
-                // 只在实际射击时发送尾迹数据
-                if(isPunched) {
-                    ItemStack gunStack = player.getHeldItemMainhand();
-                    ItemStack bulletStack = null;
-                    String model = null;
-                    String tex = null;
-                    boolean glow = false;
-
-                    if (!gunStack.isEmpty() && gunStack.hasTagCompound()) {
-                        if(gunStack.getItem() instanceof ItemGun) {
-                            GunType gunType = ((ItemGun)gunStack.getItem()).type;
-                            if (gunType != null) {
-                                if (gunType.acceptedBullets != null) {
-                                    if (gunStack.getTagCompound().hasKey("bullet")) {
-                                        bulletStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
-                                    }
-                                } else {
-                                    if (gunStack.getTagCompound().hasKey("ammo")) {
-                                        ItemStack stackAmmo = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
-                                        if(stackAmmo != null && !stackAmmo.isEmpty() && stackAmmo.hasTagCompound() && stackAmmo.getTagCompound().hasKey("bullet")) {
-                                            bulletStack = new ItemStack(stackAmmo.getTagCompound().getCompoundTag("bullet"));  
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (bulletStack != null && !bulletStack.isEmpty() && bulletStack.getItem() instanceof ItemBullet) {
-                        BulletType bulletType = ((ItemBullet)bulletStack.getItem()).type;
-                        if (bulletType != null) {
-                            model = bulletType.trailModel;
-                            tex = bulletType.trailTex;
-                            glow = bulletType.trailGlow;
-                        }
-                    }
-
-                    ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(item.type, model, tex, glow, player.posX,
-                            player.getEntityBoundingBox().minY + player.getEyeHeight() - 0.10000000149011612,
-                            player.posZ, player.motionX, player.motionZ, dir.x, dir.y, dir.z, range, 10, isPunched));
-                }
             }
 
             int ping = 0;
