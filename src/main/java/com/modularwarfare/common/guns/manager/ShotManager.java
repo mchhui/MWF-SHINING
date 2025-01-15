@@ -681,11 +681,48 @@ public class ShotManager {
             
             // 发送尾迹渲染请求
             Vec3d direction = endVec.subtract(origin).normalize();
+
+            // 获取子弹配置
+            String model = null;
+            String tex = null;
+            boolean glow = false;
+
+            ItemStack gunStack = entityPlayer.getHeldItemMainhand();
+            if (!gunStack.isEmpty() && gunStack.hasTagCompound()) {
+                ItemStack bulletStack = null;
+                if (itemGun.type.acceptedBullets != null) {
+                    if (gunStack.getTagCompound().hasKey("bullet")) {
+                        bulletStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
+                    }
+                } else {
+                    if (gunStack.getTagCompound().hasKey("ammo")) {
+                        ItemStack stackAmmo = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
+                        if(stackAmmo != null && !stackAmmo.isEmpty() && stackAmmo.hasTagCompound() && stackAmmo.getTagCompound().hasKey("bullet")) {
+                            bulletStack = new ItemStack(stackAmmo.getTagCompound().getCompoundTag("bullet"));  
+                        }
+                    }
+                }
+
+                if (bulletStack != null && !bulletStack.isEmpty() && bulletStack.getItem() instanceof ItemBullet) {
+                    BulletType bulletType = ((ItemBullet)bulletStack.getItem()).type;
+                    if (bulletType != null) {
+                        model = bulletType.trailModel;
+                        tex = bulletType.trailTex;
+                        glow = bulletType.trailGlow;
+                    }
+                }
+            }
+
+            // 如果子弹没有配置尾迹，使用枪械配置
+            if(model == null) model = itemGun.type.customTrailModel;
+            if(tex == null) tex = itemGun.type.customTrailTexture;
+            if(!glow) glow = itemGun.type.customTrailGlow;
+
             ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(
                 itemGun.type,
-                itemGun.type.customTrailModel,
-                itemGun.type.customTrailTexture,
-                itemGun.type.customTrailGlow,
+                model,
+                tex,
+                glow,
                 origin.x, origin.y, origin.z,
                 entityPlayer.motionX, entityPlayer.motionZ,
                 direction.x, direction.y, direction.z,

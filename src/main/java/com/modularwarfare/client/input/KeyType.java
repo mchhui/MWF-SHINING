@@ -19,7 +19,8 @@ public enum KeyType {
     Left("Left (Attach mode)", 203), // H
     Right("Right (Attach mode)", 205), // H
     Up("Up (Attach mode)", 200), // H
-    Down("Down (Attach mode)", 208); // H
+    Down("Down (Attach mode)", 208), // H
+    QuickViewToggle("Quick View Toggle", Keyboard.KEY_B);
 
 
     //Keyboard
