@@ -148,6 +148,8 @@ public class ClientProxy extends CommonProxy {
     public static AutoSwitchToFirstView autoSwitchToFirstView;
     
     public static boolean shoulderSurfingLoaded=false;
+
+    public static boolean SGFXloaded=false;
     
     /**
      * Patches
@@ -229,6 +231,9 @@ public class ClientProxy extends CommonProxy {
             }
         } else {
             ClientProxy.galacticraftInterop = new GCDummyInterop();
+        }
+        if (Loader.isModLoaded("SGFX")) {
+            ClientProxy.SGFXloaded=true;
         }
     }
 
