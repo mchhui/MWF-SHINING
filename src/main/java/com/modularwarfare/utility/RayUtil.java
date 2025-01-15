@@ -44,65 +44,60 @@ public class RayUtil {
     private static final long ACCURACY_TRANSITION_TIME = 100; // 100ms的过渡时间
     
     public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
-        Vec3d defaultVec = getDefaultAccuracy(pitch, yaw, accuracy, rand);
+
+        long seed = (long)(pitch * 10000) + (long)(yaw * 10000) + (long)(accuracy * 10000);
+        rand.setSeed(seed);
         
 
+        Vec3d defaultVec = getDefaultAccuracy(pitch, yaw, accuracy, rand);
+        
+        // 检查是否为客户端环境且启用了增强瞄准
         if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().world != null && Minecraft.getMinecraft().world.isRemote) {
             EntityPlayer player = Minecraft.getMinecraft().player;
             if(player == null) return defaultVec;
-            
+                    
             ItemStack heldItem = player.getHeldItemMainhand();
             if(!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
                 ItemGun itemGun = (ItemGun)heldItem.getItem();
-
                 if(itemGun.type != null && itemGun.type.useEnhancedAiming) {
-                    // 使用种子来确保客户端和服务端生成相同的随机数
-                    long seed = (long)(pitch * 10000) + (long)(yaw * 10000) + (long)(accuracy * 10000);
-                    rand.setSeed(seed);
-                    
-                    try {
-                        long currentTime = System.currentTimeMillis();
-                        
-                        if(Math.abs(lastAccuracy - accuracy) > 0.0001f || currentTime - accuracyChangeTime > 200) {
-                            accuracyChangeTime = currentTime;
-                            lastAccuracy = accuracy;
+                    long currentTime = System.currentTimeMillis();
                             
-                            startX = currentX;
-                            startY = currentY;
-                            
-                            double angle = Math.atan2(currentY, currentX) + (rand.nextDouble() - 0.5) * Math.PI * 1.5;
-                            double currentRadius = Math.sqrt(currentX * currentX + currentY * currentY);
-                            
-                            double newRadius = Math.min(accuracy, currentRadius + (rand.nextDouble() - 0.3) * accuracy * 0.8);
-                            
-                            targetX = Math.cos(angle) * newRadius;
-                            targetY = Math.sin(angle) * newRadius;
-                        }
-                        
-                        float moveProgress = (currentTime - accuracyChangeTime) / 150.0f;
-                        moveProgress = Math.min(1.0f, moveProgress);
-                        
-                        moveProgress = moveProgress < 0.5f ? 
-                            2.0f * moveProgress * moveProgress : 
-                            -1.0f + (4.0f - 2.0f * moveProgress) * moveProgress;
-                        
-                        currentX = startX + (targetX - startX) * moveProgress;
-                        currentY = startY + (targetY - startY) * moveProgress;
-                        
-                        // 只在客户端添加后坐力效果
-                        double finalX = currentX + RenderParameters.playerRecoilYaw * 0.5f;
-                        double finalY = currentY + RenderParameters.playerRecoilPitch * 0.5f;
-                        
-                        Vec3d vec3d = new Vec3d(finalX, finalY, 100).normalize();
-                        return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
-                                  .rotateYaw((float)(-yaw * Math.PI / 180));
-                    } catch(Exception e) {
-                        return defaultVec;
+                    if(Math.abs(lastAccuracy - accuracy) > 0.0001f || currentTime - accuracyChangeTime > 200) {
+                        accuracyChangeTime = currentTime;
+                        lastAccuracy = accuracy;
+                                
+                        startX = currentX;
+                        startY = currentY;
+                                
+                        double angle = Math.atan2(currentY, currentX) + (rand.nextDouble() - 0.5) * Math.PI * 1.5;
+                        double currentRadius = Math.sqrt(currentX * currentX + currentY * currentY);
+                                
+                        double newRadius = Math.min(accuracy, currentRadius + (rand.nextDouble() - 0.3) * accuracy * 0.8);
+                                
+                        targetX = Math.cos(angle) * newRadius;
+                        targetY = Math.sin(angle) * newRadius;
                     }
+                            
+                    float moveProgress = (currentTime - accuracyChangeTime) / 150.0f;
+                    moveProgress = Math.min(1.0f, moveProgress);
+                            
+                    moveProgress = moveProgress < 0.5f ? 
+                        2.0f * moveProgress * moveProgress : 
+                        -1.0f + (4.0f - 2.0f * moveProgress) * moveProgress;
+                            
+                    currentX = startX + (targetX - startX) * moveProgress;
+                    currentY = startY + (targetY - startY) * moveProgress;
+                            
+                    // 只在客户端添加后坐力效果
+                    double finalX = currentX + RenderParameters.playerRecoilYaw * 0.5f;
+                    double finalY = currentY + RenderParameters.playerRecoilPitch * 0.5f;
+                            
+                    Vec3d vec3d = new Vec3d(finalX, finalY, 100).normalize();
+                    return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
+                                  .rotateYaw((float)(-yaw * Math.PI / 180));
                 }
             }
         }
-        
         return defaultVec;
     }
 
@@ -306,31 +301,6 @@ public class RayUtil {
         }
 
         return entity.world.rayTraceBlocks(vec3d, vec3d2, false, true, false);
-    }
-
-    /**
-     * Attacks the given entity with the given damage source and amount, but
-     * preserving the entity's original velocity instead of applying knockback, as
-     * would happen with
-     * {@link EntityLivingBase#attackEntityFrom(DamageSource, float)} <i>(More
-     * accurately, calls that method as normal and then resets the entity's velocity
-     * to what it was before).</i> Handy for when you need to damage an entity
-     * repeatedly in a short space of time.
-     *
-     * @param entity The entity to attack
-     * @param source The source of the damage
-     * @param amount The amount of damage to apply
-     * @return True if the attack succeeded, false if not.
-     */
-    public static boolean attackEntityWithoutKnockback(Entity entity, DamageSource source, float amount) {
-        double vx = entity.motionX;
-        double vy = entity.motionY;
-        double vz = entity.motionZ;
-        boolean succeeded = entity.attackEntityFrom(source, amount);
-        entity.motionX = vx;
-        entity.motionY = vy;
-        entity.motionZ = vz;
-        return succeeded;
     }
 
     /**
