@@ -27,6 +27,7 @@ import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.network.*;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
+import com.modularwarfare.utility.CommonUtil;
 import com.teamderpy.shouldersurfing.client.ShoulderHelper;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
 import mchhui.modularmovements.tactical.client.ClientLitener;
@@ -468,7 +469,7 @@ public class ShotManager {
                         }
 
                         if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                            RayUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                            CommonUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
                         } else {
                             targetEntity.attackEntityFrom(DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
                         }
