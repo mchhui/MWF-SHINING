@@ -260,6 +260,10 @@ public class GunType extends BaseType {
     //是否启用新后坐力反馈
     public boolean useNewRecoilSystem = false;
 
+    public float viewKickPitchScale = 0.1f;
+
+    public float viewKickYawScale = 0.1f;
+
     //Only Enhanced ASM
     public boolean allowReloadFiring = false;
 

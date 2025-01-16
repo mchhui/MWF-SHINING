@@ -434,11 +434,9 @@ public class ScopeUtils {
             GlStateManager.translate(resolution.getScaledWidth()/2f, resolution.getScaledHeight()/2f, 0);
             // 计算倾斜角度的弧度值
             float rotateRad = (float)Math.toRadians(CROSS_ROTATE);
-            // 计算分辨率缩放因子，考虑GUI Scale
-            float resolutionScale = mc.displayHeight / (720f * resolution.getScaleFactor());
             // 根据倾斜角度旋转后坐力偏移向量
-            float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * config.factorRecoilScale * resolutionScale;
-            float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * config.factorRecoilScale * resolutionScale;
+            float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * config.recoilOverlayFactor;
+            float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * config.recoilOverlayFactor;
             GlStateManager.translate(recoilOffsetX, -recoilOffsetY, 0);
             GlStateManager.rotate(CROSS_ROTATE,0,0,1);
             GlStateManager.translate(-width/2f, -height/2f, 0);

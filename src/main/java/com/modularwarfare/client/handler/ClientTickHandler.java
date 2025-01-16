@@ -168,10 +168,10 @@ public final class ClientTickHandler {
             return;
 
         if (minecraft.mouseHelper.deltaY > 0 || -minecraft.mouseHelper.deltaY > 1) {
-            antiRecoilPitch *= 0.25F;
+            antiRecoilPitch *= 0.5F;
         }
         if (minecraft.mouseHelper.deltaX > 2 || -minecraft.mouseHelper.deltaX > 2) {
-            antiRecoilYaw *= 0.25F;
+            antiRecoilYaw *= 0.5F;
         }
         EntityPlayerSP player = minecraft.player;
 
@@ -456,8 +456,8 @@ public final class ClientTickHandler {
             ItemGun itemGun = (ItemGun) stack.getItem();
             GunType gunType = itemGun.type;
             if (gunType.useNewRecoilSystem) {
-                player.rotationPitch -= playerRecoilPitch * 0.1;
-                player.rotationYaw -= playerRecoilYaw * 0.1;
+                player.rotationPitch -= playerRecoilPitch * gunType.viewKickPitchScale;
+                player.rotationYaw -= playerRecoilYaw * gunType.viewKickYawScale;
             } else {
                 player.rotationPitch -= playerRecoilPitch;
                 player.rotationYaw -= playerRecoilYaw;
@@ -498,8 +498,8 @@ public final class ClientTickHandler {
             ItemGun itemGun = (ItemGun) stack.getItem();
             GunType gunType = itemGun.type;
             if (gunType.useNewRecoilSystem) {
-                player.rotationPitch += currentAntiPitch * 0.1;
-                player.rotationYaw += currentAntiYaw * 0.1;
+                player.rotationPitch += currentAntiPitch * gunType.viewKickPitchScale;
+                player.rotationYaw += currentAntiYaw * gunType.viewKickYawScale;
             } else {
                 player.rotationPitch += currentAntiPitch;
                 player.rotationYaw += currentAntiYaw;
