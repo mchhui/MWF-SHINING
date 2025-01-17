@@ -20,6 +20,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import net.minecraft.nbt.NBTTagCompound;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -196,9 +197,16 @@ public class ContainerInventoryModified extends Container {
 
     @Override
     public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player) {
+        // 允许QUICK_MOVE（Shift+点击）操作
+        if (clickTypeIn == ClickType.QUICK_MOVE) {
+            return super.slotClick(slotId, dragType, clickTypeIn, player);
+        }
+        
+        // 对于其他类型的点击，保持原有的限制
         if (clickTypeIn != ClickType.PICKUP && clickTypeIn != ClickType.QUICK_CRAFT && clickTypeIn != ClickType.THROW) {
             return ItemStack.EMPTY;
         }
+        
         ItemStack playerInventoryItemStack = player.inventory.getItemStack();
 
         if (ModConfig.INSTANCE.guns.acceptAttachmentDrag && player instanceof EntityPlayerMP && slotId != -999 && dragType == 0 && clickTypeIn == ClickType.PICKUP && !playerInventoryItemStack.isEmpty()) {
@@ -226,6 +234,19 @@ public class ContainerInventoryModified extends Container {
 
         if (!player.world.isRemote) {
             this.clearContainer(player, player.world, this.craftMatrix);
+            
+            // 确保MWF背包的NBT数据被保存
+            if (this.extra != null && this.extra.getStackInSlot(0).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+                ItemStack backpackStack = this.extra.getStackInSlot(0);
+                IItemHandler backpackInventory = backpackStack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+                
+                // 强制更新NBT
+                if (backpackStack.hasTagCompound()) {
+                    NBTTagCompound nbt = backpackStack.getTagCompound();
+                    nbt.setTag("_items", CapabilityItemHandler.ITEM_HANDLER_CAPABILITY.writeNBT(backpackInventory, null));
+                    backpackStack.setTagCompound(nbt);
+                }
+            }
         }
     }
 
@@ -240,25 +261,83 @@ public class ContainerInventoryModified extends Container {
         final Slot slot = this.inventorySlots.get(index);
 
         if ((slot != null) && slot.getHasStack()) {
-            final ItemStack itemstack1 = slot.getStack();
-            itemstack = itemstack1.copy();
-            final EntityEquipmentSlot entityequipmentslot = EntityLiving.getSlotForItemStack(itemstack);
+            final ItemStack sourceStack = slot.getStack();
+            itemstack = sourceStack.copy();
+
+            boolean transferred = false;
 
 
-            if (itemstack1.isEmpty()) {
+            if (index == 0) {
+                transferred = this.mergeItemStack(sourceStack, 9, 45, true);
+                if (transferred) {
+                    slot.onSlotChange(sourceStack, itemstack);
+                }
+            }
+
+            else if (index >= 1 && index < 5) {
+                transferred = this.mergeItemStack(sourceStack, 9, 45, false);
+            }
+
+            else if (index >= 5 && index < 9) {
+                transferred = this.mergeItemStack(sourceStack, 9, 45, false);
+            }
+
+            else if (index >= 9 && index < 36) {
+
+                if (this.extra != null && this.extra.getStackInSlot(0).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+                    transferred = this.mergeItemStack(sourceStack, 46, this.inventorySlots.size(), false);
+                }
+
+                if (!transferred) {
+                    transferred = this.mergeItemStack(sourceStack, 36, 45, false);
+                }
+            }
+
+            else if (index >= 36 && index < 45) {
+
+                if (this.extra != null && this.extra.getStackInSlot(0).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+                    transferred = this.mergeItemStack(sourceStack, 46, this.inventorySlots.size(), false);
+                }
+
+                if (!transferred) {
+                    transferred = this.mergeItemStack(sourceStack, 9, 36, false);
+                }
+            }
+
+            else if (index >= 46) {
+
+                transferred = this.mergeItemStack(sourceStack, 9, 36, false);
+
+                if (!transferred) {
+                    transferred = this.mergeItemStack(sourceStack, 36, 45, false);
+                }
+            }
+
+            if (!transferred) {
+                return ItemStack.EMPTY;
+            }
+
+            if (sourceStack.isEmpty()) {
                 slot.putStack(ItemStack.EMPTY);
             } else {
                 slot.onSlotChanged();
             }
 
-            if (itemstack1.getCount() == itemstack.getCount()) {
+            if (sourceStack.getCount() == itemstack.getCount()) {
                 return ItemStack.EMPTY;
             }
 
-            final ItemStack itemstack2 = slot.onTake(playerIn, itemstack1);
-
-            if (index == 0) {
-                playerIn.dropItem(itemstack2, false);
+            slot.onTake(playerIn, sourceStack);
+            
+            // 确保NBT数据更新
+            if (this.extra != null && this.extra.getStackInSlot(0).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+                ItemStack backpackStack = this.extra.getStackInSlot(0);
+                IItemHandler backpackInventory = backpackStack.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+                if (backpackStack.hasTagCompound()) {
+                    NBTTagCompound nbt = backpackStack.getTagCompound();
+                    nbt.setTag("_items", CapabilityItemHandler.ITEM_HANDLER_CAPABILITY.writeNBT(backpackInventory, null));
+                    backpackStack.setTagCompound(nbt);
+                }
             }
         }
 
