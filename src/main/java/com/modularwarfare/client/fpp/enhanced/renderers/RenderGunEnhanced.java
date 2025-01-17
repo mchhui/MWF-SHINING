@@ -561,19 +561,34 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             currentRecoilZ = linearRecoil;
         }
         
-        //枪托抖动影响参数
+        //配件抖动影响参数
         float modelBackwardsFactor = 1.0f;
         float modelUpwardsFactor = 1.0f;
         float modelShakeFactor = 1.0f;
         
-        if (player.getHeldItemMainhand() != null) {
-            if (player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                ItemStack itemStack = GunType.getAttachment(player.getHeldItemMainhand(), AttachmentPresetEnum.Stock);
-                if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                    ItemAttachment itemAttachment = (ItemAttachment) itemStack.getItem();
-                    modelBackwardsFactor = ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilBackwardsFactor;
-                    modelUpwardsFactor = ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilUpwardsFactor;
-                    modelShakeFactor = ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilShakeFactor;
+        if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+            //检查枪托
+            ItemStack itemStock = GunType.getAttachment(player.getHeldItemMainhand(), AttachmentPresetEnum.Stock);
+            if (itemStock != null && itemStock.getItem() != Items.AIR) {
+                ItemAttachment itemAttachment = (ItemAttachment) itemStock.getItem();
+                if(itemAttachment.type.model instanceof ModelAttachment && ((ModelAttachment)itemAttachment.type.model).config.stock != null) {
+                    modelBackwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilBackwardsFactor;
+                    modelUpwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilUpwardsFactor;
+                    modelShakeFactor *= ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilShakeFactor;
+                }
+            }
+            
+            //检查其他配件
+            for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+                ItemStack itemStack = GunType.getAttachment(player.getHeldItemMainhand(), attachment);
+                if (itemStack != null && itemStack.getItem() != Items.AIR && itemStack.getItem() instanceof ItemAttachment) {
+                    AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
+                    if (config.attachment.containsKey(attachmentType.internalName)) {
+                        Attachment attachConfig = config.attachment.get(attachmentType.internalName);
+                        modelBackwardsFactor *= attachConfig.modelRecoilBackwardsFactor;
+                        modelUpwardsFactor *= attachConfig.modelRecoilUpwardsFactor; 
+                        modelShakeFactor *= attachConfig.modelRecoilShakeFactor;
+                    }
                 }
             }
         }
@@ -583,18 +598,22 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             (float)(1.0 - controller.ADS * (1.0 - ADS_RECOIL_FACTOR)) : // 新系统
             (float)(1.0 - controller.ADS); // 旧系统
         
+        float aimBackwardsFactor = config.extra.modelRecoilBackwardsADSFactor;
+        float aimUpwardsFactor = config.extra.modelRecoilUpwardsADSFactor;
+        float aimShakeFactor = config.extra.modelRecoilShakeADSFactor;
+        
         if(gunType.useNewRecoilSystem) {
             //前后
-            mat.translate(new Vector3f(-currentRecoilZ * config.extra.modelRecoilBackwards * aimFactor * modelBackwardsFactor, 0F, 0F));
-            mat.translate(new Vector3f(0F, -currentRecoilZ * config.extra.modelRecoilBackwards * modelBackwardsFactor * 0.05F, 0F));
+            mat.translate(new Vector3f(-currentRecoilZ * config.extra.modelRecoilBackwards * aimFactor * modelBackwardsFactor * aimBackwardsFactor, 0F, 0F));
+            mat.translate(new Vector3f(0F, -currentRecoilZ * config.extra.modelRecoilBackwards * modelBackwardsFactor* aimBackwardsFactor * 0.05F , 0F));
             //上下
-            mat.translate(new Vector3f(0f,currentRecoilY * config.extra.modelRecoilUpwards * aimFactor * modelUpwardsFactor * 0.025F,0f));
+            mat.translate(new Vector3f(0f,currentRecoilY * config.extra.modelRecoilUpwards * aimFactor * modelUpwardsFactor * aimUpwardsFactor * 0.025F,0f));
             //左右
-            mat.translate(new Vector3f(0f,0f,currentRecoilX * config.extra.modelRecoilShake * 3f * aimFactor * modelShakeFactor * 0.025F));
+            mat.translate(new Vector3f(0f,0f,currentRecoilX * config.extra.modelRecoilShake * 3f * aimFactor * modelShakeFactor * aimShakeFactor * 0.025F));
             
             //旋转
-            mat.rotate(toRadians(currentRecoilX * config.extra.modelRecoilShake * 3f * aimFactor * modelShakeFactor * 2f), new Vector3f(0F, 1F, 0F)); // 左右摇摆
-            mat.rotate(toRadians(currentRecoilY * config.extra.modelRecoilUpwards * aimFactor * modelUpwardsFactor * 2f), new Vector3f(0F, 0F, 1F)); // 上下摇摆
+            mat.rotate(toRadians(currentRecoilX * config.extra.modelRecoilShake * 3f * aimFactor * modelShakeFactor * aimShakeFactor * 2f), new Vector3f(0F, 1F, 0F)); // 左右摇摆
+            mat.rotate(toRadians(currentRecoilY * config.extra.modelRecoilUpwards * aimFactor * modelUpwardsFactor * aimUpwardsFactor * 2f), new Vector3f(0F, 0F, 1F)); // 上下摇摆
         } else {
             float linearRecoil = Interpolation.LINEAR.interpolate(0F, 1F, alpha);
             float sin = MathHelper.sin((float) (2 * Math.PI * linearRecoil));
@@ -1314,6 +1333,19 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                         GlStateManager.rotate((float)Math.toDegrees(aa.angle), -(float)aa.x, -(float)aa.y,
                             -(float)aa.z);
                         GlStateManager.rotate(90, 0, 1, 0);
+                        //flashModelOffset for Post Smoke
+                        ItemStack itemStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
+                        if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                            AttachmentType attachmentType = ((ItemAttachment)itemStack.getItem()).type;
+                            if (config.attachment.containsKey(attachmentType.internalName)) {
+                                if (config.attachment.get(attachmentType.internalName).flashModelOffset != null) {
+                                    GlStateManager.translate(
+                                        config.attachment.get(attachmentType.internalName).flashModelOffset.x,
+                                        config.attachment.get(attachmentType.internalName).flashModelOffset.y,
+                                        config.attachment.get(attachmentType.internalName).flashModelOffset.z);
+                                }
+                            }
+                        }
                         drawPostSmoke();
                     });
                 });

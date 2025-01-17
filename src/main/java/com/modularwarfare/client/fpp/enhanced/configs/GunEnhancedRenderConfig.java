@@ -106,9 +106,12 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public HashSet<String> hidePart=new HashSet<String>();
         public HashSet<String> showPart=new HashSet<String>();
         public boolean renderInsideSightModel=false;
-        public float renderInsideGunOffset=5;
+        public float renderInsideGunOffset=5f;
         public Vector3f attachmentGuiOffset = new Vector3f(0F, 0F, 0F);
         public Vector3f flashModelOffset = new Vector3f(0F, 0F, 0F);
+        public float modelRecoilBackwardsFactor = 1f;
+        public float modelRecoilUpwardsFactor = 1f;
+        public float modelRecoilShakeFactor = 1f;
     }
     
     public static class AttachmentGroup extends Transform {
@@ -213,6 +216,13 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
          * Adds a left-right staticModel shaking motion when firing, default 0.5
          */
         public float modelRecoilShake = 0.5F;
+        /**
+         * 瞄准时抖动影响额外参数
+         */
+        public float modelRecoilBackwardsADSFactor = 1.0f;
+        public float modelRecoilUpwardsADSFactor = 1.0f;
+        public float modelRecoilShakeADSFactor = 1.0f;
+
         public float modelGuiScale=1f;
         public Vector2f modelGuiRotateCenter=new Vector2f(0,0);
         
