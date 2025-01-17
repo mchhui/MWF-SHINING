@@ -344,7 +344,7 @@ public class ClientProxy extends CommonProxy {
                 }
             }
         });
-        preloadFlashTex.forEach((type) -> {
+        preloadTextureTypes.forEach((type) -> {
             type.resourceLocations.forEach((loc)->{
                 Minecraft.getMinecraft().getTextureManager().bindTexture(loc);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);

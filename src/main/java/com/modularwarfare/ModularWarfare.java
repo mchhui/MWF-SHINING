@@ -37,6 +37,7 @@ import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.common.textures.TextureType;
+import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
@@ -82,6 +83,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static com.modularwarfare.common.CommonProxy.zipJar;
+
+import com.modularwarfare.common.grenades.GrenadeType;
 
 @Mod(
     modid = ModularWarfare.MOD_ID,
@@ -638,7 +641,15 @@ public class ModularWarfare {
                     for(SkinType skin: type.modelSkins) {
                         CommonProxy.preloadSkinTypes.put(skin, type);
                     }
-                    CommonProxy.preloadFlashTex.add(type.flashType);
+                    if(type.flashType != null) {
+                        CommonProxy.preloadTextureTypes.add(type.flashType);
+                    }
+                    if(type.handsTextureType != null) {
+                        CommonProxy.preloadTextureTypes.add(type.handsTextureType);
+                    }
+                    if(type.customTrailTexture != null && ModularWarfare.textureTypes.containsKey(type.customTrailTexture)) {
+                        CommonProxy.preloadTextureTypes.add(ModularWarfare.textureTypes.get(type.customTrailTexture));
+                    }
                 }
                 else if (item instanceof ItemBullet) {
                     final ItemBullet itemBullet = (ItemBullet) item;
@@ -646,12 +657,46 @@ public class ModularWarfare {
                     for(SkinType skin: type.modelSkins) {
                         CommonProxy.preloadSkinTypes.put(skin, type);
                     }
+                    if(type.trailTex != null && ModularWarfare.textureTypes.containsKey(type.trailTex)) {
+                        CommonProxy.preloadTextureTypes.add(ModularWarfare.textureTypes.get(type.trailTex));
+                    }
+                    if(type.customExplosionTexture != null && ModularWarfare.textureTypes.containsKey(type.customExplosionTexture)) {
+                        CommonProxy.preloadTextureTypes.add(ModularWarfare.textureTypes.get(type.customExplosionTexture));
+                    }
+                }
+                else if (item instanceof ItemAttachment) {
+                    final ItemAttachment itemAttachment = (ItemAttachment) item;
+                    final AttachmentType type = itemAttachment.type;
+                    for(SkinType skin: type.modelSkins) {
+                        CommonProxy.preloadSkinTypes.put(skin, type);
+                    }
+                    if(type.attachmentType == AttachmentPresetEnum.Sight) {
+                        com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig renderConfig = ModularWarfare.getRenderConfig(type, com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig.class);
+                        if(renderConfig != null && renderConfig.sight != null) {
+                            if(type.sight != null && type.sight.overlayType != null) {
+                                CommonProxy.preloadTextureTypes.add(type.sight.overlayType);
+                            }
+                            if(renderConfig.sight.maskTexture != null) {
+                                ResourceLocation maskResource = new ResourceLocation(ModularWarfare.MOD_ID, "skins/mask/" + renderConfig.sight.maskTexture);
+                                CommonProxy.preloadMaskResource.add(maskResource);
+                            }
+                        }
+                    }
                 }
                 else if (item instanceof ItemMWArmor) {
                     final ItemMWArmor itemArmor = (ItemMWArmor) item;
                     final ArmorType type = itemArmor.type;
                     for(SkinType skin: type.modelSkins) {
                         CommonProxy.preloadSkinTypes.put(skin, type);
+                    }
+                }
+                else if (item instanceof ItemGrenade) {
+                    final ItemGrenade itemGrenade = (ItemGrenade) item;
+                    final GrenadeType type = itemGrenade.type;
+                    if(type.modelSkins != null && type.modelSkins.length > 0) {
+                        for(SkinType skin: type.modelSkins) {
+                            CommonProxy.preloadSkinTypes.put(skin, type);
+                        }
                     }
                 }
             });

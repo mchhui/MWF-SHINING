@@ -12,6 +12,7 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.event.FMLConstructionEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
@@ -30,7 +31,8 @@ public class CommonProxy {
     public static final Pattern zipJar = Pattern.compile("(.+).(zip|jar)$");
 
     public static HashMap<SkinType,BaseType> preloadSkinTypes = new HashMap<>();
-    public static HashSet<TextureType> preloadFlashTex = new HashSet<>();
+    public static HashSet<TextureType> preloadTextureTypes = new HashSet<>();
+    public static HashSet<ResourceLocation> preloadMaskResource = new HashSet<>();
 
     public void construction(FMLConstructionEvent event) {
         //Production-environment
