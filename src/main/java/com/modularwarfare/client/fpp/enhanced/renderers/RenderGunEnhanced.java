@@ -152,13 +152,14 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     
 
     // 后坐力参数
-    private static final float RECOIL_COMPLETE_TIME = 0.05f;
-    private static final float RECOIL_RECOVER_TIME = 0.15f;
+    private static final float RECOIL_COMPLETE_TIME = 0.02f;
+    private static final float RECOIL_RECOVER_TIME = 0.08f; 
     private static final float RECOIL_FAST_RECOVER_THRESHOLD = 3.0f;
     private static final float RECOIL_FAST_RECOVER_FACTOR = 2.5f;
-    private static final float RECOIL_BOUNCE_FACTOR = 0.3f;
+    private static final float RECOIL_BOUNCE_FACTOR = 0.4f;
     private static final float ADS_RECOIL_FACTOR = 0.2f;
-    private static final float MAX_TIME_DELTA = 0.1f; // 最大时间差限制(100ms)
+    private static final float MAX_TIME_DELTA = 0.1f;
+    private static final float BOUNCE_FREQUENCY = 0.08f;
     
     private static float currentRecoilX = 0f;
     private static float currentRecoilY = 0f;
@@ -504,7 +505,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float alpha = anim.lastGunRecoil + (anim.gunRecoil - anim.lastGunRecoil) * partialTicks;
 
         if(gunType.useNewRecoilSystem) {
-            // 新版后坐力系统
+
             long currentTime = System.currentTimeMillis();
             float timeDelta = Math.min((currentTime - lastRecoilTime) / 1000f, MAX_TIME_DELTA);
             lastRecoilTime = currentTime;
@@ -517,19 +518,19 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 targetRecoilY = RenderParameters.playerRecoilPitch * 0.8f;
                 targetRecoilZ = RenderParameters.playerRecoilPitch * 0.6f;
                 
-                // 添加弹跳效果
+
                 bounceRecoilX = targetRecoilX * RECOIL_BOUNCE_FACTOR * 1.5f;
                 bounceRecoilY = targetRecoilY * RECOIL_BOUNCE_FACTOR;
                 bounceRecoilZ = targetRecoilZ * RECOIL_BOUNCE_FACTOR;
                 
-                // 记录上一帧的值
+
                 lastRecoilX = currentRecoilX;
                 lastRecoilY = currentRecoilY;
                 lastRecoilZ = currentRecoilZ;
             } else {
                 isRecovering = true;
                 float recoverTime = RECOIL_RECOVER_TIME;
-                // 如果超过阈值，加快恢复
+
                 if(Math.abs(currentRecoilX) > RECOIL_FAST_RECOVER_THRESHOLD || 
                    Math.abs(currentRecoilY) > RECOIL_FAST_RECOVER_THRESHOLD ||
                    Math.abs(currentRecoilZ) > RECOIL_FAST_RECOVER_THRESHOLD) {
@@ -541,27 +542,27 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 targetRecoilY *= (1f - recovery);
                 targetRecoilZ *= (1f - recovery);
                 
-                // 弹跳效果衰减
+
                 bounceRecoilX *= (1f - recovery * 2f);
                 bounceRecoilY *= (1f - recovery * 2f);
                 bounceRecoilZ *= (1f - recovery * 2f);
 
-                // 记录上一帧的值
+
                 lastRecoilX = currentRecoilX;
                 lastRecoilY = currentRecoilY;
                 lastRecoilZ = currentRecoilZ;
             }
             
             // 使用partialTicks进行平滑插值
-            float bounceSin = (float)Math.sin(currentTime * 0.02f);
+            float bounceSin = (float)Math.sin(currentTime * BOUNCE_FREQUENCY);
             float targetX = targetRecoilX + bounceRecoilX * bounceSin;
             float targetY = targetRecoilY + bounceRecoilY * bounceSin;
             float targetZ = targetRecoilZ + bounceRecoilZ * bounceSin;
 
             // 使用线性插值计算当前值，添加帧率补偿
-            float smoothing = isRecovering ? 0.2f : 0.4f;
-            float frameComp = Math.min(144f / Math.max(Minecraft.getDebugFPS(), 30f), 4f); // 限制帧率补偿的最大值
-            float lerpFactor = smoothing * frameComp * Math.min(timeDelta * 60f, 2f) * partialTicks; // 限制插值系数
+            float smoothing = isRecovering ? 0.3f : 0.6f;
+            float frameComp = Math.min(144f / Math.max(Minecraft.getDebugFPS(), 30f), 4f);
+            float lerpFactor = smoothing * frameComp * Math.min(timeDelta * 80f, 2f) * partialTicks;
 
             currentRecoilX = lastRecoilX + (targetX - lastRecoilX) * lerpFactor;
             currentRecoilY = lastRecoilY + (targetY - lastRecoilY) * lerpFactor;
@@ -586,7 +587,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         float modelShakeFactor = 1.0f;
         
         if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-            //检查枪托
+
             ItemStack itemStock = GunType.getAttachment(player.getHeldItemMainhand(), AttachmentPresetEnum.Stock);
             if (itemStock != null && itemStock.getItem() != Items.AIR) {
                 ItemAttachment itemAttachment = (ItemAttachment) itemStock.getItem();
@@ -596,8 +597,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     modelShakeFactor *= ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilShakeFactor;
                 }
             }
-            
-            //检查其他配件
+
             for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
                 ItemStack itemStack = GunType.getAttachment(player.getHeldItemMainhand(), attachment);
                 if (itemStack != null && itemStack.getItem() != Items.AIR && itemStack.getItem() instanceof ItemAttachment) {
@@ -617,9 +617,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             (float)(1.0 - controller.ADS * (1.0 - ADS_RECOIL_FACTOR)) : // 新系统
             (float)(1.0 - controller.ADS); // 旧系统
         
-        float aimBackwardsFactor = controller.ADS > 0 ? (float) controller.ADS * config.extra.modelRecoilBackwardsADSFactor : 1.0f;
-        float aimUpwardsFactor = controller.ADS > 0 ? (float) controller.ADS * config.extra.modelRecoilUpwardsADSFactor : 1.0f;
-        float aimShakeFactor = controller.ADS > 0 ? (float) controller.ADS * config.extra.modelRecoilShakeADSFactor : 1.0f;
+        float aimBackwardsFactor = linearInterpolation(1.0f, config.extra.modelRecoilBackwardsADSFactor, (float)controller.ADS);
+        float aimUpwardsFactor = linearInterpolation(1.0f, config.extra.modelRecoilUpwardsADSFactor, (float)controller.ADS);
+        float aimShakeFactor = linearInterpolation(1.0f, config.extra.modelRecoilShakeADSFactor, (float)controller.ADS);
         
         if(gunType.useNewRecoilSystem) {
             //前后
