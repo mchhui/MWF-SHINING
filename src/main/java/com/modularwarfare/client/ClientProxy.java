@@ -309,15 +309,12 @@ public class ClientProxy extends CommonProxy {
         }
 
         ((IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(new ISelectiveResourceReloadListener() {
-
             @Override
             public void onResourceManagerReload(IResourceManager resourceManager,
                                                 Predicate<IResourceType> resourcePredicate) {
                 loadTextures();
             }
-
         });
-        loadTextures();
         
         ModularWarfare.preloadTasklist.forEach((task)->{
             task.run();
@@ -330,10 +327,11 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void loadTextures() {
-        ModularWarfare.LOGGER.info("Preloading textures");
-        long time = System.currentTimeMillis();
+        long totalTime = System.currentTimeMillis();
+        int skinCount = 0;
+        long skinTime = System.currentTimeMillis();
+        
         preloadSkinTypes.forEach((skin, type) -> {
-
             for (int i = 0; i < skin.textures.length; i++) {
                 ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
                         String.format(skin.textures[i].format, type.getAssetDir(), skin.getSkin()));
@@ -344,6 +342,10 @@ public class ClientProxy extends CommonProxy {
                 }
             }
         });
+        ModularWarfare.LOGGER.info(String.format("Preloaded %d skin textures (%dms)", preloadSkinTypes.size(), System.currentTimeMillis() - skinTime));
+
+        long textureTime = System.currentTimeMillis();
+        int textureCount = 0;
         preloadTextureTypes.forEach((type) -> {
             type.resourceLocations.forEach((loc)->{
                 Minecraft.getMinecraft().getTextureManager().bindTexture(loc);
@@ -351,7 +353,16 @@ public class ClientProxy extends CommonProxy {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
             });
         });
-        ModularWarfare.LOGGER.info("All textures are ready(" + (System.currentTimeMillis() - time) + "ms)");
+        ModularWarfare.LOGGER.info(String.format("Preloaded %d effect textures (%dms)", preloadTextureTypes.size(), System.currentTimeMillis() - textureTime));
+
+        long maskTime = System.currentTimeMillis();
+        preloadMaskResource.forEach((ResourceLocation) -> {
+            Minecraft.getMinecraft().getTextureManager().bindTexture(ResourceLocation);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        });
+        ModularWarfare.LOGGER.info(String.format("Preloaded %d mask textures (%dms)", preloadMaskResource.size(), System.currentTimeMillis() - maskTime));
+        ModularWarfare.LOGGER.info(String.format("All textures are ready (total: %dms)", System.currentTimeMillis() - totalTime));
     }
 
     @SubscribeEvent
