@@ -9,7 +9,6 @@ import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
@@ -239,19 +238,19 @@ public final class KeyInputHandler {
                         if(ClientProxy.shoulderSurfingLoaded) {
                             if(Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
                                 Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+                                ShoulderInstance.getInstance().setShoulderSurfing(false);
                             } else {
                                 Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
                                 ShoulderInstance.getInstance().setShoulderSurfing(true);
                             }
-                            Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
                         } else {
                             if(Minecraft.getMinecraft().gameSettings.thirdPersonView == 1) {
                                 Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
                             } else {
                                 Minecraft.getMinecraft().gameSettings.thirdPersonView = 1;
                             }
-                            Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
                         }
+                        Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
                     }
                     break;
 
