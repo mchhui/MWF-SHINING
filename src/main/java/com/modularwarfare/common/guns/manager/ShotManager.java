@@ -27,7 +27,6 @@ import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.network.*;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
-import com.modularwarfare.utility.CommonUtil;
 import com.teamderpy.shouldersurfing.client.ShoulderHelper;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
 import mchhui.modularmovements.tactical.client.ClientLitener;
@@ -469,7 +468,7 @@ public class ShotManager {
                         }
 
                         if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                            CommonUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                            RayUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
                         } else {
                             targetEntity.attackEntityFrom(DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
                         }
@@ -551,7 +550,7 @@ public class ShotManager {
 
 
             if(rayTraceList.isEmpty()) {
-                Vec3d forward = RayUtil.getGunAccuracy(pitch, yaw, 0, player.world.rand);
+                Vec3d forward = RayUtil.getGunAccuracy(pitch, yaw, 0, player.world.rand, player);
                 Vec3d endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
                 addRayRender(lines, origin, endVec, (float)itemGun.type.weaponMaxRange);
             }
@@ -676,7 +675,7 @@ public class ShotManager {
             
             // 如果没有命中点，使用最大射程
             if(endVec == null) {
-                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, 0, entityPlayer.world.rand);
+                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, 0, entityPlayer.world.rand, entityPlayer);
                 endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
             }
             
