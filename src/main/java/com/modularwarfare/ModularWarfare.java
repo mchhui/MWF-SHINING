@@ -679,7 +679,7 @@ public class ModularWarfare {
                                     CommonProxy.preloadTextureTypes.add(type.sight.overlayType);
                                 }
                                 if(renderConfig.sight.maskTexture != null) {
-                                    ResourceLocation maskResource = new ResourceLocation(ModularWarfare.MOD_ID, "skins/mask/" + renderConfig.sight.maskTexture);
+                                    ResourceLocation maskResource = new ResourceLocation(ModularWarfare.MOD_ID, "skins/mask/" + renderConfig.sight.maskTexture + ".png");
                                     CommonProxy.preloadMaskResource.add(maskResource);
                                 }
                             }

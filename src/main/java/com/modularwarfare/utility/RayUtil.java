@@ -43,23 +43,21 @@ public class RayUtil {
     private static long accuracyChangeTime = 0;
     private static final long ACCURACY_TRANSITION_TIME = 100; // 100ms的过渡时间
     
-    public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
-
-        long seed = (long)(pitch * 10000) + (long)(yaw * 10000) + (long)(accuracy * 10000);
-        rand.setSeed(seed);
-        
-
+    public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand, EntityLivingBase entity) {
         Vec3d defaultVec = getDefaultAccuracy(pitch, yaw, accuracy, rand);
         
         // 检查是否为客户端环境且启用了增强瞄准
-        if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().world != null && Minecraft.getMinecraft().world.isRemote) {
-            EntityPlayer player = Minecraft.getMinecraft().player;
-            if(player == null) return defaultVec;
+        if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().world != null && Minecraft.getMinecraft().world.isRemote && entity instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) entity;
                     
             ItemStack heldItem = player.getHeldItemMainhand();
             if(!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
                 ItemGun itemGun = (ItemGun)heldItem.getItem();
                 if(itemGun.type != null && itemGun.type.useEnhancedAiming) {
+                    // 只在增强瞄准时使用相同种子
+                    long seed = (long)(pitch * 10000) + (long)(yaw * 10000) + (long)(accuracy * 10000);
+                    rand.setSeed(seed);
+                    
                     long currentTime = System.currentTimeMillis();
                             
                     if(Math.abs(lastAccuracy - accuracy) > 0.0001f || currentTime - accuracyChangeTime > 200) {
@@ -304,6 +302,21 @@ public class RayUtil {
     }
 
     /**
+     * Attacks the given entity with the given damage source and amount, but
+     * preserving the entity's original velocity instead of applying knockback
+     */
+    public static boolean attackEntityWithoutKnockback(Entity entity, DamageSource source, float amount) {
+        double vx = entity.motionX;
+        double vy = entity.motionY;
+        double vz = entity.motionZ;
+        boolean succeeded = entity.attackEntityFrom(source, amount);
+        entity.motionX = vx;
+        entity.motionY = vy;
+        entity.motionZ = vz;
+        return succeeded;
+    }
+
+    /**
      * Helper method which does a rayTrace for entities from an entity's eye level in the direction they are looking
      * with a specified range, using the tracePath method. Tidies up the code a bit. Border size defaults to 1.
      *
@@ -339,7 +352,7 @@ public class RayUtil {
                 maxPenetrateBlockResistance *= usedBullet.type.bulletBlockPenetrateFactor;
                 penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
             }
-            Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand);
+            Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, player);
 
             if(side.isServer()) {
                 // Server side code...

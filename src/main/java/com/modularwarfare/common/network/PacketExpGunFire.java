@@ -13,7 +13,6 @@ import com.modularwarfare.common.playerstate.PlayerState;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
-import com.modularwarfare.utility.CommonUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -283,7 +282,7 @@ public class PacketExpGunFire extends PacketBase {
                         damageSource.setMagicDamage();
                     }
                     if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                        flag = CommonUtil.attackEntityWithoutKnockback(target, damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
+                        flag = RayUtil.attackEntityWithoutKnockback(target, damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
                     } else {
                         flag = target.attackEntityFrom(damageSource, (hitboxType.contains("head") ? damage + itemGun.type.gunDamageHeadshotBonus : damage));
                     }
