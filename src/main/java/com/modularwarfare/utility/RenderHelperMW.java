@@ -4,7 +4,6 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.loader.ObjModel;
 import com.modularwarfare.loader.api.ObjModelLoader;
 
-import mchhui.he.resource.modelloader.Model;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.*;
