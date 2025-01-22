@@ -239,7 +239,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     private ModelEnhancedGun getOrCreateModel(GunType gunType, boolean isFirstPerson, UUID playerId) {
         if(isFirstPerson) {
             if(firstPersonModel == null || firstPersonModel.baseType != gunType) {
-                firstPersonModel = new ModelEnhancedGun((GunEnhancedRenderConfig)gunType.enhancedModel.config, gunType);
+                try {
+                    firstPersonModel = new ModelEnhancedGun((GunEnhancedRenderConfig) gunType.enhancedModel.config, gunType);
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                }
             }
             return firstPersonModel;
         } else {
