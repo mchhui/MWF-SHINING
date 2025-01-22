@@ -14,7 +14,6 @@ mwf.dictionary.barrel=Brarrel
 mwf.dictionary.stock=Stock
 mwf:dictionary.laser=Laser
 
-
 mwf:gui.tooltip.basicinfo=§9§l[Basic Info]
 mwf:gui.tooltip.attachmentinfo=§9§l[Loaded Attachments]
 mwf:gui.tooltip.helpinfo.attachment=§9§l[Accepted Attachments]
@@ -34,10 +33,19 @@ mwf:gui.tooltip.ammo.num.10= 10
 mwf:gui.tooltip.bullet=Bullet
 mwf:gui.tooltip.damage=Damage
 mwf:gui.tooltip.accuracy=Accuracy
+mwf:gui.tooltip.modifiers=§9§l[Modifiers]
+mwf:gui.tooltip.effects=§3§lEffects
+mwf:gui.tooltip.effects.level=Level
+mwf:gui.tooltip.bullet.property=Special Properties
+mwf:gui.tooltip.bullet.property.target=Target
+mwf:gui.tooltip.bullet.property.all=All
+mwf:gui.tooltip.bullet.property.fire=Fire Level
+mwf:gui.tooltip.bullet.property.explosion=Explosion Level
+mwf:gui.tooltip.bullet.property.explosion.broken=Break Blocks
+mwf:gui.tooltip.bullet.property.knock=Knockback Level
+mwf:gui.tooltip.bullet.property.banshield=Break Shield
 mwf:gui.tooltip.seemore=Press [L-SHIFT] to learn more
 mwf:gui.tooltip.help=Press [L-CTRL] to get help
 mwf:gui.tooltip.reload=Press [R] Reload
-mwf:gui.tooltip.modifiers=Modifiers
-mwf:gui.tooltip.effects=Effects
 
 mwf:gui.modify.none=None
