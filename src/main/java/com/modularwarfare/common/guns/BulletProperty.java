@@ -5,7 +5,8 @@ public class BulletProperty {
     /**
      * Damage inflicted per bullet. Multiplied by the gun damage value.
      */
-
+    
+    public float bulletDamageFactor = 1.0f;
     public PotionEntry[] potionEffects;
     public int fireLevel=0;
     public float explosionLevel=0;

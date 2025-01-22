@@ -10,6 +10,7 @@ import com.modularwarfare.common.guns.AmmoType;
 import com.modularwarfare.common.guns.AttachmentPresetEnum;
 import com.modularwarfare.common.guns.AttachmentType;
 import com.modularwarfare.common.guns.BulletType;
+import com.modularwarfare.common.guns.BulletProperty;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemAttachment;
@@ -253,6 +254,13 @@ public class ScriptAPI {
                 return ((ItemBullet)itemStack.getItem()).type.bulletAccuracyFactor;
             }
             return 1;
+        }
+
+        public HashMap<String, BulletProperty> getBulletProperties(ItemStack itemStack) {
+            if(itemStack.getItem() instanceof ItemBullet) {
+                return ((ItemBullet)itemStack.getItem()).type.bulletProperties;
+            }
+            return null;
         }
     }
 

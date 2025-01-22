@@ -15,6 +15,7 @@ import com.modularwarfare.utility.ModularDamageSource;
 import com.modularwarfare.utility.RayUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -218,7 +219,7 @@ public class PacketExpGunFire extends PacketBase {
 
                     if (target instanceof EntityLivingBase && bulletItem.type.bulletProperties != null && !bulletItem.type.bulletProperties.isEmpty()) {
                         EntityLivingBase targetELB = (EntityLivingBase) target;
-                        BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? bulletItem.type.bulletProperties.get(targetELB.getName()) : bulletItem.type.bulletProperties.get("All");
+                        BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? bulletItem.type.bulletProperties.get(targetELB.getName()) : bulletItem.type.bulletProperties.get(I18n.format("mwf:gui.tooltip.bullet.property.all"));
                         if (bulletProperty.potionEffects != null) {
                             for (PotionEntry potionEntry : bulletProperty.potionEffects) {
                                 targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
