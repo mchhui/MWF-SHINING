@@ -2,7 +2,6 @@ package mchhui.modularmovements.tactical.client;
 
 import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.api.PlayerSnapshotCreateEvent;
-import com.modularwarfare.api.RenderBonesEvent;
 import mchhui.modularmovements.tactical.PlayerState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.Vec3d;
@@ -12,7 +11,7 @@ public class MWFClientListener {
 
     @SubscribeEvent
     public void onGunBobbing(GunBobbingEvent event) {
-        if (ClientLitener.clientPlayerSitMoveAmplifier > 0) {
+        if (ClientListener.clientPlayerSitMoveAmplifier > 0) {
             event.bobbing = 0;
         }
     }
@@ -21,8 +20,8 @@ public class MWFClientListener {
     @SubscribeEvent
     public void onPlayerSnapshotCreate(PlayerSnapshotCreateEvent.Pre event) {
         if (event.player instanceof EntityPlayer && !event.player.isDead) {
-            if (ClientLitener.ohterPlayerStateMap.containsKey(event.player.getEntityId())) {
-                PlayerState state = ClientLitener.ohterPlayerStateMap.get(event.player.getEntityId());
+            if (ClientListener.ohterPlayerStateMap.containsKey(event.player.getEntityId())) {
+                PlayerState state = ClientListener.ohterPlayerStateMap.get(event.player.getEntityId());
                 if (state.probeOffset != 0) {
                     Vec3d vec3d = Vec3d.ZERO.add(state.probeOffset * -0.5, 0, 0)
                             .rotateYaw(-(event.player.rotationYaw * 3.14f / 180));

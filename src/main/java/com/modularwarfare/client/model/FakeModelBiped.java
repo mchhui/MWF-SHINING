@@ -6,7 +6,7 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -34,7 +34,7 @@ public class FakeModelBiped extends ModelBiped {
         // TODO Auto-generated method stub
         super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
         if(ModularWarfare.isLoadedModularMovements) {
-            ClientLitener.setRotationAngles(this, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch,
+            ClientListener.setRotationAngles(this, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch,
                 scaleFactor, entityIn);  
         }
         if (this.rightArmPose == ModelBiped.ArmPose.BOW_AND_ARROW)

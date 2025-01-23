@@ -4,7 +4,7 @@ import io.netty.buffer.Unpooled;
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.network.EnumFeatures;
 import mchhui.modularmovements.tactical.PlayerState;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -29,15 +29,15 @@ public class TacticalHandler {
                 if (id == Minecraft.getMinecraft().player.getEntityId()) {
                     break;
                 }
-                if (!ClientLitener.ohterPlayerStateMap.containsKey(id)) {
-                    ClientLitener.ohterPlayerStateMap.put(id, new PlayerState());
+                if (!ClientListener.ohterPlayerStateMap.containsKey(id)) {
+                    ClientListener.ohterPlayerStateMap.put(id, new PlayerState());
                 }
-                state = ClientLitener.ohterPlayerStateMap.get(id);
+                state = ClientListener.ohterPlayerStateMap.get(id);
                 state.readCode(code);
                 break;
             case SET_STATE:
                 int client_code = buffer.readInt();
-                ClientLitener.clientPlayerState.readCode(client_code);
+                ClientListener.clientPlayerState.readCode(client_code);
                 break;
 
             case MOD_CONFIG:

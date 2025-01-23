@@ -1,13 +1,11 @@
 package mchhui.modularmovements.coremod;
 
 import mchhui.modularmovements.tactical.server.ServerListener;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3d;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.relauncher.Side;
 
 public class ModularMovementsHooks {
 
@@ -24,7 +22,7 @@ public class ModularMovementsHooks {
         }
         
         if(player.world.isRemote) {
-            vec3d = ClientLitener.onGetPositionEyes(player, partialTicks, vec3d);
+            vec3d = ClientListener.onGetPositionEyes(player, partialTicks, vec3d);
         }else {
             vec3d = ServerListener.onGetPositionEyes(player, partialTicks, vec3d);
         }

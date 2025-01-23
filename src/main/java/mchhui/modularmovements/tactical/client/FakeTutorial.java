@@ -17,7 +17,7 @@ public class FakeTutorial extends Tutorial{
     @Override
     public void handleMouse(MouseHelper mouseHelper) {
         super.handleMouse(mouseHelper);
-        ClientLitener.onMouseMove(mouseHelper);
+        ClientListener.onMouseMove(mouseHelper);
     }
 
 }

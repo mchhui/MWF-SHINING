@@ -3,9 +3,6 @@ package com.modularwarfare.raycast.obb;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.lwjgl.opengl.GL11;
 
@@ -18,17 +15,14 @@ import com.modularwarfare.raycast.obb.ModelPlayer.ArmPose;
 import com.modularwarfare.raycast.obb.bbloader.BlockBenchOBBInfoLoader;
 
 import mchhui.modularmovements.tactical.PlayerState;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHandSide;
@@ -346,31 +340,31 @@ public class OBBPlayerManager {
                 boolean flag = false;
                 if (ModularWarfare.isLoadedModularMovements) {
                     if (entityPlayer == (Minecraft.getMinecraft()).player && entityPlayer.isEntityAlive()) {
-                        if (ClientLitener.clientPlayerState.isSitting) {
+                        if (ClientListener.clientPlayerState.isSitting) {
                             syncOBBObejct.scene.translate(0.0D, -0.5D, 0.0D);
                         }
-                        if (ClientLitener.clientPlayerState.isCrawling) {
+                        if (ClientListener.clientPlayerState.isCrawling) {
                             syncOBBObejct.scene.rotateDegree(entityPlayer.renderYawOffset, 0.0F, -1.0F, 0.0F);
                             syncOBBObejct.scene.rotateDegree(-90.0F, -1.0F, 0.0F, 0.0F);
                             syncOBBObejct.scene.translate(0.0D, -1.3D, -0.1D);
-                            syncOBBObejct.scene.translate(-ClientLitener.cameraProbeOffset * 0.4D, 0.0D, 0.0D);
+                            syncOBBObejct.scene.translate(-ClientListener.cameraProbeOffset * 0.4D, 0.0D, 0.0D);
                             flag = true;
                         } else {
-                            if (ClientLitener.cameraProbeOffset != 0.0F) {
+                            if (ClientListener.cameraProbeOffset != 0.0F) {
                                 syncOBBObejct.scene.rotateDegree(180 - entityPlayer.rotationYaw, 0.0F, 1.0F, 0.0F);
-                                syncOBBObejct.scene.translate(ClientLitener.cameraProbeOffset * 0.1D, 0.0D, 0.0D);
+                                syncOBBObejct.scene.translate(ClientListener.cameraProbeOffset * 0.1D, 0.0D, 0.0D);
                                 syncOBBObejct.scene.rotateDegree(180 - entityPlayer.rotationYaw, 0.0F, -1.0F, 0.0F);
                                 syncOBBObejct.scene.rotateDegree(entityPlayer.renderYawOffset, 0.0F, -1.0F, 0.0F);
-                                syncOBBObejct.scene.rotateDegree(ClientLitener.cameraProbeOffset * -20.0F, 0.0F, 0.0F,
+                                syncOBBObejct.scene.rotateDegree(ClientListener.cameraProbeOffset * -20.0F, 0.0F, 0.0F,
                                         -1.0F);
                                 flag = true;
                             }
                         }
                     }
                     if (entityPlayer != (Minecraft.getMinecraft()).player && entityPlayer instanceof EntityPlayer
-                            && entityPlayer.isEntityAlive() && ClientLitener.ohterPlayerStateMap
+                            && entityPlayer.isEntityAlive() && ClientListener.ohterPlayerStateMap
                                     .containsKey(Integer.valueOf(entityPlayer.getEntityId()))) {
-                        PlayerState state = ClientLitener.ohterPlayerStateMap
+                        PlayerState state = ClientListener.ohterPlayerStateMap
                                 .get(Integer.valueOf(entityPlayer.getEntityId()));
                         if (state.isSitting)
                             syncOBBObejct.scene.translate(0.0D, -0.5D, 0.0D);

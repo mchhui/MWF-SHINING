@@ -55,7 +55,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SideOnly(Side.CLIENT)
-public class ClientLitener {
+public class ClientListener {
     public static KeyBinding sit = new KeyBinding("Sit/Sliding", 46, "ModularMovements");
     public static KeyBinding crawling = new KeyBinding("Crawling", 44, "ModularMovements");
     public static KeyBinding leftProbe = new KeyBinding("Left Probe", 16, "ModularMovements");

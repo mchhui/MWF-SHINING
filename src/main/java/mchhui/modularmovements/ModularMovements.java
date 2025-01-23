@@ -1,7 +1,7 @@
 package mchhui.modularmovements;
 
 import mchhui.modularmovements.network.Handler;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import mchhui.modularmovements.tactical.client.MWFClientListener;
 import mchhui.modularmovements.tactical.server.MWFServerListener;
 import mchhui.modularmovements.tactical.server.ServerListener;
@@ -19,7 +19,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Logger;
 
-import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 
 import java.io.File;
@@ -29,7 +28,7 @@ public class ModularMovements {
     public static boolean enableTactical = true;
 
     @SideOnly(Side.CLIENT)
-    public static ClientLitener TacticalClientListener;
+    public static ClientListener TacticalClientListener;
     public static ServerListener TacticalServerListener = new ServerListener();
     public static FMLEventChannel channel;
     public static boolean mwfEnable=false;
@@ -79,7 +78,7 @@ public class ModularMovements {
         channel.register(new Handler());
         if (enableTactical) {
             if (FMLCommonHandler.instance().getSide().isClient()) {
-                TacticalClientListener = new ClientLitener();
+                TacticalClientListener = new ClientListener();
                 MinecraftForge.EVENT_BUS.register(TacticalClientListener);
                 if(mwfEnable) {
                     MinecraftForge.EVENT_BUS.register(new MWFClientListener());
