@@ -1,10 +1,9 @@
 package mchhui.modularmovements.tactical;
 
 import java.lang.reflect.Field;
-import java.util.concurrent.TimeUnit;
 
 import mchhui.modularmovements.ModularMovements;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.util.EnumHandSide;
@@ -162,7 +161,7 @@ public class PlayerState {
         @Override
         public void enableCrawling() {
             super.enableCrawling();
-            ClientLitener.crawlingMousePosXMove = 0;
+            ClientListener.crawlingMousePosXMove = 0;
         }
 
         public void resetProbe() {

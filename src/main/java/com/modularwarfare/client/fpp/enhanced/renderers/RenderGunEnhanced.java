@@ -2,7 +2,6 @@ package com.modularwarfare.client.fpp.enhanced.renderers;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent;
 import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreFirstLayer;
 import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreSecondLayer;
 import com.modularwarfare.api.RenderHandSleeveEnhancedEvent;
@@ -33,19 +32,8 @@ import com.modularwarfare.client.laser.LaserRenderManager;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.client.shader.Programs;
 import com.modularwarfare.common.armor.ItemMWArmor;
-import com.modularwarfare.common.guns.AmmoType;
-import com.modularwarfare.common.guns.AttachmentPresetEnum;
-import com.modularwarfare.common.guns.AttachmentType;
-import com.modularwarfare.common.guns.BulletType;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemAmmo;
-import com.modularwarfare.common.guns.ItemAttachment;
-import com.modularwarfare.common.guns.ItemBullet;
-import com.modularwarfare.common.guns.ItemGun;
-import com.modularwarfare.common.guns.WeaponFireMode;
-import com.modularwarfare.common.guns.WeaponScopeModeType;
+import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.data.VarBoolean;
-import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.loader.MWModelBase;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
@@ -53,58 +41,44 @@ import com.modularwarfare.utility.OptifineHelper;
 import com.modularwarfare.utility.ReloadHelper;
 import com.modularwarfare.utility.maths.Interpolation;
 
-import de.javagl.jgltf.model.NodeModel;
 import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.init.Items;
-import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.v1_12_R1.EntityIllagerWizard.c;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Timer;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.optifine.shaders.Shaders;
 
 import org.joml.AxisAngle4d;
-import org.joml.AxisAngle4f;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
-import org.joml.Quaterniond;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Quaternion;
 
@@ -116,7 +90,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
@@ -237,8 +210,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     private ModelEnhancedGun firstPersonModel;
     
     private ModelEnhancedGun getOrCreateModel(GunType gunType, boolean isFirstPerson, UUID playerId) {
-        if(isFirstPerson) {
-            if(firstPersonModel == null || firstPersonModel.baseType != gunType) {
+        // Added a check for the animation type
+        if (isFirstPerson && gunType.animationType != WeaponAnimationType.BASIC) {
+            if (firstPersonModel == null || firstPersonModel.baseType != gunType) {
                 try {
                     firstPersonModel = new ModelEnhancedGun((GunEnhancedRenderConfig) gunType.enhancedModel.config, gunType);
                 } catch (NullPointerException e) {
@@ -248,9 +222,11 @@ public class RenderGunEnhanced extends CustomItemRenderer {
             return firstPersonModel;
         } else {
             String key = playerId != null ? playerId.toString() : "default";
-            if(!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
-                ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig)gunType.enhancedModel.config, gunType);
-                thirdPersonModels.put(key, newModel);
+            if (gunType.animationType != WeaponAnimationType.BASIC) {
+                if (!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
+                    ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig) gunType.enhancedModel.config, gunType);
+                    thirdPersonModels.put(key, newModel);
+                }
             }
             return thirdPersonModels.get(key);
         }
@@ -442,7 +418,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
          * ACTION PROBE
          */
         if(ModularWarfare.isLoadedModularMovements) {
-            rotateX+=15F * ClientLitener.cameraProbeOffset;
+            rotateX+=15F * ClientListener.cameraProbeOffset;
         }
         mat.rotate(toRadians(rotateX),  new Vector3f(1f, 0f, 0f));
 

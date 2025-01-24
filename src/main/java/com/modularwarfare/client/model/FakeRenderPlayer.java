@@ -7,8 +7,7 @@ import com.modularwarfare.client.model.layers.RenderLayerBackpack;
 import com.modularwarfare.client.model.layers.RenderLayerBody;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGun;import com.modularwarfare.client.model.layers.ResetHiddenModelLayer;
 
-import mchhui.modularmovements.ModularMovements;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.MWFRenderHelper;
 import net.minecraft.client.renderer.entity.RenderManager;
@@ -47,7 +46,7 @@ public class FakeRenderPlayer extends RenderPlayer {
     protected void applyRotations(AbstractClientPlayer entityLiving, float p_77043_2_, float rotationYaw,
             float partialTicks) {
         if(ModularWarfare.isLoadedModularMovements) {
-            if (ClientLitener.applyRotations(this, entityLiving, p_77043_2_, rotationYaw, partialTicks)) {
+            if (ClientListener.applyRotations(this, entityLiving, p_77043_2_, rotationYaw, partialTicks)) {
                 return;
             }  
         }

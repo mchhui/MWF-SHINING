@@ -1,23 +1,18 @@
 package com.modularwarfare.client.model;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
-import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemAttachment;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
-import net.minecraft.client.model.ModelBiped.ArmPose;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -35,7 +30,7 @@ public class FakePlayerModel extends ModelPlayer {
         // TODO Auto-generated method stub
         super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
         if(ModularWarfare.isLoadedModularMovements) {
-            ClientLitener.setRotationAngles(this, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch,
+            ClientListener.setRotationAngles(this, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch,
                 scaleFactor, entityIn);  
         }
         if (this.rightArmPose == ModelBiped.ArmPose.BOW_AND_ARROW)

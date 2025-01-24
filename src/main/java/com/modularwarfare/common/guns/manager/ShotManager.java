@@ -29,7 +29,7 @@ import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
 import com.teamderpy.shouldersurfing.client.ShoulderHelper;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.Entity;
@@ -43,7 +43,6 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.EntitySelectors;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
@@ -222,7 +221,7 @@ public class ShotManager {
 
         boolean isCrawling = false;
         if(ModularWarfare.isLoadedModularMovements){
-            if(ClientLitener.clientPlayerState.isCrawling){
+            if(ClientListener.clientPlayerState.isCrawling){
                 isCrawling = true;
             }
         }
@@ -253,7 +252,7 @@ public class ShotManager {
             offsetYaw *= RenderParameters.phase ? 1 : -1;
         }
         if(ModularWarfare.isLoadedModularMovements) {
-            if(ClientLitener.clientPlayerState.isCrawling) {
+            if(ClientListener.clientPlayerState.isCrawling) {
                 offsetPitch*=gunType.recoilCrawlPitchFactor;
                 offsetYaw*=gunType.recoilCrawlYawFactor;
             }

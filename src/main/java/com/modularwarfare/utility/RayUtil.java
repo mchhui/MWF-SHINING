@@ -5,11 +5,10 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
-import com.modularwarfare.common.network.PacketGunTrailAskServer;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import mchhui.modularmovements.tactical.server.ServerListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -157,9 +156,9 @@ public class RayUtil {
                 }
             }
         	if (ModularWarfare.isLoadedModularMovements) {
-                if (ClientLitener.clientPlayerState.isCrawling) {
+                if (ClientListener.clientPlayerState.isCrawling) {
                     acc *= gun.accuracyCrawlFactor;
-                } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
+                } else if (player.isSneaking() || ClientListener.clientPlayerState.isSitting) {
                     acc *= gun.accuracySneakFactor;
                 }
             } else {

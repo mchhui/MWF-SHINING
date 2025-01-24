@@ -5,17 +5,15 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.RenderAmmoCountEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
-import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.ReloadHelper;
 import com.modularwarfare.utility.RenderHelperMW;
-import mchhui.modularmovements.tactical.client.ClientLitener;
+import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
@@ -31,10 +29,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import net.minecraft.client.gui.ScaledResolution;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
@@ -196,7 +192,7 @@ public class GunUI {
 
                                 GlStateManager.translate(xPos, yPos, 0f);
                                 if(ModularWarfare.isLoadedModularMovements) {
-                                    GL11.glRotatef(15F * ClientLitener.cameraProbeOffset, 0, 0, 1);
+                                    GL11.glRotatef(15F * ClientListener.cameraProbeOffset, 0, 0, 1);
                                 }
                                 GlStateManager.enableBlend();
                                 GlStateManager.color(1f, 1f, 1f, 1f);
