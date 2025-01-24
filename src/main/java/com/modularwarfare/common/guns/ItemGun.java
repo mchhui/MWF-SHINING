@@ -188,11 +188,17 @@ public class ItemGun extends BaseItem {
                 }
 
                 if (heldStack.getTagCompound() == null) {
-                    NBTTagCompound nbtTagCompound = new NBTTagCompound();
+                    heldStack.setTagCompound(new NBTTagCompound());
+                }
+
+                if (!heldStack.getTagCompound().hasKey("init")) {
+                    NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
                     nbtTagCompound.setString("firemode", gunType.fireModes[0].name().toLowerCase());
                     nbtTagCompound.setInteger("skinId", 0);
                     nbtTagCompound.setBoolean("punched", gunType.isEnergyGun);
-                    heldStack.setTagCompound(nbtTagCompound);
+
+                    nbtTagCompound.setInteger("init", 1);
+
                     if (gunType.defaultAttachments != null) {
                         for (Map.Entry<AttachmentPresetEnum, String> e : gunType.defaultAttachments.entrySet()) {
                             GunType.addAttachment(heldStack, e.getKey(),
