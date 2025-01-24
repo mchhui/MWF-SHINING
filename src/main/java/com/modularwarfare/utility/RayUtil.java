@@ -234,9 +234,9 @@ public class RayUtil {
 //                
 //            }
 //        	if (ModularWarfare.isLoadedModularMovements) {
-//                if (ClientLitener.clientPlayerState.isCrawling) {
+//                if (ClientListener.clientPlayerState.isCrawling) {
 //                    acc *= gun.accuracyCrawlFactor;
-//                } else if (player.isSneaking() || ClientLitener.clientPlayerState.isSitting) {
+//                } else if (player.isSneaking() || ClientListener.clientPlayerState.isSitting) {
 //                    acc *= gun.accuracySneakFactor;
 //                }
 //            } else {
