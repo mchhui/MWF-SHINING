@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.lwjgl.input.Keyboard;
 
-import com.github.ginirohikocha.mwinventorytweak.api.MwInventoryTweakAPI;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.container.ContainerInventoryModified;
@@ -123,19 +122,5 @@ public class GuiInventoryModified extends InventoryEffectRenderer {
     public void drawSlotBackground(final int x, final int y) {
         this.mc.getTextureManager().bindTexture(GuiInventoryModified.ICONS);
         this.drawTexturedModalRect(x, y, 0, 0, 18, 18);
-    }
-    
-    @Override
-    public void handleKeyboardInput() throws IOException {
-        if (Loader.isModLoaded("mwinventorytweak")) {
-            final int manageKeyInput = Keyboard.getEventKey();
-            if (MwInventoryTweakAPI.getInvTweak().getKeyCode() == manageKeyInput) {
-                MwInventoryTweakAPI.tweakInventory();
-            }
-            if (MwInventoryTweakAPI.getBackpackTweak().getKeyCode() == manageKeyInput) {
-                MwInventoryTweakAPI.tweakBackpack();
-            }
-        }
-        super.handleKeyboardInput();
     }
 }
