@@ -8,11 +8,15 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
+import com.modularwarfare.client.fpp.enhanced.configs.GrenadeEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
 import com.modularwarfare.client.laser.LaserRenderManager;
+import com.modularwarfare.common.grenades.GrenadeType;
+import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
@@ -119,6 +123,15 @@ public final class KeyInputHandler {
                             gunType.reloadModel();
                         }
                     }
+                    if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGrenade) {
+                        final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+                        final GrenadeType grenadeType = ((ItemGrenade)gunStack.getItem()).type;
+                        if (grenadeType.hasModel() && grenadeType.animationType.equals(WeaponAnimationType.ENHANCED)) {
+                            grenadeType.enhancedModel.config = ModularWarfare.getRenderConfig(grenadeType, GrenadeEnhancedRenderConfig.class);
+                        } else if(grenadeType.hasModel()){
+                            grenadeType.reloadModel();
+                        }
+                    }
 
                     if (entityPlayer.isSneaking()) {
                         ModularWarfare.PROXY.reloadModels(true);
@@ -138,8 +151,8 @@ public final class KeyInputHandler {
                 case Inspect:
                     if(!entityPlayer.isSpectator()) {
                         if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                            if(ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null)!=null) {
-                                ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).INSPECT=0;
+                            if(AnimationController.getController(entityPlayer, null)!=null) {
+                                AnimationController.getController(entityPlayer, null).INSPECT=0;
                             }
                         }
                     }
@@ -147,8 +160,8 @@ public final class KeyInputHandler {
                 case GunReload:
                     ItemStack reloadStack = entityPlayer.getHeldItemMainhand();
                     if (reloadStack != null && (reloadStack.getItem() instanceof ItemGun || reloadStack.getItem() instanceof ItemAmmo)) {
-                        if (ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null) == null
-                                || ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).isCouldReload()) {
+                        if (AnimationController.getController(entityPlayer, null) == null
+                                || AnimationController.getController(entityPlayer, null).isCouldReload()) {
                             ModularWarfare.NETWORK.sendToServer(new PacketGunReload());
                         }
                     }
@@ -160,8 +173,8 @@ public final class KeyInputHandler {
                         ModularWarfare.NETWORK.sendToServer(new PacketGunUnloadAttachment(ClientProxy.attachmentUI.selectedAttachEnum.getName(), false));
                     } else {
                         if (unloadStack != null && (unloadStack.getItem() instanceof ItemGun || unloadStack.getItem() instanceof ItemAmmo)) {
-                            if (ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null) == null
-                                || ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).isCouldReload()) {
+                            if (AnimationController.getController(entityPlayer, null) == null
+                                || AnimationController.getController(entityPlayer, null).isCouldReload()) {
                                 ModularWarfare.NETWORK.sendToServer(new PacketGunReload(true));
                             }
                         }
@@ -186,9 +199,9 @@ public final class KeyInputHandler {
                                 } else if (((ItemGun)entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem()).type.animationType == WeaponAnimationType.ENHANCED) {
                                     if ((ClientRenderHooks.currentGun != -1
                                     && ClientRenderHooks.wannaSlot == -1
-                                    && ClientProxy.gunEnhancedRenderer.getClientController() != null
-                                    && (ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT
-                                    || ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() == AnimationType.DEFAULT_EMPTY))) {
+                                    && AnimationController.getClientController() != null
+                                    && (AnimationController.getClientController().getPlayingAnimation() == AnimationType.DEFAULT
+                                    || AnimationController.getClientController().getPlayingAnimation() == AnimationType.DEFAULT_EMPTY))) {
                                         ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.open", 1f, 1f));
                                         Minecraft.getMinecraft().displayGuiScreen(new GuiGunModify());
                                         }

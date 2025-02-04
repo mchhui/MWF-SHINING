@@ -27,10 +27,11 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.Transform;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Attachment;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.AttachmentGroup;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Transform;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
@@ -166,7 +167,7 @@ public class GuiGunModify extends GuiScreen {
         // model.updateAnimation(rge.getClientController().getTime(),"");
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
 		if (((GunType) type).animationType == WeaponAnimationType.ENHANCED) {
-			rge.getClientController().reset(true);
+		    AnimationController.getClientController().reset(true);
 		}
 	    
 		mc=Minecraft.getMinecraft();
@@ -944,11 +945,11 @@ public class GuiGunModify extends GuiScreen {
 			RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
 			// model.updateAnimation(rge.getClientController().getTime(),"");
 			//rge.getClientController().reset(true);
-			rge.getClientController().updateCurrentItem();
-			rge.getClientController().DRAW = 1.0d;
+			AnimationController.getClientController().updateCurrentItem();
+			AnimationController.getClientController().DRAW = 1.0d;
 			// AnimationController.ADS = 1.0d;
-			rge.getClientController().updateActionAndTime();
-			model.updateAnimation(rge.getClientController().getTime(),true);
+			AnimationController.getClientController().updateActionAndTime();
+			model.updateAnimation(AnimationController.getClientController().getTime(),true);
 			HashSet<String> exceptParts = new HashSet<String>();
 			exceptParts.addAll(config.defaultHidePart);
 			// exceptParts.addAll(DEFAULT_EXCEPT);
@@ -964,7 +965,7 @@ public class GuiGunModify extends GuiScreen {
 				Attachment sightConfig = config.attachment.get(sight.type.internalName);
 				if (sightConfig != null) {
 					// System.out.println("test");
-					float ads = (float) rge.getClientController().ADS;
+					float ads = (float) AnimationController.getClientController().ADS;
 //                     mat.translate((Vector3f) new Vector3f(sightConfig.sightAimPosOffset).scale(ads));
 //                     mat.rotate(ads * sightConfig.sightAimRotOffset.y * 3.14f / 180, new Vector3f(0, 1, 0));
 //                     mat.rotate(ads * sightConfig.sightAimRotOffset.x * 3.14f / 180, new Vector3f(1, 0, 0));
@@ -1067,8 +1068,8 @@ public class GuiGunModify extends GuiScreen {
 			final ItemAttachment sightRendering = sight;
 			float worldScale = 1F;
 			boolean applySprint = false;
-			rge.blendTransform(model,itemstack, false, rge.getClientController().getTime(),
-					rge.getClientController().getSprintTime(), (float) rge.getClientController().SPRINT, "sprint_righthand", applySprint,true,
+			rge.blendTransform(model,itemstack, false, AnimationController.getClientController().getTime(),
+			    AnimationController.getClientController().getSprintTime(), (float) AnimationController.getClientController().SPRINT, "sprint_righthand", applySprint,true,
 					() -> {
 						if (true) {// isRenderHand0
 							if (sightRendering != null) {
@@ -1082,7 +1083,7 @@ public class GuiGunModify extends GuiScreen {
 											sightRendering.type.internalName, () -> {
 												rge.writeScopeGlassDepth(sightRendering.type,
 														(ModelAttachment) sightRendering.type.model,
-														rge.getClientController().ADS > 0, worldScale,
+														AnimationController.getClientController().ADS > 0, worldScale,
 														sightRendering.type.sight.modeType.isPIP);
 											});
 								});
@@ -1113,7 +1114,7 @@ public class GuiGunModify extends GuiScreen {
 							boolean flagDynamicAmmoRendered = false;
 							ItemStack stackAmmo = new ItemStack(itemstack.getTagCompound().getCompoundTag("ammo"));
 							ItemStack orignalAmmo = stackAmmo;
-							stackAmmo = rge.getClientController().getRenderAmmo(stackAmmo);
+							stackAmmo = AnimationController.getClientController().getRenderAmmo(stackAmmo);
 							ItemStack renderAmmo = stackAmmo;
 							ItemStack prognosisAmmo = ClientTickHandler.reloadEnhancedPrognosisAmmoRendering;
 
@@ -1131,7 +1132,7 @@ public class GuiGunModify extends GuiScreen {
 								}
 								bulletStack = new ItemStack(itemstack.getTagCompound().getCompoundTag("bullet"));
 								if (anim.reloading) {
-									bulletStack = ClientProxy.gunEnhancedRenderer.getClientController().getRenderAmmo(bulletStack);
+									bulletStack = AnimationController.getClientController().getRenderAmmo(bulletStack);
 								}
 							} else {
 								Integer currentMagcount = null;
@@ -1217,7 +1218,7 @@ public class GuiGunModify extends GuiScreen {
 				                                rge.bindTexture("ammo", pathAmmo);
 				                            }
 
-											if (rge.getClientController().shouldRenderAmmo()) {
+											if (AnimationController.getClientController().shouldRenderAmmo()) {
 												model.applyGlobalTransformToOther("ammoModel", () -> {
 													GlStateManager.pushMatrix();
 													if (renderAmmo.getTagCompound().hasKey("magcount")) {
@@ -1229,23 +1230,23 @@ public class GuiGunModify extends GuiScreen {
 																				itemAmmo.type.internalName).multiMagazineTransform
 																						.size()) {
 																	// be careful, don't mod the config
-																	Transform ammoTransform = config.attachment.get(
+																	EnhancedRenderConfig.Transform ammoTransform = config.attachment.get(
 																			itemAmmo.type.internalName).multiMagazineTransform
 																					.get(renderAmmo.getTagCompound()
 																							.getInteger("magcount")
 																							- 1);
-																	Transform renderTransform = ammoTransform;
+																	EnhancedRenderConfig.Transform renderTransform = ammoTransform;
 																	if (anim.reloading && (anim
 																			.getReloadAnimationType() == AnimationType.RELOAD_FIRST_QUICKLY)) {
-																		float magAlpha = (float) rge.getClientController().RELOAD;
-																		renderTransform = new Transform();
+																		float magAlpha = (float) AnimationController.getClientController().RELOAD;
+																		renderTransform = new EnhancedRenderConfig.Transform();
 																		ammoTransform = config.attachment.get(
 																				itemAmmo.type.internalName).multiMagazineTransform
 																						.get(prognosisAmmo
 																								.getTagCompound()
 																								.getInteger("magcount")
 																								- 1);
-																		Transform beginTransform = config.attachment
+																		EnhancedRenderConfig.Transform beginTransform = config.attachment
 																				.get(itemAmmo.type.internalName).multiMagazineTransform
 																						.get(orignalAmmo
 																								.getTagCompound()
@@ -1367,7 +1368,7 @@ public class GuiGunModify extends GuiScreen {
 								model.renderPart("bulletModel");
 							}
 
-							if (rge.getClientController().shouldRenderAmmo() && defaultAmmoFlag) {
+							if (AnimationController.getClientController().shouldRenderAmmo() && defaultAmmoFlag) {
 								model.renderPart("ammoModel");
 							}
 
@@ -1429,7 +1430,7 @@ public class GuiGunModify extends GuiScreen {
 																attachmentModel.renderAttachment(worldScale);
 																if (attachment == AttachmentPresetEnum.Sight) {
 																	rge.renderScopeGlass(attachmentType, attachmentModel,
-																			rge.getClientController().ADS > 0, worldScale);
+																			AnimationController.getClientController().ADS > 0, worldScale);
 																}
 															});
 												}
@@ -1465,7 +1466,7 @@ public class GuiGunModify extends GuiScreen {
 														if (attachment == AttachmentPresetEnum.Sight) {
 														    ObjModelRenderer.glowTxtureMode=false;
 															rge.renderScopeGlass(attachmentType, attachmentModel,
-																	rge.getClientController().ADS > 0, worldScale);
+																	AnimationController.getClientController().ADS > 0, worldScale);
 															ObjModelRenderer.glowTxtureMode=true;
 														}
 													});
@@ -1489,7 +1490,7 @@ public class GuiGunModify extends GuiScreen {
 						rge.copyMirrorTexture();
 						ClientProxy.scopeUtils.renderPostScope(partialTicks, false, true, true, 1);
 						rge.eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,
-								rge.getClientController().ADS > 0, 1);// worldScale
+								AnimationController.getClientController().ADS > 0, 1);// worldScale
 					} else if (sightRendering.type.sight.modeType.isPIP) {
 						if (false) {// isRenderHand0
 							// nothing to do
@@ -1503,8 +1504,8 @@ public class GuiGunModify extends GuiScreen {
 							rge.copyMirrorTexture();
 							ClientProxy.scopeUtils.renderPostScope(partialTicks, true, false, true, 1);
 							rge.eraseScopeGlassDepth(sightRendering.type, (ModelAttachment) sightRendering.type.model,
-									rge.getClientController().ADS > 0, 1);// worldScale
-							rge.writeScopeSoildDepth(rge.getClientController().ADS > 0);
+									AnimationController.getClientController().ADS > 0, 1);// worldScale
+							rge.writeScopeSoildDepth(AnimationController.getClientController().ADS > 0);
 
 							GL11.glPopAttrib();
 						} else {
@@ -1513,7 +1514,7 @@ public class GuiGunModify extends GuiScreen {
 					}
 				}
 			}
-			rge.getClientController().ADS = 0;
+			AnimationController.getClientController().ADS = 0;
 	        ObjModelRenderer.glowTxtureMode=glowTxtureMode;
 		}
 

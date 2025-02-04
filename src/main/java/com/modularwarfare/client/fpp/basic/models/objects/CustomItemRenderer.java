@@ -1,9 +1,19 @@
 package com.modularwarfare.client.fpp.basic.models.objects;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.RenderHandSleeveEnhancedEvent;
+import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreFirstLayer;
+import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreSecondLayer;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ShowHandArmorType;
+import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
+import com.modularwarfare.client.model.ModelCustomArmor;
+import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.AbstractClientPlayer;
+import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.texture.ITextureObject;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -13,7 +23,9 @@ import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.client.resources.data.TextureMetadataSection;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
 
 import java.awt.image.BufferedImage;
 import java.io.Closeable;
@@ -40,6 +52,11 @@ public class CustomItemRenderer {
     public float b=1;
     public float a=1;
 
+    protected static final String[] LEFT_HAND_PART = new String[] {"leftArmModel", "leftArmLayerModel"};
+    protected static final String[] LEFT_SLIM_HAND_PART = new String[] {"leftArmSlimModel", "leftArmLayerSlimModel"};
+    protected static final String[] RIGHT_HAND_PART = new String[] {"rightArmModel", "rightArmLayerModel"};
+    protected static final String[] RIGHT_SLIM_HAND_PART = new String[] {"rightArmSlimModel", "rightArmLayerSlimModel"};
+    
     public void renderItem(CustomItemRenderType type, EnumHand hand, ItemStack item, Object... data) {
     }
 
@@ -56,7 +73,7 @@ public class CustomItemRenderer {
         bindTexture(type, fileName + "_glow", true, false);
         return true;
     }
-
+    
     public void bindTexture(String type, String fileName, boolean saveBad, boolean printException) {
         String pathFormat = "skins/%s/%s.png";
 

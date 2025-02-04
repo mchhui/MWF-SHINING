@@ -11,6 +11,7 @@ import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -21,6 +22,8 @@ import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
+import com.modularwarfare.common.grenades.GrenadeType;
+import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.type.BaseItem;
@@ -89,7 +92,8 @@ public class ClientRenderHooks {
         customRenderers[1] = ClientProxy.gunStaticRenderer = new RenderGunStatic();
         customRenderers[2] = ClientProxy.ammoRenderer = new RenderAmmo();
         customRenderers[3] = ClientProxy.attachmentRenderer = new RenderAttachment();
-        customRenderers[8] = ClientProxy.grenadeRenderer = new RenderGrenade();
+        customRenderers[8] = ClientProxy.grenadeStaticRenderer = new RenderGrenade();
+        customRenderers[9] = ClientProxy.grenadeEnhancedRenderer = new RenderGrenadeEnhanced();
     }
 
     public static AnimStateMachine getAnimMachine(EntityLivingBase entityPlayer) {
@@ -392,6 +396,12 @@ public class ClientRenderHooks {
                             }
                             customRenderers[0].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, heldStack, mc.world, mc.player);
                             ScopeUtils.needRenderHand1=true;
+                        }
+                    } else if (item instanceof ItemGrenade) {
+                        if(((GrenadeType)type).animationType.equals(WeaponAnimationType.BASIC)){
+                            customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
+                        }else {
+                            customRenderers[9].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, mc.player.getHeldItemMainhand(), mc.world, mc.player);
                         }
                     } else {
                         customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);

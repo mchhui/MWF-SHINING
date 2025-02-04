@@ -3,6 +3,7 @@ package com.modularwarfare.common.grenades;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
+import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.type.BaseItem;
 import net.minecraft.entity.EntityLivingBase;
@@ -26,6 +27,9 @@ public class ItemGrenade extends BaseItem {
 
     @Override
     public boolean onEntitySwing(EntityLivingBase entityLiving, ItemStack stack) {
+        if(type.animationType==WeaponAnimationType.ENHANCED) {
+            return true;
+        }
         if (entityLiving instanceof EntityPlayer) {
             EntityPlayer playerIn = (EntityPlayer) entityLiving;
             World worldIn = playerIn.world;
@@ -64,6 +68,9 @@ public class ItemGrenade extends BaseItem {
     @Override
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn) {
         ItemStack stack = playerIn.getHeldItem(handIn);
+        if(type.animationType==WeaponAnimationType.ENHANCED) {
+            return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, stack);
+        }
         worldIn.playSound(null, playerIn.posX, playerIn.posY, playerIn.posZ, ModSounds.GRENADE_THROW, SoundCategory.PLAYERS, 0.5f, 1.0f);
         if (!worldIn.isRemote) {
             switch (type.grenadeType) {

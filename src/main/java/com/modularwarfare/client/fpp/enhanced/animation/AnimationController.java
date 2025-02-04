@@ -8,8 +8,10 @@ import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.DynamicTextureConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Extra.DynamicTextureConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -28,13 +30,18 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
+
+import java.util.HashMap;
+
 import org.lwjgl.input.Mouse;
 
 public class AnimationController {
-
+    /**
+     * 动画控制器动画机
+     * */
     public final EntityLivingBase player;
 
-    private GunEnhancedRenderConfig config;
+    private EnhancedRenderConfig config;
 
     private ActionPlayback playback;
 
@@ -48,6 +55,7 @@ public class AnimationController {
     public double SPRINT_RANDOM;
     public double INSPECT=1;
     public double FIRE;
+    public double GRENADE_THROW;
     public double MODE_CHANGE;
     public double CUSTOM=1;
     
@@ -96,8 +104,11 @@ public class AnimationController {
             AnimationType.FIRE,AnimationType.FIRE_LAST, AnimationType.FIRE_ADS, AnimationType.FIRE_LAST_ADS,
             AnimationType.PRE_FIRE, AnimationType.POST_FIRE, AnimationType.POST_FIRE_EMPTY, AnimationType.PRE_FIRE_ADS, AnimationType.POST_FIRE_ADS, AnimationType.POST_FIRE_ADS_EMPTY,
     };
+    
+    private static AnimationType[] GRENADE_THROW_TYPE =
+        new AnimationType[] {AnimationType.PRE_THROW, AnimationType.THROW_FIRST, AnimationType.THROW_SECOND, AnimationType.POST_THROW, AnimationType.PRE_THROW_LOW, AnimationType.THROW_FIRST_LOW, AnimationType.THROW_SECOND_LOW, AnimationType.POST_THROW_LOW,};
 
-    public AnimationController(EntityLivingBase player,GunEnhancedRenderConfig config){
+    public AnimationController(EntityLivingBase player,EnhancedRenderConfig config){
         this.config = config;
         this.playback = new ActionPlayback(this,config);
         this.playback.action = AnimationType.DRAW;
@@ -206,7 +217,7 @@ public class AnimationController {
             if(TAKEDOWN<=0) {
                 TAKEDOWN=0;
                 ClientRenderHooks.currentGun=-1;
-                ClientProxy.gunEnhancedRenderer.resetClientController();
+                resetClientController();
                 return;
             }
         }
@@ -353,77 +364,80 @@ public class AnimationController {
             }
             SHELL_UPDATE=1;
         }
-        if(config.extra.panelLogo!=null) {
-            PANEL_LOGO+=(1d/(config.extra.panelLogo.frameCount/(double)(config.extra.panelLogo.FPS/60d)))*stepTick;
-            if(PANEL_LOGO>1) {
+        if(config instanceof GunEnhancedRenderConfig) {
+            GunEnhancedRenderConfig guncfg=(GunEnhancedRenderConfig)config;
+            if(guncfg.extra.panelLogo!=null) {
+                PANEL_LOGO+=(1d/(guncfg.extra.panelLogo.frameCount/(double)(guncfg.extra.panelLogo.FPS/60d)))*stepTick;
+                if(PANEL_LOGO>1) {
+                    PANEL_LOGO=1;
+                }
+            }else {
                 PANEL_LOGO=1;
             }
-        }else {
-            PANEL_LOGO=1;
-        }
-        if(config.extra.panelReload!=null) {
-            PANEL_RELOAD+=(1d/(config.extra.panelReload.frameCount/(double)(config.extra.panelReload.FPS/60d)))*stepTick;
-            if(PANEL_RELOAD>1) {
-                PANEL_RELOAD=0;
+            if(guncfg.extra.panelReload!=null) {
+                PANEL_RELOAD+=(1d/(guncfg.extra.panelReload.frameCount/(double)(guncfg.extra.panelReload.FPS/60d)))*stepTick;
+                if(PANEL_RELOAD>1) {
+                    PANEL_RELOAD=0;
+                }
+            }else {
+                PANEL_RELOAD=1;
             }
-        }else {
-            PANEL_RELOAD=1;
-        }
-        if(config.extra.panelInspect!=null) {
-            PANEL_INSPECT+=(1d/(config.extra.panelInspect.frameCount/(double)(config.extra.panelInspect.FPS/60d)))*stepTick;
-            if(PANEL_INSPECT>1) {
+            if(guncfg.extra.panelInspect!=null) {
+                PANEL_INSPECT+=(1d/(guncfg.extra.panelInspect.frameCount/(double)(guncfg.extra.panelInspect.FPS/60d)))*stepTick;
+                if(PANEL_INSPECT>1) {
+                    PANEL_INSPECT=1;
+                }
+            }else {
                 PANEL_INSPECT=1;
             }
-        }else {
-            PANEL_INSPECT=1;
-        }
-        if(lastAmmoCfg!=null) {
-            PANEL_AMMO+=(1d/(lastAmmoCfg.frameCount/(double)(lastAmmoCfg.FPS/60d)))*stepTick;
-            if(PANEL_AMMO>1) {
-                PANEL_AMMO=0;
-            }
-        }else {
-            PANEL_AMMO=1;
+            if(lastAmmoCfg!=null) {
+                PANEL_AMMO+=(1d/(lastAmmoCfg.frameCount/(double)(lastAmmoCfg.FPS/60d)))*stepTick;
+                if(PANEL_AMMO>1) {
+                    PANEL_AMMO=0;
+                }
+            }else {
+                PANEL_AMMO=1;
+            }  
         }
 //        System.out.println(customAnimationSpeed);
-        /** ADS **/
-        boolean aimChargeMisc = ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
-        double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * stepTick;
-        if (player.getHeldItemMainhand().getItem() instanceof ItemGun && player instanceof EntityPlayer) {
-            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
-                AttachmentPresetEnum.Stock) != null) {
-                ItemAttachment stockAttachment =
-                    (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
-                        AttachmentPresetEnum.Stock).getItem();
-                adsSpeed*=stockAttachment.type.stock.aimSpeedFactor;
+        if(config instanceof GunEnhancedRenderConfig) {
+            /** ADS **/
+            boolean aimChargeMisc = ClientRenderHooks.getEnhancedAnimMachine(player).reloading;
+            double adsSpeed = config.animations.get(AnimationType.AIM).getSpeed(config.FPS) * stepTick;
+            if (player.getHeldItemMainhand().getItem() instanceof ItemGun && player instanceof EntityPlayer) {
+                if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                    AttachmentPresetEnum.Stock) != null) {
+                    ItemAttachment stockAttachment =
+                        (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                            AttachmentPresetEnum.Stock).getItem();
+                    adsSpeed*=stockAttachment.type.stock.aimSpeedFactor;
+                }
+                if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                    AttachmentPresetEnum.Laser) != null) {
+                    ItemAttachment stockAttachment =
+                        (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                            AttachmentPresetEnum.Laser).getItem();
+                    adsSpeed*=stockAttachment.type.laser.aimSpeedFactor;
+                }
             }
-            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
-                AttachmentPresetEnum.Laser) != null) {
-                ItemAttachment stockAttachment =
-                    (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
-                        AttachmentPresetEnum.Laser).getItem();
-                adsSpeed*=stockAttachment.type.laser.aimSpeedFactor;
+            double val = 0;
+            if (RenderParameters.collideFrontDistance == 0 && Minecraft.getMinecraft().inGameHasFocus
+                && (Mouse.isButtonDown(1)||AutoSwitchToFirstView.getAutoAimLock()) && !aimChargeMisc && INSPECT == 1F) {
+                val = ADS + adsSpeed * (2 - ADS);
+            } else {
+                val = ADS - adsSpeed * (1 + ADS);
             }
-        }
-        if (player.getHeldItemMainhand().getItem() instanceof ItemGun && player instanceof EntityPlayer) {
-            GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
+            if(player==Minecraft.getMinecraft().player) {
+                RenderParameters.adsSwitch = (float)ADS;  
+            }
             
-        }
-        double val = 0;
-        if (RenderParameters.collideFrontDistance == 0 && Minecraft.getMinecraft().inGameHasFocus
-            && (Mouse.isButtonDown(1)||AutoSwitchToFirstView.getAutoAimLock()) && !aimChargeMisc && INSPECT == 1F) {
-            val = ADS + adsSpeed * (2 - ADS);
-        } else {
-            val = ADS - adsSpeed * (1 + ADS);
-        }
-        if(player==Minecraft.getMinecraft().player) {
-            RenderParameters.adsSwitch = (float)ADS;  
-        }
-        
-        if(!isDrawing() && !isTakedown()) {
-            ADS = Math.max(0, Math.min(1, val));
+            if(!isDrawing() && !isTakedown()) {
+                ADS = Math.max(0, Math.min(1, val));
+            }else {
+                ADS = 0;
+            }
         }else {
-            ADS = 0;
+            ADS=0;
         }
         
         if(!anim.shooting) {
@@ -434,6 +448,9 @@ public class AnimationController {
             RELOAD=0;
         }
 
+        if(!anim.throwing) {
+            GRENADE_THROW=0;
+        }
         /**
          * Sprinting
          */
@@ -619,7 +636,7 @@ public class AnimationController {
             }
             this.playback.action = AnimationType.DRAW;
             if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
-                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.DRAW_EMPTY)) {
+                if(((EnhancedRenderConfig)config).animations.containsKey(AnimationType.DRAW_EMPTY)) {
                     this.playback.action = AnimationType.DRAW_EMPTY;  
                 }
             }
@@ -630,7 +647,7 @@ public class AnimationController {
             }
             this.playback.action = AnimationType.TAKEDOWN;
             if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
-                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.TAKEDOWN_EMPTY)) {
+                if(((EnhancedRenderConfig)config).animations.containsKey(AnimationType.TAKEDOWN_EMPTY)) {
                     this.playback.action = AnimationType.TAKEDOWN_EMPTY;  
                 }
             }
@@ -654,10 +671,13 @@ public class AnimationController {
         }else if(FIRE>0F) {
             resetView();
             this.playback.action = anim.getShootingAnimationType();
+        }else if(GRENADE_THROW>0F) {
+            resetView();
+            this.playback.action = anim.getGrenadeThrowAnimationType();
         } else if (INSPECT  < 1) {
             this.playback.action = AnimationType.INSPECT;
             if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
-                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.INSPECT_EMPTY)) {
+                if(((EnhancedRenderConfig)config).animations.containsKey(AnimationType.INSPECT_EMPTY)) {
                     this.playback.action = AnimationType.INSPECT_EMPTY;  
                 }
             }
@@ -671,7 +691,7 @@ public class AnimationController {
         }
         if(this.playback.action==AnimationType.DEFAULT) {
             if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
-                if(((GunEnhancedRenderConfig)config).animations.containsKey(AnimationType.DEFAULT_EMPTY)) {
+                if(((EnhancedRenderConfig)config).animations.containsKey(AnimationType.DEFAULT_EMPTY)) {
                     this.playback.action = AnimationType.DEFAULT_EMPTY;  
                 }
             }
@@ -730,6 +750,12 @@ public class AnimationController {
                 break;
             }  
         }
+        for(AnimationType throwType:GRENADE_THROW_TYPE) {
+            if(this.playback.action==throwType) {
+                this.playback.updateTime(GRENADE_THROW);
+                break;
+            }  
+        }
     }
     
     public void updateActionAndTime() {
@@ -755,11 +781,11 @@ public class AnimationController {
         return(float) result;
     }
 
-    public void setConfig(GunEnhancedRenderConfig config){
+    public void setConfig(EnhancedRenderConfig config){
         this.config = config;
     }
 
-    public GunEnhancedRenderConfig getConfig(){
+    public EnhancedRenderConfig getConfig(){
         return this.config;
     }
     
@@ -877,58 +903,105 @@ public class AnimationController {
     public ResourceLocation getPanelTexture(ItemStack item, GunType gunType, int ammo, boolean reloading) {
         int frame;
         ResourceLocation loc=null;
-        if(config!=null) {
-            if(config.extra.panelLogo!=null) {
-                if(PANEL_LOGO<1) { 
-                    frame=(int)(config.extra.panelLogo.frameCount*PANEL_LOGO);
-                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelLogo.texhead+frame+".png");
+        if(config instanceof GunEnhancedRenderConfig) {
+            GunEnhancedRenderConfig guncfg=(GunEnhancedRenderConfig)config;
+            if(guncfg!=null) {
+                if(guncfg.extra.panelLogo!=null) {
+                    if(PANEL_LOGO<1) { 
+                        frame=(int)(guncfg.extra.panelLogo.frameCount*PANEL_LOGO);
+                        loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+guncfg.extra.panelLogo.texhead+frame+".png");
+                        return loc;
+                    }
+                }
+            } 
+            if(guncfg!=null) {
+                if(guncfg.extra.panelReload!=null) {
+                    if(reloading) { 
+                        frame=(int)(guncfg.extra.panelReload.frameCount*PANEL_RELOAD);
+                        loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+guncfg.extra.panelReload.texhead+frame+".png");
+                        return loc;
+                    }
+                }
+            }
+            if(guncfg!=null) {
+                if(guncfg.extra.panelInspect!=null) {
+                    if(PANEL_INSPECT<1) { 
+                        frame=(int)(guncfg.extra.panelInspect.frameCount*PANEL_INSPECT);
+                        loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+guncfg.extra.panelInspect.texhead+frame+".png");
+                        return loc;
+                    }
+                }
+            } 
+            if(guncfg.extra.panelSpecialAmmo!=null) {
+                DynamicTextureConfig cfg=guncfg.extra.panelSpecialAmmo.get(ammo);
+                if(lastAmmoCfg!=cfg) {
+                    PANEL_AMMO=0;
+                }
+                lastAmmoCfg=cfg;
+                if(cfg!=null) {
+                    frame=(int)(cfg.frameCount*PANEL_AMMO);
+                    if(frame<0) {
+                        frame=0;
+                    }
+                    if(frame>=cfg.frameCount) {
+                        frame=cfg.frameCount-1;
+                    }
+                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+cfg.texhead+(frame)+".png");
                     return loc;
                 }
             }
-        } 
-        if(config!=null) {
-            if(config.extra.panelReload!=null) {
-                if(reloading) { 
-                    frame=(int)(config.extra.panelReload.frameCount*PANEL_RELOAD);
-                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelReload.texhead+frame+".png");
+            if(guncfg!=null) {
+                if(guncfg.extra.panelAmmo!=null) {
+                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+guncfg.extra.panelAmmo.texhead+(ammo%guncfg.extra.panelAmmo.frameCount)+".png");
                     return loc;
                 }
-            }
+            } 
         }
-        if(config!=null) {
-            if(config.extra.panelInspect!=null) {
-                if(PANEL_INSPECT<1) { 
-                    frame=(int)(config.extra.panelInspect.frameCount*PANEL_INSPECT);
-                    loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelInspect.texhead+frame+".png");
-                    return loc;
-                }
-            }
-        } 
-        if(config.extra.panelSpecialAmmo!=null) {
-            DynamicTextureConfig cfg=config.extra.panelSpecialAmmo.get(ammo);
-            if(lastAmmoCfg!=cfg) {
-                PANEL_AMMO=0;
-            }
-            lastAmmoCfg=cfg;
-            if(cfg!=null) {
-                frame=(int)(cfg.frameCount*PANEL_AMMO);
-                if(frame<0) {
-                    frame=0;
-                }
-                if(frame>=cfg.frameCount) {
-                    frame=cfg.frameCount-1;
-                }
-                loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+cfg.texhead+(frame)+".png");
-                return loc;
-            }
-        }
-        if(config!=null) {
-            if(config.extra.panelAmmo!=null) {
-                loc=new ResourceLocation(ModularWarfare.MOD_ID, "panel/"+config.extra.panelAmmo.texhead+(ammo%config.extra.panelAmmo.frameCount)+".png");
-                return loc;
-            }
-        } 
         return loc;
+    }
+    
+    /**
+     * 动画控制器包装器
+     * */
+    
+    private static AnimationController controller = new AnimationController(null, null);
+
+    private static HashMap<String, AnimationController> otherControllers = new HashMap<String, AnimationController>();
+    
+    public static void resetClientController() {
+        controller = new AnimationController(null, null);
+    }
+
+    public static AnimationController getClientController() {
+        return controller;
+    }
+    
+    public static void setClientController(AnimationController controller) {
+        AnimationController.controller=controller;
+    }
+
+    public static HashMap<String, AnimationController> getOtherControllers() {
+        return otherControllers;
+    }
+
+    public static AnimationController getController(EntityLivingBase player, EnhancedRenderConfig config) {
+        if (player == Minecraft.getMinecraft().player) {
+            if (controller.player != player || (config != null && controller.getConfig() != config)) {
+                controller = new AnimationController(player, config);
+            }
+            return controller;
+        }
+        String name = player.getName();
+        if (config == null && !otherControllers.containsKey(name)) {
+            return null;
+        }
+        if (!otherControllers.containsKey(name)) {
+            otherControllers.put(name, new AnimationController(player, config));
+        }
+        if (config != null && otherControllers.get(name).getConfig() != config) {
+            otherControllers.put(name, new AnimationController(player, config));
+        }
+        return otherControllers.get(name);
     }
 
 }

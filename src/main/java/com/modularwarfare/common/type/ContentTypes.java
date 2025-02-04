@@ -4,6 +4,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.MWArmorType;
 import com.modularwarfare.api.TypeRegisterEvent;
 import com.modularwarfare.client.fpp.basic.configs.*;
+import com.modularwarfare.client.fpp.enhanced.configs.GrenadeEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.model.*;
 import com.modularwarfare.common.armor.ArmorType;
@@ -112,8 +113,13 @@ public class ContentTypes {
         registerType("grenades", GrenadeType.class, (type, reload) -> {
             ContentTypes.assignType(ModularWarfare.grenadeTypes, ItemGrenade::new, (GrenadeType) type, reload);
 
-            if (FMLCommonHandler.instance().getSide() == Side.CLIENT)
-                ((ModelGrenade) (type.model)).config = ModularWarfare.getRenderConfig(type, GrenadeRenderConfig.class);
+            if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
+                if(((GrenadeType)type).animationType.equals(WeaponAnimationType.ENHANCED)){
+                    ((type.enhancedModel)).config = ModularWarfare.getRenderConfig(type, GrenadeEnhancedRenderConfig.class);
+                } else {
+                    ((ModelGrenade) (type.model)).config = ModularWarfare.getRenderConfig(type, GrenadeRenderConfig.class);
+                }
+            }
         });
 
 

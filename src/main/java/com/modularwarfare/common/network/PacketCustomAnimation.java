@@ -83,7 +83,7 @@ public class PacketCustomAnimation extends PacketBase {
     @Override
     @SideOnly(Side.CLIENT)
     public void handleClientSide(EntityPlayer entityPlayer) {
-        AnimationController controller = ClientProxy.gunEnhancedRenderer.getController(Minecraft.getMinecraft().world.getPlayerEntityByUUID(living), null);
+        AnimationController controller = AnimationController.getController(Minecraft.getMinecraft().world.getPlayerEntityByUUID(living), null);
         controller.CUSTOM = 0;
         controller.customAnimation = name;
         controller.startTime = startTime;

@@ -5,6 +5,8 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.grenades.ItemGrenade;
+import com.modularwarfare.common.guns.WeaponAnimationType;
+
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.entity.Render;
@@ -57,9 +59,11 @@ public class RenderGrenadeEntity extends Render<EntityGrenade> {
 
         if (ModularWarfare.grenadeTypes.containsKey(entityIn.getGrenadeName())) {
             ItemGrenade itemGrenade = ModularWarfare.grenadeTypes.get(entityIn.getGrenadeName());
-            ModelGrenade grenade = (ModelGrenade) (ModularWarfare.grenadeTypes.get(entityIn.getGrenadeName()).type.model);
-            ClientRenderHooks.customRenderers[1].bindTexture("grenades", itemGrenade.type.internalName);
-            grenade.renderPart("grenadeModel", worldScale);
+            if(itemGrenade.type.animationType==WeaponAnimationType.BASIC) {
+                ModelGrenade grenade = (ModelGrenade) (ModularWarfare.grenadeTypes.get(entityIn.getGrenadeName()).type.model);
+                ClientRenderHooks.customRenderers[1].bindTexture("grenades", itemGrenade.type.internalName);
+                grenade.renderPart("grenadeModel", worldScale);  
+            }
         }
 
         GlStateManager.enableLighting();

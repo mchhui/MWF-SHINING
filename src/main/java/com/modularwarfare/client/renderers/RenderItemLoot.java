@@ -10,6 +10,7 @@ import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.common.entity.item.EntityItemLoot;
+import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
@@ -236,6 +237,8 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                 ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.ITEMLOOT, null, itemstack);
                 GlStateManager.popMatrix();
             }
+        }else if((itemstack.getItem() instanceof ItemGrenade)&&(((ItemGrenade)itemstack.getItem()).type.animationType==WeaponAnimationType.ENHANCED)) {
+            
         } else {
             int i;
             if (itemstack != null && itemstack.getItem() != null) {

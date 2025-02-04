@@ -18,12 +18,12 @@ import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Attachment;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ObjectControl;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.SpecialEffect.EjectionGroup;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ObjectControl;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ShowHandArmorType;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.ThirdPerson.RenderElement;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Transform;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.Transform;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
@@ -94,7 +94,7 @@ import java.util.UUID;
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 
-public class RenderGunEnhanced extends CustomItemRenderer {
+public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     public static float diversion = 64f;
     public static float[] es_joint = new float[(int) (diversion + 1)];
     public static float[] strafing_joint = new float[(int) (diversion + 1)];
@@ -113,11 +113,9 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     public static Vector3f mwf_camera_pos = new Vector3f();
     public static AxisAngle4d mwf_camera_rot = new AxisAngle4d();
 
-    public static float sizeFactor = 10000f;
     public static boolean debug = false;
     public static boolean debug1 = false;
 
-    public static final float PI = 3.14159265f;
     private ShortBuffer pixelBuffer = null;
     private int lastWidth;
     private int lastHeight;
@@ -151,14 +149,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
     private static FloatBuffer lightBuf = BufferUtils.createFloatBuffer(4);
 
-    private Timer timer;
-
-    private AnimationController controller = new AnimationController(null, null);
-
-    private HashMap<String, AnimationController> otherControllers = new HashMap<String, AnimationController>();
-
-    public FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(16);
-
     private boolean renderingMagazine = true;
 
     private float linearInterpolation(float start, float end, float alpha) {
@@ -168,18 +158,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
     public static final int BULLET_MAX_RENDER = 256;
     private static float theata90 = (float) Math.toRadians(90);
     public static final HashSet<String> DEFAULT_EXCEPT = new HashSet<String>();
-    private static final String[] LEFT_HAND_PART = new String[] {
-            "leftArmModel", "leftArmLayerModel"
-    };
-    private static final String[] LEFT_SLIM_HAND_PART = new String[] {
-            "leftArmSlimModel", "leftArmLayerSlimModel"
-    };
-    private static final String[] RIGHT_HAND_PART = new String[] {
-            "rightArmModel", "rightArmLayerModel"
-    };
-    private static final String[] RIGHT_SLIM_HAND_PART = new String[] {
-            "rightArmSlimModel", "rightArmLayerSlimModel"
-    };
     public static final List<String> defaultHideList = Arrays.asList("ammoModel", "leftArmModel", "leftArmLayerModel",
             "leftArmSlimModel",
             "leftArmLayerSlimModel", "rightArmModel", "rightArmLayerModel", "rightArmSlimModel",
@@ -206,74 +184,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         public Vector3f rot = new Vector3f();
     }
 
-    private HashMap<String, ModelEnhancedGun> thirdPersonModels = new HashMap<>();
-    private ModelEnhancedGun firstPersonModel;
-    
-    private ModelEnhancedGun getOrCreateModel(GunType gunType, boolean isFirstPerson, UUID playerId) {
-        // Added a check for the animation type
-        if (isFirstPerson && gunType.animationType != WeaponAnimationType.BASIC) {
-            if (firstPersonModel == null || firstPersonModel.baseType != gunType) {
-                try {
-                    firstPersonModel = new ModelEnhancedGun((GunEnhancedRenderConfig) gunType.enhancedModel.config, gunType);
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                }
-            }
-            return firstPersonModel;
-        } else {
-            String key = playerId != null ? playerId.toString() : "default";
-            if (gunType.animationType != WeaponAnimationType.BASIC) {
-                if (!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
-                    ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig) gunType.enhancedModel.config, gunType);
-                    thirdPersonModels.put(key, newModel);
-                }
-            }
-            return thirdPersonModels.get(key);
-        }
-    }
-
-    public void resetModels() {
-        // 清空所有缓存的模型
-        this.firstPersonModel = null;
-        this.thirdPersonModels.clear();
-        
-        // 重置控制器
-        this.resetClientController();
-        this.otherControllers.clear();
-    }
-
-    public void resetClientController() {
-        controller = new AnimationController(null, null);
-    }
-
-    public AnimationController getClientController() {
-        return controller;
-    }
-
-    public HashMap<String, AnimationController> getOtherControllers() {
-        return otherControllers;
-    }
-
-    public AnimationController getController(EntityLivingBase player, GunEnhancedRenderConfig config) {
-        if (player == Minecraft.getMinecraft().player) {
-            if (controller.player != player || (config != null && controller.getConfig() != config)) {
-                controller = new AnimationController(player, config);
-            }
-            return controller;
-        }
-        String name = player.getName();
-        if (config == null && !otherControllers.containsKey(name)) {
-            return null;
-        }
-        if (!otherControllers.containsKey(name)) {
-            otherControllers.put(name, new AnimationController(player, config));
-        }
-        if (config != null && otherControllers.get(name).getConfig() != config) {
-            otherControllers.put(name, new AnimationController(player, config));
-        }
-        return otherControllers.get(name);
-    }
-
     public void renderItem(CustomItemRenderType type, EnumHand hand, ItemStack item, Object... data) {
         EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().player;
         if (!(item.getItem() instanceof ItemGun))
@@ -297,18 +207,15 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         ClientProxy.renderHooks.hidePlayerModel((AbstractClientPlayer)Minecraft.getMinecraft().getRenderViewEntity(), renderplayer);
 
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
-        if(this.controller == null || this.controller.getConfig() != config||this.controller.player!=Minecraft.getMinecraft().player){
-            this.controller = new AnimationController(Minecraft.getMinecraft().player,config);
+        if(AnimationController.getClientController() == null || AnimationController.getClientController().getConfig() != config||AnimationController.getClientController().player!=Minecraft.getMinecraft().player){
+            AnimationController.setClientController(new AnimationController(Minecraft.getMinecraft().player,config));
         }
-
-        if (this.timer == null) {
-            this.timer = ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "timer", "field_71428_T");
-        }
+        AnimationController controller=AnimationController.getClientController();
 
         if(!item.hasTagCompound())
             return;
         
-        float partialTicks = this.timer.renderPartialTicks;
+        float partialTicks = getTimer().renderPartialTicks;
         shellModel=null;
 
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
@@ -891,7 +798,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     }
                     bulletStack= new ItemStack(item.getTagCompound().getCompoundTag("bullet"));
                     if (anim.reloading) {
-                        bulletStack = ClientProxy.gunEnhancedRenderer.controller.getRenderAmmo(bulletStack);
+                        bulletStack = AnimationController.getClientController().getRenderAmmo(bulletStack);
                     }
                     costAmmoCount=gunType.internalAmmoStorage-currentAmmoCount;
                 }else {
@@ -996,14 +903,14 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                             if (config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform != null) {
                                                 if (renderAmmo.getTagCompound().getInteger("magcount") <= config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform.size()) {
                                                     //be careful, don't mod the config
-                                                    Transform ammoTransform = config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform.get(renderAmmo.getTagCompound().getInteger("magcount") - 1);
-                                                    Transform renderTransform = ammoTransform;
+                                                    EnhancedRenderConfig.Transform ammoTransform = config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform.get(renderAmmo.getTagCompound().getInteger("magcount") - 1);
+                                                    EnhancedRenderConfig.Transform renderTransform = ammoTransform;
                                                     if (anim.reloading && (anim
                                                             .getReloadAnimationType() == AnimationType.RELOAD_FIRST_QUICKLY)) {
                                                         float magAlpha = (float) controller.RELOAD;
-                                                        renderTransform = new Transform();
+                                                        renderTransform = new EnhancedRenderConfig.Transform();
                                                         ammoTransform = config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform.get(prognosisAmmo.getTagCompound().getInteger("magcount") - 1);
-                                                        Transform beginTransform = config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform.get(orignalAmmo.getTagCompound().getInteger("magcount") - 1);
+                                                        EnhancedRenderConfig.Transform beginTransform = config.attachment.get(itemAmmo.type.internalName).multiMagazineTransform.get(orignalAmmo.getTagCompound().getInteger("magcount") - 1);
 
                                                         renderTransform.translate.x = beginTransform.translate.x
                                                                 + (ammoTransform.translate.x - beginTransform.translate.x)
@@ -1286,7 +1193,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                 ObjModelRenderer.glowTxtureMode=false;
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
                 
-                ResourceLocation panelTex=this.controller.getPanelTexture(item, gunType, currentAmmoCount, anim.reloading);
+                ResourceLocation panelTex=AnimationController.getClientController().getPanelTexture(item, gunType, currentAmmoCount, anim.reloading);
                 if(panelTex!=null) {
                     Minecraft.getMinecraft().getTextureManager().bindTexture(panelTex);
                     model.renderPart("panelModel");
@@ -1682,155 +1589,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         GlStateManager.enableLighting();
     }
 
-    public void renderHandAndArmor(EnumHandSide side, AbstractClientPlayer player, EnhancedRenderConfig config,
-            ModelPlayer modelPlayer, EnhancedModel model) {
-        if (side == EnumHandSide.LEFT) {
-            if (config.showHandArmorType != ShowHandArmorType.NONE) {
-                PreFirstLayer leftFirst = new PreFirstLayer(this, EnumHandSide.LEFT);
-                PreSecondLayer leftSecond = new PreSecondLayer(this, EnumHandSide.LEFT);
-                MinecraftForge.EVENT_BUS.post(leftFirst);
-                MinecraftForge.EVENT_BUS.post(leftSecond);
-                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                    if (!leftFirst.isCanceled()) {
-                        if (modelPlayer.bipedLeftArm.showModel && !modelPlayer.bipedLeftArm.isHidden) {
-                            model.renderPart("leftArmModel");
-                        }
-                    }
-                    if (!leftSecond.isCanceled()) {
-                        if (modelPlayer.bipedLeftArmwear.showModel && !modelPlayer.bipedLeftArmwear.isHidden) {
-                            model.renderPart("leftArmLayerModel");
-                        }
-                    }
-                } else {
-                    if (!leftFirst.isCanceled()) {
-                        if (modelPlayer.bipedLeftArm.showModel && !modelPlayer.bipedLeftArm.isHidden) {
-                            model.renderPart("leftArmSlimModel");
-                        }
-                    }
-                    if (!leftSecond.isCanceled()) {
-                        if (modelPlayer.bipedLeftArmwear.showModel && !modelPlayer.bipedLeftArmwear.isHidden) {
-                            model.renderPart("leftArmLayerSlimModel");
-                        }
-                    }
-                }
-                if (player.inventory.armorItemInSlot(2) != null) {
-                    ItemStack armorStack = player.inventory.armorItemInSlot(2);
-                    if (armorStack.getItem() instanceof ItemMWArmor) {
-                        int skinId = 0;
-                        String path = skinId > 0
-                                ? ((ItemMWArmor) armorStack.getItem()).type.modelSkins[skinId].getSkin()
-                                : ((ItemMWArmor) armorStack.getItem()).type.modelSkins[0].getSkin();
-
-                        if (!((ItemMWArmor) armorStack.getItem()).type.simpleArmor) {
-                            ModelCustomArmor modelArmor = ((ModelCustomArmor) ((ItemMWArmor) armorStack
-                                    .getItem()).type.bipedModel);
-
-                            bindTexture("armor", path);
-                            if (modelArmor.enhancedArmModel != null) {
-                                modelArmor.enhancedArmModel.loadAnimation(model,
-                                        config.showHandArmorType == ShowHandArmorType.SKIN);
-                                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                        modelArmor.enhancedArmModel.renderPart("leftArmModel");
-                                    }
-                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                        modelArmor.enhancedArmModel.renderPart("leftArmModel_bone");
-                                    }
-                                } else {
-                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                        modelArmor.enhancedArmModel.renderPart("leftArmSlimModel");
-                                    }
-                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                        modelArmor.enhancedArmModel.renderPart("leftArmSlimModel_bone");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEnhancedEvent.Post(this, EnumHandSide.LEFT, model));
-            } else {
-                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                    model.renderPart(LEFT_HAND_PART);
-                } else {
-                    model.renderPart(LEFT_SLIM_HAND_PART);
-                }
-            }
-        } else {
-            if (config.showHandArmorType != ShowHandArmorType.NONE) {
-                PreFirstLayer rightFirst = new PreFirstLayer(this, EnumHandSide.RIGHT);
-                PreSecondLayer rightSecond = new PreSecondLayer(this, EnumHandSide.RIGHT);
-                MinecraftForge.EVENT_BUS.post(rightFirst);
-                MinecraftForge.EVENT_BUS.post(rightSecond);
-                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                    if (!rightFirst.isCanceled()) {
-                        if (modelPlayer.bipedRightArm.showModel && !modelPlayer.bipedRightArm.isHidden) {
-                            model.renderPart("rightArmModel");
-                        }
-                    }
-                    if (!rightSecond.isCanceled()) {
-                        if (modelPlayer.bipedRightArmwear.showModel && !modelPlayer.bipedRightArmwear.isHidden) {
-                            model.renderPart("rightArmLayerModel");
-                        }
-                    }
-                } else {
-                    if (!rightFirst.isCanceled()) {
-                        if (modelPlayer.bipedRightArm.showModel && !modelPlayer.bipedRightArm.isHidden) {
-                            model.renderPart("rightArmSlimModel");
-                        }
-                    }
-                    if (!rightSecond.isCanceled()) {
-                        if (modelPlayer.bipedRightArmwear.showModel && !modelPlayer.bipedRightArmwear.isHidden) {
-                            model.renderPart("rightArmLayerSlimModel");
-                        }
-                    }
-                }
-                if (player.inventory.armorItemInSlot(2) != null) {
-                    ItemStack armorStack = player.inventory.armorItemInSlot(2);
-                    if (armorStack.getItem() instanceof ItemMWArmor) {
-                        int skinId = 0;
-                        String path = skinId > 0
-                                ? ((ItemMWArmor) armorStack.getItem()).type.modelSkins[skinId].getSkin()
-                                : ((ItemMWArmor) armorStack.getItem()).type.modelSkins[0].getSkin();
-
-                        if (!((ItemMWArmor) armorStack.getItem()).type.simpleArmor) {
-                            ModelCustomArmor modelArmor = ((ModelCustomArmor) ((ItemMWArmor) armorStack
-                                    .getItem()).type.bipedModel);
-
-                            bindTexture("armor", path);
-                            if (modelArmor.enhancedArmModel != null) {
-                                modelArmor.enhancedArmModel.loadAnimation(model,
-                                        config.showHandArmorType == ShowHandArmorType.SKIN);
-                                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                        modelArmor.enhancedArmModel.renderPart("rightArmModel");
-                                    }
-                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                        modelArmor.enhancedArmModel.renderPart("rightArmModel_bone");
-                                    }
-                                } else {
-                                    if (config.showHandArmorType == ShowHandArmorType.STATIC) {
-                                        modelArmor.enhancedArmModel.renderPart("rightArmSlimModel");
-                                    }
-                                    if (config.showHandArmorType == ShowHandArmorType.SKIN) {
-                                        modelArmor.enhancedArmModel.renderPart("rightArmSlimModel_bone");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                MinecraftForge.EVENT_BUS.post(new RenderHandSleeveEnhancedEvent.Post(this, EnumHandSide.RIGHT, model));
-            } else {
-                if (!Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                    model.renderPart(RIGHT_HAND_PART);
-                } else {
-                    model.renderPart(RIGHT_SLIM_HAND_PART);
-                }
-            }
-        }
-    }
-
     public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
             ItemStack demoStack) {
         // boolean sneakFlag = false;
@@ -1856,7 +1614,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                     newModel.model = gunType.enhancedModel.model;
                     thirdPersonModels.put(key, newModel);
                 }
-                model = thirdPersonModels.get(key);
+                model = (ModelEnhancedGun)thirdPersonModels.get(key);
             } else {
                 model = getOrCreateModel(gunType, false, player != null ? player.getUniqueID() : null);
             }
@@ -1865,7 +1623,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         // 这里可以考虑一下 是否可以对骨骼枪做一些优化
         if (player != null) {
-            controller = ClientProxy.gunEnhancedRenderer.getController(player, config);
+            controller = AnimationController.getController(player, config);
             if (controller.getPlayingAnimation() == AnimationType.DEFAULT
                     || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
                     || controller.getPlayingAnimation() == AnimationType.FIRE
@@ -2093,10 +1851,10 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                                     if (renderAmmo.getTagCompound().getInteger("magcount") <= config.attachment
                                             .get(itemAmmo.type.internalName).multiMagazineTransform.size()) {
                                         // be careful, don't mod the config
-                                        Transform ammoTransform = config.attachment
+                                        EnhancedRenderConfig.Transform ammoTransform = config.attachment
                                                 .get(itemAmmo.type.internalName).multiMagazineTransform
                                                 .get(renderAmmo.getTagCompound().getInteger("magcount") - 1);
-                                        Transform renderTransform = ammoTransform;
+                                        EnhancedRenderConfig.Transform renderTransform = ammoTransform;
 
                                         GlStateManager.translate(renderTransform.translate.x,
                                                 renderTransform.translate.y, renderTransform.translate.z);
@@ -2608,7 +2366,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
         run.run();
     }
 
-    public void applyTransform(Transform transform) {
+    public void applyTransform(EnhancedRenderConfig.Transform transform) {
         GlStateManager.translate(transform.translate.x, transform.translate.y, transform.translate.z);
         GlStateManager.scale(transform.scale.x, transform.scale.y, transform.scale.z);
         GlStateManager.rotate(transform.rotate.y, 0, 1, 0);
@@ -2680,7 +2438,7 @@ public class RenderGunEnhanced extends CustomItemRenderer {
                         }
                     }
                 }
-                ObjectControl cfg = ((GunEnhancedRenderConfig) model.config).objectControl.get(node.name);
+                EnhancedRenderConfig.ObjectControl cfg = ((GunEnhancedRenderConfig) model.config).objectControl.get(node.name);
                 if (cfg != null) {
                     float per = ammoPerParam;
                     if (!cfg.progress) {
@@ -2737,10 +2495,6 @@ public class RenderGunEnhanced extends CustomItemRenderer {
 
     public boolean onGltfRenderCallback(String part) {
         return false;
-    }
-
-    public static float toRadians(float angdeg) {
-        return angdeg / 180.0f * PI;
     }
 
     public void color(float r, float g, float b, float a) {

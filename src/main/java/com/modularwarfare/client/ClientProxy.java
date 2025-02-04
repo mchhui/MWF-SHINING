@@ -17,6 +17,7 @@ import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.handler.KeyInputHandler;
@@ -129,7 +130,8 @@ public class ClientProxy extends CommonProxy {
 
     public static RenderAmmo ammoRenderer;
     public static RenderAttachment attachmentRenderer;
-    public static RenderGrenade grenadeRenderer;
+    public static RenderGrenade grenadeStaticRenderer;
+    public static RenderGrenadeEnhanced grenadeEnhancedRenderer;
 
     public static HashMap<String, SoundEvent> modSounds = new HashMap<String, SoundEvent>();
 
@@ -807,7 +809,7 @@ public class ClientProxy extends CommonProxy {
                 ClientEventHandler.cemeraBobVelocity += newBobTarget * velocityFactor;
                 
                 lastBobbingParm=-lastBobbingParm;
-                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
+                AnimationController controller=AnimationController.getController(player,(GunEnhancedRenderConfig) gunType.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun) gunType.enhancedModel,
                         gunType, fireTickDelay);
             }
@@ -822,7 +824,7 @@ public class ClientProxy extends CommonProxy {
             if (gunType.type.animationType == WeaponAnimationType.BASIC) {
                 ClientRenderHooks.getAnimMachine(player).triggerReload(reloadTime, reloadCount, (ModelGun) gunType.type.model, ReloadType.getTypeFromInt(reloadType), player.isSprinting());
             } else {
-                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
+                AnimationController controller=AnimationController.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerReload(controller,player,reloadTime, reloadCount, (ModelEnhancedGun) gunType.type.enhancedModel, ReloadType.getTypeFromInt(reloadType));
             }
         }
@@ -833,7 +835,7 @@ public class ClientProxy extends CommonProxy {
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
             if (gunType.type.animationType == WeaponAnimationType.ENHANCED) {
-                AnimationController controller=gunEnhancedRenderer.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
+                AnimationController controller=AnimationController.getController(player,(GunEnhancedRenderConfig) gunType.type.enhancedModel.config);
                 ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(controller,(ModelEnhancedGun)gunType.type.enhancedModel, gunType.type, 0,true);
             }
         }
@@ -844,8 +846,8 @@ public class ClientProxy extends CommonProxy {
         ItemGun gunType = ModularWarfare.gunTypes.get(wepType);
         if (gunType != null) {
             if (gunType.type.animationType == WeaponAnimationType.ENHANCED) {
-                if(gunEnhancedRenderer.getController(player, null)!=null) {
-                    gunEnhancedRenderer.getController(player, null).MODE_CHANGE=0;
+                if(AnimationController.getController(player, null)!=null) {
+                    AnimationController.getController(player, null).MODE_CHANGE=0;
                 }
             }
         }

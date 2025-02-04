@@ -9,6 +9,7 @@ import com.modularwarfare.api.WeaponHitEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.armor.ArmorType;
@@ -292,8 +293,8 @@ public class ShotManager {
                 || !itemGun.type.hasFireMode(fireMode)) {
             return false;
         }
-        if (ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null) != null) {
-            if(!ClientProxy.gunEnhancedRenderer.getController(entityPlayer, null).isCouldShoot()) {
+        if (AnimationController.getController(entityPlayer, null) != null) {
+            if(!AnimationController.getController(entityPlayer, null).isCouldShoot()) {
                 return false;
             }
         }

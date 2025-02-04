@@ -9,11 +9,17 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.StateEntry;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.Animation;
+import com.modularwarfare.client.fpp.enhanced.configs.GrenadeEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig.Animation;
+import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
+import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGrenade;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.handler.GrenadeEnhancedHandler;
+import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemGun;
@@ -63,10 +69,16 @@ public class EnhancedStateMachine {
     public int flashCount = 0;
     public boolean isFailedShoot = false;
 
-    public ModelEnhancedGun currentModel;
+    /**
+     * Grenade Throw State Machine
+     */
+    public boolean throwing = false;
+    
+    public EnhancedModel currentModel;
     public Phase reloadPhase = Phase.PRE;
     public Phase lastReloadPhase = null;
     public Phase shootingPhase = Phase.PRE;
+    public Phase throwingPhase = Phase.PRE;
 
     public ItemStack heldItemstStack=ItemStack.EMPTY;
     public int lastItemIndex=0;
@@ -97,6 +109,8 @@ public class EnhancedStateMachine {
         reloadPhase = Phase.PRE;
         lastReloadPhase = null;
         shootingPhase = Phase.PRE;
+        throwing=false;
+        throwingPhase = Phase.PRE;
         RenderGunEnhanced.postSmokeTp=0;
     }
 
@@ -133,7 +147,7 @@ public class EnhancedStateMachine {
             if(this.controller.POST_SMOKE>1) {
                 this.controller.POST_SMOKE=1.2f;
             }
-            RenderGunEnhanced.postSmokeAlpha+=0.05f*controller.getConfig().specialEffect.postSmokeFactor;
+            RenderGunEnhanced.postSmokeAlpha+=0.05f*((GunEnhancedRenderConfig)controller.getConfig()).specialEffect.postSmokeFactor;
             if(RenderGunEnhanced.postSmokeAlpha>1) {
                 RenderGunEnhanced.postSmokeAlpha=1;
             }  
@@ -157,6 +171,16 @@ public class EnhancedStateMachine {
         this.reloadPhase = Phase.PRE;
         this.lastReloadPhase = null;
         this.reloading = true;
+        this.currentModel = model;
+        
+        this.controller=controller;
+    }
+    
+    public void triggerThrow(AnimationController controller,EntityLivingBase entity, ModelEnhancedGrenade model) {
+        reset();
+        updateCurrentItem(entity);
+        this.throwingPhase = Phase.PRE;
+        this.throwing = true;
         this.currentModel = model;
         
         this.controller=controller;
@@ -366,6 +390,9 @@ public class EnhancedStateMachine {
             if (!shooting) {
                 reset();
             }
+            if (throwing) {
+                reset();
+            }
             //ClientTickHandler.reloadEnhancedPrognosisAmmo=ItemStack.EMPTY;
         }
         heldItemstStack = player.getHeldItemMainhand();
@@ -486,7 +513,7 @@ public class EnhancedStateMachine {
                 AnimationType aniType = getShootingAnimationType();
                 Passer<Phase> phase = new Passer(shootingPhase);
                 Passer<Double> progess = new Passer(controller.FIRE);
-                shooting = phaseUpdate(aniType, partialTick, 1, phase, progess,()->{
+                shooting = phaseUpdate(aniType, partialTick, 1, phase, progess, () -> {
                     phase.set(Phase.FIRST);
                 }, () -> {
                     phase.set(Phase.POST);
@@ -503,6 +530,29 @@ public class EnhancedStateMachine {
                         }
 //                        System.out.println(RenderGunEnhanced.postSmokeAlpha);
                     }
+                    controller.updateActionAndTime();
+                }
+            }
+        }
+        if(item instanceof ItemGrenade) {
+            if (throwing) {
+                AnimationType aniType = getGrenadeThrowAnimationType();
+                Passer<Phase> phase = new Passer(throwingPhase);
+                Passer<Double> progess = new Passer(controller.GRENADE_THROW);
+                throwing = phaseUpdate(aniType, partialTick, 1, phase, progess,()->{
+                    phase.set(Phase.FIRST);
+                }, () -> {
+                    if(GrenadeEnhancedHandler.isHolding) {
+                        progess.set(1D);
+                    }else {
+                        phase.set(Phase.SECOND);
+                    }
+                }, ()->{
+                    phase.set(Phase.POST);
+                });
+                throwingPhase = phase.get();
+                controller.GRENADE_THROW = progess.get();
+                if (!throwing) {
                     controller.updateActionAndTime();
                 }
             }
@@ -528,9 +578,9 @@ public class EnhancedStateMachine {
     public boolean phaseUpdate(AnimationType aniType, float partialTick,float speedFactor, Passer<Phase> phase, Passer<Double> progress,
             Runnable preCall,Runnable firstCall, Runnable secondCall) {
         boolean flag = true;
-        Animation ani = null;
+        EnhancedRenderConfig.Animation ani = null;
         if (aniType != null) {
-            ani = ((GunEnhancedRenderConfig)currentModel.config).animations.get(aniType);
+            ani = ((EnhancedRenderConfig)currentModel.config).animations.get(aniType);
         }
 //        System.out.println(aniType+":"+ani);
         if (ani != null) {
@@ -686,6 +736,33 @@ public class EnhancedStateMachine {
         } else {
             return reloadMaxCount;
         }
+    }
+
+    public AnimationType getGrenadeThrowAnimationType() {
+        AnimationType aniType = AnimationType.DEFAULT;
+        
+        GrenadeEnhancedRenderConfig config = (GrenadeEnhancedRenderConfig)currentModel.config;
+
+        switch (throwingPhase) {
+            case FIRST:
+                aniType = AnimationType.THROW_FIRST;
+                break;
+            case SECOND:
+                aniType = AnimationType.THROW_SECOND;
+                break;
+            case POST:
+                aniType = AnimationType.POST_THROW;
+                break;
+
+            case PRE:
+                aniType = AnimationType.PRE_THROW;
+                break;
+
+            default:
+                break;
+        }
+
+        return aniType;
     }
 
 }

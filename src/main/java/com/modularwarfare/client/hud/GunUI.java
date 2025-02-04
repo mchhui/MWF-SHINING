@@ -8,6 +8,7 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.utility.RayUtil;
@@ -155,7 +156,7 @@ public class GunUI {
                             }
                         }
 
-                        boolean showCrosshair = ((adsSwitch < 0.6F) && (ClientProxy.gunEnhancedRenderer.getClientController().ADS < 0.5F));
+                        boolean showCrosshair = ((adsSwitch < 0.6F) && (AnimationController.getClientController().ADS < 0.5F));
                         if(Minecraft.getMinecraft().gameSettings.thirdPersonView==1) {
                             showCrosshair=true;
                         }
@@ -163,7 +164,7 @@ public class GunUI {
                             if(ClientRenderHooks.getEnhancedAnimMachine(mc.player).reloading) {
                                 showCrosshair = false;
                             }
-                            if(ClientProxy.gunEnhancedRenderer.getClientController().INSPECT != 1F){
+                            if(AnimationController.getClientController().INSPECT != 1F){
                                 showCrosshair = false;
                             }
                         }
@@ -279,11 +280,11 @@ public class GunUI {
                         renderBullets(stack, null, i, j, 0,null);
                     }
                 }else {
-                    if(ClientProxy.gunEnhancedRenderer.getClientController()!=null) {
+                    if(AnimationController.getClientController()!=null) {
                         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(mc.player);
                         AnimationType reloadAni=anim.getReloadAnimationType();
                         if(type.acceptedAmmo!=null) {
-                            ammoStack=ClientProxy.gunEnhancedRenderer.getClientController().getRenderAmmo(ammoStack);
+                            ammoStack=AnimationController.getClientController().getRenderAmmo(ammoStack);
                             ammoStack.setItemDamage(0);
                             if(reloadAni==AnimationType.RELOAD_FIRST||reloadAni==AnimationType.RELOAD_FIRST_QUICKLY||reloadAni==AnimationType.UNLOAD) {
                                 ammoStack=ItemStack.EMPTY;
@@ -293,8 +294,8 @@ public class GunUI {
                             boolean flag=true;
                             ItemStack bulletStack = new ItemStack(stack.getTagCompound().getCompoundTag("bullet"));
                             if(anim.reloading) {
-                                bulletStack=ClientProxy.gunEnhancedRenderer.getClientController().getRenderAmmo(bulletStack);
-                                if(ClientProxy.gunEnhancedRenderer.getClientController().getPlayingAnimation() ==AnimationType.POST_UNLOAD) {
+                                bulletStack=AnimationController.getClientController().getRenderAmmo(bulletStack);
+                                if(AnimationController.getClientController().getPlayingAnimation() ==AnimationType.POST_UNLOAD) {
                                     //flag=false;
                                 }
                             }

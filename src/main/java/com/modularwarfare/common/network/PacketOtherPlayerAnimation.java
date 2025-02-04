@@ -3,6 +3,7 @@ package com.modularwarfare.common.network;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.model.ModelGun;
@@ -87,7 +88,7 @@ public class PacketOtherPlayerAnimation extends PacketBase {
                             fireTickDelay);
                 } else {
                     ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(
-                            ClientProxy.gunEnhancedRenderer.getController(player,
+                        AnimationController.getController(player,
                                     (GunEnhancedRenderConfig) gunType.enhancedModel.config),
                             (ModelEnhancedGun) gunType.enhancedModel, gunType, fireTickDelay, isFailed);
                 }

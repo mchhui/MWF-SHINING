@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.utility.maths.Interpolation;
@@ -23,10 +24,10 @@ public class ActionPlayback {
     
     private AnimationController animationController;
 
-    private GunEnhancedRenderConfig config;
+    private EnhancedRenderConfig config;
     
 
-    public ActionPlayback(AnimationController animationController, GunEnhancedRenderConfig config){
+    public ActionPlayback(AnimationController animationController, EnhancedRenderConfig config){
         this.animationController=animationController;
         this.config = config;
     }
@@ -65,13 +66,16 @@ public class ActionPlayback {
                     if(this.lastAction!=this.action) {
                         this.lastTime=config.animations.get(this.action).getStartTime(config.FPS);
                     }
-                    if(config.specialEffect.ejectionGroups!=null) {
-                        config.specialEffect.ejectionGroups.forEach((group)->{
-                            double testTime=group.throwShellFrame/config.FPS;
-                            if(this.lastTime<=testTime&&this.time>testTime) {
-                                RenderGunEnhanced.addEjectShell(group,0.15f);
-                            }
-                        });
+                    if(config instanceof GunEnhancedRenderConfig) {
+                        GunEnhancedRenderConfig guncfg=(GunEnhancedRenderConfig)config;
+                        if(guncfg.specialEffect.ejectionGroups!=null) {
+                            guncfg.specialEffect.ejectionGroups.forEach((group)->{
+                                double testTime=group.throwShellFrame/config.FPS;
+                                if(this.lastTime<=testTime&&this.time>testTime) {
+                                    RenderGunEnhanced.addEjectShell(group,0.15f);
+                                }
+                            });
+                        }
                     }
                 }  
             }

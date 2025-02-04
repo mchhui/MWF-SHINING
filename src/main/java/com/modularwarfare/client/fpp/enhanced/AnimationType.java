@@ -59,7 +59,15 @@ public enum AnimationType {
     CUSTOM7("custom7"),
     CUSTOM8("custom8"),
     PRIMARY_SKILL("primarySkill"),
-    SECONDARY_SKILL("secondarySkill");
+    SECONDARY_SKILL("secondarySkill"),
+    PRE_THROW("preThrow"),
+    THROW_FIRST("throwFirst"),
+    THROW_SECOND("throwSecond"),
+    POST_THROW("postThrow"),
+    PRE_THROW_LOW("preThrowLow"),
+    THROW_FIRST_LOW("throwFirstLow"),
+    THROW_SECOND_LOW("throwSecondLow"),
+    POST_THROW_LOW("postThrowLow");
 
     public String serializedName;
     private AnimationType(String name) {

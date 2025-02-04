@@ -18,11 +18,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
-
-    public HashMap<AnimationType, Animation> animations = new HashMap<>();
-    public HashMap<String, ObjectControl> objectControl = new HashMap<>();
+    public HashMap<String, EnhancedRenderConfig.ObjectControl> objectControl = new HashMap<>();
     
-    public GunEnhancedRenderConfig.Global global = new GunEnhancedRenderConfig.Global();
     public GunEnhancedRenderConfig.Sprint sprint = new GunEnhancedRenderConfig.Sprint();
     public GunEnhancedRenderConfig.Aim aim = new GunEnhancedRenderConfig.Aim();
     public GunEnhancedRenderConfig.SpecialEffect specialEffect = new GunEnhancedRenderConfig.SpecialEffect();
@@ -36,50 +33,8 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public boolean renderOffhandPart=false;
     public HashSet<String> thirdHideOffhandPart=new HashSet<String>();
     public HashSet<String> thirdShowOffhandPart=new HashSet<String>();
-
-    public GunEnhancedRenderConfig.ThirdPerson thirdPerson = new GunEnhancedRenderConfig.ThirdPerson();
     
    
-
-    public static class Transform{
-        public Vector3f translate = new Vector3f(0, 0, 0);
-        public Vector3f scale = new Vector3f(1, 1, 1);
-        public Vector3f rotate = new Vector3f(0, 0, 0);
-    }
-    
-    public static class ObjectControl extends Transform{
-        public boolean progress;
-    }
-    
-    public static class Animation {
-        public double startTime = 0;
-        public double endTime = 1;
-        public double speed = 1;
-
-        public double getStartTime(double FPS) {
-            return startTime * 1/FPS;
-        }
-
-        public double getEndTime(double FPS) {
-            return endTime * 1/FPS;
-        }
-        
-        public double getSpeed(double FPS) {
-            double a=(getEndTime(FPS)-getStartTime(FPS));
-            if(a<=0) {
-                a=1;
-            }
-            return speed/a;
-        }
-    }
-
-    //1.translate 3.scale 2.rotate(yxz)
-    public static class Global {
-        public Vector3f globalTranslate = new Vector3f(0, 0, 0);
-        //注:这并不会让你的枪看起来变大或变小 但是会影响剪裁空间
-        public Vector3f globalScale = new Vector3f(1, 1, 1);
-        public Vector3f globalRotate = new Vector3f(0, 0, 0);
-    }
 
     public static class Sprint {
         public Vector3f sprintRotate = new Vector3f(-20.0F, 30.0F, -0.0F);
@@ -98,11 +53,11 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public Vector3f translateAimPosition = new Vector3f(0F, 0F, 0F);
     }
     
-    public static class Attachment extends Transform {
+    public static class Attachment extends EnhancedRenderConfig.Transform {
         public String binding = "gunModel";
         public Vector3f sightAimPosOffset = new Vector3f(0F, 0F, 0F);
         public Vector3f sightAimRotOffset = new Vector3f(0F, 0F, 0F);
-        public ArrayList<Transform> multiMagazineTransform;
+        public ArrayList<EnhancedRenderConfig.Transform> multiMagazineTransform;
         public HashSet<String> hidePart=new HashSet<String>();
         public HashSet<String> showPart=new HashSet<String>();
         public boolean renderInsideSightModel=false;
@@ -114,35 +69,11 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public float modelRecoilShakeFactor = 1f;
     }
     
-    public static class AttachmentGroup extends Transform {
+    public static class AttachmentGroup extends EnhancedRenderConfig.Transform {
         public HashSet<String> hidePart=new HashSet<String>();
         public HashSet<String> showPart=new HashSet<String>();
     }
 
-    public static class ThirdPerson {
-
-        public static class RenderElement {
-            public Vector3f pos = new Vector3f(0F, 0F, 0F);
-            public Vector3f rot = new Vector3f(0F, 0F, 0F);
-            public Vector3f size = new Vector3f(1F, 1F, 1F);
-            
-            /**
-             * loot only
-             * */
-            public boolean randomYaw=false;
-        }
-
-        public HashMap<String, RenderElement> renderElements=new HashMap<String, GunEnhancedRenderConfig.ThirdPerson.RenderElement>(){{
-            put(RenderType.PLAYER.serializedName, new RenderElement());
-            put(RenderType.PLAYER_OFFHAND.serializedName, new RenderElement());
-            put(RenderType.ITEMLOOT.serializedName, new RenderElement());
-            put(RenderType.ITEMFRAME.serializedName, new RenderElement());
-        }};
-
-        
-        
-    }
-    
     public static class SpecialEffect{
         //是否启用对传统的FlashModel对象的渲染
         public boolean oldFlashModel=true;
@@ -183,26 +114,11 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
 
     public static class Extra {
         
-        public static class DynamicTextureConfig{
-            public String texhead;
-            /**
-             * 序列图后缀从从0开始数 数到frameCount-1
-             * 用于panelAmmo时
-             * frameCount表示循环周期
-             * 比如当前弹量为4
-             * frameCount为3
-             * 则取后缀assets/modularwarfare/panel/+texhead+1.png的图片为纹理
-             * */
-            public int frameCount;
-            public int FPS;
-            public boolean linear=false;
-        }
-        
-        public DynamicTextureConfig panelAmmo;
-        public HashMap<Integer, DynamicTextureConfig> panelSpecialAmmo;
-        public DynamicTextureConfig panelLogo;
-        public DynamicTextureConfig panelReload;
-        public DynamicTextureConfig panelInspect;
+        public EnhancedRenderConfig.DynamicTextureConfig panelAmmo;
+        public HashMap<Integer, EnhancedRenderConfig.DynamicTextureConfig> panelSpecialAmmo;
+        public EnhancedRenderConfig.DynamicTextureConfig panelLogo;
+        public EnhancedRenderConfig.DynamicTextureConfig panelReload;
+        public EnhancedRenderConfig.DynamicTextureConfig panelInspect;
 
         /**
          * Adds backwards recoil translations to the gun staticModel when firing
@@ -237,7 +153,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         
         public void preloadDynamicTexture() {
             ModularWarfare.preloadTasklist.add(()->{
-                ArrayList<DynamicTextureConfig> list=new ArrayList<GunEnhancedRenderConfig.Extra.DynamicTextureConfig>();
+                ArrayList<EnhancedRenderConfig.DynamicTextureConfig> list=new ArrayList<EnhancedRenderConfig.DynamicTextureConfig>();
                 list.add(panelAmmo);
                 list.add(panelLogo);
                 list.add(panelReload);

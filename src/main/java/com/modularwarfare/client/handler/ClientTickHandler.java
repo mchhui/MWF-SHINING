@@ -8,6 +8,7 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.animations.StateEntry;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.hud.GunUI;
@@ -23,6 +24,8 @@ import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.common.guns.manager.ShotManager;
+import com.modularwarfare.common.type.BaseItem;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLivingBase;
@@ -77,7 +80,7 @@ public final class ClientTickHandler {
                 if(lastWorld!=Minecraft.getMinecraft().world) {
                     ClientRenderHooks.weaponEnhancedAnimations.clear();
                     ClientRenderHooks.weaponBasicAnimations.clear();
-                    ClientProxy.gunEnhancedRenderer.getOtherControllers().clear();
+                    AnimationController.getOtherControllers().clear();
                     lastWorld=Minecraft.getMinecraft().world;
                 }
                 //CLEARING OLD_DATA END
@@ -127,22 +130,21 @@ public final class ClientTickHandler {
                     if (lastSyncTime > 0) {
 
                         final float stepTick = (time - lastSyncTime) / (1000/(float)SPS);
-                        if (ClientProxy.gunEnhancedRenderer.getClientController() != null) {
+                        if (AnimationController.getClientController() != null) {
                             if (Minecraft.getMinecraft().player != null) {
                                 if (Minecraft.getMinecraft().player.getHeldItemMainhand()
-                                        .getItem() instanceof ItemGun) {
-                                    if (((ItemGun) Minecraft.getMinecraft().player.getHeldItemMainhand()
-                                            .getItem()).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                                        ClientProxy.gunEnhancedRenderer.getClientController().onTickRender(stepTick);
+                                        .getItem() instanceof BaseItem) {
+                                    if (((BaseItem) Minecraft.getMinecraft().player.getHeldItemMainhand()
+                                            .getItem()).baseType.enhancedModel!=null) {
+                                        AnimationController.getClientController().onTickRender(stepTick);
                                     }
                                 }
                             }
                         }
 
-                        ClientProxy.gunEnhancedRenderer.getOtherControllers().values().forEach((ctrl) -> {
-                            if (ctrl.player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                                if (((ItemGun) ctrl.player.getHeldItemMainhand().getItem()).type.animationType
-                                        .equals(WeaponAnimationType.ENHANCED)) {
+                        AnimationController.getOtherControllers().values().forEach((ctrl) -> {
+                            if (ctrl.player.getHeldItemMainhand().getItem() instanceof BaseItem) {
+                                if (((BaseItem) ctrl.player.getHeldItemMainhand().getItem()).baseType.enhancedModel!=null) {
                                     ctrl.onTickRender(stepTick);
                                 }
                             }
@@ -191,10 +193,10 @@ public final class ClientTickHandler {
         /**
          *EnhancedGunRendered update currentItem 
          */
-        if (ClientProxy.gunEnhancedRenderer.getClientController() != null) {
-            ClientProxy.gunEnhancedRenderer.getClientController().updateCurrentItem();
+        if (AnimationController.getClientController() != null) {
+            AnimationController.getClientController().updateCurrentItem();
         }
-        ClientProxy.gunEnhancedRenderer.getOtherControllers().values().forEach((ctrl)->{
+        AnimationController.getOtherControllers().values().forEach((ctrl)->{
             ctrl.updateCurrentItem();
         });
 
