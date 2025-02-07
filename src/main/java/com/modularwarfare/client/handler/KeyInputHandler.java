@@ -104,6 +104,9 @@ public final class KeyInputHandler {
                     if(ClientProxy.gunEnhancedRenderer != null) {
                         ClientProxy.gunEnhancedRenderer.resetModels();
                     }
+                    if(ClientProxy.grenadeEnhancedRenderer != null) {
+                        ClientProxy.grenadeEnhancedRenderer.resetModels();
+                    }
 
                     if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
                         final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);

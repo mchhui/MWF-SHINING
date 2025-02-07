@@ -67,7 +67,8 @@ public enum AnimationType {
     PRE_THROW_LOW("preThrowLow"),
     THROW_FIRST_LOW("throwFirstLow"),
     THROW_SECOND_LOW("throwSecondLow"),
-    POST_THROW_LOW("postThrowLow");
+    POST_THROW_LOW("postThrowLow"),
+    THROWED("throwed");
 
     public String serializedName;
     private AnimationType(String name) {

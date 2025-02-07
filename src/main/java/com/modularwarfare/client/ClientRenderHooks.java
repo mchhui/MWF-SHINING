@@ -93,7 +93,7 @@ public class ClientRenderHooks {
         customRenderers[2] = ClientProxy.ammoRenderer = new RenderAmmo();
         customRenderers[3] = ClientProxy.attachmentRenderer = new RenderAttachment();
         customRenderers[8] = ClientProxy.grenadeStaticRenderer = new RenderGrenade();
-        customRenderers[9] = ClientProxy.grenadeEnhancedRenderer = new RenderGrenadeEnhanced();
+        customRenderers[10] = ClientProxy.grenadeEnhancedRenderer = new RenderGrenadeEnhanced();
     }
 
     public static AnimStateMachine getAnimMachine(EntityLivingBase entityPlayer) {
@@ -187,6 +187,33 @@ public class ClientRenderHooks {
                 GlStateManager.rotate(rotation * 45F, 0F, 0F, 1F);
                 GlStateManager.pushMatrix();
                 ClientProxy.gunEnhancedRenderer.drawThirdGun(null, RenderType.ITEMFRAME, null, event.getItem());
+                GlStateManager.popMatrix();
+            } else if (type.hasModel()) {
+                event.setCanceled(true);
+
+                int rotation = event.getEntityItemFrame().getRotation();
+                GlStateManager.rotate(-rotation * 45F, 0F, 0F, 1F);
+                RenderHelper.enableStandardItemLighting();
+                GlStateManager.rotate(rotation * 45F, 0F, 0F, 1F);
+                GlStateManager.pushMatrix();
+                float scale = 0.75F;
+                GlStateManager.scale(scale, scale, scale);
+                GlStateManager.translate(0.15F, -0.15F, 0F);
+                customRenderers[type.id].renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
+                GlStateManager.popMatrix();
+            }
+        } else if (item instanceof ItemGrenade) {
+            BaseType type = ((BaseItem) event.getItem().getItem()).baseType;
+            GrenadeType grenadeType = (GrenadeType) type;
+            if (grenadeType.animationType == WeaponAnimationType.ENHANCED) {
+                event.setCanceled(true);
+
+                int rotation = event.getEntityItemFrame().getRotation();
+                GlStateManager.rotate(-rotation * 45F, 0F, 0F, 1F);
+                RenderHelper.enableStandardItemLighting();
+                GlStateManager.rotate(rotation * 45F, 0F, 0F, 1F);
+                GlStateManager.pushMatrix();
+                ClientProxy.grenadeEnhancedRenderer.renderThirdPersonGrenade(null, RenderType.ITEMFRAME, null, event.getItem(), false);
                 GlStateManager.popMatrix();
             } else if (type.hasModel()) {
                 event.setCanceled(true);
@@ -401,7 +428,7 @@ public class ClientRenderHooks {
                         if(((GrenadeType)type).animationType.equals(WeaponAnimationType.BASIC)){
                             customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
                         }else {
-                            customRenderers[9].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, mc.player.getHeldItemMainhand(), mc.world, mc.player);
+                            customRenderers[10].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, mc.player.getHeldItemMainhand(), mc.world, mc.player);
                         }
                     } else {
                         customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);

@@ -4,8 +4,10 @@ import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.GUN
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.SMOOTH_SWING;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -21,15 +23,19 @@ import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.configs.GrenadeEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGrenade;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
+import com.modularwarfare.client.handler.GrenadeEnhancedHandler;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.modularwarfare.utility.ReloadHelper;
@@ -40,13 +46,16 @@ import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 import net.minecraft.client.renderer.entity.Render;
+import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.RenderPlayer;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.EnumHandSide;
@@ -121,7 +130,7 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
         mat.rotate(toRadians((player.rotationPitch - f5) * 0.1F), new Vector3f(1, 0, 0));
         mat.rotate(toRadians((player.rotationYaw - f6) * 0.1F), new Vector3f(0, 1, 0));
         /**
-         *  global
+         *  global (x-正左负右 y-正上负下 z-正前负后)
          * */
         mat.rotate(toRadians(90), new Vector3f(0, 1, 0));
         mat.translate(new Vector3f(config.global.globalTranslate.x, config.global.globalTranslate.y, config.global.globalTranslate.z));
@@ -202,22 +211,28 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.disableBlend();
     }
 
-    public void blendTransform(ModelEnhancedGrenade model, ItemStack gunStack, boolean basicSprint, float time, float sprintTime, float alpha, String hand, boolean applySprint, boolean skin, Runnable runnable) {
-
-        model.setAnimationCalBlender(new NodeAnimationBlender("FirstPersonBlender") {
-
-            @Override
-            public void handle(DataNode node, org.joml.Matrix4f mat) {
-                if (!basicSprint) {
+    public void blendTransform(ModelEnhancedGrenade model, ItemStack grenadeStack, boolean basicSprint, float time, float sprintTime, float alpha, String hand, boolean applySprint, boolean skin, Runnable runnable) {
+        if (runnable == null) {
+            return;
+        }
+        
+        AnimationType controllerState = AnimationController.getClientController().getPlayingAnimation();
+        boolean isDefaultState = controllerState == AnimationType.DEFAULT || controllerState == AnimationType.SPRINT;
+        
+        if (isDefaultState && !basicSprint) {
+            model.setAnimationCalBlender(new NodeAnimationBlender("FirstPersonBlender") {
+                @Override
+                public void handle(DataNode node, org.joml.Matrix4f mat) {
                     if (alpha != 0) {
-                        sprint:
-                        {
+                        sprint: {
                             org.joml.Matrix4f begin_transform = mat;
                             mchhui.hegltf.DataAnimation.Transform end_transform = model.findLocalTransform(node.name, sprintTime);
                             if (end_transform == null) {
                                 break sprint;
                             }
-                            if (!node.name.equals("root") && !node.name.equals("sprint_lefthand") && !node.name.equals("sprint_righthand") && !node.name.equals("root_bone") && !node.name.equals("sprint_lefthand_bone") && !node.name.equals("sprint_righthand_bone") && !node.name.endsWith("_sprint")) {
+                            if (!node.name.equals("root") && !node.name.equals("sprint_lefthand") && !node.name.equals("sprint_righthand") 
+                                && !node.name.equals("root_bone") && !node.name.equals("sprint_lefthand_bone") 
+                                && !node.name.equals("sprint_righthand_bone") && !node.name.endsWith("_sprint")) {
                                 break sprint;
                             }
                             Quaternionf quat = new Quaternionf();
@@ -225,10 +240,14 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
                             quat.normalize().slerp(end_transform.rot.normalize(), alpha);
                             org.joml.Vector3f pos = new org.joml.Vector3f();
                             begin_transform.getTranslation(pos);
-                            pos.set(pos.x + (end_transform.pos.x - pos.x) * alpha, pos.y + (end_transform.pos.y - pos.y) * alpha, pos.z + (end_transform.pos.z - pos.z) * alpha);
+                            pos.set(pos.x + (end_transform.pos.x - pos.x) * alpha, 
+                                  pos.y + (end_transform.pos.y - pos.y) * alpha, 
+                                  pos.z + (end_transform.pos.z - pos.z) * alpha);
                             org.joml.Vector3f size = new org.joml.Vector3f();
                             begin_transform.getScale(size);
-                            size.set(size.x + (end_transform.size.x - size.x) * alpha, size.y + (end_transform.size.y - size.y) * alpha, size.z + (end_transform.size.z - size.z) * alpha);
+                            size.set(size.x + (end_transform.size.x - size.x) * alpha,
+                                   size.y + (end_transform.size.y - size.y) * alpha,
+                                   size.z + (end_transform.size.z - size.z) * alpha);
                             mat.identity();
                             mat.translate(pos);
                             mat.scale(size);
@@ -236,11 +255,139 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
                         }
                     }
                 }
-            }
-        });
+            });
+            model.updateAnimation(time, skin);
+            runnable.run();
+            model.setAnimationCalBlender(null);
+            return;
+        }
+        
         model.updateAnimation(time, skin);
         runnable.run();
-        model.setAnimationCalBlender(null);
+    }
+
+    
+
+    public void renderThirdPersonGrenade(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player, ItemStack stack) {
+        renderThirdPersonGrenade(renderPlayer, renderType, player, stack, false);
+    }
+
+    public void renderThirdPersonGrenade(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player, ItemStack demoStack, boolean sneakFlag) {
+        if (!(demoStack.getItem() instanceof ItemGrenade)) return;
+        
+        GrenadeType grenadeType = ((ItemGrenade) demoStack.getItem()).type;
+        if (grenadeType == null || grenadeType.animationType != WeaponAnimationType.ENHANCED) return;
+
+        ModelEnhancedGrenade model;
+        if (renderType == RenderType.ITEMFRAME || renderType == RenderType.ITEMLOOT) {
+            String key = renderType.serializedName;
+            if(!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != grenadeType) {
+                ModelEnhancedGrenade newModel = new ModelEnhancedGrenade((GrenadeEnhancedRenderConfig)grenadeType.enhancedModel.config, grenadeType);
+                newModel.model = grenadeType.enhancedModel.model;
+                thirdPersonModels.put(key, newModel);
+            }
+            model = (ModelEnhancedGrenade)thirdPersonModels.get(key);
+        } else {
+            model = getOrCreateModel(grenadeType, false, player != null ? player.getUniqueID() : null);
+        }
+
+        if (model == null) return;
+
+        GrenadeEnhancedRenderConfig config = (GrenadeEnhancedRenderConfig) model.config;
+        
+        if (renderType == RenderType.GRENADE) {
+            float animTime;
+            if (config.animations.containsKey(AnimationType.THROWED)) {
+                float throwedDuration = (float) (config.animations.get(AnimationType.THROWED).getEndTime(config.FPS) - 
+                                               config.animations.get(AnimationType.THROWED).getStartTime(config.FPS));
+                float startTime = (float) config.animations.get(AnimationType.THROWED).getStartTime(config.FPS);
+                animTime = startTime + (Minecraft.getMinecraft().world.getTotalWorldTime() % (int)(throwedDuration * 20)) / 20.0f;
+            } else {
+                float defaultDuration = (float) (config.animations.get(AnimationType.DEFAULT).getEndTime(config.FPS) - 
+                                              config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS));
+                float startTime = (float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS);
+                animTime = startTime + (Minecraft.getMinecraft().world.getTotalWorldTime() % (int)(defaultDuration * 20)) / 20.0f;
+            }
+            model.updateAnimation(animTime, true);
+        } else {
+            AnimationController controller;
+            EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
+            if (player != null) {
+                controller = AnimationController.getController(player, config);
+                if (controller.getPlayingAnimation() == AnimationType.DEFAULT) {
+                    model.updateAnimation(controller.getTime(), true);
+                } else {
+                    model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS),
+                            true);
+                }
+            } else {
+                model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS), true);
+            }
+        }
+
+        boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode = true;
+
+        HashSet<String> exceptParts = new HashSet<String>();
+        exceptParts.addAll(RenderGunEnhanced.DEFAULT_EXCEPT);
+
+        float worldScale = 1;
+
+        HashSet<String> exceptPartsRendering = exceptParts;
+
+        GlStateManager.pushMatrix();
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
+        ClientProxy.grenadeEnhancedRenderer.color(1, 1, 1, 1f);
+
+        if (player != null && sneakFlag) {
+            GlStateManager.translate(0.0F, 0.2F, 0.0F);
+        }
+
+        if (renderPlayer != null && renderPlayer.getMainModel() instanceof ModelBiped) {
+            if (renderType == RenderType.PLAYER_OFFHAND) {
+                ((ModelBiped) renderPlayer.getMainModel()).bipedLeftArm.postRender(0.0625F);
+            } else {
+                ((ModelBiped) renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
+            }
+        }
+
+        RenderElement renderConfigElement = config.thirdPerson.renderElements.get(renderType.serializedName);
+        GlStateManager.translate(renderConfigElement.pos.x, renderConfigElement.pos.y, renderConfigElement.pos.z);
+        GlStateManager.scale(1 / 10f, 1 / 10f, 1 / 10f);
+        GlStateManager.scale(renderConfigElement.size.x, renderConfigElement.size.y, renderConfigElement.size.z);
+        GlStateManager.rotate(renderConfigElement.rot.y, 0, -1, 0);
+        GlStateManager.rotate(renderConfigElement.rot.x, -1, 0, 0);
+        GlStateManager.rotate(renderConfigElement.rot.z, 0, 0, -1);
+
+        int skinId = 0;
+        if (demoStack.hasTagCompound()) {
+            if (demoStack.getTagCompound().hasKey("skinId")) {
+                skinId = demoStack.getTagCompound().getInteger("skinId");
+            }
+        }
+        
+        String grenadePath = skinId > 0 ? grenadeType.modelSkins[skinId].getSkin() : grenadeType.modelSkins[0].getSkin();
+        
+        ClientProxy.grenadeEnhancedRenderer.bindTexture("grenades", grenadePath);
+        exceptParts.addAll(Arrays.asList(
+                "leftArmModel", "leftArmLayerModel",
+                "rightArmModel", "rightArmLayerModel",
+                "leftArmSlimModel", "leftArmLayerSlimModel",
+                "rightArmSlimModel", "rightArmLayerSlimModel"
+            ));
+        model.renderPartExcept(exceptParts);
+
+        ObjModelRenderer.glowTxtureMode = glowTxtureMode;
+        GlStateManager.shadeModel(GL11.GL_FLAT);
+        GlStateManager.popMatrix();
+    }
+
+    public void color(float r, float g, float b, float a) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+        GlStateManager.color(r, g, b, a);
     }
 
     @Override

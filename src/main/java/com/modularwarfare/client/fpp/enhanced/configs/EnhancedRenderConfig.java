@@ -88,6 +88,7 @@ public class EnhancedRenderConfig {
             put(RenderType.PLAYER_OFFHAND.serializedName, new RenderElement());
             put(RenderType.ITEMLOOT.serializedName, new RenderElement());
             put(RenderType.ITEMFRAME.serializedName, new RenderElement());
+            put(RenderType.GRENADE.serializedName, new RenderElement());
         }};
     
         
