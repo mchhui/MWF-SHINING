@@ -6,10 +6,15 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.optifine.shaders.Shaders;
+import net.optifine.shaders.MWFOptifineShadesHelper;
+import com.modularwarfare.utility.OptifineHelper;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,46 +113,78 @@ public class GrenadeTrajectoryManager {
     public void renderTrajectory(EntityPlayer player, float partialTicks) {
         if(trajectoryPoints.isEmpty()) return;
         
-        GlStateManager.pushMatrix();
+        // 保存所有渲染状态
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        GlStateManager.pushMatrix();
         
-        GlStateManager.disableTexture2D();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GlStateManager.disableLighting();
-        
-        double interpPosX = player.lastTickPosX + (player.posX - player.lastTickPosX) * partialTicks;
-        double interpPosY = player.lastTickPosY + (player.posY - player.lastTickPosY) * partialTicks;
-        double interpPosZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks;
-        
-        GlStateManager.translate(-interpPosX, -interpPosY, -interpPosZ);
-        
-        GL11.glLineWidth(2.0F);
-        GL11.glEnable(GL11.GL_LINE_SMOOTH);
-        
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-        
-        buffer.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
-        for(int i = 0; i < trajectoryPoints.size(); i++) {
-            Vec3d point = trajectoryPoints.get(i);
-            float alpha = 0.8f - (0.6f * i / trajectoryPoints.size());
-            buffer.pos(point.x, point.y, point.z).color(1f, 1f, 1f, alpha).endVertex();
-        }
-        tessellator.draw();
-        
-        if(collisionPoint != null) {
-            renderCollisionSphere(tessellator, buffer, collisionPoint);
+        // 保存着色器状态
+        boolean shadersEnabled = OptifineHelper.isShadersEnabled();
+        int prevProgram = -1;
+        if(shadersEnabled) {
+            prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
         }
         
-        GL11.glDisable(GL11.GL_LINE_SMOOTH);
-        GL11.glLineWidth(1.0F);
-        GlStateManager.enableLighting();
-        GlStateManager.enableTexture2D();
-        GlStateManager.disableBlend();
-        
-        GL11.glPopAttrib();
-        GlStateManager.popMatrix();
+        try {
+            // 设置渲染状态
+            GlStateManager.disableTexture2D();
+            GlStateManager.enableBlend();
+            GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GlStateManager.disableLighting();
+            
+            if(shadersEnabled) {
+                Shaders.useProgram(Shaders.ProgramNone);
+                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+            }
+            
+            double interpPosX = player.lastTickPosX + (player.posX - player.lastTickPosX) * partialTicks;
+            double interpPosY = player.lastTickPosY + (player.posY - player.lastTickPosY) * partialTicks;
+            double interpPosZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * partialTicks;
+            
+            GlStateManager.translate(-interpPosX, -interpPosY, -interpPosZ);
+            
+            GL11.glLineWidth(2.0F);
+            GL11.glEnable(GL11.GL_LINE_SMOOTH);
+            
+            Tessellator tessellator = Tessellator.getInstance();
+            BufferBuilder buffer = tessellator.getBuffer();
+            
+            // 渲染抛物线
+            buffer.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+            for(int i = 0; i < trajectoryPoints.size(); i++) {
+                Vec3d point = trajectoryPoints.get(i);
+                float alpha = 0.8f - (0.6f * i / trajectoryPoints.size());
+                buffer.pos(point.x, point.y, point.z).color(1f, 1f, 1f, alpha).endVertex();
+            }
+            tessellator.draw();
+            
+            // 渲染落点球体
+            if(collisionPoint != null) {
+                renderCollisionSphere(tessellator, buffer, collisionPoint);
+            }
+            
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            GL11.glLineWidth(1.0F);
+            
+        } finally {
+            // 恢复渲染状态
+            GlStateManager.enableTexture2D();
+            GlStateManager.enableLighting();
+            GlStateManager.disableBlend();
+            
+            // 恢复着色器状态
+            if(shadersEnabled) {
+                GL20.glUseProgram(prevProgram);
+                
+                if(OptifineHelper.isRenderingDfb()) {
+                    OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, MWFOptifineShadesHelper.getDFB());
+                    Shaders.setDrawBuffers(MWFOptifineShadesHelper.getDFBDrawBuffers());
+                }
+            }
+            
+            // 恢复所有状态
+            GlStateManager.popMatrix();
+            GL11.glPopAttrib();
+        }
     }
     
     private void renderCollisionSphere(Tessellator tessellator, BufferBuilder buffer, Vec3d center) {
