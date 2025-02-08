@@ -12,6 +12,7 @@ import com.modularwarfare.client.export.ItemModelExport;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.anims.*;
 import com.modularwarfare.client.fpp.basic.configs.GunRenderConfig;
+import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
@@ -341,6 +342,9 @@ public class ClientProxy extends CommonProxy {
                 if (skin.sampling.equals(SkinType.Sampling.LINEAR)) {
                     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                     GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                } else {
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
                 }
             }
         });
@@ -351,8 +355,13 @@ public class ClientProxy extends CommonProxy {
         preloadTextureTypes.forEach((type) -> {
             type.resourceLocations.forEach((loc)->{
                 Minecraft.getMinecraft().getTextureManager().bindTexture(loc);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                if (type.sampling.equals(SkinType.Sampling.LINEAR)) {
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                } else {
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                }
             });
         });
         ModularWarfare.LOGGER.info(String.format("Preloaded %d effect textures (%dms)", preloadTextureTypes.size(), System.currentTimeMillis() - textureTime));
@@ -360,8 +369,26 @@ public class ClientProxy extends CommonProxy {
         long maskTime = System.currentTimeMillis();
         preloadMaskResource.forEach((ResourceLocation) -> {
             Minecraft.getMinecraft().getTextureManager().bindTexture(ResourceLocation);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            // 对于 mask 纹理,根据配置决定采样方式
+            // 遍历所有 attachment 类型找到对应的配置
+            boolean useLinearSampling = false;
+            for (ItemAttachment attachment : ModularWarfare.attachmentTypes.values()) {
+                if (attachment.type.attachmentType == AttachmentPresetEnum.Sight) {
+                    AttachmentRenderConfig config = ModularWarfare.getRenderConfig(attachment.type, AttachmentRenderConfig.class);
+                    if (config != null && config.sight != null && 
+                        ResourceLocation.toString().contains(config.sight.maskTexture)) {
+                        useLinearSampling = config.sight.maskLinearSampling;
+                        break;
+                    }
+                }
+            }
+            if (useLinearSampling) {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            } else {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            }
         });
         ModularWarfare.LOGGER.info(String.format("Preloaded %d mask textures (%dms)", preloadMaskResource.size(), System.currentTimeMillis() - maskTime));
         ModularWarfare.LOGGER.info(String.format("All textures are ready (total: %dms)", System.currentTimeMillis() - totalTime));

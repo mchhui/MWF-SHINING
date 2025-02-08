@@ -2,6 +2,7 @@ package com.modularwarfare.common.textures;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.type.BaseType;
+import com.modularwarfare.common.guns.SkinType;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ public class TextureType extends BaseType {
 
     public TextureEnumType textureType = TextureEnumType.Flash;
     public String[] imageLocation;
+    public SkinType.Sampling sampling = SkinType.Sampling.FLAT;
 
     public transient List<ResourceLocation> resourceLocations = new ArrayList<>();
 

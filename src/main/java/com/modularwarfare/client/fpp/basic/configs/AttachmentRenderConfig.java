@@ -48,6 +48,8 @@ public class AttachmentRenderConfig {
         
         public float factorCrossScale = 0.2f;
         public String maskTexture="default_mask";
+        // 控制 mask 纹理的采样方式,默认使用线性采样
+        public boolean maskLinearSampling = true;
         public float maskSize=0.75f;
         public float uniformMaskRange=0.1f;
         public float uniformDrawRange=245f/1600;
