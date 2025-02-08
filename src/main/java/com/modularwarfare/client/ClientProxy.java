@@ -26,6 +26,7 @@ import com.modularwarfare.client.handler.SmoothSwingTicker;
 import com.modularwarfare.client.hud.AttachmentUI;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.hud.GunUI;
+import com.modularwarfare.client.input.HudHoldUtil;
 import com.modularwarfare.client.killchat.KillFeedManager;
 import com.modularwarfare.client.killchat.KillFeedRender;
 import com.modularwarfare.client.model.FakeRenderPlayer;
@@ -306,6 +307,10 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void init() {
+        super.init();
+        HudHoldUtil.disableHideGui(ModConfig.INSTANCE.general.disableHideGui);
+        MinecraftForge.EVENT_BUS.register(HudHoldUtil.class);
+
         //Disable VAO on Mac computer (not compatibility)
         if (ModUtil.isMac()) {
             ModConfig.INSTANCE.model_optimization = false;
