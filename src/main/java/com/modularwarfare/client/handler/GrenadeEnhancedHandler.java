@@ -166,15 +166,17 @@ public class GrenadeEnhancedHandler {
                  }
                  
                  if(isThrowingTemp && !isHolding) {
-                     setTimerStarted(stack, false);
-                     isConsumed = false;
-                     if(type.enhancedModel != null) {
-                         machine.triggerThrow(AnimationController.getClientController(), mc.player, (ModelEnhancedGrenade)type.enhancedModel);
+                     if(machine != null && !machine.throwing) {
+                         setTimerStarted(stack, false);
+                         isConsumed = false;
+                         if(type.enhancedModel != null) {
+                             machine.triggerThrow(AnimationController.getClientController(), mc.player, (ModelEnhancedGrenade)type.enhancedModel);
+                         }
+                         startHoldTime=System.currentTimeMillis();
+                         isHolding = true;
+                         holdingStack = stack.copy();
+                         type.playClientSound(mc.player, WeaponSoundType.GrenadePreThrow);
                      }
-                     startHoldTime=System.currentTimeMillis();
-                     isHolding = true;
-                     holdingStack = stack.copy();
-                     type.playClientSound(mc.player, WeaponSoundType.GrenadePreThrow);
                  } else if(!isThrowingTemp && isHolding) {
                      if(machine != null && machine.throwing) {
                          if(machine.throwingPhase == EnhancedStateMachine.Phase.FIRST && 
