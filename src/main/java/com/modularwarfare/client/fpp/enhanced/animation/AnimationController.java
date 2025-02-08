@@ -18,6 +18,8 @@ import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.input.KeyBindingUtil;
 import com.modularwarfare.client.view.AutoSwitchToFirstView;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.grenades.GrenadeType;
+import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.utility.maths.Interpolation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
@@ -166,13 +168,17 @@ public class AnimationController {
             defaultSpeed = config.animations.get(AnimationType.DEFAULT_EMPTY).getSpeed(config.FPS) * stepTick;
         }
         if(DEFAULT==0&&DRAW==1) {
-            if (player.getHeldItemMainhand().getItem() instanceof ItemGun&&player instanceof EntityPlayer) {
+            if (player.getHeldItemMainhand().getItem() instanceof ItemGun && player instanceof EntityPlayer) {
                 GunType type=((ItemGun)player.getHeldItemMainhand().getItem()).type;
                 if(playback.action==AnimationType.DEFAULT_EMPTY) {
                     type.playClientSound((EntityPlayer)player, WeaponSoundType.IdleEmpty);
                 }else {
                     type.playClientSound((EntityPlayer)player, WeaponSoundType.Idle);
                 }
+            } else if (player.getHeldItemMainhand().getItem() instanceof ItemGrenade) {
+                // 手雷暂时不需要播放空闲声音
+                GrenadeType type = ((ItemGrenade)player.getHeldItemMainhand().getItem()).type;
+                // TODO: 如果需要可以添加手雷的空闲声音
             }
         }
         DEFAULT = Math.max(0F,DEFAULT + defaultSpeed);
@@ -207,10 +213,12 @@ public class AnimationController {
                     }
                 }  
             }
-            GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
-            if(type.drawForce) {
-                if(DRAW<1) {
-                    takedownSpeed=0;  
+            if(player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
+                if(type.drawForce) {
+                    if(DRAW<1) {
+                        takedownSpeed=0;  
+                    }
                 }
             }
             TAKEDOWN-=takedownSpeed;
