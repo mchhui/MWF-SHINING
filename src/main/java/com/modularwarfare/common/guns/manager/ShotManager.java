@@ -659,6 +659,9 @@ public class ShotManager {
 
     public static void fireClientSide(EntityPlayer entityPlayer, ItemGun itemGun) {
         if (entityPlayer.world.isRemote) {
+            // 重置子弹索引，确保每次射击都从第一颗子弹开始
+            RayUtil.resetBulletIndex();
+            
             AimingData aimData = getAimingData(entityPlayer);
             // 强制更新瞄准数据,确保使用最新的数据
             aimData.updateForced(entityPlayer, itemGun);

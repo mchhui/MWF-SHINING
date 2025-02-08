@@ -853,14 +853,13 @@ public class RenderHelperMW {
         EntityPlayer player = Minecraft.getMinecraft().player;
         HashMap<String, ObjModel> modelCache=new HashMap<String, ObjModel>();
 
-        // 保存当前激活的纹理单元
+        // 保存当前OpenGL状态
+        GL11.glPushMatrix();
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        
+        // 保存当前激活的纹理单元和绑定的纹理
         int activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         int boundTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-
-        GL11.glPushMatrix();
-        
-        // 保存当前的OpenGL状态
-        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
 
         boolean shadersEnabled = OptifineHelper.isShadersEnabled();
         int prevProgram = -1;
@@ -869,13 +868,17 @@ public class RenderHelperMW {
         }
         
         // 设置渲染状态
+        GL11.glDisable(GL11.GL_CULL_FACE);
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glDisable(GL11.GL_ALPHA_TEST);
+        
+        // 设置深度测试
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GL11.glDepthMask(false);
+        
+        // 设置混合模式
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glDisable(GL11.GL_ALPHA_TEST); // 禁用alpha测试以获得更好的混合效果
-        
-        // 确保烟雾在其他透明物体之后渲染
-        GL11.glDepthMask(false);
-        GL11.glDepthFunc(GL11.GL_LEQUAL);
 
         float scale2 = 0.02F;
 
@@ -884,10 +887,8 @@ public class RenderHelperMW {
         float playerOffsetY = (float) (player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) partialTicks);
         float playerOffsetZ = (float) (player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) partialTicks);
 
-        GL11.glTranslatef((float) worldX, (float) worldY, (float) worldZ);
-        GL11.glTranslatef(-playerOffsetX, -playerOffsetY, -playerOffsetZ);
+        GL11.glTranslatef((float) worldX - playerOffsetX, (float) worldY - playerOffsetY, (float) worldZ - playerOffsetZ);
         GL11.glNormal3f(0.0F, 1.0F, 0.0F);
-
         GL11.glScalef(-scale2, -scale2, scale2);
 
         float realTick = RenderParameters.SMOOTH_SWING;
@@ -904,9 +905,7 @@ public class RenderHelperMW {
         // 如果有自定义模型，渲染模型
         if (modelPath != null) {
             GL11.glPushMatrix();
-
             GL11.glRotatef(180, 1, 0, 0);
-            GL11.glTranslatef(0, 0, 0);
             GL11.glScalef(100F, 100F, 100F);
             
             ObjModel obj = modelCache.get(modelPath);
@@ -915,37 +914,24 @@ public class RenderHelperMW {
                 modelCache.put(modelPath, obj);
             }
 
-            // 设置适当的混合模式
-            GlStateManager.tryBlendFuncSeparate(
-                GlStateManager.SourceFactor.SRC_ALPHA, 
-                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
-                GlStateManager.SourceFactor.ONE, 
-                GlStateManager.DestFactor.ZERO);
-
             obj.renderAll(1);
-
             GL11.glPopMatrix();
         } else {
             // 渲染默认的平面特效
             for (int layer = 0; layer < 4; layer++) {
                 float swingOffset = (float) (Math.sin(realTick / 100) * 3);
-
                 if (layer % 2 == 0) {
                     swingOffset = -swingOffset;
                 }
 
                 for (int rotation = 0; rotation < 9; rotation++) {
-                    // 每次渲染前重新绑定纹理
                     textureManager.bindTexture(textureLocation);
                     
-                    // 使用新的混合模式
-                    GlStateManager.tryBlendFuncSeparate(
-                        GlStateManager.SourceFactor.SRC_ALPHA, 
-                        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
-                        GlStateManager.SourceFactor.ONE, 
-                        GlStateManager.DestFactor.ZERO);
+                    // 设置颜色和alpha
+                    float alpha = (float)opacity;
+                    GL11.glColor4f(1.0f, 1.0f, 1.0f, alpha);
                         
-                    renderImageAlpha(-effectWidth / 2, -effectHeight / 2, textureLocation, effectWidth, effectHeight, opacity);
+                    renderImageAlpha(-effectWidth / 2, -effectHeight / 2, textureLocation, effectWidth, effectHeight, alpha);
                     
                     GL11.glRotatef(64, 0, 1, 0);
                     GL11.glRotatef(swingOffset, 1, 0, 0);
@@ -954,6 +940,8 @@ public class RenderHelperMW {
                 GL11.glRotatef(90, 1, 0, 0);
             }
         }
+
+        // 恢复着色器状态
         if(shadersEnabled) {
             GL20.glUseProgram(prevProgram);
             
@@ -963,13 +951,13 @@ public class RenderHelperMW {
             }
         }
 
-        // 恢复OpenGL状态
-        GL11.glPopAttrib();
-        GL11.glPopMatrix();
-
         // 恢复之前的纹理状态
         GlStateManager.setActiveTexture(activeTexture);
         GlStateManager.bindTexture(boundTexture);
+
+        // 恢复OpenGL状态
+        GL11.glPopAttrib();
+        GL11.glPopMatrix();
     }
 
     public static void renderPositionedImageInViewWithDepth(ResourceLocation img, double x, double y, double z, float width, float height, float givenAlpha) {

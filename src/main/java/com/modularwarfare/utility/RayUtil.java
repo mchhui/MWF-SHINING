@@ -31,21 +31,26 @@ import java.util.Random;
 
 public class RayUtil {
 
-    // 存储当前位置和目标位置的静态变量
-    private static double currentX = 0;
-    private static double currentY = 0;
-    private static double targetX = 0;
-    private static double targetY = 0;
-    private static double startX = 0;
-    private static double startY = 0;
-    private static float lastAccuracy = 0;
-    private static long accuracyChangeTime = 0;
-    private static final long ACCURACY_TRANSITION_TIME = 100; // 100ms的过渡时间
+    private static class AimingPoint {
+        double currentX = 0;
+        double currentY = 0;
+        double targetX = 0;
+        double targetY = 0;
+        double startX = 0;
+        double startY = 0;
+        float lastAccuracy = 0;
+        long accuracyChangeTime = 0;
+    }
+    
+    private static AimingPoint mainAimPoint = new AimingPoint();
+    private static AimingPoint[] subAimPoints = new AimingPoint[32]; // 支持最多32颗子弹
+    private static int currentBulletIndex = 0;
+    
+    public static void resetBulletIndex() {
+        currentBulletIndex = 0;
+    }
     
     public static Vec3d getGunAccuracy(float pitch, float yaw, final float accuracy, final Random rand, EntityLivingBase entity) {
-        Vec3d defaultVec = getDefaultAccuracy(pitch, yaw, accuracy, rand);
-        
-        // 检查是否为客户端环境且启用了增强瞄准
         if(Minecraft.getMinecraft() != null && Minecraft.getMinecraft().world != null && Minecraft.getMinecraft().world.isRemote && entity instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) entity;
                     
@@ -53,41 +58,59 @@ public class RayUtil {
             if(!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
                 ItemGun itemGun = (ItemGun)heldItem.getItem();
                 if(itemGun.type != null && itemGun.type.useEnhancedAiming) {
-                    // 只在增强瞄准时使用相同种子
+                    AimingPoint aimPoint;
+                    if(itemGun.type.numBullets > 1) {
+                        if(subAimPoints[currentBulletIndex] == null) {
+                            subAimPoints[currentBulletIndex] = new AimingPoint();
+                        }
+                        aimPoint = subAimPoints[currentBulletIndex];
+                        currentBulletIndex = (currentBulletIndex + 1) % itemGun.type.numBullets;
+                    } else {
+                        aimPoint = mainAimPoint;
+                    }
+                    
                     long seed = (long)(pitch * 10000) + (long)(yaw * 10000) + (long)(accuracy * 10000);
+                    
+                    if(itemGun.type.numBullets > 1) {
+                        long time = System.nanoTime();
+                        seed = seed * 31 + currentBulletIndex * 17 + (time & 0xFFFF);
+                        seed = seed * 31 + (time >>> 16) & 0xFFFF;
+                        seed = seed * 31 + (long)(Math.sin(currentBulletIndex * Math.PI / itemGun.type.numBullets) * 10000);
+                    }
                     rand.setSeed(seed);
                     
                     long currentTime = System.currentTimeMillis();
                             
-                    if(Math.abs(lastAccuracy - accuracy) > 0.0001f || currentTime - accuracyChangeTime > 200) {
-                        accuracyChangeTime = currentTime;
-                        lastAccuracy = accuracy;
+                    if(Math.abs(aimPoint.lastAccuracy - accuracy) > 0.0001f || currentTime - aimPoint.accuracyChangeTime > 200) {
+                        aimPoint.accuracyChangeTime = currentTime;
+                        aimPoint.lastAccuracy = accuracy;
                                 
-                        startX = currentX;
-                        startY = currentY;
+                        aimPoint.startX = aimPoint.currentX;
+                        aimPoint.startY = aimPoint.currentY;
                                 
-                        double angle = Math.atan2(currentY, currentX) + (rand.nextDouble() - 0.5) * Math.PI * 1.5;
-                        double currentRadius = Math.sqrt(currentX * currentX + currentY * currentY);
+                        double angleRange = itemGun.type.numBullets > 1 ? Math.PI * 2.0 : Math.PI * 1.5;
+                        double angle = Math.atan2(aimPoint.currentY, aimPoint.currentX) + (rand.nextDouble() - 0.5) * angleRange;
+                        double currentRadius = Math.sqrt(aimPoint.currentX * aimPoint.currentX + aimPoint.currentY * aimPoint.currentY);
                                 
-                        double newRadius = Math.min(accuracy, currentRadius + (rand.nextDouble() - 0.3) * accuracy * 0.8);
+                        double radiusChange = itemGun.type.numBullets > 1 ? 1.2 : 0.8;
+                        double newRadius = Math.min(accuracy, currentRadius + (rand.nextDouble() - 0.3) * accuracy * radiusChange);
                                 
-                        targetX = Math.cos(angle) * newRadius;
-                        targetY = Math.sin(angle) * newRadius;
+                        aimPoint.targetX = Math.cos(angle) * newRadius;
+                        aimPoint.targetY = Math.sin(angle) * newRadius;
                     }
                             
-                    float moveProgress = (currentTime - accuracyChangeTime) / 150.0f;
+                    float moveProgress = (currentTime - aimPoint.accuracyChangeTime) / 150.0f;
                     moveProgress = Math.min(1.0f, moveProgress);
                             
                     moveProgress = moveProgress < 0.5f ? 
                         2.0f * moveProgress * moveProgress : 
                         -1.0f + (4.0f - 2.0f * moveProgress) * moveProgress;
                             
-                    currentX = startX + (targetX - startX) * moveProgress;
-                    currentY = startY + (targetY - startY) * moveProgress;
+                    aimPoint.currentX = aimPoint.startX + (aimPoint.targetX - aimPoint.startX) * moveProgress;
+                    aimPoint.currentY = aimPoint.startY + (aimPoint.targetY - aimPoint.startY) * moveProgress;
                             
-                    // 只在客户端添加后坐力效果
-                    double finalX = currentX + RenderParameters.playerRecoilYaw * 0.5f;
-                    double finalY = currentY + RenderParameters.playerRecoilPitch * 0.5f;
+                    double finalX = aimPoint.currentX + RenderParameters.playerRecoilYaw * 0.5f;
+                    double finalY = aimPoint.currentY + RenderParameters.playerRecoilPitch * 0.5f;
                             
                     Vec3d vec3d = new Vec3d(finalX, finalY, 100).normalize();
                     return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
@@ -95,7 +118,7 @@ public class RayUtil {
                 }
             }
         }
-        return defaultVec;
+        return getDefaultAccuracy(pitch, yaw, accuracy, rand);
     }
 
 

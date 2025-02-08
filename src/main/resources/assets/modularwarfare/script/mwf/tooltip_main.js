@@ -1,6 +1,37 @@
 var KEY_LSHIFT = 42;
 var KEY_CTRL = 29;
 
+var potionEffectMap = {
+    "ABSORPTION": "absorption",
+    "BLINDNESS": "blindness",
+    "NAUSEA": "confusion",
+    "STRENGTH": "damageBoost",
+    "MINING_FATIGUE": "digSlowDown",
+    "HASTE": "digSpeed",
+    "FIRE_RESISTANCE": "fireResistance",
+    "GLOWING": "glowing",
+    "INSTANT_DAMAGE": "harm",
+    "INSTANT_HEALTH": "heal",
+    "HEALTH_BOOST": "healthBoost",
+    "HUNGER": "hunger",
+    "INVISIBILITY": "invisibility",
+    "JUMP_BOOST": "jump",
+    "LEVITATION": "levitation",
+    "LUCK": "luck",
+    "SLOWNESS": "moveSlowdown",
+    "SPEED": "moveSpeed",
+    "NIGHT_VISION": "nightVision",
+    "NONE": "none",
+    "POISON": "poison",
+    "REGENERATION": "regeneration",
+    "RESISTANCE": "resistance",
+    "SATURATION": "saturation",
+    "UNLUCK": "unluck",
+    "WATER_BREATHING": "waterBreathing",
+    "WEAKNESS": "weakness",
+    "WITHER": "wither"
+};
+
 function updateTooltip(stack, tiplist) {
     if (ScriptAPI.Gun.isGun(stack)) {
         updateGunTooltip(stack, tiplist);
@@ -99,7 +130,9 @@ function updateBulletTooltip(stack, tiplist) {
                     tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.effects") + ":");
                     for (var i = 0; i < allProperty.potionEffects.length; i++) {
                         var potionEntry = allProperty.potionEffects[i];
-                        var effectName = ScriptAPI.Lang.format(potionEntry.potionEffect.getPotion().getName());
+                        var effectKey = String(potionEntry.potionEffect);
+                        var mappedEffect = potionEffectMap[effectKey] || effectKey.toLowerCase();
+                        var effectName = ScriptAPI.Lang.format("effect." + mappedEffect);
                         var duration = (potionEntry.duration / 20.0).toFixed(1);
                         var level = potionEntry.level > 0 ? " " + ScriptAPI.Lang.format("mwf:gui.tooltip.effects.level") + " " + (potionEntry.level + 1) : "";
                         tiplist.add("§7- " + effectName + level + " " + duration + "s");
@@ -154,7 +187,9 @@ function updateBulletTooltip(stack, tiplist) {
                         tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.effects") + ":");
                         for (var j = 0; j < bulletProperty.potionEffects.length; j++) {
                             var potionEntry = bulletProperty.potionEffects[j];
-                            var effectName = ScriptAPI.Lang.format(potionEntry.potionEffect.getPotion().getName());
+                            var effectKey = String(potionEntry.potionEffect);
+                            var mappedEffect = potionEffectMap[effectKey] || effectKey.toLowerCase();
+                            var effectName = ScriptAPI.Lang.format("effect." + mappedEffect);
                             var duration = (potionEntry.duration / 20.0).toFixed(1);
                             var level = potionEntry.level > 0 ? " " + ScriptAPI.Lang.format("mwf:gui.tooltip.effects.level") + " " + (potionEntry.level + 1) : "";
                             tiplist.add("§7- " + effectName + level + " " + duration + "s");

@@ -45,7 +45,7 @@ public class EntityGrenade extends Entity {
         this.setEntityInvulnerable(false);
     }
 
-    public EntityGrenade(World world, EntityLivingBase thrower, boolean isRightClick, GrenadeType grenadeType) {
+    public EntityGrenade(World world, EntityLivingBase thrower, float throwStrength, GrenadeType grenadeType) {
         this(world);
 
         this.setGrenadeName(grenadeType.internalName);
@@ -59,11 +59,6 @@ public class EntityGrenade extends Entity {
             }
         }
         this.setPosition(eye.x,eye.y,eye.z);
-        float strenght = grenadeType.throwStrength;
-
-        if (!isRightClick) {
-            strenght *= 0.5f;
-        }
 
         Vec3d vec = thrower.getLookVec();
         double modifier = 1;
@@ -71,11 +66,15 @@ public class EntityGrenade extends Entity {
             modifier = 1.25;
         }
 
-        this.motionX = ((vec.x * 1.5) * modifier) * strenght;
-        this.motionY = ((vec.y * 1.5) * modifier) * strenght;
-        this.motionZ = ((vec.z * 1.5) * modifier) * strenght;
+        this.motionX = ((vec.x * 1.5) * modifier) * throwStrength;
+        this.motionY = ((vec.y * 1.5) * modifier) * throwStrength;
+        this.motionZ = ((vec.z * 1.5) * modifier) * throwStrength;
 
         this.thrower = thrower;
+    }
+
+    public EntityGrenade(World world, EntityLivingBase thrower, boolean isRightClick, GrenadeType grenadeType) {
+        this(world, thrower, isRightClick ? grenadeType.throwStrength : grenadeType.throwStrength * 0.5f, grenadeType);
     }
 
     @Override
@@ -142,7 +141,6 @@ public class EntityGrenade extends Entity {
 
     public void explode() {
         if (!this.world.isRemote && !exploded) {
-            this.world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.EXPLOSIONS_CLOSE, SoundCategory.BLOCKS, 2.0f, 1.0f);
             if (grenadeType != null) {
                 MWFExplosion explosion = new MWFExplosion(this.world, grenadeType.throwerVulnerable ? null : thrower, posX,
                         posY, posZ, grenadeType.explosionRange, grenadeType.explosionDamage, grenadeType.explosionKnockback,

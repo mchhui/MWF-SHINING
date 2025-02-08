@@ -35,14 +35,18 @@ public class EntitySmokeGrenade extends EntityGrenade {
         super(worldIn);
     }
 
-    public EntitySmokeGrenade(World world, EntityLivingBase thrower, boolean isRightClick, GrenadeType grenadeType) {
-        super(world, thrower, isRightClick, grenadeType);
+    public EntitySmokeGrenade(World world, EntityLivingBase thrower, float throwStrength, GrenadeType grenadeType) {
+        super(world, thrower, throwStrength, grenadeType);
         this.smokeTime = grenadeType.smokeTime * 20;
         this.preventEntitySpawning = true;
         this.isImmuneToFire = true;
         this.setSize(0.35f, 0.35f);
         this.setEntityInvulnerable(false);
         this.smokeScale = 0.0f;
+    }
+
+    public EntitySmokeGrenade(World world, EntityLivingBase thrower, boolean isRightClick, GrenadeType grenadeType) {
+        this(world, thrower, isRightClick ? grenadeType.throwStrength : grenadeType.throwStrength * 0.5f, grenadeType);
     }
 
     @Override

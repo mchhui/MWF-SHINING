@@ -30,6 +30,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.modularwarfare.common.grenades.PacketGrenadeThrow;
+
 /**
  * ModularWarfare packet handler class. Directs packet data to packet classes.
  *
@@ -217,6 +219,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         
         registerPacket(PacketLaserToggle.class);
         registerPacket(PacketLaserToggleClient.class);
+        registerPacket(PacketGrenadeThrow.class);
 
     }
 

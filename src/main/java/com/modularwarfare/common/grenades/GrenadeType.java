@@ -11,8 +11,13 @@ import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.type.BaseType;
+import com.modularwarfare.common.guns.WeaponSoundType;
+import com.modularwarfare.objects.SoundEntry;
 
 import net.minecraftforge.fml.common.FMLCommonHandler;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GrenadeType extends BaseType {
 
@@ -20,12 +25,18 @@ public class GrenadeType extends BaseType {
     
     public GrenadesEnumType grenadeType = GrenadesEnumType.Frag;
     
+    // UI控制参数
+    public boolean showIndicator = true;
+    public boolean showTrajectory = true;
+    public boolean showTimerBar = true;
+    
     public float fuseTime = 5.0f;
     public boolean damageWorld = false;
     public float explosionDamage = 30f;
     public float explosionRange = 6f;
     public float explosionKnockback = 1f;
     public float throwStrength = 1f;
+    public float throwStrengthLow = 0.5f;
     public boolean throwerVulnerable = false;
 
     public float smokeTime = 10f;

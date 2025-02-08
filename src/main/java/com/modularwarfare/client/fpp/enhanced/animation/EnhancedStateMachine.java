@@ -582,7 +582,7 @@ public class EnhancedStateMachine {
         if (aniType != null) {
             ani = ((EnhancedRenderConfig)currentModel.config).animations.get(aniType);
         }
-//        System.out.println(aniType+":"+ani);
+        
         if (ani != null) {
             double speed = ani.getSpeed(currentModel.config.FPS) * speedFactor * partialTick;
             double val = progress.get() + speed;
@@ -595,6 +595,7 @@ public class EnhancedStateMachine {
         } else {
             progress.set(1D);
         }
+        
         if (progress.get() >= 1F) {
             if (phase.get() == Phase.POST) {
                 flag = false;
@@ -742,22 +743,21 @@ public class EnhancedStateMachine {
         AnimationType aniType = AnimationType.DEFAULT;
         
         GrenadeEnhancedRenderConfig config = (GrenadeEnhancedRenderConfig)currentModel.config;
+        boolean isLowThrow = GrenadeEnhancedHandler.isThrowLow;
 
         switch (throwingPhase) {
             case FIRST:
-                aniType = AnimationType.THROW_FIRST;
+                aniType = isLowThrow ? AnimationType.THROW_FIRST_LOW : AnimationType.THROW_FIRST;
                 break;
             case SECOND:
-                aniType = AnimationType.THROW_SECOND;
+                aniType = isLowThrow ? AnimationType.THROW_SECOND_LOW : AnimationType.THROW_SECOND;
                 break;
             case POST:
-                aniType = AnimationType.POST_THROW;
+                aniType = isLowThrow ? AnimationType.POST_THROW_LOW : AnimationType.POST_THROW;
                 break;
-
             case PRE:
-                aniType = AnimationType.PRE_THROW;
+                aniType = isLowThrow ? AnimationType.PRE_THROW_LOW : AnimationType.PRE_THROW;
                 break;
-
             default:
                 break;
         }
