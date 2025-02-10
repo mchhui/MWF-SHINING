@@ -218,6 +218,8 @@ public enum WeaponSoundType {
     @SerializedName("attFovStage") Att_FOVStage("attFovStage", 8, "defweaponmodeswitch"),
 
     // 手雷音效
+    @SerializedName("grenadeDraw") GrenadeDraw("grenadeDraw", 8, "grenade_arm"),
+    @SerializedName("grenadeIdle") GrenadeIdle("grenadeIdle", 8, null),
     @SerializedName("grenadePreThrow") GrenadePreThrow("grenadePreThrow", 8, null),
     @SerializedName("grenadeThrowFirst") GrenadeThrowFirst("grenadeThrowFirst", 8, null),
     @SerializedName("grenadeThrowSecond") GrenadeThrowSecond("grenadeThrowSecond", 8, null),

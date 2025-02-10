@@ -176,9 +176,8 @@ public class AnimationController {
                     type.playClientSound((EntityPlayer)player, WeaponSoundType.Idle);
                 }
             } else if (player.getHeldItemMainhand().getItem() instanceof ItemGrenade) {
-                // 手雷暂时不需要播放空闲声音
                 GrenadeType type = ((ItemGrenade)player.getHeldItemMainhand().getItem()).type;
-                // TODO: 如果需要可以添加手雷的空闲声音
+                type.playClientSound((EntityPlayer)player, WeaponSoundType.GrenadeIdle);
             }
         }
         DEFAULT = Math.max(0F,DEFAULT + defaultSpeed);
@@ -640,10 +639,26 @@ public class AnimationController {
                         }
                     }
                     hasPlayedDrawSound = true;
+                } else if (item instanceof ItemGrenade) {
+                    if(player==Minecraft.getMinecraft().player) {
+                        if(drawSound!=null) {
+                            Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
+                            drawSound=null;
+                        }
+                        GrenadeType type = ((ItemGrenade)item).type;
+                        if(type.animationType==WeaponAnimationType.ENHANCED&&config==type.enhancedModel.config) {
+                            SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.GrenadeDraw);
+                            if(se!=null) {
+                                drawSound=PositionedSoundRecord.getRecord(se, 1, 1);
+                                Minecraft.getMinecraft().getSoundHandler().playSound(drawSound);  
+                            }
+                        }
+                    }
+                    hasPlayedDrawSound = true;
                 }
             }
             this.playback.action = AnimationType.DRAW;
-            if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+            if(player.getHeldItemMainhand().getItem() instanceof ItemGun && !ItemGun.hasNextShot(player.getHeldItemMainhand())) {
                 if(((EnhancedRenderConfig)config).animations.containsKey(AnimationType.DRAW_EMPTY)) {
                     this.playback.action = AnimationType.DRAW_EMPTY;  
                 }
@@ -654,7 +669,7 @@ public class AnimationController {
                 inspectSound=null;
             }
             this.playback.action = AnimationType.TAKEDOWN;
-            if(!ItemGun.hasNextShot(player.getHeldItemMainhand())) {
+            if(player.getHeldItemMainhand().getItem() instanceof ItemGun && !ItemGun.hasNextShot(player.getHeldItemMainhand())) {
                 if(((EnhancedRenderConfig)config).animations.containsKey(AnimationType.TAKEDOWN_EMPTY)) {
                     this.playback.action = AnimationType.TAKEDOWN_EMPTY;  
                 }
