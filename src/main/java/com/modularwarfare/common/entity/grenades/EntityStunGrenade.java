@@ -28,7 +28,11 @@ public class EntityStunGrenade extends EntityGrenade {
     }
 
     public EntityStunGrenade(World world, EntityLivingBase thrower, float throwStrength, GrenadeType grenadeType) {
-        super(world, thrower, throwStrength, grenadeType);
+        this(world, thrower, throwStrength, grenadeType, false);
+    }
+
+    public EntityStunGrenade(World world, EntityLivingBase thrower, float throwStrength, GrenadeType grenadeType, boolean isLowThrow) {
+        super(world, thrower, throwStrength, grenadeType, isLowThrow);
         this.preventEntitySpawning = true;
         this.isImmuneToFire = true;
         this.setSize(0.35f, 0.35f);
