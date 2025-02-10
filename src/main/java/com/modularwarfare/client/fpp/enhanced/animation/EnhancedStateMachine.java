@@ -186,6 +186,14 @@ public class EnhancedStateMachine {
         this.controller=controller;
     }
 
+    public void continueThrow(AnimationController controller,EntityLivingBase entity, ModelEnhancedGrenade model) {
+        this.throwingPhase = Phase.SECOND;
+        this.throwing = true;
+        this.currentModel = model;
+        
+        this.controller=controller;
+    }
+
     public void onTickUpdate() {
         // Recoil
         lastGunRecoil = gunRecoil;
