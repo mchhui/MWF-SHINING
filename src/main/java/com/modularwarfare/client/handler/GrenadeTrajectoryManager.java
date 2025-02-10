@@ -1,6 +1,8 @@
 package com.modularwarfare.client.handler;
 
+import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
+import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -10,6 +12,7 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.MathHelper;
 import net.optifine.shaders.Shaders;
 import net.optifine.shaders.MWFOptifineShadesHelper;
 import com.modularwarfare.utility.OptifineHelper;
@@ -21,7 +24,7 @@ import java.util.List;
 
 public class GrenadeTrajectoryManager {
     private static final GrenadeTrajectoryManager INSTANCE = new GrenadeTrajectoryManager();
-    private static final float NEAR_DISTANCE = 1.0f;
+    private static final float NEAR_DISTANCE = 0.1f;
     private static final int SPHERE_DETAIL = 16;
     private static final float SPHERE_RADIUS = 0.15f;
     
@@ -38,37 +41,51 @@ public class GrenadeTrajectoryManager {
         collisionPoint = null;
         collisionNormal = null;
         
+        // 获取玩家准心位置作为起点
         Vec3d startPos = player.getPositionEyes(partialTicks);
-        float strength = GrenadeEnhancedHandler.isThrowLow ? type.throwStrengthLow : type.throwStrength;
-        
-        Vec3d vec;
-        if (!GrenadeEnhancedHandler.isThrowLow) {
-            // 正常投掷增加15度仰角
-            float pitch = player.rotationPitch - 15;
-            float yaw = player.rotationYaw;
-            float f = 0.017453292F;
-            
-            double x = -Math.sin(yaw * f) * Math.cos(pitch * f);
-            double y = -Math.sin(pitch * f);
-            double z = Math.cos(yaw * f) * Math.cos(pitch * f);
-            
-            vec = new Vec3d(x, y, z);
-        } else {
-            vec = player.getLookVec();
+        if(ModularWarfare.isLoadedModularMovements) {
+            if (player instanceof EntityPlayer) {
+                startPos = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) player, partialTicks);
+            }
         }
         
-        double modifier = player.isSprinting() ? 1.25 : 1.0;
+        // 不再添加向下偏移，保持在准心位置
+        trajectoryPoints.add(startPos);
         
-        double motionX = ((vec.x * 1.5) * modifier) * strength;
-        double motionY = ((vec.y * 1.5) * modifier) * strength;
-        double motionZ = ((vec.z * 1.5) * modifier) * strength;
+        // 计算基础投掷力度
+        float baseStrength = GrenadeEnhancedHandler.isThrowLow ? type.throwStrengthLow : type.throwStrength;
+        // 与EntityGrenade相同的冲刺修正计算
+        float actualStrength = baseStrength * (player.isSprinting() ? 1.25f : 1.0f);
+        
+        // 获取基础视线向量
+        Vec3d lookVec = player.getLookVec();
+        
+        // 如果是正常投掷(非低抛)，增加仰角
+        if(!GrenadeEnhancedHandler.isThrowLow) {
+            // 获取玩家当前的俯仰角和偏航角
+            float playerPitch = player.rotationPitch;
+            float playerYaw = player.rotationYaw;
+            
+            // 减小俯仰角(增加仰角)10度，但不超过最大仰角(90度)
+            float newPitch = Math.max(-90, playerPitch - 10);
+            
+            // 使用新的角度计算投掷向量
+            float f = -MathHelper.sin(playerYaw * 0.017453292F) * MathHelper.cos(newPitch * 0.017453292F);
+            float f1 = -MathHelper.sin(newPitch * 0.017453292F);
+            float f2 = MathHelper.cos(playerYaw * 0.017453292F) * MathHelper.cos(newPitch * 0.017453292F);
+            
+            lookVec = new Vec3d(f, f1, f2);
+        }
+        
+        double motionX = lookVec.x * 1.5 * actualStrength;
+        double motionY = lookVec.y * 1.5 * actualStrength;
+        double motionZ = lookVec.z * 1.5 * actualStrength;
         
         double posX = startPos.x;
-        double posY = startPos.y - 0.10;
+        double posY = startPos.y;
         double posZ = startPos.z;
         
         Vec3d currentPos = new Vec3d(posX, posY, posZ);
-        double distanceFromStart = 0;
         
         boolean onGround = false;
         
@@ -94,11 +111,8 @@ public class GrenadeTrajectoryManager {
             posZ += motionZ;
             currentPos = new Vec3d(posX, posY, posZ);
             
-            distanceFromStart = startPos.distanceTo(currentPos);
-            
-            if(distanceFromStart > NEAR_DISTANCE) {
-                trajectoryPoints.add(currentPos);
-            }
+            // 移除距离检查，直接添加所有轨迹点
+            trajectoryPoints.add(currentPos);
             
             RayTraceResult rayTrace = player.world.rayTraceBlocks(prevPos, currentPos, false, true, false);
             if(rayTrace != null) {

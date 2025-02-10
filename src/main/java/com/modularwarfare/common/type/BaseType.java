@@ -176,18 +176,34 @@ public class BaseType {
      */
 
     public void playClientSound(EntityPlayer player, WeaponSoundType weaponSoundType) {
-        if (weaponSoundType != null) {
-            if(weaponSoundMap != null) {
-                if (weaponSoundMap.containsKey(weaponSoundType)) {
-                    for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
-                        Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), SoundCategory.PLAYERS, 1f, 1f);
-                    }
-                }else {
-                    if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
-                        Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(weaponSoundType.defaultSound), SoundCategory.PLAYERS, 1f, 1f);
-                    }
+        if (weaponSoundType == null) {
+            ModularWarfare.LOGGER.error(String.format("[%s] Attempted to play sound with null weaponSoundType", this.internalName));
+            return;
+        }
+        
+        if(weaponSoundMap == null) {
+            ModularWarfare.LOGGER.error(String.format("[%s] weaponSoundMap is null, cannot play sound for event '%s'", this.internalName, weaponSoundType.eventName));
+            return;
+        }
+        
+        if (weaponSoundMap.containsKey(weaponSoundType)) {
+            for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
+                if(soundEntry.soundName == null) {
+                    ModularWarfare.LOGGER.error(String.format("[%s] Sound entry for event '%s' has null soundName", this.internalName, weaponSoundType.eventName));
+                    continue;
                 }
+                if(!ClientProxy.modSounds.containsKey(soundEntry.soundName)) {
+                    ModularWarfare.LOGGER.error(String.format("[%s] Sound '%s' for event '%s' is not registered", this.internalName, soundEntry.soundName, weaponSoundType.eventName));
+                    continue;
+                }
+                Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), SoundCategory.PLAYERS, 1f, 1f);
             }
+        } else if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
+            if(!ClientProxy.modSounds.containsKey(weaponSoundType.defaultSound)) {
+                ModularWarfare.LOGGER.error(String.format("[%s] Default sound '%s' for event '%s' is not registered", this.internalName, weaponSoundType.defaultSound, weaponSoundType.eventName));
+                return;
+            }
+            Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(weaponSoundType.defaultSound), SoundCategory.PLAYERS, 1f, 1f);
         }
     }
     
@@ -241,11 +257,11 @@ public class BaseType {
         }
     }
 
-    public void playSound(EntityLivingBase entityPlayer, WeaponSoundType weaponSoundType, ItemStack gunStack) {
-        playSound(entityPlayer, weaponSoundType, gunStack, null);
+    public void playSound(EntityLivingBase entityPlayer, WeaponSoundType weaponSoundType, ItemStack stack) {
+        playSound(entityPlayer, weaponSoundType, stack, null);
     }
 
-    public void playSound(EntityLivingBase entityPlayer, WeaponSoundType weaponSoundType, ItemStack gunStack, @Nullable EntityPlayer excluded) {
+    public void playSound(EntityLivingBase entityPlayer, WeaponSoundType weaponSoundType, ItemStack stack, @Nullable EntityPlayer excluded) {
         if (weaponSoundType != null) {
             if (weaponSoundMap.containsKey(weaponSoundType)) {
                 BlockPos originPos = entityPlayer.getPosition();
@@ -272,12 +288,16 @@ public class BaseType {
                                 }
                                 //Send sound packet for guns using advanced audio settings
                                 //Increases pitch slighty towards end of mag if enabled
-
+                                float modifyPitch = 0f;
                                 float customPitch = soundEntry.soundPitch + (random.nextFloat() * soundEntry.soundRandomPitch);
-                                float modifyPitch = ItemGun.getMagazineBullets(gunStack) <= 5 && soundEntry.emptyPitch != 0F ? 0.30f - (soundEntry.emptyPitch * ItemGun.getMagazineBullets(gunStack)) : 0f;
+                                if (stack.getItem() instanceof ItemGun) {
+                                    modifyPitch = ItemGun.getMagazineBullets(stack) <= 5 && soundEntry.emptyPitch != 0F ? 0.30f - (soundEntry.emptyPitch * ItemGun.getMagazineBullets(stack)) : 0f;
+                                }
+
                                 customPitch += modifyPitch;
                                 ModularWarfare.NETWORK.sendTo(new PacketPlaySound(originPos, soundName, volume, customPitch), (EntityPlayerMP) hearingPlayer);
                             }
+
                         }
                     } else {
                         for (EntityPlayer hearingPlayer : world.getEntities(EntityPlayer.class, e -> e.getPosition().getDistance(originPos.getX(), originPos.getY(), originPos.getZ()) <= soundRange)) {

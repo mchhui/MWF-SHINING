@@ -46,6 +46,7 @@ public class GrenadeType extends BaseType {
         if (maxStackSize == null)
             maxStackSize = 1;
         loadBaseValues();
+        loadWeaponSoundMap();
     }
 
     @Override

@@ -217,7 +217,7 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
         }
         
         AnimationType controllerState = AnimationController.getClientController().getPlayingAnimation();
-        boolean isDefaultState = controllerState == AnimationType.DEFAULT || controllerState == AnimationType.SPRINT;
+        boolean isDefaultState = controllerState == AnimationType.DEFAULT || controllerState == AnimationType.SPRINT || controllerState == AnimationType.DRAW;
         
         if (isDefaultState && !basicSprint) {
             model.setAnimationCalBlender(new NodeAnimationBlender("FirstPersonBlender") {

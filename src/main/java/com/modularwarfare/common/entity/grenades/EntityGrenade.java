@@ -20,6 +20,7 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
@@ -46,29 +47,46 @@ public class EntityGrenade extends Entity {
     }
 
     public EntityGrenade(World world, EntityLivingBase thrower, float throwStrength, GrenadeType grenadeType) {
+        this(world, thrower, throwStrength, grenadeType, false);
+    }
+
+    public EntityGrenade(World world, EntityLivingBase thrower, float throwStrength, GrenadeType grenadeType, boolean isLowThrow) {
         this(world);
 
         this.setGrenadeName(grenadeType.internalName);
         this.grenadeType = grenadeType;
         this.fuse = grenadeType.fuseTime * 20;
         this.exploded = false;
-        Vec3d eye=thrower.getPositionEyes(1);
+        
+        Vec3d eye = thrower.getPositionEyes(1);
         if(ModularWarfare.isLoadedModularMovements) {
             if (thrower instanceof EntityPlayer) {
                 eye = ModularMovementsHooks.onGetPositionEyes((EntityPlayer) thrower, 1);
             }
         }
-        this.setPosition(eye.x,eye.y,eye.z);
+        
+        this.setPosition(eye.x, eye.y, eye.z);
 
-        Vec3d vec = thrower.getLookVec();
-        double modifier = 1;
-        if (thrower.isSprinting()) {
-            modifier = 1.25;
+        Vec3d lookVec = thrower.getLookVec();
+        
+        if(!isLowThrow) {
+            float playerPitch = thrower.rotationPitch;
+            float playerYaw = thrower.rotationYaw;
+            
+            float newPitch = Math.max(-90, playerPitch - 10);
+            
+            float f = -MathHelper.sin(playerYaw * 0.017453292F) * MathHelper.cos(newPitch * 0.017453292F);
+            float f1 = -MathHelper.sin(newPitch * 0.017453292F);
+            float f2 = MathHelper.cos(playerYaw * 0.017453292F) * MathHelper.cos(newPitch * 0.017453292F);
+            
+            lookVec = new Vec3d(f, f1, f2);
         }
-
-        this.motionX = ((vec.x * 1.5) * modifier) * throwStrength;
-        this.motionY = ((vec.y * 1.5) * modifier) * throwStrength;
-        this.motionZ = ((vec.z * 1.5) * modifier) * throwStrength;
+        
+        float actualStrength = throwStrength * (thrower.isSprinting() ? 1.25f : 1.0f);
+        
+        this.motionX = lookVec.x * 1.5 * actualStrength;
+        this.motionY = lookVec.y * 1.5 * actualStrength;
+        this.motionZ = lookVec.z * 1.5 * actualStrength;
 
         this.thrower = thrower;
     }
