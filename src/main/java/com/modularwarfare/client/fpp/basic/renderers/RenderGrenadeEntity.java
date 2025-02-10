@@ -21,7 +21,6 @@ import net.minecraftforge.fml.client.registry.IRenderFactory;
 
 import javax.annotation.Nullable;
 
-
 public class RenderGrenadeEntity extends Render<EntityGrenade> {
 
     public static final Factory FACTORY = new Factory();
@@ -37,24 +36,26 @@ public class RenderGrenadeEntity extends Render<EntityGrenade> {
         return null;
     }
 
-    public void doRenderShadowAndFire(Entity entityIn, double x, double y, double z, float yaw, float partialTicks) {
-        if (this.renderManager.options != null) {
-            this.doRenderGrenade((EntityGrenade) entityIn, x, y, z, yaw, partialTicks);
-        }
-    }
-
-    private void doRenderGrenade(EntityGrenade entityIn, double x, double y, double z, float yaw, float partialTicks) {
+    @Override
+    public void doRender(EntityGrenade entityIn, double x, double y, double z, float entityYaw, float partialTicks) {
         GlStateManager.pushMatrix();
         GlStateManager.disableLighting();
 
         GlStateManager.translate((float) x + 0.15F, (float) y + 0.1F, (float) z);
 
+        float prevTicksExisted = entityIn.ticksExisted - 1;
+        float interpolatedTicks = prevTicksExisted + partialTicks;
+
         if (entityIn.onGround) {
             GlStateManager.rotate(90, 0, 0, 1);
         } else {
-            GlStateManager.rotate(entityIn.ticksExisted * 10F, 1.0F, 0.0F, 0.0F);
-            GlStateManager.rotate(entityIn.ticksExisted * 8F, 0.0F, 1.0F, 0.0F);
-            GlStateManager.rotate(entityIn.ticksExisted * 15F, 0.0F, 0.0F, 1.0F);
+            float rotX = interpolatedTicks * 10F; 
+            float rotY = interpolatedTicks * 8F;
+            float rotZ = interpolatedTicks * 15F;
+
+            GlStateManager.rotate(rotX, 1.0F, 0.0F, 0.0F);
+            GlStateManager.rotate(rotY, 0.0F, 1.0F, 0.0F);
+            GlStateManager.rotate(rotZ, 0.0F, 0.0F, 1.0F);
         }
 
         GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -80,6 +81,4 @@ public class RenderGrenadeEntity extends Render<EntityGrenade> {
             return new RenderGrenadeEntity(manager);
         }
     }
-
-
 }
