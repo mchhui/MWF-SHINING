@@ -124,6 +124,7 @@ public class GrenadeEnhancedHandler {
         boolean isDraw = controllerState == AnimationType.DRAW;
 
         if (isDraw) {
+            resetGrenadeState();
             return;
         }
         
@@ -261,7 +262,7 @@ public class GrenadeEnhancedHandler {
                 isConsumed) {
             double throwProgress = machine.controller.GRENADE_THROW;
             
-            if (throwProgress >= 0.9 || (throwProgress == 0 && machine.throwing)) {
+            if (throwProgress >= 0.95 || (throwProgress == 0 && machine.throwing)) {
                 handlePostPhase(mc, stack, type, machine);
             }
         }
