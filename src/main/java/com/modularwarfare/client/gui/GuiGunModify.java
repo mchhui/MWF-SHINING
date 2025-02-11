@@ -1093,6 +1093,11 @@ public class GuiGunModify extends GuiScreen {
 							 * gun
 							 */
 							rge.bindTexture("guns", gunPath);
+							if (config.specialEffect.flashModelGroups != null) {
+								config.specialEffect.flashModelGroups.forEach((g) -> {
+									exceptPartsRendering.add(g.name);
+								});
+							}
 							model.renderPartExcept(exceptPartsRendering);
 							// model.renderPart(controller.getTime(),"flashModel", "gunModel");
 
