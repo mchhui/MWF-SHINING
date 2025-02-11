@@ -38,7 +38,8 @@ public class GrenadeType extends BaseType {
     public float throwStrength = 1f;
     public float throwStrengthLow = 0.5f;
     public boolean throwerVulnerable = false;
-
+    public boolean instantExplode = false;
+    public boolean isSticky = false; // 是否为黏性手雷
     public float smokeTime = 10f;
 
     @Override
