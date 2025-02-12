@@ -30,6 +30,8 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.potion.PotionEffect;
+import com.modularwarfare.common.guns.PotionEntry;
 
 public class MWFExplosion
 {
@@ -49,6 +51,13 @@ public class MWFExplosion
     private final Map<EntityPlayer, Vec3d> playerKnockbackMap;
     private final Vec3d position;
     private final Explosion explosion;
+    
+    // 新增属性
+    private boolean explosionThroughWalls = false;
+    private PotionEntry[] potionEffects;
+    private int fireLevel = 0;
+    private float knockLevel = 0;
+    private boolean banShield = false;
 
     @SideOnly(Side.CLIENT)
     public MWFExplosion(World worldIn, Entity entityIn, double x, double y, double z, float size, List<BlockPos> affectedPositions)
@@ -79,13 +88,24 @@ public class MWFExplosion
         this.allowBlockDrops = allowBlockDrops;
         this.damagesTerrain = damagesTerrain;
         this.position = new Vec3d(this.x, this.y, this.z);
-        this.explosion=new Explosion(worldIn, entityIn, x, y, z, size, flaming, damagesTerrain);
-        this.affectedBlockPositions=this.explosion.getAffectedBlockPositions();
+        this.explosion = new Explosion(worldIn, entityIn, x, y, z, size, flaming, damagesTerrain);
+        this.affectedBlockPositions = this.explosion.getAffectedBlockPositions();
         this.playerKnockbackMap = this.explosion.getPlayerKnockbackMap();
+        
+        // 初始化新增属性的默认值
+        this.explosionThroughWalls = false;
+        this.potionEffects = null;
+        this.fireLevel = 0;
+        this.knockLevel = 0;
+        this.banShield = false;
     }
 
     public void doExplosionA()
     {
+        if (this.world == null || this.explosion == null) {
+            return;
+        }
+        
         Set<BlockPos> set = Sets.<BlockPos>newHashSet();
         
         if(this.damagesTerrain) {
@@ -127,11 +147,31 @@ public class MWFExplosion
                 if (distance <= range)
                 {
                     Vec3d entityPos = entity.getPositionVector().add(0, entity.getEyeHeight() / 2, 0);
-                    if (world.rayTraceBlocks(vec3d, entityPos, false, true, false) == null) {
+                    if (explosionThroughWalls || world.rayTraceBlocks(vec3d, entityPos, false, true, false) == null) {
                         double scale = Math.pow(1.0 - (distance / range), 2.0);
-                        entity.attackEntityFrom(DamageSource.causeExplosionDamage(this.explosion), 
-                            this.damage * (float)scale);
+                        
+                        // 如果启用了禁用盾牌，使用无法被盾牌格挡的伤害源
+                        DamageSource damageSource = banShield ? 
+                            DamageSource.causeExplosionDamage(this.explosion).setDamageBypassesArmor() : 
+                            DamageSource.causeExplosionDamage(this.explosion);
                             
+                        if (damageSource != null) {
+                            entity.attackEntityFrom(damageSource, this.damage * (float)scale);
+                        }
+                            
+                        if (entity instanceof EntityLivingBase && potionEffects != null) {
+                            EntityLivingBase livingEntity = (EntityLivingBase) entity;
+                            for (PotionEntry potionEntry : potionEffects) {
+                                if (potionEntry != null && potionEntry.potionEffect != null) {
+                                    livingEntity.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
+                                }
+                            }
+                        }
+                        
+                        if (fireLevel > 0 && entity instanceof EntityLivingBase) {
+                            entity.setFire(fireLevel);
+                        }
+                        
                         double d5 = entity.posX - this.x;
                         double d7 = entity.posY + (double)entity.getEyeHeight() - this.y;
                         double d9 = entity.posZ - this.z;
@@ -142,7 +182,7 @@ public class MWFExplosion
                             d7 = d7 / d13;
                             d9 = d9 / d13;
                             
-                            double knockbackStrength = scale * this.knockback;
+                            double knockbackStrength = scale * (this.knockback + this.knockLevel);
                             entity.motionX += d5 * knockbackStrength;
                             entity.motionY += d7 * knockbackStrength;
                             entity.motionZ += d9 * knockbackStrength;
@@ -264,4 +304,25 @@ public class MWFExplosion
     }
 
     public Vec3d getPosition(){ return this.position; }
+    
+    // 新增方法
+    public void setExplosionThroughWalls(boolean throughWalls) {
+        this.explosionThroughWalls = throughWalls;
+    }
+    
+    public void setPotionEffects(PotionEntry[] effects) {
+        this.potionEffects = effects;
+    }
+    
+    public void setFireLevel(int level) {
+        this.fireLevel = level;
+    }
+    
+    public void setKnockLevel(float level) {
+        this.knockLevel = level;
+    }
+    
+    public void setBanShield(boolean ban) {
+        this.banShield = ban;
+    }
 }

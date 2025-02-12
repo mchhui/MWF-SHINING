@@ -194,6 +194,14 @@ public class EntityGrenade extends Entity {
                     if (!list.isEmpty()) {
                         for (Entity entity : list) {
                             if (entity != thrower && entity instanceof EntityLivingBase) {
+                                double motionMagnitude = Math.sqrt(this.motionX * this.motionX + 
+                                                                 this.motionY * this.motionY + 
+                                                                 this.motionZ * this.motionZ);
+                                if (grenadeType.impactDamage > 0 && motionMagnitude > 0.1) {
+                                    entity.attackEntityFrom(DamageSource.causeThrownDamage(this, this.thrower), 
+                                                         grenadeType.impactDamage);
+                                }
+                                
                                 if (grenadeType.isSticky) {
                                     RayTraceResult entityTrace = entity.getEntityBoundingBox().calculateIntercept(currentPos, nextPos);
                                     if (entityTrace != null) {
@@ -301,6 +309,16 @@ public class EntityGrenade extends Entity {
                 MWFExplosion explosion = new MWFExplosion(this.world, grenadeType.throwerVulnerable ? null : thrower, posX,
                         posY, posZ, grenadeType.explosionRange, grenadeType.explosionDamage, grenadeType.explosionKnockback,
                         false, grenadeType.damageWorld, grenadeType.damageWorld);
+                
+                explosion.setExplosionThroughWalls(grenadeType.explosionThroughWalls);
+                
+                if (grenadeType.explosionPotionEffects != null) {
+                    explosion.setPotionEffects(grenadeType.explosionPotionEffects);
+                }
+                explosion.setFireLevel(grenadeType.explosionFireLevel);
+                explosion.setKnockLevel(grenadeType.explosionKnockLevel);
+                explosion.setBanShield(grenadeType.banShield);
+                
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
                 ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);

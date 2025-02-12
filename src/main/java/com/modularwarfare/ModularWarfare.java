@@ -27,6 +27,7 @@ import com.modularwarfare.common.entity.decals.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
+import com.modularwarfare.common.entity.grenades.EntityGasGrenade;
 import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.extra.ItemLight;
 import com.modularwarfare.common.grenades.ItemGrenade;
@@ -719,6 +720,7 @@ public class ModularWarfare {
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "grenade"), EntityGrenade.class, "grenade", 7, this, 64, 1, true);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "smoke_grenade"), EntitySmokeGrenade.class, "smoke_grenade", 8, this, 64, 1, true);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "stun_grenade"), EntityStunGrenade.class, "stun_grenade", 9, this, 64, 1, true);
+        EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "gas_grenade"), EntityGasGrenade.class, "gas_grenade", 10, this, 64, 1, true);
 
         //EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "bullet"), EntityBullet.class, "bullet", 15, this, 64, 1, true);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "explosive_projectile"), EntityExplosiveProjectile.class, "explosive_projectile", 15, this, 80, 1, true);

@@ -24,7 +24,8 @@ import net.minecraft.world.World;
 
 public class EntitySmokeGrenade extends EntityGrenade {
 
-    private static final DataParameter GRENADE_NAME = EntityDataManager.createKey(EntitySmokeGrenade.class, DataSerializers.STRING);
+    private static final DataParameter<String> GRENADE_NAME = EntityDataManager.createKey(EntitySmokeGrenade.class, DataSerializers.STRING);
+    private static final DataParameter<Boolean> IS_EXPLODED = EntityDataManager.createKey(EntitySmokeGrenade.class, DataSerializers.BOOLEAN);
 
     public float smokeTime = 12 * 20;
     private float smokeScale = 0.0f;
@@ -41,7 +42,7 @@ public class EntitySmokeGrenade extends EntityGrenade {
 
     public EntitySmokeGrenade(World world, EntityLivingBase thrower, float throwStrength, GrenadeType grenadeType, boolean isLowThrow) {
         super(world, thrower, throwStrength, grenadeType, isLowThrow);
-        this.smokeTime = grenadeType.smokeTime * 20;
+        this.smokeTime = grenadeType != null ? grenadeType.smokeTime * 20 : 220;
         this.smokeScale = 0.0f;
     }
 
@@ -97,7 +98,7 @@ public class EntitySmokeGrenade extends EntityGrenade {
             }
         }
 
-        if(this.exploded){
+        if(this.isExploded()){
             if(smokeScale < MAX_SMOKE_SCALE) {
                 smokeScale = Math.min(MAX_SMOKE_SCALE, smokeScale + SMOKE_SCALE_SPEED);
             }
@@ -111,23 +112,30 @@ public class EntitySmokeGrenade extends EntityGrenade {
 
     @Override
     public void explode(){
-        if (!this.exploded) {
+        if (!this.isExploded()) {
             this.world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_SMOKE, SoundCategory.BLOCKS, 2.0f, 1.0f);
-            this.exploded = true;
+            this.setExploded(true);
             this.fuse = 0;
             this.smokeTime = 220;
             this.smokeScale = 0.0f;
         }
     }
 
+    public boolean isExploded() {
+        return this.dataManager.get(IS_EXPLODED);
+    }
+
+    private void setExploded(boolean exploded) {
+        this.dataManager.set(IS_EXPLODED, exploded);
+    }
+
     public String getGrenadeName() {
-        return (String) this.dataManager.get(GRENADE_NAME);
+        return this.dataManager.get(GRENADE_NAME);
     }
 
     public void setGrenadeName(String grenadeName) {
         this.dataManager.set(GRENADE_NAME, grenadeName);
     }
-
 
     @Override
     public boolean canBeCollidedWith() {
@@ -141,7 +149,9 @@ public class EntitySmokeGrenade extends EntityGrenade {
 
     @Override
     protected void entityInit() {
+        super.entityInit();
         this.dataManager.register(GRENADE_NAME, "");
+        this.dataManager.register(IS_EXPLODED, false);
     }
 
     @Override
@@ -151,26 +161,16 @@ public class EntitySmokeGrenade extends EntityGrenade {
 
     @Override
     protected void writeEntityToNBT(NBTTagCompound compound) {
-        compound.setDouble("posX", this.posX);
-        compound.setDouble("posY", this.posY);
-        compound.setDouble("posZ", this.posZ);
-        compound.setDouble("motionX", this.motionX);
-        compound.setDouble("motionY", this.motionY);
-        compound.setDouble("motionZ", this.motionZ);
-        compound.setFloat("fuse", this.fuse);
+        super.writeEntityToNBT(compound);
         compound.setFloat("smokeTime", this.smokeTime);
+        compound.setBoolean("exploded", this.isExploded());
     }
 
     @Override
     protected void readEntityFromNBT(NBTTagCompound compound) {
-        posX = compound.getDouble("posX");
-        posY = compound.getDouble("posY");
-        posZ = compound.getDouble("posZ");
-        motionX = compound.getDouble("motionX");
-        motionY = compound.getDouble("motionY");
-        motionZ = compound.getDouble("motionZ");
-        fuse = compound.getFloat("fuse");
-        smokeTime = compound.getFloat("smokeTime");
+        super.readEntityFromNBT(compound);
+        this.smokeTime = compound.getFloat("smokeTime");
+        this.setExploded(compound.getBoolean("exploded"));
     }
 
     public float getSmokeScale() {

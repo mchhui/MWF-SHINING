@@ -54,6 +54,7 @@ import com.modularwarfare.common.entity.decals.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
+import com.modularwarfare.common.entity.grenades.EntityGasGrenade;
 import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.extra.ItemLight;
 import com.modularwarfare.common.grenades.GrenadeType;
@@ -809,6 +810,7 @@ public class ClientProxy extends CommonProxy {
             RenderingRegistry.registerEntityRenderingHandler(EntityGrenade.class, RenderGrenadeEntity.FACTORY);
             RenderingRegistry.registerEntityRenderingHandler(EntitySmokeGrenade.class, RenderGrenadeEntity.FACTORY);
             RenderingRegistry.registerEntityRenderingHandler(EntityStunGrenade.class, RenderGrenadeEntity.FACTORY);
+            RenderingRegistry.registerEntityRenderingHandler(EntityGasGrenade.class, RenderGrenadeEntity.FACTORY);
 
             RenderingRegistry.registerEntityRenderingHandler(EntityItemLoot.class, RenderItemLoot.FACTORY);
 
