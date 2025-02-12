@@ -13,6 +13,7 @@ import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.objects.SoundEntry;
+import com.modularwarfare.common.guns.PotionEntry;
 
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
@@ -41,6 +42,19 @@ public class GrenadeType extends BaseType {
     public boolean instantExplode = false;
     public boolean isSticky = false; // 是否为黏性手雷
     public float smokeTime = 10f;
+    
+    // 撞击伤害
+    public float impactDamage = 1.0f;
+    // 爆炸穿透墙壁
+    public boolean explosionThroughWalls = false;
+    // 爆炸效果
+    public PotionEntry[] explosionPotionEffects;
+    public int explosionFireLevel = 0;
+    public float explosionKnockLevel = 0;
+    public boolean banShield = false;
+
+
+    public GrenadeGasType gasType;
 
     @Override
     public void loadExtraValues() {

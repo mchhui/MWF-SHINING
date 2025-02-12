@@ -10,7 +10,8 @@ public enum GrenadesEnumType {
      */
     @SerializedName("frag") Frag("frag"),
     @SerializedName("smoke") Smoke("smoke"),
-    @SerializedName("stun") Stun("stun");
+    @SerializedName("stun") Stun("stun"),
+    @SerializedName("gas") Gas("gas");
 
 
     public String typeName;

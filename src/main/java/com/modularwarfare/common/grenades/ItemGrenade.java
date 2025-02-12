@@ -3,6 +3,7 @@ package com.modularwarfare.common.grenades;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
+import com.modularwarfare.common.entity.grenades.EntityGasGrenade;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.type.BaseItem;
@@ -59,6 +60,13 @@ public class ItemGrenade extends BaseItem {
                             stack.shrink(1);
                         }
                         break;
+                    case Gas:
+                        EntityGasGrenade gas = new EntityGasGrenade(worldIn, playerIn, true, type);
+                        worldIn.spawnEntity(gas);
+                        if (!playerIn.capabilities.isCreativeMode) {
+                            stack.shrink(1);
+                        }
+                        break;
                 }
             }
         }
@@ -77,7 +85,6 @@ public class ItemGrenade extends BaseItem {
                 case Frag:
                     EntityGrenade grenade = new EntityGrenade(worldIn, playerIn, true, type);
                     worldIn.spawnEntity(grenade);
-
                     if (!playerIn.capabilities.isCreativeMode) {
                         stack.shrink(1);
                     }
@@ -85,7 +92,6 @@ public class ItemGrenade extends BaseItem {
                 case Smoke:
                     EntitySmokeGrenade smoke = new EntitySmokeGrenade(worldIn, playerIn, true, type);
                     worldIn.spawnEntity(smoke);
-
                     if (!playerIn.capabilities.isCreativeMode) {
                         stack.shrink(1);
                     }
@@ -93,13 +99,18 @@ public class ItemGrenade extends BaseItem {
                 case Stun:
                     EntityStunGrenade stun = new EntityStunGrenade(worldIn, playerIn, true, type);
                     worldIn.spawnEntity(stun);
-
+                    if (!playerIn.capabilities.isCreativeMode) {
+                        stack.shrink(1);
+                    }
+                    break;
+                case Gas:
+                    EntityGasGrenade gas = new EntityGasGrenade(worldIn, playerIn, true, type);
+                    worldIn.spawnEntity(gas);
                     if (!playerIn.capabilities.isCreativeMode) {
                         stack.shrink(1);
                     }
                     break;
             }
-
         }
         return new ActionResult<ItemStack>(EnumActionResult.SUCCESS, stack);
     }

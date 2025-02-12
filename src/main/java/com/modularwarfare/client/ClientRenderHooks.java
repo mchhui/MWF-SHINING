@@ -240,7 +240,7 @@ public class ClientRenderHooks {
             //If entity is smoke grenade, render smoke
             if (givenEntity instanceof EntitySmokeGrenade) {
                 EntitySmokeGrenade smokeGrenade = (EntitySmokeGrenade) givenEntity;
-                if (smokeGrenade.exploded) {
+                if (smokeGrenade.isExploded()) {
                     if (smokeGrenade.smokeTime > 0) {
                         // 保存当前GL状态
                         GlStateManager.pushMatrix();

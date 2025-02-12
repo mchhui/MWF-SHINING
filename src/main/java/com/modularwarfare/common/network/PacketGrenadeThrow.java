@@ -1,6 +1,7 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.entity.grenades.EntityGasGrenade;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
@@ -89,6 +90,14 @@ public class PacketGrenadeThrow extends PacketBase {
                     }
                     type.playSound(player, WeaponSoundType.GrenadeThrow, stack);
                     player.world.spawnEntity(stun);
+                    break;
+                case Gas:
+                    EntityGasGrenade gas = new EntityGasGrenade(player.world, player, strength, type, isLowThrow);
+                    if(remainingFuseTime > 0) {
+                        gas.fuse = (int)(remainingFuseTime * 20);
+                    }
+                    type.playSound(player, WeaponSoundType.GrenadeThrow, stack);
+                    player.world.spawnEntity(gas);
                     break;
             }
         }
