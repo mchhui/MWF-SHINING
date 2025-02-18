@@ -112,7 +112,7 @@ public class PacketGunTrailAskServer extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP entityPlayer) {
-        ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(gunType, model, tex, glow, posX, posY, posZ, motionX, motionZ, dirX, dirY, dirZ, range, 10, isPunched), entityPlayer.world.provider.getDimension());
+        ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(gunType, model, tex, glow, posX, posY, posZ, motionX, motionZ, dirX, dirY, dirZ, range, 10, isPunched), entityPlayer.dimension);
     }
 
     @Override
