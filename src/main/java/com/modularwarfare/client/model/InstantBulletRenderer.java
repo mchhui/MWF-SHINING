@@ -23,6 +23,8 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.optifine.shaders.MWFOptifineShadesHelper;
 import net.optifine.shaders.Shaders;
+import safx.SagerFX;
+
 import com.modularwarfare.utility.OptifineHelper;
 
 import org.lwjgl.opengl.GL11;
@@ -116,6 +118,7 @@ public class InstantBulletRenderer {
             if (Math.abs(distanceToTarget) > 300.0f) {
                 distanceToTarget = 300.0f;
             }
+            
         }
 
         // Return true if this needs deleting
@@ -191,10 +194,11 @@ public class InstantBulletRenderer {
                 Tessellator tessellator = Tessellator.getInstance();
                 tessellator.getBuffer().begin(7, DefaultVertexFormats.POSITION_TEX);
 
-                tessellator.getBuffer().pos(startPos.x + trailTangent.x, startPos.y + trailTangent.y, startPos.z + trailTangent.z).tex(0.0f, 0.0f).endVertex();
-                tessellator.getBuffer().pos(startPos.x - trailTangent.x, startPos.y - trailTangent.y, startPos.z - trailTangent.z).tex(0.0f, 1.0f).endVertex();
-                tessellator.getBuffer().pos(endPos.x - trailTangent.x, endPos.y - trailTangent.y, endPos.z - trailTangent.z).tex(1.0f, 1.0f).endVertex();
-                tessellator.getBuffer().pos(endPos.x + trailTangent.x, endPos.y + trailTangent.y, endPos.z + trailTangent.z).tex(1.0f, 0.0f).endVertex();
+                float yOffset = -0.5f;
+                tessellator.getBuffer().pos(startPos.x + trailTangent.x, startPos.y + trailTangent.y + yOffset, startPos.z + trailTangent.z).tex(0.0f, 0.0f).endVertex();
+                tessellator.getBuffer().pos(startPos.x - trailTangent.x, startPos.y - trailTangent.y + yOffset, startPos.z - trailTangent.z).tex(0.0f, 1.0f).endVertex();
+                tessellator.getBuffer().pos(endPos.x - trailTangent.x, endPos.y - trailTangent.y + yOffset, endPos.z - trailTangent.z).tex(1.0f, 1.0f).endVertex();
+                tessellator.getBuffer().pos(endPos.x + trailTangent.x, endPos.y + trailTangent.y + yOffset, endPos.z + trailTangent.z).tex(1.0f, 0.0f).endVertex();
 
                 tessellator.draw();
             }else {
