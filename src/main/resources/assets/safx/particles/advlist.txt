@@ -1,0 +1,1477 @@
+﻿//FX
+BlastwaveGround {
+Texture = advancearmy:textures/fx/shockwave.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+Lifetime = 13 15
+SystemLifetime = 1 1
+Size = 8.0 8.0
+SizeRate = 7 8
+SizeRateDamping = 0.84 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+groundAligned = true
+}
+
+FXLIST GunHit {//枪命中金属
+SmallExp
+hitSmall
+}
+
+FXLIST GunExp {//枪命中地面
+SmallExp
+dirtUp1
+dirtUp2
+SmallStone
+}
+
+//命中爆炸
+FXLIST AdvExpHit {
+Blastwave//震波中心
+aExplosion1
+OrangeSpark//火星
+BlackSmoke//命中黑烟
+}
+//地面爆炸
+FXLIST AdvExplosion {
+Blastwave//震波中心
+BlastwaveGround//震波地面
+aExplosion1//爆炸中心
+SmokeH1//爆炸向上烟
+SmokeH2//爆炸中间烟
+SmokeGroundRing//爆炸扩散烟
+MudSplash//飞溅泥土
+StoneSplash//飞溅碎石头
+}
+//小型地面爆炸
+FXLIST AdvExpSmall {
+aExplosion2
+SmokeGroundSmall
+SmokeUpSmall
+SmokeUpSmall2
+}
+//小型能量爆炸
+FXLIST PowerImpact {
+PowerWave
+BlueSparks
+}
+
+//载具爆炸
+FXLIST VehicleExp1 {
+aExplosion2
+BlackSmoke2//扩散黑烟
+}
+FXLIST VehicleExp2 {
+aExplosion1
+DirtSmoke//扩散泥土
+}
+
+//枪械开火
+FXLIST GunCloud {
+MuzzExpGun
+MuzzFlashGun
+SmokeGun
+}
+
+//枪械开火无烟雾
+FXLIST MuzzGun {
+MuzzExpGun
+MuzzFlashGun
+}
+
+//炮口开火
+FXLIST AdvTankFire {
+MuzzExpTank
+MuzzFlashTank
+SmokeTank
+}
+//TTV开火
+FXLIST TTVCloud {
+MuzzExpRed
+MuzzFlashGun
+SmokeGun
+}
+
+OrangeSpark {//火星
+AnimationSpeed = 1 1
+Texture = advancearmy:textures/fx/point1.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+HasVariations = false
+Angle = 0 360
+AngleRate = -10 10
+AngleRateDamping = 0.95 0.97
+Lifetime = 22 38
+SystemLifetime = 1 1
+AnimationSpeed = 1 1
+Size = 1.3 1.4
+SizeRate = 0.1 0.2
+SizeRateDamping = 0.75 0.78
+StartSizeRate = 0 0
+StartSizeRateDamping = 1.0 1.0
+Alpha = 0.0 0
+Alpha = 1.0 0.5
+Alpha = 0 1.0
+//Color = 192 225 255 0
+Color = 255 196 128 0
+Color = 0 0 0 1
+ParticleCount = 5 7
+InitialDelay = 1 1
+SpawnDelay = 2 2
+VelocityType = SPHERICAL
+Velocity1 = 16 19
+Velocity2 = 30 42
+VelocityDamping = 0.84 0.87
+Gravity = 0.2
+VolumeType = POINT
+IsHollow = false
+RemoveOnGround = true
+SystemVelocityFactor = 0.0 0.0
+AttachedSystem = SparkTrail
+}
+
+BlueSparks {//蓝星
+AnimationSpeed = 1 1
+//Texture = tgfx:textures/fx/lensflare3.png
+Texture = advancearmy:textures/fx/point1.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+HasVariations = false
+Angle = 0 360
+AngleRate = -10 10
+AngleRateDamping = 0.95 0.97
+Lifetime = 12 18
+SystemLifetime = 1 1
+AnimationSpeed = 1 1
+Size = 0.1 0.2
+SizeRate = 0.1 0.2
+SizeRateDamping = 0.75 0.78
+StartSizeRate = 0 0
+StartSizeRateDamping = 1.0 1.0
+Alpha = 0.0 0
+Alpha = 1.0 0.5
+Alpha = 0 1.0
+Color = 192 225 255 0
+//Color = 0 0 0 1
+ParticleCount = 5 7
+InitialDelay = 0 0
+SpawnDelay = 0 0
+VelocityType = SPHERICAL
+Velocity1 = 0 5
+//Velocity2 = 2 6
+VelocityDamping = 0.84 0.87
+Gravity = 0.015
+VolumeType = POINT
+IsHollow = false
+RemoveOnGround = true
+}
+
+MuzzExpTank {
+Texture = advancearmy:textures/fx/muzzleflash2x2.png
+RenderType = ADDITIVE
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 16 18
+SystemLifetime = 1 1
+Size = 15 20
+SizeRate = -1.60 -2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+
+aExplosion1 {
+Texture = advancearmy:textures/fx/exp.png
+RenderType = Alpha//ADDITIVE
+Rows = 4
+Columns = 4
+Frames = 16
+Lifetime = 16 18
+SystemLifetime = 1 1
+Size = 15 20
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 3 4
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+aExplosion2 {
+Texture = advancearmy:textures/fx/exp.png
+RenderType = Alpha
+Rows = 4
+Columns = 4
+Frames = 16
+Lifetime = 12 14
+SystemLifetime = 1 1
+Size = 3 5
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 3 4
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+SmokeTank {
+Texture = advancearmy:textures/fx/anim_smoke3.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -8 8
+angleRateDamping = 0.85 0.88
+Lifetime = 25 35
+SystemLifetime = 1 1
+Size = 25 30
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 5 7
+InitialDelay = 6 6
+SpawnDelay = 8 8
+VelocityType = OUTWARD
+Velocity1 = 2 3
+Velocity2 = 1 2
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+SmokeH1 {
+Texture = advancearmy:textures/fx/anim_smoke3.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -8 8
+angleRateDamping = 0.85 0.88
+Lifetime = 55 65
+SystemLifetime = 1 1
+Size = 24 26
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 115 107 102 0
+Color = 100 90 80 1
+ParticleCount = 2 4
+InitialDelay = 3 3
+SpawnDelay = 5 5
+VelocityType = OUTWARD
+Velocity1 = 1 2
+Velocity2 = 6 7
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+SmokeH2 {
+Texture = advancearmy:textures/fx/anim_smoke3.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -8 8
+angleRateDamping = 0.85 0.88
+Lifetime = 55 65
+SystemLifetime = 1 1
+Size = 25 27
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 115 107 102 0
+Color = 100 90 80 1
+ParticleCount = 1 3
+InitialDelay = 2 2
+SpawnDelay = 4 4
+VelocityType = OUTWARD
+Velocity1 = 0.5 1.5
+Velocity2 = 9 13
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+SmokeGroundRing {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 55 65
+SystemLifetime = 1 1
+Size = 24 26
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 115 107 102 0
+Color = 100 90 80 1
+ParticleCount = 10 11
+InitialDelay = 2 2
+SpawnDelay = 4 4
+VelocityType = OUTWARD
+Velocity1 = 2 3
+Velocity2 = -0.1 0.1
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+SmokeGroundSmall {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 12 14
+SystemLifetime = 1 1
+Size = 12 14
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 2 3
+InitialDelay = 3 3
+SpawnDelay = 4 4
+VelocityType = OUTWARD
+Velocity1 = 0.5 0.6
+Velocity2 = -0.1 0.1
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+SmokeUpSmall {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 25 35
+SystemLifetime = 1 1
+Size = 12 14
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 2 3
+InitialDelay = 3 3
+SpawnDelay = 4 4
+VelocityType = OUTWARD
+Velocity1 = 0.3 0.5
+Velocity2 = 3.6 4
+VelocityDamping = 0.85 0.86
+Gravity = 0.01
+VolumeType = CYLINDER
+Volume1 = 0.5
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+SmokeUpSmall2 {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 25 35
+SystemLifetime = 1 1
+Size = 12 14
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 2 3
+InitialDelay = 3 3
+SpawnDelay = 4 4
+VelocityType = OUTWARD
+Velocity1 = 0.3 0.5
+Velocity2 = 5.6 6
+VelocityDamping = 0.85 0.86
+Gravity = 0.01
+VolumeType = CYLINDER
+Volume1 = 0.5
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+BlackSmoke {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 35 45
+SystemLifetime = 1 1
+Size = 20 22
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 26 10 4 0
+Color = 26 10 4 1
+ParticleCount = 5 7
+InitialDelay = 3 3
+SpawnDelay = 5 5
+VelocityType = OUTWARD
+Velocity1 = 0.6 1
+Velocity2 = -0.1 0.1
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+BlackSmokeUp {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 55 65
+SystemLifetime = 1 1
+Size = 16 18
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 26 10 4 0
+Color = 26 10 4 1
+ParticleCount = 1 2
+InitialDelay = 3 3
+SpawnDelay = 5 5
+VelocityType = OUTWARD
+Velocity1 = 0.6 1
+Velocity2 = 6.2 7.4
+VelocityDamping = 0.75 0.76
+Gravity = -0.2
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+TankSmoke {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 235 245
+SystemLifetime = 1 1
+Size = 84 96
+SizeRate = 0.5 2
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 9 10
+InitialDelay = 8 8
+SpawnDelay = 10 10
+VelocityType = OUTWARD
+Velocity1 = 7.6 9.7
+Velocity2 = -1.4 2.4
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+
+BlackSmoke2 {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 35 45
+SystemLifetime = 1 1
+Size = 24 26
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 26 10 4 0
+Color = 26 10 4 1
+ParticleCount = 5 7
+InitialDelay = 3 3
+SpawnDelay = 5 5
+VelocityType = OUTWARD
+Velocity1 = 4.6 6.7
+Velocity2 = -1.4 2.4
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+DirtSmoke {
+Texture = advancearmy:textures/fx/anim_smoke2ground.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 35 45
+SystemLifetime = 1 1
+Size = 24 26
+SizeRate = 1 1.3
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 115 107 102 0
+Color = 100 90 80 1
+ParticleCount = 5 7
+InitialDelay = 3 3
+SpawnDelay = 5 5
+VelocityType = OUTWARD
+Velocity1 = 4.6 6.7
+Velocity2 = -1.4 2.4
+VelocityDamping = 0.85 0.86
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 1.0
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+MuzzFlashTank {
+Texture = advancearmy:textures/fx/burst_horizontal.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+Lifetime = 5 6
+SystemLifetime = 1 1
+Size = 12.0 14.0
+SizeRate = 7 8
+SizeRateDamping = 0.84 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+
+PrismFlashGun {
+Texture = wmlib:textures/fx/prismfire.png
+RenderType = ADDITIVE
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 15 16
+SystemLifetime = 1 1
+Size = 4.1 6.1
+SizeRate = 4 6
+SizeRateDamping = 0.84 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 64 128 255 0
+Color = 0 0 255 1
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = NONE
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+
+LaserFlashGun {
+Texture = wmlib:textures/fx/laserfire.png
+RenderType = ADDITIVE
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 5 6
+SystemLifetime = 1 1
+Size = 2.1 3.1
+SizeRate = 4 6
+SizeRateDamping = 0.84 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = NONE
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+TeslaFlashGun {
+Texture = wmlib:textures/fx/teslafire.png
+RenderType = ADDITIVE
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 5 6
+SystemLifetime = 1 1
+Size = 0.8 1.6
+SizeRate = 1 2
+SizeRateDamping = 0.84 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 0
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = NONE
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+
+FXLIST PrismHit {
+PrismEnd
+PrismSparks
+}
+
+PrismSparks {
+AnimationSpeed = 1 1
+Texture = tgfx:textures/fx/lensflare3.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+HasVariations = false
+Angle = 0 360
+AngleRate = -10 10
+AngleRateDamping = 0.95 0.97
+Lifetime = 12 18
+SystemLifetime = 1 1
+AnimationSpeed = 1 1
+Size = 15.1 18.2
+SizeRate = 0.1 0.2
+SizeRateDamping = 0.75 0.78
+StartSizeRate = 0 0
+StartSizeRateDamping = 1.0 1.0
+Alpha = 0.0 0
+Alpha = 1.0 0.5
+Alpha = 0 1.0
+Color = 64 128 255 0
+Color = 0 0 255 1
+//Color = 0 0 0 1
+ParticleCount = 4 5
+InitialDelay = 0 0
+SpawnDelay = 0 0
+VelocityType = SPHERICAL
+Velocity1 = 0 3
+//Velocity2 = 2 6
+VelocityDamping = 0.84 0.87
+Gravity = 0.02
+VolumeType = POINT
+IsHollow = false
+RemoveOnGround = true
+}
+
+MastHit {
+AnimationSpeed = 1 1
+Texture = advancearmy:textures/fx/flash2.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+Lifetime = 22 28
+SystemLifetime = 1 1
+Size = 38 40
+SizeRate = 0.1 3
+SizeRateDamping = 0.75 0.78
+StartSizeRate = 0 0
+StartSizeRateDamping = 1.0 1.0
+Alpha = 0.0 0
+Alpha = 1.0 0.5
+Alpha = 0 1.0
+Color = 20 240 20 0
+Color = 0 235 0 1.0
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 0 0
+VelocityType = NONE
+VolumeType = POINT
+IsHollow = false
+}
+
+PrismEnd {
+AnimationSpeed = 1 1
+Size = 6.0 10.0
+Texture = wmlib:textures/fx/prismhit.png
+RenderType = ADDITIVE
+Rows = 4
+Columns = 4
+Frames = 16
+HasVariations = false
+Angle = 0 360
+AngleRate = -10 10
+AngleRateDamping = 0.95 0.97
+Lifetime = 17 17
+SystemLifetime = 1 1
+AnimationSpeed = 1 1
+Size = 3.0 5.0
+SizeRate = 1.20 1.87
+SizeRateDamping = 0.90 0.91
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = NONE
+//VelocityDamping = 0.95 0.97
+Gravity = 0.0
+VolumeType = POINT
+IsHollow =false
+RemoveOnGround = false
+SystemVelocityFactor = 0 0
+}
+
+FXLIST LaserHit {
+LaserEnd
+LaserSparks
+}
+
+LaserEnd {
+AnimationSpeed = 1 1
+Size = 6.0 10.0
+Texture = wmlib:textures/fx/laserhit.png
+RenderType = ADDITIVE
+Rows = 4
+Columns = 4
+Frames = 16
+HasVariations = false
+Angle = 0 360
+AngleRate = -10 10
+AngleRateDamping = 0.95 0.97
+Lifetime = 17 17
+SystemLifetime = 1 1
+AnimationSpeed = 1 1
+Size = 1.0 2.0
+SizeRate = 1.20 1.87
+SizeRateDamping = 0.90 0.91
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = NONE
+//VelocityDamping = 0.95 0.97
+Gravity = 0.0
+VolumeType = POINT
+IsHollow =false
+RemoveOnGround = false
+SystemVelocityFactor = 0 0
+}
+
+PrismSparks {
+AnimationSpeed = 1 1
+Texture = tgfx:textures/fx/lensflare3.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+HasVariations = false
+Angle = 0 360
+AngleRate = -10 10
+AngleRateDamping = 0.95 0.97
+Lifetime = 9 12
+SystemLifetime = 1 1
+AnimationSpeed = 1 1
+Size = 11.1 12.2
+SizeRate = 0.1 0.2
+SizeRateDamping = 0.75 0.78
+StartSizeRate = 0 0
+StartSizeRateDamping = 1.0 1.0
+Alpha = 0.0 0
+Alpha = 1.0 0.5
+Alpha = 0 1.0
+Color = 255 64 128 0
+Color = 255 0 0 1
+//Color = 0 0 0 1
+ParticleCount = 4 5
+InitialDelay = 0 0
+SpawnDelay = 0 0
+VelocityType = SPHERICAL
+Velocity1 = 0 3
+//Velocity2 = 2 6
+VelocityDamping = 0.84 0.87
+Gravity = 0.02
+VolumeType = POINT
+IsHollow = false
+RemoveOnGround = false
+}
+
+TeslaHit {
+AnimationSpeed = 1 1
+Size = 6.0 10.0
+Texture = wmlib:textures/fx/teslahit.png
+RenderType = ADDITIVE
+Rows = 4
+Columns = 4
+Frames = 16
+HasVariations = false
+Angle = 0 360
+AngleRate = -10 10
+AngleRateDamping = 0.95 0.97
+Lifetime = 17 17
+SystemLifetime = 1 1
+AnimationSpeed = 1 1
+Size = 1.0 2.0
+SizeRate = 1.20 1.87
+SizeRateDamping = 0.90 0.91
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 0
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = NONE
+//VelocityDamping = 0.95 0.97
+Gravity = 0.0
+VolumeType = POINT
+IsHollow =false
+RemoveOnGround = false
+SystemVelocityFactor = 0 0
+}
+
+MuzzFlashGun {
+Texture = advancearmy:textures/fx/burst_horizontal.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+Lifetime = 3 4
+SystemLifetime = 1 1
+Size = 0.8 1.6
+SizeRate = 4 6
+SizeRateDamping = 0.84 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+
+Blastwave {
+Texture = advancearmy:textures/fx/burst_horizontal.png
+RenderType = ADDITIVE
+Rows = 1
+Columns = 1
+Frames = 1
+Lifetime = 6 8
+SystemLifetime = 1 1
+Size = 22.0 24.0
+SizeRate = 7 8
+SizeRateDamping = 0.84 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 1
+Color = 255 255 255 0
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+
+StoneSplash {
+Texture = advancearmy:textures/fx/stone4x4.png
+RenderType = ALPHA
+Rows = 4
+Columns =4
+Frames = 16
+angle = 0 360
+angleRate = -30 30
+angleRateDamping = 0.96 0.98
+Lifetime = 65 85
+SpawnDelay = 0 0
+SystemLifetime = 1 1
+InitialDelay = 1 1
+Size = 0.8 1.6
+SizeRate = 0.025 0.1
+SizeRateDamping = 0.87 0.9
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 1.0 0.75
+Alpha = 0 1.0
+Color = 128 128 96 0
+ParticleCount = 8 10
+Gravity = 1
+VolumeType = POINT
+VelocityType = OUTWARD
+Velocity1 = 3.2 5.3 //Outward
+Velocity2 = 25 30 //Up
+VelocityDamping = 0.95 0.98
+HasVariations = true
+}
+
+MudSplash {
+Texture = advancearmy:textures/fx/anim_mudsplash_s.png
+RenderType = ALPHA
+Rows = 2
+Columns =2
+Frames = 4
+angle = 0 360
+//angleRate = -5 5
+angleRateDamping = 0.96 0.98
+Lifetime = 75 85
+SpawnDelay = 0 0
+SystemLifetime = 1 1
+InitialDelay = 2 2
+Size = 29.8 29.6
+SizeRate = 0.6 0.7
+SizeRateDamping = 0.92 0.96
+Alpha = 0.0 0
+Alpha = 0.7 0.6
+Alpha = 0 1.0
+Color = 196 189 179 0
+Color = 135 123 115 1
+ParticleCount = 1 2
+Gravity = 0.5
+VolumeType = POINT
+VelocityType = OUTWARD
+Velocity1 = 0.8 1 //Outward
+Velocity2 = 12 14 //Up
+VelocityDamping = 0.95 0.98
+InitialDelay = 5 5
+HasVariations = true
+}
+
+MuzzExpGun {
+Texture = advancearmy:textures/fx/muzzleflash2x2.png
+RenderType = ADDITIVE
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 7 8
+SystemLifetime = 1 1
+Size = 5 7
+SizeRate = -1.60 -2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+
+IsHollow = true
+HasVariations = true
+}
+
+MuzzExpRed {
+Texture = advancearmy:textures/fx/redflash2x2.png
+RenderType = ADDITIVE
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 7 8
+SystemLifetime = 1 1
+Size = 10 12
+SizeRate = -1.60 -2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.01
+Volume2 = 0.01
+IsHollow = true
+HasVariations = true
+}
+
+SmokeGun {
+Texture = advancearmy:textures/fx/muzzlesmoke2x2.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 6 8
+SystemLifetime = 1 1
+Size = 2 3
+SizeRate = 1 1.4
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 1 2
+InitialDelay = 1 1
+SpawnDelay = 4 4
+VelocityType = OUTWARD
+Velocity1 = 0.1 0.2
+Velocity2 = 0.8 1.8
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.2
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+PowerWave {
+AnimationSpeed = 1 1
+Texture = tgfx:textures/fx/shock02.png
+RenderType = ADDITIVE
+Rows = 4
+Columns = 4
+Frames = 8
+Angle = 0 360
+AngleRate = -5 5
+AngleRateDamping = 0.98 0.99
+Lifetime = 16 17
+SystemLifetime = 1 1
+Size = 2 2
+SizeRate = 2.5 2.8
+SizeRateDamping = 0.84 0.86
+Color = 128 128 128 0
+Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 2
+SpawnDelay = 0 0
+VelocityType = NONE
+VelocityDamping = 0.96 0.97
+Gravity = 0.0
+VolumeType = POINT
+IsHollow =false
+RemoveOnGround = false
+SystemVelocityFactor = 0 0
+}
+
+hitSmall {
+Texture = advancearmy:textures/fx/hitsmoke2x2.png
+RenderType = ALPHA
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 10 12
+SystemLifetime = 1 1
+Size = 0.6 0.8
+SizeRate = 1 1.4
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 1 2
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 0.1 0.2
+Velocity2 = 0.4 0.6
+VelocityDamping = 0.85 0.86
+Gravity = 0.01
+VolumeType = CYLINDER
+Volume1 = 0.2
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+dirtUp1 {
+Texture = advancearmy:textures/fx/hitsdirt2x2.png
+RenderType = ALPHA
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 22 31
+SystemLifetime = 1 1
+Size = 2 2.1
+SizeRate = 1 1.4
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+Color = 215 207 202 0
+Color = 200 190 180 1
+//Color = 115 107 102 0
+//Color = 100 90 80 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 0.1 0.2
+Velocity2 = 0.4 0.6
+VelocityDamping = 0.85 0.86
+Gravity = 0.01
+VolumeType = CYLINDER
+Volume1 = 0.12
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+dirtUp2 {
+Texture = advancearmy:textures/fx/anim_dirt_dying.png
+RenderType = ALPHA
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 23 32
+SystemLifetime = 1 1
+Size = 2 2.1
+SizeRate = 1 1.4
+SizeRateDamping = 0.86 0.87
+Alpha = 0.0 0
+Alpha = 0.8 0.25
+Alpha = 0 1.0
+//Color = 115 107 102 0
+//Color = 100 90 80 1
+Color = 215 207 202 0
+Color = 200 190 180 1
+ParticleCount = 1 2
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = ORTHO
+Velocity1 = 0.1 0.2
+Velocity2 = 2 3
+VelocityDamping = 0.85 0.86
+//Velocity1 = 0 0
+//Velocity2 = 0 0
+//Velocity3 = 1 2
+//VelocityDamping = 0.92 0.94
+Gravity = 0.01
+VolumeType = SPHERE
+Volume1 = 0.13
+Volume2 = 0.1
+IsHollow = true
+HasVariations = true
+}
+
+SmallExp {
+Texture = advancearmy:textures/fx/muzzleflash2x2.png
+RenderType = ADDITIVE
+Rows = 2
+Columns = 2
+Frames = 4
+Lifetime = 8 10
+SystemLifetime = 1 1
+Size = 3.5 4
+SizeRate = -1.60 -2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = OUTWARD
+Velocity1 = 0 0
+Velocity2 = 0 0
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.1
+Volume2 = 0.1
+}
+
+SparkTrail {
+Texture = advancearmy:textures/fx/sparktrail.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 5 7
+SpawnDelay = 0 0
+SystemLifetime = 4 5
+Size = 0.40 0.55
+SizeRate = -0.1 -0.125
+SizeRateDamping = 0.98 0.99
+Alpha = 0 0
+Alpha = 1 0.125
+Alpha = 0 1
+Color = 255 128 64 0
+//Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = SPHERICAL
+Velocity1 = 0 0.1
+VelocityDamping = 0.92 0.93
+InitialDelay = 0 0
+offset = 0 0 0
+}
+
+SmallStone {
+Texture = advancearmy:textures/fx/smallstone.png
+RenderType = ALPHA
+Rows = 4
+Columns =4
+Frames = 16
+angle = 0 360
+angleRate = -30 30
+angleRateDamping = 0.96 0.98
+Lifetime = 65 85
+SpawnDelay = 0 0
+SystemLifetime = 1 1
+InitialDelay = 1 1
+Size = 0.8 1.6
+SizeRate = 0.025 0.1
+SizeRateDamping = 0.87 0.9
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 1.0 0.75
+Alpha = 0 1.0
+Color = 128 128 96 0
+ParticleCount = 2 4
+Gravity = 0.6
+VolumeType = POINT
+VelocityType = OUTWARD
+Velocity1 = 0.8 1.3 //Outward
+Velocity2 = 10 12 //Up
+VelocityDamping = 0.95 0.98
+HasVariations = true
+}

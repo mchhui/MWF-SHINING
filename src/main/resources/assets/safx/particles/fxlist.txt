@@ -1,0 +1,539 @@
+﻿Null {
+}
+
+SAAPTrail {//默认穿甲弹拖尾
+Texture = safx:textures/fx/throwtrail.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 15 15
+SpawnDelay = 0 0
+SystemLifetime = 0 0
+Size = 6 6
+SizeRate = -0.35 -0.35
+SizeRateDamping = 0.9 0.9
+//Alpha = 1 0
+//Alpha = 0 1
+Color = 155 155 255 0
+Color = 125 135 155 0.25
+Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = NONE
+VelocityDamping = 1 1
+InitialDelay = 0 0
+offset = 0 0 0
+}
+
+SABulletTrail {//默认子弹拖尾
+Texture = safx:particles/ra2sa/sabullettrail.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 6 6
+SpawnDelay = 0 0
+SystemLifetime = 0 0
+Size = 1.2 1.2
+SizeRate = -0.35 -0.35
+SizeRateDamping = 0.9 0.9
+//Alpha = 1 0
+//Alpha = 0 1
+Color = 155 155 255 0
+Color = 125 135 155 0.25
+Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = NONE
+VelocityDamping = 1 1
+InitialDelay = 0 0
+offset = 0 0 0
+}
+
+BuzzTrail {//焚风AA子弹拖尾
+Texture = safx:particles/ra2sa/laserff.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 16 16
+SpawnDelay = 0 0
+SystemLifetime = 0 0
+Size = 2 2
+SizeRate = -0.35 -0.35
+SizeRateDamping = 0.9 0.9
+//Alpha = 1 0
+//Alpha = 0 1
+Color = 155 155 255 0
+Color = 125 135 155 0.25
+Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = NONE
+VelocityDamping = 1 1
+InitialDelay = 0 0
+offset = 0 0 0
+}
+
+SAAATrail {//默认AA子弹拖尾
+Texture = safx:particles/ra2sa/laser12.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 16 16
+SpawnDelay = 0 0
+SystemLifetime = 0 0
+Size = 2 2
+SizeRate = -0.35 -0.35
+SizeRateDamping = 0.9 0.9
+//Alpha = 1 0
+//Alpha = 0 1
+Color = 155 155 255 0
+Color = 125 135 155 0.25
+Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = NONE
+VelocityDamping = 1 1
+InitialDelay = 0 0
+offset = 0 0 0
+}
+
+LSAAATrail {//默认大AA子弹拖尾
+Texture = safx:particles/ra2sa/laser12.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 16 16
+SpawnDelay = 0 0
+SystemLifetime = 0 0
+Size = 6 6
+SizeRate = -0.35 -0.35
+SizeRateDamping = 0.9 0.9
+//Alpha = 1 0
+//Alpha = 0 1
+Color = 155 155 255 0
+Color = 125 135 155 0.25
+Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = NONE
+VelocityDamping = 1 1
+InitialDelay = 0 0
+offset = 0 0 0
+}
+
+FXLIST SAHETrail {//默认HE子弹拖尾
+RocketLauncherTrail
+//RocketLauncherTrailFlare
+}
+SAGrenadeTrail {//默认投掷物拖尾
+Texture = safx:textures/fx/throwtrail.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 8 8
+SpawnDelay = 0 0
+SystemLifetime = 0 0
+Size = 2 2
+SizeRate = -0.35 -0.35
+SizeRateDamping = 0.9 0.9
+//Alpha = 1 0
+//Alpha = 0 1
+Color = 155 155 255 0
+Color = 125 135 155 0.25
+Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = NONE
+VelocityDamping = 1 1
+InitialDelay = 0 0
+offset = 0 0 0
+}
+FXLIST SAMissileTrail {//默认追踪导弹拖尾
+//RocketLauncherTrailFlare
+SAMissileTrailStreak
+}
+SAMissileTrailStreak {
+Texture = safx:textures/fx/missiletrail.png
+RenderType = ADDITIVE
+Streak = true
+Lifetime = 35 35
+SpawnDelay = 0 0
+SystemLifetime = 0 0
+Size = 3.5 3.8
+SizeRate = -0.25 -0.25
+SizeRateDamping = 0.8 0.8
+Alpha = 0 0
+Alpha = 1 0.05
+Alpha = 0 1
+Color = 0 0 0 0
+Color = 255 255 155 0.05
+Color = 145 135 125 0.15
+Color = 0 0 0 1
+ParticleCount = 1 1
+Gravity = 0.0
+VolumeType = POINT
+VelocityType = SPHERICAL
+Velocity1 = 0 0.2
+VelocityDamping = 0.94 0.97
+InitialDelay = 0 0
+offset = 0 0 0
+}
+
+LargeExplosion1 {
+Texture = safx:particles/ra2sa/explosion5.png
+RenderType = ALPHA
+Rows = 8
+Columns = 8
+Frames = 64
+//angle = 0 360
+//angleRate = -10 10
+//angleRateDamping = 0.85 0.88
+Lifetime = 15 16
+SystemLifetime = 1 1
+Size = 25 40
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 7 8
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+smallExplosion {
+Texture = safx:particles/ra2sa/explosion4.png
+RenderType = ALPHA
+Rows = 8
+Columns = 8
+Frames = 64
+//angle = 0 360
+//angleRate = -10 10
+//angleRateDamping = 0.85 0.88
+Lifetime = 15 16
+SystemLifetime = 1 1
+Size = 5 8
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+smallExplosionFF {
+Texture = safx:particles/ra2sa/explosionff.png
+RenderType = ALPHA
+Rows = 8
+Columns = 8
+Frames = 64
+//angle = 0 360
+//angleRate = -10 10
+//angleRateDamping = 0.85 0.88
+Lifetime = 15 16
+SystemLifetime = 1 1
+Size = 5 8
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+LargeExplosion {
+Texture = safx:particles/ra2sa/explosion4.png
+RenderType = ALPHA
+Rows = 8
+Columns = 8
+Frames = 64
+//angle = 0 360
+//angleRate = -10 10
+//angleRateDamping = 0.85 0.88
+Lifetime = 15 16
+SystemLifetime = 1 1
+Size = 25 40
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+LargeExplosion2 {
+Texture = safx:particles/ra2sa/explosion2.png
+//RenderType = ADDITIVE//高亮透明
+RenderType = ALPHA//正常色
+Rows = 8//宽
+Columns = 8//高
+Frames = 64//总帧数
+angle = 0 360//旋转
+angleRate = -10 10//旋转
+angleRateDamping = 0.85 0.88//旋转
+Lifetime = 20 30//渲染时间
+SystemLifetime = 1 1
+Size = 10 20//尺寸
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0//颜色、透明度变化
+Color = 255 255 255 1
+ParticleCount = 3 4//数量
+InitialDelay = 0 0//延迟
+SpawnDelay = 1 1
+VelocityType = OUTWARD//位移类型
+Velocity1 = 0.5 2//水平移动
+Velocity2 = 2 2//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0//重力
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+LargeExplosion3 {
+Texture = safx:particles/ra2sa/explosion3.png
+//RenderType = ADDITIVE//高亮透明
+RenderType = ALPHA//正常色
+Rows = 8//宽
+Columns = 8//高
+Frames = 64//总帧数
+angle = 0 360//旋转
+angleRate = -10 10//旋转
+angleRateDamping = 0.85 0.88//旋转
+Lifetime = 30 40//渲染时间
+SystemLifetime = 1 1
+Size = 20 30//尺寸
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0//颜色、透明度变化
+Color = 255 255 255 1
+ParticleCount = 7 8//数量
+InitialDelay = 0 0//延迟
+SpawnDelay = 1 1
+VelocityType = OUTWARD//位移类型
+Velocity1 = 0.5 2//水平移动
+Velocity2 = 2 2//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0//重力
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+LargeExplosionFire {
+Texture = safx:textures/fx/fireball_4x4_add.png
+//RenderType = ADDITIVE//高亮透明
+RenderType = ADDITIVE//正常色ALPHA
+Rows = 4//宽
+Columns = 4//高
+Frames = 16//总帧数
+angle = 0 360//旋转
+angleRate = -10 10//旋转
+angleRateDamping = 0.85 0.88//旋转
+Lifetime = 20 30//渲染时间
+SystemLifetime = 1 1
+Size = 20 30//尺寸
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0//颜色、透明度变化
+Color = 255 255 255 1
+ParticleCount = 7 8//数量
+InitialDelay = 0 0//延迟
+SpawnDelay = 1 1
+VelocityType = OUTWARD//位移类型
+Velocity1 = 0.5 2//水平移动
+Velocity2 = 2 2//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0//重力
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+LargeExplosion4 {
+Texture = safx:particles/ra2sa/explosion5.png
+RenderType = ALPHA
+Rows = 8
+Columns = 8
+Frames = 64
+//angle = 0 360
+//angleRate = -10 10
+//angleRateDamping = 0.85 0.88
+Lifetime = 300 350
+SystemLifetime = 1 1
+Size = 25 40
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+LargeExplosion5 {
+Texture = safx:particles/ra2sa/exp.png
+RenderType = ALPHA
+Rows = 4
+Columns = 4
+Frames = 16
+angle = 0 360
+angleRate = -10 10
+angleRateDamping = 0.85 0.88
+Lifetime = 20 30
+SystemLifetime = 1 1
+Size = 12 20
+SizeRate = 1.60 2.4
+SizeRateDamping = 0.88 0.94
+Alpha = 0.0 0
+Alpha = 1.0 0.25
+Alpha = 0 1.0
+//Alpha = 1 1 0
+Color = 255 255 255 0
+Color = 255 255 255 1
+ParticleCount = 5 7
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = OUTWARD
+Velocity1 = 1 2//水平移动
+Velocity2 = 4 4//垂直移动
+VelocityDamping = 0.85 0.88
+Gravity = 0.0
+VolumeType = CYLINDER
+Volume1 = 0.5//随机分散度
+Volume2 = 0.5
+}
+
+FXLIST RocketExplosion {
+//LargeExplosionBlastwave//震波中心
+//LargeExplosionBlastwaveGroundAligned//震波地面
+//LargeExplosionSmoke//爆炸烟尘
+LargeExplosion//爆炸中心
+//LargeExplosionRing//爆炸环
+}
+
+FXLIST RocketExplosion1 {
+//LargeExplosionBlastwave//震波中心
+//LargeExplosionBlastwaveGroundAligned//震波地面
+//LargeExplosionSmoke//爆炸烟尘
+LargeExplosion1//爆炸中心
+//LargeExplosionRing//爆炸环
+}
+
+FXLIST AAExplosion {
+////LargeExplosionSmoke//爆炸烟尘
+smallExplosion//爆炸中心
+}
+
+FXLIST FFExplosion {
+//LargeExplosionSmoke//爆炸烟尘
+smallExplosionFF//爆炸中心
+}
+
+FXLIST RocketExplosion2 {
+////LargeExplosionBlastwave//震波中心
+////LargeExplosionBlastwaveGroundAligned//震波地面
+////LargeExplosionSmoke//爆炸烟尘
+LargeExplosion2//爆炸中心
+//LargeExplosionRing//爆炸环
+}
+
+FXLIST RocketExplosion3 {
+//LargeExplosionBlastwave//震波中心
+//LargeExplosionBlastwaveGroundAligned//震波地面
+//LargeExplosionSmoke//爆炸烟尘
+LargeExplosion3//爆炸中心
+//LargeExplosionRing//爆炸环
+}
+
+FXLIST RocketExplosion4 {
+//LargeExplosionBlastwave//震波中心
+//LargeExplosionBlastwaveGroundAligned//震波地面
+//LargeExplosionSmoke//爆炸烟尘
+LargeExplosion4//爆炸中心
+//LargeExplosionRing//爆炸环
+}
+
+FXLIST GuidedMissileExplosion {
+////LargeExplosionSmoke
+LargeExplosion5
+//LargeExplosionBlastwave//震波中心
+}
+
+
+
