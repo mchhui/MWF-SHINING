@@ -10,6 +10,7 @@ import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.network.PacketDecal;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
+import safx.SagerFX;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -30,6 +31,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -265,22 +267,119 @@ public class ItemGun extends BaseItem {
 
     }
 
-    public static void playImpactSound(World world, BlockPos pos, GunType gunType) {
-        if (world.getBlockState(pos).getMaterial() == Material.ROCK) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactStone, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.GRASS || world.getBlockState(pos).getMaterial() == Material.GROUND || world.getBlockState(pos).getMaterial() == Material.SAND) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactDirt, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.WOOD) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactWood, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.GLASS) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactGlass, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.WATER) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactWater, null, 1f);
-        } else if (world.getBlockState(pos).getMaterial() == Material.IRON) {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactMetal, null, 1f);
-        } else {
-            gunType.playSoundPos(pos, world, WeaponSoundType.ImpactDirt, null, 1f);
+    public static void playImpactSound(World world, double posX, double posY, double posZ, EnumFacing facing, BlockPos blockPos, GunType gunType) {
+        if(facing != null) {
+            // 根据射线击中的面调整方块坐标
+            switch(facing) {
+                case EAST:
+                    blockPos = blockPos.west();
+                    break;
+                case SOUTH:
+                    blockPos = blockPos.north();
+                    break;
+                case WEST:
+                    break;
+                case NORTH:
+                    break;
+                case UP:
+                    blockPos = blockPos.down();
+                    break;
+                case DOWN:
+                    break;
+            }
         }
+        
+        Material material = world.getBlockState(blockPos).getMaterial();
+        WeaponSoundType soundType = WeaponSoundType.ImpactDirt;
+        
+        if (material == Material.ROCK) {
+            soundType = WeaponSoundType.ImpactStone;
+        } else if (material == Material.GRASS || material == Material.GROUND || material == Material.SAND) {
+            soundType = WeaponSoundType.ImpactDirt;
+        } else if (material == Material.WOOD) {
+            soundType = WeaponSoundType.ImpactWood;
+        } else if (material == Material.GLASS) {
+            soundType = WeaponSoundType.ImpactGlass;
+        } else if (material == Material.WATER) {
+            soundType = WeaponSoundType.ImpactWater;
+        } else if (material == Material.IRON) {
+            soundType = WeaponSoundType.ImpactMetal;
+        }
+        
+        BlockPos hitPos = new BlockPos(posX, posY, posZ);
+        gunType.playSoundPos(hitPos, world, soundType, null, 1f);
+    }
+
+    public static void playImpactSound(World world, RayTraceResult rayTrace, GunType gunType) {
+        if(rayTrace == null || rayTrace.hitVec == null) return;
+        
+        playImpactSound(world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, rayTrace.sideHit, rayTrace.getBlockPos(), gunType);
+    }
+
+    // 保留旧方法以保持兼容性
+    public static void playImpactSound(World world, BlockPos pos, GunType gunType) {
+        playImpactSound(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, null, pos, gunType);
+    }
+    
+    public static void playHitEffect(World world, double posX, double posY, double posZ, EnumFacing facing, BlockPos blockPos) {
+        RayTraceResult rayTrace = new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, blockPos);
+        playHitEffect(world, rayTrace);
+    }
+    
+    public static void playHitEffect(World world, RayTraceResult rayTrace) {
+        if(rayTrace == null || rayTrace.hitVec == null) return;
+        
+        BlockPos pos = rayTrace.getBlockPos();
+        if(rayTrace.sideHit != null) {
+            // 根据射线击中的面调整方块坐标
+            switch(rayTrace.sideHit) {
+                case EAST:
+                    pos = pos.west();
+                    break;
+                case SOUTH:
+                    pos = pos.north();
+                    break;
+                case WEST:
+                    break;
+                case NORTH:
+                    break;
+                case UP:
+                    pos = pos.down();
+                    break;
+                case DOWN:
+                    break;
+            }
+        }
+        
+        Material material = world.getBlockState(pos).getMaterial();
+        
+        //String materialType = "未知";
+        if (material == Material.IRON) {
+            //materialType = "金属";
+            SagerFX.proxy.createFX("GunHit", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+        } else if (material == Material.ROCK) {
+            //materialType = "石头";
+            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+        } else if (material == Material.GROUND) {
+            //materialType = "泥土";
+            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+        } else if (material == Material.WOOD) {
+            //materialType = "木头";
+            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+        } else if (material == Material.GRASS) {
+            //materialType = "草地";
+            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+        }
+
+        // String message = String.format("§7命中坐标: §f[%.2f, %.2f, %.2f] §7材质: §f%s §7方向: §f%s", 
+        //     rayTrace.hitVec.x,
+        //     rayTrace.hitVec.y, 
+        //     rayTrace.hitVec.z,
+        //     materialType,
+        //     rayTrace.sideHit);
+        // if(Minecraft.getMinecraft().player != null) {
+        //     Minecraft.getMinecraft().player.sendMessage(new TextComponentString(message));
+        // }
     }
 
     @Override

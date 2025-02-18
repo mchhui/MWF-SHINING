@@ -27,6 +27,8 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.IThreadListener;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
@@ -165,9 +167,10 @@ public class PacketExpGunFire extends PacketBase {
 
                     if (entityId == -1) {
                         BlockPos blockPos = new BlockPos(posX, posY, posZ);
-                        ItemGun.playImpactSound(entityPlayer.world, blockPos, itemGun.type);
+                        ItemGun.playImpactSound(entityPlayer.world, posX, posY, posZ, facing, blockPos, itemGun.type);
                         itemGun.type.playSoundPos(blockPos, entityPlayer.world, WeaponSoundType.Crack, entityPlayer, 1.0f);
                         ItemGun.doHit(posX, posY, posZ, facing, entityPlayer);
+                        ItemGun.playHitEffect(entityPlayer.world, posX, posY, posZ, facing, blockPos);
                         return;
                     }
 

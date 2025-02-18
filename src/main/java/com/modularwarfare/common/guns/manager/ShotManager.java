@@ -392,11 +392,12 @@ public class ShotManager {
                         }
                         continue;
                     }
-                    if (rayTrace.rayTraceResult.hitVec != null) {
+                    if (rayTrace.rayTraceResult != null && rayTrace.rayTraceResult.hitVec != null) {
                         BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
-                        ItemGun.playImpactSound(world, blockPos, gunType);
+                        ItemGun.playImpactSound(world, rayTrace.rayTraceResult, gunType);
                         gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entityPlayer, 1.0f);
                         ItemGun.doHit(rayTrace.rayTraceResult, entityPlayer);
+                        ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
                     }
                 }
 
@@ -679,7 +680,7 @@ public class ShotManager {
             
             // 如果没有命中点，使用最大射程
             if(endVec == null) {
-                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, 0, entityPlayer.world.rand, entityPlayer);
+                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, itemGun.type.bulletSpread, entityPlayer.world.rand, entityPlayer);
                 endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
             }
             
