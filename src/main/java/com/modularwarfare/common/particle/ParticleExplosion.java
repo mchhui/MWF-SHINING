@@ -20,6 +20,8 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import safx.SagerFX;
+
 import org.lwjgl.opengl.GL11;
 
 import java.util.Random;
@@ -41,6 +43,7 @@ public class ParticleExplosion extends Particle {
     private static final float EXPAND_SPEED = 4.5f;
     private static final int DEFAULT_PARTICLE_MAX_AGE = 110; // 默认粒子生命周期
     private float currentScale = SCALE_START;
+    private boolean hasSpawnedEffect = false;
 
     public ParticleExplosion(World par1World, double par2, double par4, double par6) {
         this(par1World, par2, par4, par6, null, null);
@@ -67,6 +70,7 @@ public class ParticleExplosion extends Particle {
         this.customTexturePath = texturePath;
         this.fadeInProgress = 0.0f;
         this.currentScale = SCALE_START;
+        this.hasSpawnedEffect = false;
     }
 
     @Override
@@ -164,16 +168,16 @@ public class ParticleExplosion extends Particle {
         int width = (int)((baseSize + (interpolatedAge * baseSize)) * currentScale);
         int height = (int)((baseSize + (interpolatedAge * 50)) * currentScale);
 
-        RenderHelperMW.renderSmoke(
-                texture,
-                this.customModelPath, 
-                interpolatedX,
-                interpolatedY + (interpolatedAge / 100),
-                interpolatedZ,
-                partialTicks,
-                width, height,
-                "0xFFFFFF",
-                finalAlpha);
+        // RenderHelperMW.renderSmoke(
+        //         texture,
+        //         this.customModelPath, 
+        //         interpolatedX,
+        //         interpolatedY + (interpolatedAge / 100),
+        //         interpolatedZ,
+        //         partialTicks,
+        //         width, height,
+        //         "0xFFFFFF",
+        //         finalAlpha);
 
         GL11.glPopAttrib();
         GL11.glPopMatrix();
@@ -187,7 +191,10 @@ public class ParticleExplosion extends Particle {
         if (world != null) {
             this.lastParticleAge = this.particleAge;
 
-            if (this.particleAge == 1) {
+            if (this.particleAge == 1 && !hasSpawnedEffect) {
+                SagerFX.proxy.createFX("AdvExplosion", world, posX, posY, posZ, 0, 0, 0, 1);
+                hasSpawnedEffect = true;
+                
                 this.world.playSound(this.posX, this.posY, this.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.AMBIENT, 20.0F, 0.9F + this.rand.nextFloat() * 0.15F, true);
             }
 
