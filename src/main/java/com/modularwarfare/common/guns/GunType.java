@@ -286,6 +286,18 @@ public class GunType extends BaseType {
     public transient TextureType flashType;
 
     /**
+     * Custom tesla textures
+     */
+    public String customTeslaTexture;
+    public transient TextureType teslaType;
+
+    /**
+     * Custom transform wheel texture
+     */
+    public String customWheelTexture;
+    public transient TextureType wheelType;
+
+    /**
      * Extra Lore
      */
     public String extraLore;
@@ -306,6 +318,26 @@ public class GunType extends BaseType {
     public String customTrailTexture;
     public String customTrailModel;
     public boolean customTrailGlow;
+
+    /** 是否使用特斯拉电击效果 */
+    public boolean useTeslaTrails = false;
+
+    /**
+     * 枪械变换配置
+     * key: 变换状态ID
+     * value: 目标枪械的注册名
+     */
+    public HashMap<Integer, String> transformations;
+    
+    /**
+     * 变换时是否按比例转换弹药
+     */
+    public boolean transformAmmoRatio = true;
+    
+    /**
+     * 变换时是否继承配件
+     */
+    public boolean inheritAttachments = true;
 
     public static boolean isPackAPunched(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {
@@ -394,6 +426,19 @@ public class GunType extends BaseType {
                 flashType = new TextureType();
                 flashType.initDefaultTextures(TextureEnumType.Flash);
             }
+
+            if (customTeslaTexture != null) {
+                if (ModularWarfare.textureTypes.containsKey(customTeslaTexture)) {
+                    teslaType = ModularWarfare.textureTypes.get(customTeslaTexture);
+                }
+            }
+
+            if (customWheelTexture != null) {
+                if (ModularWarfare.textureTypes.containsKey(customWheelTexture)) {
+                    wheelType = ModularWarfare.textureTypes.get(customWheelTexture);
+                }
+            }
+
             if (customHandsTexture != null) {
                 if (ModularWarfare.textureTypes.containsKey(customHandsTexture)) {
                     handsTextureType = ModularWarfare.textureTypes.get(customHandsTexture);
@@ -436,5 +481,4 @@ public class GunType extends BaseType {
     public String getAssetDir() {
         return "guns";
     }
-
 }

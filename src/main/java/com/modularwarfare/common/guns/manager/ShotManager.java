@@ -17,6 +17,7 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
+import com.modularwarfare.common.entity.EntityThrowerProjectile;
 import com.modularwarfare.common.entity.decals.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.guns.*;
@@ -57,6 +58,7 @@ import com.modularwarfare.raycast.obb.OBBModelBox;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.OBBDebugObject;
 import com.modularwarfare.raycast.DefaultRayCasting;
+import com.modularwarfare.client.model.InstantBulletTeslaRender;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -171,7 +173,7 @@ public class ShotManager {
         /**
          * Hit Register
          */
-        if (gunType.weaponType == WeaponType.Launcher) {
+        if (gunType.weaponType == WeaponType.Launcher || gunType.weaponType == WeaponType.Thrower) {
             ModularWarfare.NETWORK.sendToServer(new PacketGunFire(gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread, entityPlayer.rotationPitch, entityPlayer.rotationYaw));
         } else {
             DefaultRayCasting.onShot();
@@ -343,7 +345,7 @@ public class ShotManager {
                 numBullets = 1;
             }
 
-            if(gunType.weaponType != WeaponType.Launcher) {
+            if(gunType.weaponType != WeaponType.Launcher && gunType.weaponType != WeaponType.Thrower) {
                 List<BulletHit> rayTraceList = new ArrayList<>();
                 for (int i = 0; i < numBullets; i++) {
                     List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.SERVER, world, rotationPitch, rotationYaw, entityPlayer, preFireEvent.getWeaponRange(), itemGun, GunType.isPackAPunched(gunStack));
@@ -392,11 +394,12 @@ public class ShotManager {
                         }
                         continue;
                     }
-                    if (rayTrace.rayTraceResult.hitVec != null) {
+                    if (rayTrace.rayTraceResult != null && rayTrace.rayTraceResult.hitVec != null) {
                         BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
-                        ItemGun.playImpactSound(world, blockPos, gunType);
+                        ItemGun.playImpactSound(world, rayTrace.rayTraceResult, gunType);
                         gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entityPlayer, 1.0f);
                         ItemGun.doHit(rayTrace.rayTraceResult, entityPlayer);
+                        ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
                     }
                 }
 
@@ -442,7 +445,9 @@ public class ShotManager {
                                 preHitEvent.setDamage(preHitEvent.getDamage() * bulletItem.type.bulletDamageFactor);
                                 if (bulletItem.type.bulletProperties != null) {
                                     if (!bulletItem.type.bulletProperties.isEmpty()) {
-                                        BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? bulletItem.type.bulletProperties.get(targetELB.getName()) : bulletItem.type.bulletProperties.get(I18n.format("mwf:gui.tooltip.bullet.property.all"));
+                                        BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? 
+                                            bulletItem.type.bulletProperties.get(targetELB.getName()) : 
+                                            bulletItem.type.bulletProperties.get("All");
                                         if (bulletProperty.potionEffects != null) {
                                             for (PotionEntry potionEntry : bulletProperty.potionEffects) {
                                                 targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
@@ -480,9 +485,13 @@ public class ShotManager {
                         MinecraftForge.EVENT_BUS.post(postHitEvent);
                     }
                 }
-            } else {
+            } else if (gunType.weaponType == WeaponType.Launcher){
                 final float accuracy = RayUtil.calculateAccuracy(itemGun, entityPlayer);
                 EntityExplosiveProjectile projectile = new EntityExplosiveProjectile(world, entityPlayer, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke, bulletItem.type.isExplosion);
+                world.spawnEntity(projectile);
+            } else if (gunType.weaponType == WeaponType.Thrower){
+                final float accuracy = RayUtil.calculateAccuracy(itemGun, entityPlayer);
+                EntityThrowerProjectile projectile = new EntityThrowerProjectile(world, entityPlayer, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke);
                 world.spawnEntity(projectile);
             }
 
@@ -627,15 +636,23 @@ public class ShotManager {
                 
                 int numBullets = itemGun.type.numBullets;
                 ItemBullet bulletItem = ItemGun.getUsedBullet(heldItem, itemGun.type);
+                boolean isSlug = false;
                 if (bulletItem != null && bulletItem.type.isSlug) {
-                    numBullets = 1;
+                    isSlug = true;
                 }
                 
                 rayTraceList.clear();
-                for (int i = 0; i < numBullets; i++) {
+                if (isSlug || itemGun.type.weaponType != WeaponType.Shotgun) {
                     List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, player.world, pitch, yaw, player, itemGun.type.weaponMaxRange, itemGun, false);
                     if(rayTrace != null) {
                         rayTraceList.addAll(rayTrace);
+                    }
+                } else {
+                    for (int i = 0; i < numBullets; i++) {
+                        List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, player.world, pitch, yaw, player, itemGun.type.weaponMaxRange, itemGun, false);
+                        if(rayTrace != null) {
+                            rayTraceList.addAll(rayTrace);
+                        }
                     }
                 }
 
@@ -679,7 +696,8 @@ public class ShotManager {
             
             // 如果没有命中点，使用最大射程
             if(endVec == null) {
-                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, 0, entityPlayer.world.rand, entityPlayer);
+                float accuracy = RayUtil.calculateAccuracy(itemGun, entityPlayer);
+                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, accuracy, entityPlayer.world.rand, entityPlayer);
                 endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
             }
             
@@ -722,18 +740,30 @@ public class ShotManager {
             if(tex == null) tex = itemGun.type.customTrailTexture;
             if(!glow) glow = itemGun.type.customTrailGlow;
 
-            ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(
-                itemGun.type,
-                model,
-                tex,
-                glow,
-                origin.x, origin.y, origin.z,
-                entityPlayer.motionX, entityPlayer.motionZ,
-                direction.x, direction.y, direction.z,
-                origin.distanceTo(endVec),
-                10,
-                false
-            ));
+            // 判断是否使用特斯拉效果
+            if(itemGun.type.useTeslaTrails) {
+                // 添加特斯拉效果
+                ModularWarfare.NETWORK.sendToServer(new PacketTeslaTrailAskServer(
+                    origin.x, origin.y, origin.z,
+                    endVec.x, endVec.y, endVec.z,
+                    10f,
+                    itemGun.type
+                ));
+            } else {
+                // 使用普通尾迹效果
+                ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(
+                    itemGun.type,
+                    model,
+                    tex,
+                    glow,
+                    origin.x, origin.y, origin.z,
+                    entityPlayer.motionX, entityPlayer.motionZ,
+                    direction.x, direction.y, direction.z,
+                    origin.distanceTo(endVec),
+                    10,
+                    false
+                ));
+            }
 
             ModularWarfare.NETWORK.sendToServer(new PacketExpShot(entityPlayer.getEntityId(), itemGun.type.internalName));
 

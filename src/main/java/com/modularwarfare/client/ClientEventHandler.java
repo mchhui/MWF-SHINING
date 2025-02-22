@@ -18,6 +18,7 @@ import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.laser.LaserDotRenderer;
 import com.modularwarfare.client.model.InstantBulletRenderer;
+import com.modularwarfare.client.model.InstantBulletTeslaRender;
 import com.modularwarfare.common.backpacks.BackpackType;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
@@ -269,6 +270,7 @@ public class ClientEventHandler {
     @SubscribeEvent
     public void renderWorld(RenderWorldLastEvent event) {
         InstantBulletRenderer.RenderAllTrails(event.getPartialTicks());
+        InstantBulletTeslaRender.RenderAllTeslaTrails(event.getPartialTicks());
         LaserDotRenderer.renderLaserDots();
     }
     
@@ -276,6 +278,9 @@ public class ClientEventHandler {
     public void onPlayerTick(PlayerTickEvent event) {
         if(event.phase==Phase.START&&event.side==Side.CLIENT) {
             if(event.player==Minecraft.getMinecraft().player) {
+                // 更新特斯拉效果
+                InstantBulletTeslaRender.UpdateAllTeslaTrails();
+                
                 boolean isJetFly=false;
                 BackpackType backpack=null;
                 if (event.player.hasCapability(CapabilityExtra.CAPABILITY, null)) {

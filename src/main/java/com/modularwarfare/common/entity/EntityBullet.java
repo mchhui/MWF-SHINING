@@ -29,7 +29,7 @@ public class EntityBullet extends EntityArrow implements IProjectile {
 
     private float velocity;
 
-    private static final DataParameter BULLET_NAME = EntityDataManager.createKey(EntityShell.class, DataSerializers.STRING);
+    private static final DataParameter<String> BULLET_NAME = EntityDataManager.createKey(EntityBullet.class, DataSerializers.STRING);
 
     public EntityBullet(World world) {
         super(world);
@@ -37,6 +37,24 @@ public class EntityBullet extends EntityArrow implements IProjectile {
     }
 
     public EntityBullet(World par1World, EntityPlayer par2EntityPlayer, float damage, float accuracy, float velocity, String bulletName, float gravity, boolean isSmoke, boolean isExplosion) {
+        super(par1World);
+        this.setBulletType(bulletName);
+        this.player = par2EntityPlayer;
+        this.shootingEntity = par2EntityPlayer;
+        setSize(0.2F, 0.2F);
+        setLocationAndAngles(par2EntityPlayer.posX, par2EntityPlayer.posY + par2EntityPlayer.getEyeHeight(), par2EntityPlayer.posZ, par2EntityPlayer.rotationYaw, par2EntityPlayer.rotationPitch);
+        this.posX -= MathHelper.cos(this.rotationYaw / 180.0F * 3.141593F) * 0.16F;
+        this.posY -= 0.0D;
+        this.posZ -= MathHelper.sin(this.rotationYaw / 180.0F * 3.141593F) * 0.16F;
+        setPosition(par2EntityPlayer.posX, par2EntityPlayer.posY + par2EntityPlayer.getEyeHeight(), par2EntityPlayer.posZ);
+        this.motionX = (-MathHelper.sin(this.rotationYaw / 180.0F * 3.141593F) * MathHelper.cos(this.rotationPitch / 180.0F * 3.141593F));
+        this.motionZ = (MathHelper.cos(this.rotationYaw / 180.0F * 3.141593F) * MathHelper.cos(this.rotationPitch / 180.0F * 3.141593F));
+        this.motionY = (-MathHelper.sin(this.rotationPitch / 180.0F * 3.141593F));
+        this.damage = damage;
+        shoot(this.motionX, this.motionY, this.motionZ, velocity, accuracy);
+    }
+
+    public EntityBullet(World par1World, EntityPlayer par2EntityPlayer, float damage, float accuracy, float velocity, String bulletName, float gravity, boolean isSmoke) {
         super(par1World);
         this.setBulletType(bulletName);
         this.player = par2EntityPlayer;

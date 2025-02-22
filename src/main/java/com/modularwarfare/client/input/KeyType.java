@@ -15,6 +15,7 @@ public enum KeyType {
     // Backpack("Backpack Inventory", 0x30), // B // Deprecated
     Jetpack("Jetpack fire", Keyboard.KEY_X), 
     LaserToggle("Laser Toggle", Keyboard.KEY_L),
+    GunTransform("Gun Transform", Keyboard.KEY_G), // 按G打开变换轮盘
 
     Left("Left (Attach mode)", 203), // H
     Right("Right (Attach mode)", 205), // H

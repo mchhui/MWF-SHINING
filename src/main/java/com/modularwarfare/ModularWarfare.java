@@ -22,6 +22,7 @@ import com.modularwarfare.common.commands.CommandNBT;
 import com.modularwarfare.common.commands.CommandPlay;
 import com.modularwarfare.common.commands.kits.CommandKit;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
+import com.modularwarfare.common.entity.EntityThrowerProjectile;
 import com.modularwarfare.common.entity.decals.EntityBulletHole;
 import com.modularwarfare.common.entity.decals.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
@@ -86,6 +87,7 @@ import java.util.stream.Stream;
 import static com.modularwarfare.common.CommonProxy.zipJar;
 
 import com.modularwarfare.common.grenades.GrenadeType;
+import com.modularwarfare.client.hud.GunTransformHUD;
 
 @Mod(
     modid = ModularWarfare.MOD_ID,
@@ -561,6 +563,10 @@ public class ModularWarfare {
         NETWORK.initialise();
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularWarfare.INSTANCE, new GuiHandler());
         loaderManager.initAddons(event);
+
+        if(event.getSide().isClient()) {
+            MinecraftForge.EVENT_BUS.register(new GunTransformHUD());
+        }
     }
 
     // Last loading things
@@ -724,6 +730,7 @@ public class ModularWarfare {
 
         //EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "bullet"), EntityBullet.class, "bullet", 15, this, 64, 1, true);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "explosive_projectile"), EntityExplosiveProjectile.class, "explosive_projectile", 15, this, 80, 1, true);
+        EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "thrower_projectile"), EntityThrowerProjectile.class, "thrower_projectile", 16, this, 80, 1, true);
     }
 
     public static void registerRayCasting(RayCasting rayCasting) {

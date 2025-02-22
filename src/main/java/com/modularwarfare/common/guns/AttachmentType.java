@@ -70,6 +70,8 @@ public class AttachmentType extends BaseType {
         public boolean plumbCrossHair = false;
         
         public boolean usedDefaultOverlayModelTexture=true;
+
+        public float aimSpeedFactor = 1.0f;
     }
 
     public static class Barrel {

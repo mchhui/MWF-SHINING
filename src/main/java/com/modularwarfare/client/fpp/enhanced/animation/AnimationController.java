@@ -11,7 +11,6 @@ import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAda
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.DynamicTextureConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
@@ -20,6 +19,7 @@ import com.modularwarfare.client.view.AutoSwitchToFirstView;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
+import com.modularwarfare.common.network.PacketGunTransform;
 import com.modularwarfare.utility.maths.Interpolation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
@@ -30,10 +30,12 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.lwjgl.input.Mouse;
 
@@ -60,6 +62,7 @@ public class AnimationController {
     public double GRENADE_THROW;
     public double MODE_CHANGE;
     public double CUSTOM=1;
+    public double TRANSFORM=1;
     
     public double POST_SMOKE=0;
     public double EJECTION_SMOKE=0;
@@ -83,7 +86,9 @@ public class AnimationController {
 
     public boolean hasPlayedDrawSound = true;
     public boolean hasPlayedTakedownSound = true;
+    public boolean hasPlayedTransformSound = true;
     public ISound inspectSound=null;
+    public ISound transformSound = null;
     public String customAnimation="null";
     public double startTime;
     public double endTime;
@@ -94,6 +99,10 @@ public class AnimationController {
     public DynamicTextureConfig lastAmmoCfg;
     
     public static ISound drawSound=null;
+
+    public String pendingTransformGun = null;
+
+    private boolean drawSoundSkipFlag = false;
 
     private static AnimationType[] RELOAD_TYPE =
         new AnimationType[] {AnimationType.PRE_LOAD, AnimationType.LOAD, AnimationType.POST_LOAD,
@@ -110,6 +119,9 @@ public class AnimationController {
     private static AnimationType[] GRENADE_THROW_TYPE =
         new AnimationType[] {AnimationType.PRE_THROW, AnimationType.THROW_FIRST, AnimationType.THROW_SECOND, AnimationType.POST_THROW, AnimationType.PRE_THROW_LOW, AnimationType.THROW_FIRST_LOW, AnimationType.THROW_SECOND_LOW, AnimationType.POST_THROW_LOW,};
 
+    private static AnimationType[] TRANSFORM_TYPE =
+        new AnimationType[] {AnimationType.TRANSFORM_0, AnimationType.TRANSFORM_1, AnimationType.TRANSFORM_2, AnimationType.TRANSFORM_3, AnimationType.TRANSFORM_4};
+        
     public AnimationController(EntityLivingBase player,EnhancedRenderConfig config){
         this.config = config;
         this.playback = new ActionPlayback(this,config);
@@ -125,6 +137,7 @@ public class AnimationController {
         DRAW=0f;
         hasPlayedDrawSound = false;
         hasPlayedTakedownSound=false;
+        hasPlayedTransformSound = false;
         ADS=0;
         RELOAD=0;
         if(resetSprint) {
@@ -132,6 +145,7 @@ public class AnimationController {
         }
         SPRINT_LOOP=0;
         INSPECT=1;
+        TRANSFORM=1;
         if(inspectSound!=null) {
             Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
             inspectSound=null;
@@ -139,6 +153,10 @@ public class AnimationController {
         if(drawSound!=null) {
             Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
             drawSound=null;
+        }
+        if(transformSound!=null) {
+            Minecraft.getMinecraft().getSoundHandler().stopSound(transformSound);
+            transformSound=null;
         }
         FIRE=0;
         MODE_CHANGE=1;
@@ -162,6 +180,33 @@ public class AnimationController {
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         float moveDistance=player.distanceWalkedModified-player.prevDistanceWalkedModified;
         double speedFactor=Math.sqrt((player.posX-player.prevPosX)*(player.posX-player.prevPosX)+(player.posY-player.prevPosY)*(player.posY-player.prevPosY)+(player.posZ-player.prevPosZ)*(player.posZ-player.prevPosZ))/0.21;
+        
+        /** TRANSFORM **/
+        if(TRANSFORM < 1F) {
+            double transformSpeed = 1.0;
+            int targetState = 0;
+            String pendingGun = pendingTransformGun;
+            
+            if(pendingGun != null) {
+                ItemGun targetGun = ModularWarfare.gunTypes.get(pendingGun);
+                if(targetGun != null) {
+                    for(Map.Entry<Integer, String> entry : targetGun.type.transformations.entrySet()) {
+                        if(entry.getValue().equals(pendingGun)) {
+                            targetState = entry.getKey();
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            AnimationType transformType = AnimationType.valueOf("TRANSFORM_" + targetState);
+            
+            if(config.animations.containsKey(transformType)) {
+                transformSpeed = config.animations.get(transformType).getSpeed(config.FPS) * stepTick;
+            }
+            TRANSFORM = Math.max(0, TRANSFORM + transformSpeed);
+        }
+
         /** DEFAULT **/
         double defaultSpeed = config.animations.get(AnimationType.DEFAULT).getSpeed(config.FPS) * stepTick;
         if(playback.action==AnimationType.DEFAULT_EMPTY) {
@@ -421,10 +466,17 @@ public class AnimationController {
                 }
                 if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
                     AttachmentPresetEnum.Laser) != null) {
-                    ItemAttachment stockAttachment =
+                    ItemAttachment laserAttachment =
                         (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
                             AttachmentPresetEnum.Laser).getItem();
-                    adsSpeed*=stockAttachment.type.laser.aimSpeedFactor;
+                    adsSpeed*=laserAttachment.type.laser.aimSpeedFactor;
+                }
+                if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                    AttachmentPresetEnum.Sight) != null) {
+                    ItemAttachment sightAttachment =
+                        (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                            AttachmentPresetEnum.Sight).getItem();
+                    adsSpeed*=sightAttachment.type.sight.aimSpeedFactor;
                 }
             }
             double val = 0;
@@ -615,9 +667,123 @@ public class AnimationController {
         if (CUSTOM < 1F) {
             resetView();
             this.playback.action = AnimationType.CUSTOM;
-        } else if (DRAW < 1F) {
-            if(!hasPlayedDrawSound){
+        } else if (TRANSFORM < 1F) {
+            ModularWarfare.LOGGER.debug("[Transform] Updating transform action");
+            if(!hasPlayedTransformSound) {
                 Item item = player.getHeldItemMainhand().getItem();
+                if (item instanceof ItemGun) {
+                    if(player == Minecraft.getMinecraft().player) {
+                        if(transformSound != null) {
+                            Minecraft.getMinecraft().getSoundHandler().stopSound(transformSound);
+                            transformSound = null;
+                        }
+                        GunType type = ((ItemGun)item).type;
+                        if(type.animationType == WeaponAnimationType.ENHANCED && config == type.enhancedModel.config) {
+                            int targetState = 0;
+                            String pendingGun = pendingTransformGun;
+                            if(pendingGun != null) {
+                                ItemGun targetGun = ModularWarfare.gunTypes.get(pendingGun);
+                                if(targetGun != null) {
+                                    for(Map.Entry<Integer, String> entry : targetGun.type.transformations.entrySet()) {
+                                        if(entry.getValue().equals(pendingGun)) {
+                                            targetState = entry.getKey();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            ModularWarfare.LOGGER.debug("[Transform] Playing sound for target state: " + targetState);
+                            
+                            WeaponSoundType transformSoundType = null;
+                            switch(targetState) {
+                                case 0:
+                                    transformSoundType = WeaponSoundType.Transform0;
+                                    break;
+                                case 1:
+                                    transformSoundType = WeaponSoundType.Transform1;
+                                    break;
+                                case 2:
+                                    transformSoundType = WeaponSoundType.Transform2;
+                                    break;
+                                case 3:
+                                    transformSoundType = WeaponSoundType.Transform3;
+                                    break;
+                                case 4:
+                                    transformSoundType = WeaponSoundType.Transform4;
+                                    break;
+                            }
+                            
+                            if(transformSoundType != null) {
+                                SoundEvent se = type.getSound((EntityPlayer)player, transformSoundType);
+                                if(se != null) {
+                                    ModularWarfare.LOGGER.debug("[Transform] Found sound event for type: " + transformSoundType);
+                                    transformSound = PositionedSoundRecord.getRecord(se, 1, 1);
+                                    Minecraft.getMinecraft().getSoundHandler().playSound(transformSound);
+                                } else {
+                                    ModularWarfare.LOGGER.debug("[Transform] No sound event found for type: " + transformSoundType);
+                                }
+                            }
+                        }
+                    }
+                    hasPlayedTransformSound = true;
+                }
+            }
+            
+            int targetState = 0;
+            String pendingGun = pendingTransformGun;
+            if(pendingGun != null) {
+                ItemGun targetGun = ModularWarfare.gunTypes.get(pendingGun);
+                if(targetGun != null) {
+                    for(Map.Entry<Integer, String> entry : targetGun.type.transformations.entrySet()) {
+                        if(entry.getValue().equals(pendingGun)) {
+                            targetState = entry.getKey();
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            this.playback.action = AnimationType.valueOf("TRANSFORM_" + targetState);
+            ModularWarfare.LOGGER.debug("[Transform] Set playback action to: " + this.playback.action);
+        } else if (TRANSFORM >= 1F && pendingTransformGun != null) {
+
+            ModularWarfare.LOGGER.debug("[Transform] Transform complete, switching to: " + pendingTransformGun);
+            
+            if(player != null && player instanceof EntityPlayer && !player.getHeldItemMainhand().isEmpty() 
+               && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                
+                ModularWarfare.LOGGER.debug("[Transform] Player holding valid gun, executing transform");
+
+                if(player.world.isRemote) {
+                    ModularWarfare.NETWORK.sendToServer(new PacketGunTransform(pendingTransformGun));
+                    ModularWarfare.LOGGER.debug("[Transform] Sent transform packet to server: " + pendingTransformGun);
+                }
+            } else {
+                ModularWarfare.LOGGER.warn("[Transform] Cannot execute transform - invalid item in hand");
+            }
+            
+            pendingTransformGun = null;
+            hasPlayedTransformSound = false;
+            TRANSFORM = 1F;
+        } else if (DRAW < 1F) {
+            if(player.getHeldItemMainhand().hasTagCompound() && 
+               player.getHeldItemMainhand().getTagCompound().hasKey(GunTransformManager.TRANSFORM_DRAW_SKIP) &&
+               player.getHeldItemMainhand().getTagCompound().getBoolean(GunTransformManager.TRANSFORM_DRAW_SKIP)) {
+                DRAW = 1F;
+                hasPlayedDrawSound = true;
+                drawSoundSkipFlag = true;
+                if(drawSound != null) {
+                    Minecraft.getMinecraft().getSoundHandler().stopSound(drawSound);
+                    drawSound = null;
+                }
+                player.getHeldItemMainhand().getTagCompound().removeTag(GunTransformManager.TRANSFORM_DRAW_SKIP);
+                return;
+            }
+            
+            if(!hasPlayedDrawSound && !drawSoundSkipFlag){
+                Item item = player.getHeldItemMainhand().getItem();
+
+                
                 if (item instanceof ItemGun) {
                     if((!(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify))&&player==Minecraft.getMinecraft().player) {
                         if(drawSound!=null) {
@@ -776,6 +942,12 @@ public class AnimationController {
         for(AnimationType throwType:GRENADE_THROW_TYPE) {
             if(this.playback.action==throwType) {
                 this.playback.updateTime(GRENADE_THROW);
+                break;
+            }  
+        }
+        for(AnimationType transformType:TRANSFORM_TYPE) {
+            if(this.playback.action==transformType) {
+                this.playback.updateTime(TRANSFORM);
                 break;
             }  
         }

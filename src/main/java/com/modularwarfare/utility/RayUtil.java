@@ -58,8 +58,12 @@ public class RayUtil {
             if(!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
                 ItemGun itemGun = (ItemGun)heldItem.getItem();
                 if(itemGun.type != null && itemGun.type.useEnhancedAiming) {
+                    
+                    ItemBullet bulletItem = ItemGun.getUsedBullet(heldItem, itemGun.type);
+                    boolean isSlug = bulletItem != null && bulletItem.type != null && bulletItem.type.isSlug;
+                    
                     AimingPoint aimPoint;
-                    if(itemGun.type.numBullets > 1) {
+                    if(itemGun.type.numBullets > 1 && !isSlug) {
                         if(subAimPoints[currentBulletIndex] == null) {
                             subAimPoints[currentBulletIndex] = new AimingPoint();
                         }
