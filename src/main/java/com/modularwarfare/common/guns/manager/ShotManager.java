@@ -636,15 +636,23 @@ public class ShotManager {
                 
                 int numBullets = itemGun.type.numBullets;
                 ItemBullet bulletItem = ItemGun.getUsedBullet(heldItem, itemGun.type);
+                boolean isSlug = false;
                 if (bulletItem != null && bulletItem.type.isSlug) {
-                    numBullets = 1;
+                    isSlug = true;
                 }
                 
                 rayTraceList.clear();
-                for (int i = 0; i < numBullets; i++) {
+                if (isSlug || itemGun.type.weaponType != WeaponType.Shotgun) {
                     List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, player.world, pitch, yaw, player, itemGun.type.weaponMaxRange, itemGun, false);
                     if(rayTrace != null) {
                         rayTraceList.addAll(rayTrace);
+                    }
+                } else {
+                    for (int i = 0; i < numBullets; i++) {
+                        List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, player.world, pitch, yaw, player, itemGun.type.weaponMaxRange, itemGun, false);
+                        if(rayTrace != null) {
+                            rayTraceList.addAll(rayTrace);
+                        }
                     }
                 }
 
@@ -688,7 +696,8 @@ public class ShotManager {
             
             // 如果没有命中点，使用最大射程
             if(endVec == null) {
-                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, itemGun.type.bulletSpread, entityPlayer.world.rand, entityPlayer);
+                float accuracy = RayUtil.calculateAccuracy(itemGun, entityPlayer);
+                Vec3d forward = RayUtil.getGunAccuracy(aimData.pitch, aimData.yaw, accuracy, entityPlayer.world.rand, entityPlayer);
                 endVec = origin.add(forward.scale(itemGun.type.weaponMaxRange));
             }
             
