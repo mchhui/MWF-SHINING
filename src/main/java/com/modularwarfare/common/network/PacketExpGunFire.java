@@ -222,30 +222,38 @@ public class PacketExpGunFire extends PacketBase {
 
                     if (target instanceof EntityLivingBase && bulletItem.type.bulletProperties != null && !bulletItem.type.bulletProperties.isEmpty()) {
                         EntityLivingBase targetELB = (EntityLivingBase) target;
-                        BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? bulletItem.type.bulletProperties.get(targetELB.getName()) : bulletItem.type.bulletProperties.get(I18n.format("mwf:gui.tooltip.bullet.property.all"));
-                        if (bulletProperty.potionEffects != null) {
-                            for (PotionEntry potionEntry : bulletProperty.potionEffects) {
-                                targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
-                            }
-                        }
-                        if (bulletProperty.fireLevel > 0) {
-                            targetELB.setFire(bulletProperty.fireLevel);
-                        }
-                        if (bulletProperty.explosionLevel > 0) {
-                            targetELB.world.createExplosion(null, targetELB.posX, targetELB.posY + 1, targetELB.posZ, bulletProperty.explosionLevel, bulletProperty.explosionBroken);
-                        }
-                        if (bulletProperty.knockLevel > 0) {
-                            targetELB.knockBack(entityPlayer, bulletProperty.knockLevel, entityPlayer.posX - targetELB.posX, entityPlayer.posZ - targetELB.posZ);
-                        }
-                        if (bulletProperty.banShield) {
-                            if (targetELB instanceof EntityPlayer) {
-                                EntityPlayer ep = (EntityPlayer) targetELB;
-                                ItemStack itemstack1 = ep.isHandActive() ? ep.getActiveItemStack() : ItemStack.EMPTY;
-
-                                if ((!itemstack1.isEmpty()) && itemstack1.getItem().isShield(itemstack1, ep)) {
-                                    ep.getCooldownTracker().setCooldown(itemstack1.getItem(), 100);
-                                    ep.world.setEntityState(ep, (byte) 30);
+                        BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? 
+                            bulletItem.type.bulletProperties.get(targetELB.getName()) : 
+                            bulletItem.type.bulletProperties.get("All");
+                        System.out.println("Bullet property: " + bulletProperty);
+                        if(bulletProperty != null) {
+                            if (bulletProperty.potionEffects != null) {
+                                for (PotionEntry potionEntry : bulletProperty.potionEffects) {
+                                    targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
                                 }
+                            }
+                            if (bulletProperty.fireLevel > 0) {
+                                targetELB.setFire(bulletProperty.fireLevel);
+                            }
+                            if (bulletProperty.explosionLevel > 0) {
+                                targetELB.world.createExplosion(null, targetELB.posX, targetELB.posY + 1, targetELB.posZ, bulletProperty.explosionLevel, bulletProperty.explosionBroken);
+                            }
+                            if (bulletProperty.knockLevel > 0) {
+                                targetELB.knockBack(entityPlayer, bulletProperty.knockLevel, entityPlayer.posX - targetELB.posX, entityPlayer.posZ - targetELB.posZ);
+                            }
+                            if (bulletProperty.banShield) {
+                                if (targetELB instanceof EntityPlayer) {
+                                    EntityPlayer ep = (EntityPlayer) targetELB;
+                                    ItemStack itemstack1 = ep.isHandActive() ? ep.getActiveItemStack() : ItemStack.EMPTY;
+
+                                    if ((!itemstack1.isEmpty()) && itemstack1.getItem().isShield(itemstack1, ep)) {
+                                        ep.getCooldownTracker().setCooldown(itemstack1.getItem(), 100);
+                                        ep.world.setEntityState(ep, (byte) 30);
+                                    }
+                                }
+                            }
+                            if(bulletProperty.bulletDamageFactor != 0) {
+                                damage *= bulletProperty.bulletDamageFactor;
                             }
                         }
                     }
