@@ -219,6 +219,11 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketLaserToggleClient.class);
         registerPacket(PacketGrenadeThrow.class);
         registerPacket(PacketGrenadeConsume.class);
+
+        registerPacket(PacketTeslaTrail.class);
+        registerPacket(PacketTeslaTrailAskServer.class);
+
+        registerPacket(PacketGunTransform.class);
     }
 
     /**

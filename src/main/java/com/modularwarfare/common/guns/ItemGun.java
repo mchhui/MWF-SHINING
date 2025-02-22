@@ -48,6 +48,8 @@ public class ItemGun extends BaseItem {
     public static boolean fireButtonHeld = false;
     public static boolean lastFireButtonHeld = false;
     public static final String LASER_ENABLED_NBT = "laser_enabled";
+    public static final String TRANSFORM_STATE_NBT = "transform_state";
+    public static final String LAST_TRANSFORM_STATE_NBT = "last_transform_state";
     public GunType type;
 
     public ItemGun(GunType type) {
@@ -652,5 +654,48 @@ public class ItemGun extends BaseItem {
             return false;
         }
         return stack.getTagCompound().getBoolean(LASER_ENABLED_NBT);
+    }
+
+    /**
+     * 获取枪械当前的变换状态
+     */
+    public static int getTransformState(ItemStack heldStack) {
+        if (heldStack.getTagCompound() != null) {
+            NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
+            return nbtTagCompound.hasKey(TRANSFORM_STATE_NBT) ? nbtTagCompound.getInteger(TRANSFORM_STATE_NBT) : 0;
+        }
+        return 0;
+    }
+
+    /**
+     * 设置枪械当前的变换状态
+     */
+    public static void setTransformState(ItemStack heldStack, int state) {
+        if (heldStack.getTagCompound() != null) {
+            NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
+            nbtTagCompound.setInteger(LAST_TRANSFORM_STATE_NBT, getTransformState(heldStack));
+            nbtTagCompound.setInteger(TRANSFORM_STATE_NBT, state);
+            heldStack.setTagCompound(nbtTagCompound);
+        }
+    }
+
+    /**
+     * 获取枪械上一次的变换状态
+     */
+    public static int getLastTransformState(ItemStack heldStack) {
+        if (heldStack.getTagCompound() != null) {
+            NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
+            return nbtTagCompound.hasKey(LAST_TRANSFORM_STATE_NBT) ? nbtTagCompound.getInteger(LAST_TRANSFORM_STATE_NBT) : 0;
+        }
+        return 0;
+    }
+
+    /**
+     * 切换到上一次的变换状态
+     */
+    public static void switchToLastTransformState(ItemStack heldStack) {
+        int currentState = getTransformState(heldStack);
+        int lastState = getLastTransformState(heldStack);
+        setTransformState(heldStack, lastState);
     }
 }
