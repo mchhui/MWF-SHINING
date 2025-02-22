@@ -28,7 +28,7 @@ public class SAFX {
 //	}
 	
 	public static final String FXLIST_DIR = "/assets/safx/particles/";
-	public static String[] FXFILES = {"fxlist.txt", "advlist.txt"};
+	public static String[] FXFILES = {"fxlist.txt", "mwffxlist.txt"};
 	
 	public static HashMap<String, SAFXType> FXList = new HashMap<String, SAFXType>();
 

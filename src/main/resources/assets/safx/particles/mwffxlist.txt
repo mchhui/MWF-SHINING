@@ -1,6 +1,74 @@
-﻿//FX
+﻿FlamethrowerTrailFlames {
+Texture = modularwarfare:textures/particles/flamethrower_a.png
+RenderType = ALPHA
+Rows = 4
+Columns = 4
+Frames = 16
+angle = -45 45
+angleRate = -10 10
+angleRateDamping = 0.87 0.89
+Lifetime = 15 20
+SystemLifetime = 0 0
+Size = 0.4 0.8
+SizeRate = 0.6 1.2
+SizeRateDamping = 0.82 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.15
+Alpha = 0.5 0.5
+Alpha = 0 1.0
+Color = 255 255 255 0
+//Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 0 0
+VelocityType = SPHERICAL
+Velocity1 = 0 1
+VelocityDamping = 0.84 0.86
+Gravity = -0.02
+VolumeType = POINT
+SystemVelocityFactor = 0.25 0.5
+}
+
+FlamethrowerTrailFlames2 {
+Texture = modularwarfare:textures/particles/flamethrower2.png
+RenderType = ADDITIVE
+Rows = 4
+Columns = 4
+Frames = 16
+angle = -45 45
+angleRate = -10 10
+angleRateDamping = 0.87 0.89
+Lifetime = 15 20
+SystemLifetime = 0 0
+Size = 0.6 1.2
+SizeRate = 0.8 1.6
+SizeRateDamping = 0.82 0.86
+Alpha = 0.0 0
+Alpha = 1.0 0.15
+Alpha = 0.5 0.5
+Alpha = 0 1.0
+Color = 0 0 0 0
+Color = 255 255 255 0.15
+Color = 0 0 0 1
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 0 1
+VelocityType = SPHERICAL
+Velocity1 = 0 1
+VelocityDamping = 0.84 0.86
+Gravity = -0.02
+VolumeType = POINT
+SystemVelocityFactor = 0.25 0.5
+}
+
+FXLIST FlamethrowerTrail {
+FlamethrowerTrailFlames
+FlamethrowerTrailFlames2
+}
+
+//FX
 BlastwaveGround {
-Texture = advancearmy:textures/fx/shockwave.png
+Texture = modularwarfare:textures/particles/shockwave.png
 RenderType = ADDITIVE
 Rows = 1
 Columns = 1
@@ -111,7 +179,7 @@ SmokeGun
 
 OrangeSpark {//火星
 AnimationSpeed = 1 1
-Texture = advancearmy:textures/fx/point1.png
+Texture = modularwarfare:textures/particles/point1.png
 RenderType = ADDITIVE
 Rows = 1
 Columns = 1
@@ -151,8 +219,7 @@ AttachedSystem = SparkTrail
 
 BlueSparks {//蓝星
 AnimationSpeed = 1 1
-//Texture = tgfx:textures/fx/lensflare3.png
-Texture = advancearmy:textures/fx/point1.png
+Texture = modularwarfare:textures/particles/point1.png
 RenderType = ADDITIVE
 Rows = 1
 Columns = 1
@@ -188,7 +255,7 @@ RemoveOnGround = true
 }
 
 MuzzExpTank {
-Texture = advancearmy:textures/fx/muzzleflash2x2.png
+Texture = modularwarfare:textures/particles/muzzleflash2x2.png
 RenderType = ADDITIVE
 Rows = 2
 Columns = 2
@@ -218,7 +285,7 @@ Volume2 = 0.1
 }
 
 aExplosion1 {
-Texture = advancearmy:textures/fx/exp.png
+Texture = modularwarfare:textures/particles/exp.png
 RenderType = Alpha//ADDITIVE
 Rows = 4
 Columns = 4
@@ -252,7 +319,7 @@ Volume2 = 0.5
 }
 
 aExplosion2 {
-Texture = advancearmy:textures/fx/exp.png
+Texture = modularwarfare:textures/particles/exp.png
 RenderType = Alpha
 Rows = 4
 Columns = 4
@@ -286,7 +353,7 @@ Volume2 = 0.5
 }
 
 SmokeTank {
-Texture = advancearmy:textures/fx/anim_smoke3.png
+Texture = modularwarfare:textures/particles/anim_smoke3.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -320,7 +387,7 @@ HasVariations = true
 }
 
 SmokeH1 {
-Texture = advancearmy:textures/fx/anim_smoke3.png
+Texture = modularwarfare:textures/particles/anim_smoke3.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -354,7 +421,7 @@ HasVariations = true
 }
 
 SmokeH2 {
-Texture = advancearmy:textures/fx/anim_smoke3.png
+Texture = modularwarfare:textures/particles/anim_smoke3.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -388,7 +455,7 @@ HasVariations = true
 }
 
 SmokeGroundRing {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -422,7 +489,7 @@ HasVariations = true
 }
 
 SmokeGroundSmall {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -456,7 +523,7 @@ IsHollow = true
 HasVariations = true
 }
 SmokeUpSmall {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -489,7 +556,7 @@ IsHollow = true
 HasVariations = true
 }
 SmokeUpSmall2 {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -523,7 +590,7 @@ HasVariations = true
 }
 
 BlackSmoke {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -557,7 +624,7 @@ IsHollow = true
 HasVariations = true
 }
 BlackSmokeUp {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -592,7 +659,7 @@ HasVariations = true
 }
 
 TankSmoke {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -628,7 +695,7 @@ HasVariations = true
 
 
 BlackSmoke2 {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -662,7 +729,7 @@ IsHollow = true
 HasVariations = true
 }
 DirtSmoke {
-Texture = advancearmy:textures/fx/anim_smoke2ground.png
+Texture = modularwarfare:textures/particles/anim_smoke2ground.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -695,7 +762,7 @@ IsHollow = true
 HasVariations = true
 }
 MuzzFlashTank {
-Texture = advancearmy:textures/fx/burst_horizontal.png
+Texture = modularwarfare:textures/particles/burst_horizontal.png
 RenderType = ADDITIVE
 Rows = 1
 Columns = 1
@@ -757,7 +824,7 @@ Volume2 = 0.1
 }
 
 LaserFlashGun {
-Texture = wmlib:textures/fx/laserfire.png
+Texture = modularwarfare:trail/textures/laserfire.png
 RenderType = ADDITIVE
 Rows = 2
 Columns = 2
@@ -787,7 +854,7 @@ Volume1 = 0.1
 Volume2 = 0.1
 }
 TeslaFlashGun {
-Texture = wmlib:textures/fx/teslafire.png
+Texture = modularwarfare:trail/textures/teslafire.png
 RenderType = ADDITIVE
 Rows = 2
 Columns = 2
@@ -862,7 +929,7 @@ RemoveOnGround = true
 
 MastHit {
 AnimationSpeed = 1 1
-Texture = advancearmy:textures/fx/flash2.png
+Texture = modularwarfare:textures/particles/flash2.png
 RenderType = ADDITIVE
 Rows = 1
 Columns = 1
@@ -931,7 +998,7 @@ LaserSparks
 LaserEnd {
 AnimationSpeed = 1 1
 Size = 6.0 10.0
-Texture = wmlib:textures/fx/laserhit.png
+Texture = modularwarfare:trail/textures/laserhit.png
 RenderType = ADDITIVE
 Rows = 4
 Columns = 4
@@ -1005,7 +1072,7 @@ RemoveOnGround = false
 TeslaHit {
 AnimationSpeed = 1 1
 Size = 6.0 10.0
-Texture = wmlib:textures/fx/teslahit.png
+Texture = modularwarfare:trail/textures/teslahit.png
 RenderType = ADDITIVE
 Rows = 4
 Columns = 4
@@ -1039,7 +1106,7 @@ SystemVelocityFactor = 0 0
 }
 
 MuzzFlashGun {
-Texture = advancearmy:textures/fx/burst_horizontal.png
+Texture = modularwarfare:textures/particles/burst_horizontal.png
 RenderType = ADDITIVE
 Rows = 1
 Columns = 1
@@ -1070,7 +1137,7 @@ Volume2 = 0.1
 }
 
 Blastwave {
-Texture = advancearmy:textures/fx/burst_horizontal.png
+Texture = modularwarfare:textures/particles/burst_horizontal.png
 RenderType = ADDITIVE
 Rows = 1
 Columns = 1
@@ -1101,7 +1168,7 @@ Volume2 = 0.1
 }
 
 StoneSplash {
-Texture = advancearmy:textures/fx/stone4x4.png
+Texture = modularwarfare:textures/particles/stone4x4.png
 RenderType = ALPHA
 Rows = 4
 Columns =4
@@ -1132,7 +1199,7 @@ HasVariations = true
 }
 
 MudSplash {
-Texture = advancearmy:textures/fx/anim_mudsplash_s.png
+Texture = modularwarfare:textures/particles/anim_mudsplash_s.png
 RenderType = ALPHA
 Rows = 2
 Columns =2
@@ -1164,7 +1231,7 @@ HasVariations = true
 }
 
 MuzzExpGun {
-Texture = advancearmy:textures/fx/muzzleflash2x2.png
+Texture = modularwarfare:textures/particles/muzzleflash2x2.png
 RenderType = ADDITIVE
 Rows = 2
 Columns = 2
@@ -1198,7 +1265,7 @@ HasVariations = true
 }
 
 MuzzExpRed {
-Texture = advancearmy:textures/fx/redflash2x2.png
+Texture = modularwarfare:textures/particles/redflash2x2.png
 RenderType = ADDITIVE
 Rows = 2
 Columns = 2
@@ -1231,7 +1298,7 @@ HasVariations = true
 }
 
 SmokeGun {
-Texture = advancearmy:textures/fx/muzzlesmoke2x2.png
+Texture = modularwarfare:textures/particles/muzzlesmoke2x2.png
 RenderType = ALPHA_SHADED
 Rows = 2
 Columns = 2
@@ -1291,7 +1358,7 @@ SystemVelocityFactor = 0 0
 }
 
 hitSmall {
-Texture = advancearmy:textures/fx/hitsmoke2x2.png
+Texture = modularwarfare:textures/particles/hitsmoke2x2.png
 RenderType = ALPHA
 Rows = 2
 Columns = 2
@@ -1322,7 +1389,7 @@ HasVariations = true
 }
 
 dirtUp1 {
-Texture = advancearmy:textures/fx/hitsdirt2x2.png
+Texture = modularwarfare:textures/particles/hitsdirt2x2.png
 RenderType = ALPHA
 Rows = 2
 Columns = 2
@@ -1354,7 +1421,7 @@ IsHollow = true
 HasVariations = true
 }
 dirtUp2 {
-Texture = advancearmy:textures/fx/anim_dirt_dying.png
+Texture = modularwarfare:textures/particles/anim_dirt_dying.png
 RenderType = ALPHA
 Rows = 2
 Columns = 2
@@ -1391,7 +1458,7 @@ HasVariations = true
 }
 
 SmallExp {
-Texture = advancearmy:textures/fx/muzzleflash2x2.png
+Texture = modularwarfare:textures/particles/muzzleflash2x2.png
 RenderType = ADDITIVE
 Rows = 2
 Columns = 2
@@ -1421,7 +1488,7 @@ Volume2 = 0.1
 }
 
 SparkTrail {
-Texture = advancearmy:textures/fx/sparktrail.png
+Texture = modularwarfare:textures/particles/sparktrail.png
 RenderType = ADDITIVE
 Streak = true
 Lifetime = 5 7
@@ -1446,7 +1513,7 @@ offset = 0 0 0
 }
 
 SmallStone {
-Texture = advancearmy:textures/fx/smallstone.png
+Texture = modularwarfare:textures/particles/smallstone.png
 RenderType = ALPHA
 Rows = 4
 Columns =4
