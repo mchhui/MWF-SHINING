@@ -25,6 +25,7 @@ import com.modularwarfare.common.network.PacketLaserToggle;
 import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.MWSound;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
+import com.modularwarfare.client.hud.GunTransformHUD;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -60,6 +61,7 @@ public final class KeyInputHandler {
         keyBinds.add(new KeyEntry(KeyType.AddAttachment));
         keyBinds.add(new KeyEntry(KeyType.Flashlight));
         keyBinds.add(new KeyEntry(KeyType.LaserToggle));
+        keyBinds.add(new KeyEntry(KeyType.GunTransform));
 
         keyBinds.add(new KeyEntry(KeyType.Left));
         keyBinds.add(new KeyEntry(KeyType.Right));
@@ -81,9 +83,11 @@ public final class KeyInputHandler {
     @SubscribeEvent
     static void onKeyInput(InputEvent.KeyInputEvent event) {
         for (KeyEntry keyEntry : keyBinds) {
-            if (keyEntry.keyBinding.isPressed()) {
+            if (keyEntry.keyBinding.isKeyDown()) {
                 handleKeyInput(keyEntry.keyType);
                 break;
+            } else if(keyEntry.keyType == KeyType.GunTransform && !keyEntry.keyBinding.isKeyDown() && GunTransformHUD.isVisible()) {
+                GunTransformHUD.onKeyReleased();
             }
         }
     }
@@ -270,6 +274,9 @@ public final class KeyInputHandler {
                     }
                     break;
 
+                case GunTransform:
+                    handleGunTransform(entityPlayer);
+                    break;
 
                     // Deprecated
 //                case Backpack:
@@ -295,6 +302,29 @@ public final class KeyInputHandler {
                 default:
                     ModularWarfare.LOGGER.warn("Default case called on handleKeyInput for " + keyType.toString());
                     break;
+            }
+        }
+    }
+
+    /**
+     * 处理武器变形相关的按键逻辑
+     * @param entityPlayer 玩家实体
+     */
+    private static void handleGunTransform(EntityPlayerSP entityPlayer) {
+        if(entityPlayer == null || entityPlayer.isSpectator()) return;
+
+        ItemStack heldItem = entityPlayer.getHeldItemMainhand();
+        if(heldItem.isEmpty() || !(heldItem.getItem() instanceof ItemGun)) return;
+
+        ItemGun itemGun = (ItemGun) heldItem.getItem();
+        GunType gunType = itemGun.type;
+
+        if(gunType.transformations != null && !gunType.transformations.isEmpty()) {
+            if(entityPlayer.isSneaking()) {
+                ItemGun.switchToLastTransformState(heldItem);
+                GunTransformManager.transformGun(entityPlayer, gunType.transformations.get(ItemGun.getTransformState(heldItem)));
+            } else if(!GunTransformHUD.isVisible()) {
+                GunTransformHUD.setVisible(true);
             }
         }
     }

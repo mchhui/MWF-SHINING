@@ -227,6 +227,12 @@ public enum WeaponSoundType {
     @SerializedName("grenadeTimerStart") GrenadeTimerStart("grenadeTimerStart", 8, "defweaponmodeswitch"),
     @SerializedName("grenadeThrow") GrenadeThrow("grenadeThrow", 8, "grenade_throw"),
 
+    @SerializedName("weaponTransform0") Transform0("weaponTransform0", 12, null),
+    @SerializedName("weaponTransform1") Transform1("weaponTransform1", 12, null), 
+    @SerializedName("weaponTransform2") Transform2("weaponTransform2", 12, null),
+    @SerializedName("weaponTransform3") Transform3("weaponTransform3", 12, null),
+    @SerializedName("weaponTransform4") Transform4("weaponTransform4", 12, null),
+
     ;
 
     public String eventName;

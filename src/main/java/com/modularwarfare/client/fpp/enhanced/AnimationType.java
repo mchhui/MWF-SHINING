@@ -68,7 +68,13 @@ public enum AnimationType {
     THROW_FIRST_LOW("throwFirstLow"),
     THROW_SECOND_LOW("throwSecondLow"),
     POST_THROW_LOW("postThrowLow"),
-    THROWED("throwed");
+    THROWED("throwed"),
+    // 枪械变换动画
+    TRANSFORM_0("transform0"),
+    TRANSFORM_1("transform1"),
+    TRANSFORM_2("transform2"),
+    TRANSFORM_3("transform3"),
+    TRANSFORM_4("transform4");
 
     public String serializedName;
     private AnimationType(String name) {
@@ -89,6 +95,14 @@ public enum AnimationType {
             return true;
         }
         return false;
+    }
+    
+    public boolean isTransformAnimation() {
+        return this == TRANSFORM_0 || 
+               this == TRANSFORM_1 || 
+               this == TRANSFORM_2 || 
+               this == TRANSFORM_3 || 
+               this == TRANSFORM_4;
     }
     
     public static class AnimationTypeJsonAdapter extends TypeAdapter<AnimationType>{
