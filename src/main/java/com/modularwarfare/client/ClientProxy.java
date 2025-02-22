@@ -49,6 +49,7 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.entity.EntityBulletClient;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
+import com.modularwarfare.common.entity.EntityThrowerProjectile;
 import com.modularwarfare.common.entity.decals.EntityBulletHole;
 import com.modularwarfare.common.entity.decals.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
@@ -818,6 +819,7 @@ public class ClientProxy extends CommonProxy {
             
             //RENDER PROJECTILES
             RenderingRegistry.registerEntityRenderingHandler(EntityExplosiveProjectile.class, RenderProjectile.FACTORY);
+            RenderingRegistry.registerEntityRenderingHandler(EntityThrowerProjectile.class, RenderProjectile.FACTORY);
         }
 
     }
