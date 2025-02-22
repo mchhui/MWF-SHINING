@@ -21,6 +21,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import safx.SagerFX;
+import safx.SAPackets;
+import safx.packets.PacketSpawnParticle;
 
 import org.lwjgl.opengl.GL11;
 
@@ -71,6 +73,11 @@ public class ParticleExplosion extends Particle {
         this.fadeInProgress = 0.0f;
         this.currentScale = SCALE_START;
         this.hasSpawnedEffect = false;
+
+        // 在客户端创建SagerFX特效
+        if(par1World.isRemote) {
+            SagerFX.proxy.createFX("AdvExplosion", par1World, par2, par4, par6, 0, 0, 0, 1);
+        }
     }
 
     @Override
@@ -192,9 +199,7 @@ public class ParticleExplosion extends Particle {
             this.lastParticleAge = this.particleAge;
 
             if (this.particleAge == 1 && !hasSpawnedEffect) {
-                SagerFX.proxy.createFX("AdvExplosion", world, posX, posY, posZ, 0, 0, 0, 1);
                 hasSpawnedEffect = true;
-                
                 this.world.playSound(this.posX, this.posY, this.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.AMBIENT, 20.0F, 0.9F + this.rand.nextFloat() * 0.15F, true);
             }
 

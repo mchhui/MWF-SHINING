@@ -157,19 +157,34 @@ public class CommonProxy {
 
     public void spawnExplosionParticle(World world, double x, double y, double z) {
         if (!world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 256));
+            // 获取最近的玩家
+            EntityPlayer nearestPlayer = world.getClosestPlayer(x, y, z, 256, false);
+            if(nearestPlayer != null) {
+                ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z),
+                    new TargetPoint(nearestPlayer.dimension, x, y, z, 256));
+            }
         }
     }
     
     public void spawnExplosionParticle(World world, double x, double y, double z, String modelPath, String texturePath) {
         if (!world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z,modelPath,texturePath),new TargetPoint(world.provider.getDimension(), x, y, z, 256));
+            // 获取最近的玩家
+            EntityPlayer nearestPlayer = world.getClosestPlayer(x, y, z, 256, false);
+            if(nearestPlayer != null) {
+                ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z,modelPath,texturePath),
+                    new TargetPoint(nearestPlayer.dimension, x, y, z, 256));
+            }
         }
     }
     
     public void spawnRocketParticle(World world, double x, double y, double z) {
         if (!world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET,x,y,z),new TargetPoint(world.provider.getDimension(), x, y, z, 256));
+            // 获取最近的玩家
+            EntityPlayer nearestPlayer = world.getClosestPlayer(x, y, z, 256, false);
+            if(nearestPlayer != null) {
+                ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.ROCKET,x,y,z),
+                    new TargetPoint(nearestPlayer.dimension, x, y, z, 256));
+            }
         }
     }
 

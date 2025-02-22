@@ -11,6 +11,8 @@ import com.modularwarfare.common.network.PacketDecal;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import safx.SagerFX;
+import safx.SAPackets;
+import safx.packets.PacketSpawnParticle;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -358,19 +360,19 @@ public class ItemGun extends BaseItem {
         //String materialType = "未知";
         if (material == Material.IRON) {
             //materialType = "金属";
-            SagerFX.proxy.createFX("GunHit", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+            SAPackets.network.sendToAll(new PacketSpawnParticle("GunHit", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.ROCK) {
             //materialType = "石头";
-            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+            SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.GROUND) {
             //materialType = "泥土";
-            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+            SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.WOOD) {
             //materialType = "木头";
-            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+            SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.GRASS) {
             //materialType = "草地";
-            SagerFX.proxy.createFX("GunExp", world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0);
+            SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         }
 
         // String message = String.format("§7命中坐标: §f[%.2f, %.2f, %.2f] §7材质: §f%s §7方向: §f%s", 
