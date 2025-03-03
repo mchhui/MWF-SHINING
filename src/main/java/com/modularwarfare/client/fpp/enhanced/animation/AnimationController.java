@@ -1041,7 +1041,7 @@ public class AnimationController {
         Item item = player.getHeldItemMainhand().getItem();
         if (item instanceof ItemGun) {
             if (((ItemGun) item).type.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                if (isDrawing() && !isTakedown()) {
+                if (isDrawing() || isTakedown()) {
                     return false;
                 }
                 if(ClientRenderHooks.getEnhancedAnimMachine(player).reloading) {

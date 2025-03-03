@@ -480,4 +480,14 @@ public class SAParticleSystemType extends SAFXType{
 			this.values = params;
 		}
 	}
+
+	public void setParticleColor(int r, int g, int b) {
+		this.colorEntries.clear();
+		this.colorEntries.add(new ColorEntry(r, g, b, 0.0f));
+	}
+	
+	public void setParticleColor(float r, float g, float b) {
+		this.colorEntries.clear();
+		this.colorEntries.add(new ColorEntry(r, g, b, 0.0f));
+	}
 }

@@ -563,10 +563,6 @@ public class ModularWarfare {
         NETWORK.initialise();
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularWarfare.INSTANCE, new GuiHandler());
         loaderManager.initAddons(event);
-
-        if(event.getSide().isClient()) {
-            MinecraftForge.EVENT_BUS.register(new GunTransformHUD());
-        }
     }
 
     // Last loading things

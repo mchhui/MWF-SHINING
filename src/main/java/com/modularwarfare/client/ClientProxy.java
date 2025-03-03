@@ -22,9 +22,11 @@ import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.handler.KeyInputHandler;
+import com.modularwarfare.client.handler.RenderGuiHandler;
 import com.modularwarfare.client.handler.SmoothSwingTicker;
 import com.modularwarfare.client.hud.AttachmentUI;
 import com.modularwarfare.client.hud.FlashSystem;
+import com.modularwarfare.client.hud.GunTransformHUD;
 import com.modularwarfare.client.hud.GunUI;
 import com.modularwarfare.client.input.HudHoldUtil;
 import com.modularwarfare.client.killchat.KillFeedManager;
@@ -899,6 +901,8 @@ public class ClientProxy extends CommonProxy {
         super.registerEventHandlers();
         MinecraftForge.EVENT_BUS.register(new ClientEventHandler());
         MinecraftForge.EVENT_BUS.register(new OBBPlayerManager());
+        MinecraftForge.EVENT_BUS.register(new GunTransformHUD());
+        MinecraftForge.EVENT_BUS.register(new RenderGuiHandler());
         KeyInputHandler.registerKeys();
     }
 
