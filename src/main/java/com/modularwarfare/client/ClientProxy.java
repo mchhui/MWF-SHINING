@@ -126,6 +126,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
+import com.modularwarfare.client.handler.SensitivityHandler;
 
 public class ClientProxy extends CommonProxy {
 
@@ -336,6 +337,9 @@ public class ClientProxy extends CommonProxy {
         ClientCommandHandler.instance.registerCommand(new CommandMWClient());
         
         Programs.init();
+
+        // 初始化灵敏度处理系统
+        SensitivityHandler.getInstance();
     }
 
     public void loadTextures() {

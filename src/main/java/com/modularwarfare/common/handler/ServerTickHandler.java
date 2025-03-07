@@ -1,6 +1,7 @@
 package com.modularwarfare.common.handler;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.effect.ModPotions;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemGun;
@@ -30,12 +31,15 @@ public final class ServerTickHandler {
     public static ConcurrentHashMap<UUID, DataGunReloadEnhancedTask> reloadEnhancedTask = new ConcurrentHashMap<UUID, DataGunReloadEnhancedTask>();
 
     private static long lastBackWeaponsSync = -1;
+    // 计数器，用于间隔调用清理方法
+    private static int potionCleanupCounter = 0;
 
     @SubscribeEvent
     static void onPlayerTick(PlayerTickEvent event) {
         if(event.side!=Side.SERVER||event.phase!=Phase.END) {
             return;
         }
+        
         ItemStack stack = event.player.getHeldItem(EnumHand.MAIN_HAND);
         if (stack.getItem() instanceof ItemGun) {
             if(!stack.hasTagCompound()) {
@@ -54,12 +58,6 @@ public final class ServerTickHandler {
                 }
             }
         }
-        
-        final boolean flag = (
-            playerAimShootCooldown.containsKey(event.player.getUniqueID())
-            || playerAimInstant.getOrDefault(event.player.getUniqueID(), false)
-        );
-        ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(event.player.getUniqueID(), flag));
     }
     
     @SubscribeEvent
@@ -92,6 +90,13 @@ public final class ServerTickHandler {
                 } else {
                     playerReloadCooldown.replace(uuid, value);
                 }
+            }
+            
+            // 每200tick(约10秒)调用一次清理方法
+            potionCleanupCounter++;
+            if (potionCleanupCounter >= 200) {
+                ModPotions.onWorldTick();
+                potionCleanupCounter = 0;
             }
             break;
         case END:

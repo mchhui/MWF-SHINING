@@ -21,6 +21,7 @@ import com.modularwarfare.common.commands.CommandDebug;
 import com.modularwarfare.common.commands.CommandNBT;
 import com.modularwarfare.common.commands.CommandPlay;
 import com.modularwarfare.common.commands.kits.CommandKit;
+import com.modularwarfare.common.effect.ModPotions;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
 import com.modularwarfare.common.entity.EntityThrowerProjectile;
 import com.modularwarfare.common.entity.decals.EntityBulletHole;
@@ -527,6 +528,7 @@ public class ModularWarfare {
 
         PROXY.registerEventHandlers();
 
+        MinecraftForge.EVENT_BUS.register(new ModPotions());
         MinecraftForge.EVENT_BUS.register(new CommonEventHandler());
         MinecraftForge.EVENT_BUS.register(new PlayerStateManager());
         MinecraftForge.EVENT_BUS.register(this);
