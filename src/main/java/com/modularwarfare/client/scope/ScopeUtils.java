@@ -15,6 +15,7 @@ import com.modularwarfare.client.shader.Programs;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.mixin.client.accessor.IShaderGroup;
 import com.modularwarfare.utility.OptifineHelper;
+import com.modularwarfare.client.handler.SensitivityHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -71,7 +72,6 @@ public class ScopeUtils {
     public static boolean needRenderHand1=false;
 
     public boolean hasBeenReseted = true;
-    public float mouseSensitivityBackup;
     private Field renderEndNanoTime;
 
     public ShaderGroup blurShader;
@@ -100,8 +100,6 @@ public class ScopeUtils {
         if (this.renderEndNanoTime != null) {
             this.renderEndNanoTime.setAccessible(true);
         }
-        // 初始化鼠标灵敏度备份
-        this.mouseSensitivityBackup = mc.gameSettings.mouseSensitivity;
     }
 
 
@@ -588,20 +586,20 @@ public class ScopeUtils {
                                     if(sightCFG.fovZoomStage !=null)  fovScale = sightCFG.fovZoom / sightCFG.GetStageFovZoomRange()[1];
                                     else                              fovScale = sightCFG.fovZoomMax > 1F ? sightCFG.fovZoom/sightCFG.fovZoomMax : 1F;
 
+                                    // 计算开镜时的灵敏度乘数
                                     float mouseSensitivity = sightCFG.mouseSensitivityFactor * (1F-fovScale+1F);
-
-                                    mc.gameSettings.mouseSensitivity = mouseSensitivityBackup * mouseSensitivity;
+                                    
+                                    // 使用灵敏度处理器设置乘数
+                                    SensitivityHandler.getInstance().setSensitivityMultiplier(SensitivityHandler.SCOPE_EFFECT, mouseSensitivity);
                                     hasBeenReseted = false;
                                 }
                             }
                         }
                     }
                 } else if (!hasBeenReseted) {
-                    mc.gameSettings.mouseSensitivity = mouseSensitivityBackup;
-                    //mc.gameSettings.fovSetting = 90;
+                    // 不再直接开镜状态结束时，移除开镜灵敏度乘数
+                    SensitivityHandler.getInstance().removeSensitivityMultiplier(SensitivityHandler.SCOPE_EFFECT);
                     hasBeenReseted = true;
-                } else if (mouseSensitivityBackup != mc.gameSettings.mouseSensitivity) {
-                    mouseSensitivityBackup = mc.gameSettings.mouseSensitivity;
                 }
         }
     }
@@ -626,7 +624,6 @@ public class ScopeUtils {
         RayTraceResult mouseOver = mc.objectMouseOver;
         float fov = mc.gameSettings.fovSetting;
         boolean bobbingBackup = mc.gameSettings.viewBobbing;
-        float mouseSensitivityBackup = mc.gameSettings.mouseSensitivity;
 
         mc.renderGlobal = scopeRenderGlobal;
 
@@ -678,7 +675,6 @@ public class ScopeUtils {
         mc.gameSettings.thirdPersonView = view;
         mc.gameSettings.hideGUI = hide;
         mc.gameSettings.viewBobbing = bobbingBackup;
-        mc.gameSettings.mouseSensitivity = mouseSensitivityBackup;
 
         mc.gameSettings.fovSetting = fov;
         mc.renderGlobal = renderBackup;

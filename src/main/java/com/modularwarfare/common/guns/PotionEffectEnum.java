@@ -32,16 +32,23 @@ public enum PotionEffectEnum {
     @SerializedName("glowing") GLOWING,
     @SerializedName("levitation") LEVITATION,
     @SerializedName("luck") LUCK,
-    @SerializedName("unluck") UNLUCK;
+    @SerializedName("unluck") UNLUCK,
+    @SerializedName("stun") STUN;
 
     public Potion getPotion() {
         String name = name().toLowerCase();
         Potion potion = Potion.REGISTRY.getObject(new ResourceLocation(name));
         if (potion == null) {
-            throw new IllegalStateException("Invalid MobEffect requested: " + name);
-        } else {
-            return potion;
+            // 特殊处理自定义药水效果
+            if (name.equals("stun")) {
+                potion = Potion.REGISTRY.getObject(new ResourceLocation("modularwarfare", "stun"));
+            }
+            
+            if (potion == null) {
+                throw new IllegalStateException("Invalid MobEffect requested: " + name);
+            }
         }
+        return potion;
     }
 
 }
