@@ -308,7 +308,7 @@ public class EntityGrenade extends Entity {
             if (grenadeType != null) {
                 MWFExplosion explosion = new MWFExplosion(this.world, grenadeType.throwerVulnerable ? null : thrower, posX,
                         posY, posZ, grenadeType.explosionRange, grenadeType.explosionDamage, grenadeType.explosionKnockback,
-                        false, grenadeType.damageWorld, grenadeType.damageWorld);
+                        grenadeType.causesFire, grenadeType.damageWorld, grenadeType.allowBlockDrops);
                 
                 explosion.setExplosionThroughWalls(grenadeType.explosionThroughWalls);
                 
@@ -321,7 +321,7 @@ public class EntityGrenade extends Entity {
                 
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
-                ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);
+                ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ, null, null, grenadeType.causesFire);
             }
         }
         exploded = true;

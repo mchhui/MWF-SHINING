@@ -32,6 +32,9 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraft.potion.PotionEffect;
 import com.modularwarfare.common.guns.PotionEntry;
+import com.modularwarfare.common.network.PacketSpawnCustomFire;
+import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.entity.EntityCustomFire;
 
 public class MWFExplosion
 {
@@ -58,6 +61,9 @@ public class MWFExplosion
     private int fireLevel = 0;
     private float knockLevel = 0;
     private boolean banShield = false;
+    private int fireLifeTime = 100;
+    private int fireDuration = 10;
+    private float fireDamage = 2f;
 
     @SideOnly(Side.CLIENT)
     public MWFExplosion(World worldIn, Entity entityIn, double x, double y, double z, float size, List<BlockPos> affectedPositions)
@@ -124,7 +130,75 @@ public class MWFExplosion
                         }
                     }
                 }
-            }  
+            }
+        }
+
+        // 如果需要生成火焰，计算可以放置火焰的位置
+        if (this.causesFire) {
+            Vec3d explosionCenter = new Vec3d(this.x + 0.5D, this.y + 0.5D, this.z + 0.5D);
+            List<BlockPos> customFirePositions = Lists.newArrayList();
+            
+            for (int x = -(int)this.size; x <= (int)this.size; x++) {
+                for (int y = -(int)this.size; y <= (int)this.size; y++) {
+                    for (int z = -(int)this.size; z <= (int)this.size; z++) {
+                        if (Math.sqrt(x * x + y * y + z * z) <= this.size) {
+                            BlockPos blockPos = new BlockPos(this.x + x, this.y + y, this.z + z);
+                            
+                            // 检查当前位置是否为空气
+                            if (world.getBlockState(blockPos).getMaterial() == Material.AIR) {
+                                boolean canPlaceFire = false;
+                                
+                                // 检查六个方向是否有方块
+                                if (world.getBlockState(blockPos.down()).isFullBlock() ||
+                                    world.getBlockState(blockPos.north()).isFullBlock() ||
+                                    world.getBlockState(blockPos.south()).isFullBlock() ||
+                                    world.getBlockState(blockPos.east()).isFullBlock() ||
+                                    world.getBlockState(blockPos.west()).isFullBlock()) {
+                                    canPlaceFire = true;
+                                }
+                                
+                                if (canPlaceFire) {
+                                    // 计算目标位置的中心点
+                                    Vec3d targetVec = new Vec3d(
+                                        blockPos.getX() + 0.5D,
+                                        blockPos.getY() + 0.5D,
+                                        blockPos.getZ() + 0.5D
+                                    );
+                                    
+                                    // 进行射线检测，检查是否有方块阻挡
+                                    boolean blocked = world.rayTraceBlocks(
+                                        explosionCenter,
+                                        targetVec,
+                                        false,
+                                        true,
+                                        false
+                                    ) != null;
+                                    
+                                    if (!blocked || explosionThroughWalls) {
+                                        customFirePositions.add(blockPos);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 生成自定义火焰实体
+            for (BlockPos pos : customFirePositions) {
+                if (this.random.nextInt(3) == 0) {
+                    ModularWarfare.NETWORK.sendToServer(new PacketSpawnCustomFire(
+                        pos.getX() + 0.5D,
+                        pos.getY() + 0.5D,
+                        pos.getZ() + 0.5D,
+                        this.fireLifeTime + this.random.nextInt(40),
+                        this.fireDamage,
+                        this.fireDuration,
+                        this.explosionThroughWalls,
+                        this.exploder != null ? this.exploder.getEntityId() : -1
+                    ));
+                }
+            }
         }
 
         this.affectedBlockPositions.addAll(set);
@@ -255,17 +329,6 @@ public class MWFExplosion
                     }
 
                     block.onBlockExploded(this.world, blockpos, this.explosion);
-                }
-            }
-        }
-
-        if (this.causesFire)
-        {
-            for (BlockPos blockpos1 : this.affectedBlockPositions)
-            {
-                if (this.world.getBlockState(blockpos1).getMaterial() == Material.AIR && this.world.getBlockState(blockpos1.down()).isFullBlock() && this.random.nextInt(3) == 0)
-                {
-                    this.world.setBlockState(blockpos1, Blocks.FIRE.getDefaultState());
                 }
             }
         }

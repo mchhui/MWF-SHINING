@@ -46,16 +46,21 @@ public class ParticleExplosion extends Particle {
     private static final int DEFAULT_PARTICLE_MAX_AGE = 110; // 默认粒子生命周期
     private float currentScale = SCALE_START;
     private boolean hasSpawnedEffect = false;
+    private boolean causesFire = false;
 
     public ParticleExplosion(World par1World, double par2, double par4, double par6) {
-        this(par1World, par2, par4, par6, null, null);
+        this(par1World, par2, par4, par6, null, null, null, false);
     }
 
     public ParticleExplosion(World par1World, double par2, double par4, double par6, String modelPath, String texturePath) {
-        this(par1World, par2, par4, par6, modelPath, texturePath, null);
+        this(par1World, par2, par4, par6, modelPath, texturePath, null, false);
     }
 
     public ParticleExplosion(World par1World, double par2, double par4, double par6, String modelPath, String texturePath, BulletType bulletType) {
+        this(par1World, par2, par4, par6, modelPath, texturePath, bulletType, false);
+    }
+
+    public ParticleExplosion(World par1World, double par2, double par4, double par6, String modelPath, String texturePath, BulletType bulletType, boolean causesFire) {
         super(par1World, par2, par4, par6, 0.0D, 0.0D, 0.0D);
         Random rand = new Random();
         this.motionX *= 0.800000011920929D;
@@ -73,10 +78,14 @@ public class ParticleExplosion extends Particle {
         this.fadeInProgress = 0.0f;
         this.currentScale = SCALE_START;
         this.hasSpawnedEffect = false;
+        this.causesFire = causesFire;
 
         // 在客户端创建SagerFX特效
         if(par1World.isRemote) {
             SagerFX.proxy.createFX("AdvExplosion", par1World, par2, par4, par6, 0, 0, 0, 1);
+            if(this.causesFire) {
+                SagerFX.proxy.createFX("ExplosionFirePillar", par1World, par2, par4+1d, par6, 0, 0, 0, 1.5f);
+            }
         }
     }
 

@@ -14,9 +14,11 @@ public class GrenadeGasType {
     public float explosionRange = 3f;
     public float explosionKnockback = 0.5f;
     public boolean damageWorld = false;
+    public boolean allowBlockDrops = false;
     public boolean throwerVulnerable = false;
     public boolean explosionThroughWalls = false;
     public PotionEntry[] explosionPotionEffects;
     public int explosionFireLevel = 0;
     public float explosionKnockLevel = 0;
+    public boolean causesFire = false;
 } 

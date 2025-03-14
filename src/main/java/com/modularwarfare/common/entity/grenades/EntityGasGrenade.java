@@ -144,7 +144,7 @@ public class EntityGasGrenade extends EntityGrenade {
         if (!this.world.isRemote && !exploded && grenadeType != null) {
             MWFExplosion explosion = new MWFExplosion(this.world, grenadeType.throwerVulnerable ? null : thrower, posX,
                     posY, posZ, grenadeType.explosionRange, grenadeType.explosionDamage, grenadeType.explosionKnockback,
-                    false, grenadeType.damageWorld, grenadeType.damageWorld);
+                    grenadeType.causesFire, grenadeType.damageWorld, grenadeType.allowBlockDrops);
             
             explosion.setExplosionThroughWalls(grenadeType.explosionThroughWalls);
             
@@ -157,7 +157,7 @@ public class EntityGasGrenade extends EntityGrenade {
             
             explosion.doExplosionA();
             explosion.doExplosionB(true);
-            ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);
+            ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ, null, null, grenadeType.causesFire);
         }
     }
 
@@ -171,9 +171,9 @@ public class EntityGasGrenade extends EntityGrenade {
             grenadeType.gasType.explosionRange,
             grenadeType.gasType.explosionDamage,
             grenadeType.gasType.explosionKnockback,
-            false,
+            grenadeType.gasType.causesFire,
             grenadeType.gasType.damageWorld,
-            grenadeType.gasType.damageWorld
+            grenadeType.gasType.allowBlockDrops
         );
         
         explosion.setExplosionThroughWalls(grenadeType.gasType.explosionThroughWalls);
@@ -188,7 +188,7 @@ public class EntityGasGrenade extends EntityGrenade {
         
         explosion.doExplosionA();
         explosion.doExplosionB(true);
-        ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ);
+        ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ, null, null, grenadeType.gasType.causesFire);
     }
 
     @Override

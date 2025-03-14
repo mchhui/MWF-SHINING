@@ -33,6 +33,7 @@ public class GrenadeType extends BaseType {
     
     public float fuseTime = 5.0f;
     public boolean damageWorld = false;
+    public boolean allowBlockDrops = false;
     public float explosionDamage = 30f;
     public float explosionRange = 6f;
     public float explosionKnockback = 1f;
@@ -41,6 +42,10 @@ public class GrenadeType extends BaseType {
     public boolean throwerVulnerable = false;
     public boolean instantExplode = false;
     public boolean isSticky = false; // 是否为黏性手雷
+    public boolean causesFire = false;
+    public int fireLifeTime = 100;
+    public int fireDuration = 10;
+    public float fireDamage = 2f;
     public float smokeTime = 10f;
     
     // 撞击伤害

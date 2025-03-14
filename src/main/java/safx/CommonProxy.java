@@ -88,7 +88,7 @@ public abstract class CommonProxy implements ISAInitializer {
 	public void createFXOnEntity(String name, Entity ent, float scale) {
 
 	}
-	public void createFXOnEntityWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, EntityCondition condition) {};
+	public void createFXOnEntityWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, EntityCondition condition, float scale) {};
 	public void createFXOnPlayerWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, float scale) {};
 	
     public void setHasStepassist(boolean value){};
