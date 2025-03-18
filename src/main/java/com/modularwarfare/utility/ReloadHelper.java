@@ -209,12 +209,16 @@ public class ReloadHelper {
                 if (bulletsReturnCount <= 64) {
                     ItemStack clonedBullet = returningBullet.copy();
                     clonedBullet.setCount(bulletsReturnCount);
-                    entityPlayer.inventory.addItemStackToInventory(clonedBullet);
+                    if(!entityPlayer.inventory.addItemStackToInventory(clonedBullet)) {
+                        entityPlayer.dropItem(clonedBullet, false);
+                    }
                     bulletsReturnCount -= bulletsReturnCount;
                 } else {
                     ItemStack clonedBullet = returningBullet.copy();
                     clonedBullet.setCount(64);
-                    entityPlayer.inventory.addItemStackToInventory(clonedBullet);
+                    if(!entityPlayer.inventory.addItemStackToInventory(clonedBullet)) {
+                        entityPlayer.dropItem(clonedBullet, false);
+                    }
                     bulletsReturnCount -= 64;
                 }
             }
