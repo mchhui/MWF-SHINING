@@ -30,11 +30,17 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import safx.SAPackets;
+import safx.packets.PacketSpawnParticleOnEntity;
+import safx.util.EntityCondition;
 import net.minecraft.potion.PotionEffect;
 import com.modularwarfare.common.guns.PotionEntry;
-import com.modularwarfare.common.network.PacketSpawnCustomFire;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.entity.EntityCustomFire;
+import com.modularwarfare.common.entity.grenades.EntityGasGrenade;
+import com.modularwarfare.common.entity.grenades.EntityGrenade;
+import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
+import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
 
 public class MWFExplosion
 {
@@ -187,7 +193,10 @@ public class MWFExplosion
             // 生成自定义火焰实体
             for (BlockPos pos : customFirePositions) {
                 if (this.random.nextInt(3) == 0) {
-                    ModularWarfare.NETWORK.sendToServer(new PacketSpawnCustomFire(
+                    World world = this.world;
+                    int exploderId = this.exploder != null ? this.exploder.getEntityId() : -1;
+                    EntityCustomFire fireEntity = new EntityCustomFire(
+                        world,
                         pos.getX() + 0.5D,
                         pos.getY() + 0.5D,
                         pos.getZ() + 0.5D,
@@ -195,8 +204,21 @@ public class MWFExplosion
                         this.fireDamage,
                         this.fireDuration,
                         this.explosionThroughWalls,
-                        this.exploder != null ? this.exploder.getEntityId() : -1
-                    ));
+                        world.getEntityByID(exploderId)
+                    );
+                    world.spawnEntity(fireEntity);
+                    
+                    // 生成实体后发送特效包
+                    if (fireEntity.isAddedToWorld()) {
+                        SAPackets.network.sendToAll(new PacketSpawnParticleOnEntity(
+                            "FlamethrowerTrail", 
+                            fireEntity, 
+                            0, 0, 0, 
+                            true,
+                            EntityCondition.ENTITY_ALIVE,
+                            1.5f
+                        ));
+                    }
                 }
             }
         }
@@ -217,6 +239,15 @@ public class MWFExplosion
         {
             if (!entity.isImmuneToExplosions())
             {
+                // 跳过火焰实体和手雷实体
+                if (entity instanceof EntityCustomFire ||
+                    entity instanceof EntityGrenade ||
+                    entity instanceof EntitySmokeGrenade ||
+                    entity instanceof EntityStunGrenade ||
+                    entity instanceof EntityGasGrenade) {
+                    continue;
+                }
+
                 double distance = entity.getDistance(this.x, this.y, this.z);
                 if (distance <= range)
                 {

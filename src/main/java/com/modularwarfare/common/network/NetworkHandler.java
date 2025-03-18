@@ -225,7 +225,6 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
 
         registerPacket(PacketGunTransform.class);
 
-        registerPacket(PacketSpawnCustomFire.class);
     }
 
     /**
