@@ -4,6 +4,8 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.GunTransformManager;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.guns.AttachmentPresetEnum;
+import com.modularwarfare.common.guns.ItemAttachment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
@@ -13,6 +15,8 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.input.Mouse;
+
+import java.util.HashMap;
 
 public class GunTransformHUD {
     
@@ -233,13 +237,22 @@ public class GunTransformHUD {
                 if(!availableGuns.isEmpty()) {
                     long holdTime = System.currentTimeMillis() - showStartTime;
                     String targetGun;
+                    Integer targetTransformId = null;
                     
                     if(availableGuns.size() == 1) {
                         targetGun = availableGuns.get(0);
+                        // 找到对应的变换ID
+                        for(Integer id : gunType.transformations.keySet()) {
+                            if(gunType.transformations.get(id).equals(targetGun)) {
+                                targetTransformId = id;
+                                break;
+                            }
+                        }
                     } else if(holdTime < QUICK_CLICK_THRESHOLD) {
                         if(heldItem.hasTagCompound()) {
                             int lastState = ItemGun.getLastTransformState(heldItem);
                             targetGun = gunType.transformations.get(lastState);
+                            targetTransformId = lastState;
                             if(targetGun == null || targetGun.equals(gunType.internalName)) {
                                 setVisible(false);
                                 return;
@@ -250,9 +263,71 @@ public class GunTransformHUD {
                         }
                     } else if(selectedIndex >= 0 && selectedIndex < availableGuns.size()) {
                         targetGun = availableGuns.get(selectedIndex);
+                        // 找到对应的变换ID
+                        for(Integer id : gunType.transformations.keySet()) {
+                            if(gunType.transformations.get(id).equals(targetGun)) {
+                                targetTransformId = id;
+                                break;
+                            }
+                        }
                     } else {
                         setVisible(false);
                         return;
+                    }
+                    
+                    // 检查变换所需的配件条件
+                    if(targetTransformId != null && gunType.transformationRequirements != null) {
+                        HashMap<AttachmentPresetEnum, String> requirements = gunType.transformationRequirements.get(targetTransformId);
+                        if(requirements != null && !requirements.isEmpty()) {
+                            boolean allRequirementsMet = true;
+                            String missingAttachment = null;
+                            AttachmentPresetEnum missingType = null;
+                            
+                            for(AttachmentPresetEnum attachmentType : requirements.keySet()) {
+                                String requiredAttachment = requirements.get(attachmentType);
+                                ItemStack attachmentStack = GunType.getAttachment(heldItem, attachmentType);
+                                
+                                if(attachmentStack == null || !(attachmentStack.getItem() instanceof ItemAttachment)) {
+                                    allRequirementsMet = false;
+                                    missingAttachment = requiredAttachment;
+                                    missingType = attachmentType;
+                                    break;
+                                }
+                                
+                                ItemAttachment attachmentItem = (ItemAttachment)attachmentStack.getItem();
+                                if(!attachmentItem.type.internalName.equals(requiredAttachment)) {
+                                    allRequirementsMet = false;
+                                    missingAttachment = requiredAttachment;
+                                    missingType = attachmentType;
+                                    break;
+                                }
+                            }
+                            
+                            if(!allRequirementsMet) {
+                                ItemAttachment attachmentItem = null;
+                                String attachmentDisplayName = missingAttachment;
+                                
+                                for(ItemAttachment item : ModularWarfare.attachmentTypes.values()) {
+                                    if(item.type.internalName.equals(missingAttachment)) {
+                                        attachmentDisplayName = item.type.displayName != null ? 
+                                                item.type.displayName : missingAttachment;
+                                        attachmentItem = item;
+                                        break;
+                                    }
+                                }
+                                
+                                String attachmentTypeKey = "mwf.dictionary." + missingType.typeName;
+                                String attachmentTypeName = net.minecraft.client.resources.I18n.format(attachmentTypeKey, missingType.typeName);
+                                
+                                String messageKey = "mwf.transform.requirement_not_met";
+                                String message = net.minecraft.client.resources.I18n.format(messageKey, 
+                                        attachmentTypeName, attachmentDisplayName);
+                                
+                                player.sendMessage(new net.minecraft.util.text.TextComponentString("§c" + message));
+                                setVisible(false);
+                                return;
+                            }
+                        }
                     }
                     
                     GunTransformManager.transformGun(player, targetGun);

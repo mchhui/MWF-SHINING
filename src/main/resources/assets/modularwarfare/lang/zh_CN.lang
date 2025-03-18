@@ -49,3 +49,6 @@ mwf:gui.tooltip.help=按下[L-CTRL]查看帮助
 mwf:gui.tooltip.reload=按下[R]重新装填
 
 mwf:gui.modify.none=无
+
+# 枪械变换相关
+mwf.transform.requirement_not_met=需要安装 %1$s 类型的 %2$s 配件才能变换到此形态
