@@ -49,3 +49,6 @@ mwf:gui.tooltip.help=Press [L-CTRL] to get help
 mwf:gui.tooltip.reload=Press [R] Reload
 
 mwf:gui.modify.none=None
+
+# Gun Transformation
+mwf.transform.requirement_not_met=Requires a %2$s of type %1$s to transform to this state

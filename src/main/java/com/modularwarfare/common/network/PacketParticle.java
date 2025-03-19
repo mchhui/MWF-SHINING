@@ -14,6 +14,7 @@ public class PacketParticle extends PacketBase {
     public double posZ;
     public String modelPath;
     public String texturePath;
+    public boolean causesFire;
 
     public static enum ParticleType {
         UNKOWN, EXPLOSION, ROCKET
@@ -23,10 +24,14 @@ public class PacketParticle extends PacketBase {
     }  // Don't delete
 
     public PacketParticle(ParticleType particleType, double posX, double posY, double posZ) {
-        this(particleType, posX, posY, posZ, null, null);
+        this(particleType, posX, posY, posZ, null, null, false);
     }
 
     public PacketParticle(ParticleType particleType, double posX, double posY, double posZ, String modelPath, String texturePath) {
+        this(particleType, posX, posY, posZ, modelPath, texturePath, false);
+    }
+
+    public PacketParticle(ParticleType particleType, double posX, double posY, double posZ, String modelPath, String texturePath, boolean causesFire) {
         this.particleType = particleType;
         if (this.particleType == null) {
             this.particleType = ParticleType.UNKOWN;
@@ -36,6 +41,7 @@ public class PacketParticle extends PacketBase {
         this.posZ = posZ;
         this.modelPath = modelPath;
         this.texturePath = texturePath;
+        this.causesFire = causesFire;
     }
 
     @Override
@@ -52,6 +58,7 @@ public class PacketParticle extends PacketBase {
         if(texturePath != null) {
             writeUTF(data, texturePath);
         }
+        data.writeBoolean(causesFire);
     }
 
     @Override
@@ -66,6 +73,7 @@ public class PacketParticle extends PacketBase {
         if(data.readBoolean()) {
             this.texturePath = readUTF(data);
         }
+        this.causesFire = data.readBoolean();
     }
 
     @Override
@@ -76,7 +84,7 @@ public class PacketParticle extends PacketBase {
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
         if (this.particleType == ParticleType.EXPLOSION) {
-            ModularWarfare.PROXY.spawnExplosionParticle(clientPlayer.world, this.posX, this.posY, this.posZ, this.modelPath, this.texturePath);
+            ModularWarfare.PROXY.spawnExplosionParticle(clientPlayer.world, this.posX, this.posY, this.posZ, this.modelPath, this.texturePath, this.causesFire);
         } else if (this.particleType == ParticleType.ROCKET) {
             ModularWarfare.PROXY.spawnRocketParticle(clientPlayer.world, this.posX, this.posY, this.posZ);
         }

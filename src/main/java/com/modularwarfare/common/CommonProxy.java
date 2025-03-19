@@ -156,22 +156,19 @@ public class CommonProxy {
     }
 
     public void spawnExplosionParticle(World world, double x, double y, double z) {
-        if (!world.isRemote) {
-            // 获取最近的玩家
-            EntityPlayer nearestPlayer = world.getClosestPlayer(x, y, z, 256, false);
-            if(nearestPlayer != null) {
-                ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z),
-                    new TargetPoint(nearestPlayer.dimension, x, y, z, 256));
-            }
-        }
+        spawnExplosionParticle(world, x, y, z, null, null, false);
     }
     
     public void spawnExplosionParticle(World world, double x, double y, double z, String modelPath, String texturePath) {
+        spawnExplosionParticle(world, x, y, z, modelPath, texturePath, false);
+    }
+    
+    public void spawnExplosionParticle(World world, double x, double y, double z, String modelPath, String texturePath, boolean causesFire) {
         if (!world.isRemote) {
             // 获取最近的玩家
             EntityPlayer nearestPlayer = world.getClosestPlayer(x, y, z, 256, false);
             if(nearestPlayer != null) {
-                ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION,x,y,z,modelPath,texturePath),
+                ModularWarfare.NETWORK.sendToAllAround(new PacketParticle(ParticleType.EXPLOSION, x, y, z, modelPath, texturePath, causesFire),
                     new TargetPoint(nearestPlayer.dimension, x, y, z, 256));
             }
         }

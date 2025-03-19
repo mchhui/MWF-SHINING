@@ -127,6 +127,8 @@ import java.util.function.Predicate;
 
 import static com.modularwarfare.ModularWarfare.contentPacks;
 import com.modularwarfare.client.handler.SensitivityHandler;
+import com.modularwarfare.common.entity.EntityCustomFire;
+import com.modularwarfare.client.renderer.RenderCustomFire;
 
 public class ClientProxy extends CommonProxy {
 
@@ -826,6 +828,8 @@ public class ClientProxy extends CommonProxy {
             //RENDER PROJECTILES
             RenderingRegistry.registerEntityRenderingHandler(EntityExplosiveProjectile.class, RenderProjectile.FACTORY);
             RenderingRegistry.registerEntityRenderingHandler(EntityThrowerProjectile.class, RenderProjectile.FACTORY);
+
+            RenderingRegistry.registerEntityRenderingHandler(EntityCustomFire.class, RenderCustomFire.FACTORY);
         }
 
     }
@@ -970,6 +974,16 @@ public class ClientProxy extends CommonProxy {
             return;
         }
         final Particle explosionParticle = new ParticleExplosion(world, x, y, z, modelPath, texturePath);
+        Minecraft.getMinecraft().effectRenderer.addEffect(explosionParticle);
+    }
+
+    @Override
+    public void spawnExplosionParticle(World world, double x, double y, double z, String modelPath, String texturePath, boolean causesFire) {
+        if(!world.isRemote) {
+            super.spawnExplosionParticle(world, x, y, z, modelPath, texturePath, causesFire);
+            return;
+        }
+        final Particle explosionParticle = new ParticleExplosion(world, x, y, z, modelPath, texturePath, null, causesFire);
         Minecraft.getMinecraft().effectRenderer.addEffect(explosionParticle);
     }
 

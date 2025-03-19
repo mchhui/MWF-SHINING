@@ -22,6 +22,7 @@ import com.modularwarfare.common.commands.CommandNBT;
 import com.modularwarfare.common.commands.CommandPlay;
 import com.modularwarfare.common.commands.kits.CommandKit;
 import com.modularwarfare.common.effect.ModPotions;
+import com.modularwarfare.common.entity.EntityCustomFire;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
 import com.modularwarfare.common.entity.EntityThrowerProjectile;
 import com.modularwarfare.common.entity.decals.EntityBulletHole;
@@ -532,7 +533,6 @@ public class ModularWarfare {
         MinecraftForge.EVENT_BUS.register(new CommonEventHandler());
         MinecraftForge.EVENT_BUS.register(new PlayerStateManager());
         MinecraftForge.EVENT_BUS.register(this);
-
     }
     
     public static void loadConfig() {
@@ -729,6 +729,7 @@ public class ModularWarfare {
         //EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "bullet"), EntityBullet.class, "bullet", 15, this, 64, 1, true);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "explosive_projectile"), EntityExplosiveProjectile.class, "explosive_projectile", 15, this, 80, 1, true);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "thrower_projectile"), EntityThrowerProjectile.class, "thrower_projectile", 16, this, 80, 1, true);
+        EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "custom_fire"), EntityCustomFire.class, "custom_fire", 17, this, 64, 1, true);
     }
 
     public static void registerRayCasting(RayCasting rayCasting) {

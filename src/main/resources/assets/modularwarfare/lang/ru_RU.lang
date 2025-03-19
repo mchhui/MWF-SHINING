@@ -49,3 +49,6 @@ mwf:gui.tooltip.help=Нажмите [L-CTRL] чтобы получить пом�
 mwf:gui.tooltip.reload=Нажмите [R] для перезарядки
 
 mwf:gui.modify.none=Нет
+
+# Трансформация оружия
+mwf.transform.requirement_not_met=Требуется установить %2$s типа %1$s для трансформации в это состояние

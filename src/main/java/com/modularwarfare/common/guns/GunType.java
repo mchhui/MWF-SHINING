@@ -338,6 +338,13 @@ public class GunType extends BaseType {
      * 变换时是否继承配件
      */
     public boolean inheritAttachments = true;
+    
+    /**
+     * 形态变换所需的配件条件
+     * key: 变换状态ID
+     * value: 所需配件Map<AttachmentPresetEnum, String>，键为配件类型，值为配件内部名称
+     */
+    public HashMap<Integer, HashMap<AttachmentPresetEnum, String>> transformationRequirements;
 
     public static boolean isPackAPunched(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {

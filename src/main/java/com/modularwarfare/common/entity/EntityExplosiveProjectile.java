@@ -74,7 +74,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
                 ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());
                 MWFExplosion explosion = new MWFExplosion(this.world, this.player, posX, posY, posZ,
                         itemBullet.type.explosionRange, itemBullet.type.explosionDamage, itemBullet.type.explosionKnockback,
-                        false, itemBullet.type.damageWorld, itemBullet.type.allowBlockDrops);
+                        itemBullet.type.causesFire, itemBullet.type.damageWorld, itemBullet.type.allowBlockDrops);
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
                 
@@ -89,7 +89,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
                     texturePath = "modularwarfare:explosion/texture/" + itemBullet.type.customExplosionTexture;
                 }
                 
-                ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ, modelPath, texturePath);
+                ModularWarfare.PROXY.spawnExplosionParticle(this.world, this.posX, this.posY, this.posZ, modelPath, texturePath, itemBullet.type.causesFire);
             }
         }
         this.setDead();

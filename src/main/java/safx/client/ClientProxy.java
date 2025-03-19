@@ -215,10 +215,11 @@ public class ClientProxy extends CommonProxy {
 	}
 	
 	@Override
-	public void createFXOnEntityWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, EntityCondition condition) {
+	public void createFXOnEntityWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, EntityCondition condition, float scale) {
 		List<SAParticleSystem> systems = SAFX.createFXOnEntity(ent, name);
 		if (systems!=null) {
 			for (SAParticleSystem s : systems) {
+				s.scale = scale;
 				s.entityOffset = new Vec3d(offsetX, offsetY, offsetZ);
 				s.attachToHead = attachToHead;
 				s.condition = condition;
@@ -235,7 +236,6 @@ public class ClientProxy extends CommonProxy {
 				s.scale = scale;
 				s.entityOffset = new Vec3d(offsetX, offsetY, offsetZ);
 				s.attachToHead = attachToHead;
-				//s.condition = condition;
 				particleManager.addEffect(s);
 			}
 		}
