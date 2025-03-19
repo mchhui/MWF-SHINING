@@ -30,6 +30,7 @@ public class EntityCustomFire extends Entity {
         this.damage = 1.0F;
         this.fireDuration = 5;
         this.noClip = false;
+        this.isImmuneToFire = true;
     }
 
     public EntityCustomFire(World worldIn, double x, double y, double z, int lifetime, float damage, int fireDuration, boolean throughWalls, Entity exploder) {
