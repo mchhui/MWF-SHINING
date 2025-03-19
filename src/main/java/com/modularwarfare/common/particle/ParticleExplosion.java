@@ -209,7 +209,6 @@ public class ParticleExplosion extends Particle {
 
             if (this.particleAge == 1 && !hasSpawnedEffect) {
                 hasSpawnedEffect = true;
-                this.world.playSound(this.posX, this.posY, this.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.AMBIENT, 20.0F, 0.9F + this.rand.nextFloat() * 0.15F, true);
             }
 
             this.prevPosX = this.posX;
