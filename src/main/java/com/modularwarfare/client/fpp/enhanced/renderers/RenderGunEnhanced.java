@@ -771,6 +771,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     model.renderPart("selector_full");
                 }else if(fireMode==WeaponFireMode.BURST){
                     model.renderPart("selector_burst");
+                }else if(fireMode==WeaponFireMode.SAFE){
+                    model.renderPart("selector_safe");
                 }
                 
                 /**
