@@ -1111,6 +1111,8 @@ public class GuiGunModify extends GuiScreen {
 								model.renderPart("selector_full");
 							} else if (fireMode == WeaponFireMode.BURST) {
 								model.renderPart("selector_brust");
+							} else if (fireMode == WeaponFireMode.SAFE) {
+								model.renderPart("selector_safe");
 							}
 
 							/**

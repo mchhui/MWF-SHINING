@@ -18,7 +18,12 @@ public enum WeaponFireMode {
     /**
      * Burst of shots fire mode
      */
-    @SerializedName("burst") BURST;
+    @SerializedName("burst") BURST,
+
+    /**
+     * Safe mode
+     */
+    @SerializedName("safe") SAFE;
 
     public static WeaponFireMode fromString(String modeName) {
         for (WeaponFireMode fireMode : values()) {

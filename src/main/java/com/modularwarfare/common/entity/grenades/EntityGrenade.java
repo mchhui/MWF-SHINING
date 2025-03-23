@@ -49,7 +49,7 @@ public class EntityGrenade extends Entity {
         this.fuse = 80;
         this.preventEntitySpawning = true;
         this.isImmuneToFire = true;
-        this.setSize(0.35f, 0.35f);
+        this.setSize(0.25f, 0.25f);
         this.setEntityInvulnerable(false);
     }
 
