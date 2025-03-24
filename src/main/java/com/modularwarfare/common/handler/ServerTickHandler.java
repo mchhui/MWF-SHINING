@@ -58,6 +58,12 @@ public final class ServerTickHandler {
                 }
             }
         }
+
+        final boolean flag = (
+             playerAimShootCooldown.containsKey(event.player.getUniqueID())
+             || playerAimInstant.getOrDefault(event.player.getUniqueID(), false)
+         );
+         ModularWarfare.NETWORK.sendToAll(new PacketAimingResponse(event.player.getUniqueID(), flag));
     }
     
     @SubscribeEvent
