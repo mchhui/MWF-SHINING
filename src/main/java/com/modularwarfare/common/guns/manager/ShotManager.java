@@ -525,8 +525,12 @@ public class ShotManager {
         private static boolean showBulletTrajectory = true; // 是否显示弹道-调试用
         
         public void update(EntityPlayer player, ItemGun itemGun) {
+            // 添加服务端检查，如果是服务端则直接返回
+            if (player.world != null && !player.world.isRemote) {
+                return;
+            }
+            
             if(System.currentTimeMillis() - lastUpdateTime < 50) {
-
                 if(OBBPlayerManager.debug && showBulletTrajectory && player.world.isRemote) {
                     renderDebugLine(player, itemGun);
                 }
