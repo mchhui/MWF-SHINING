@@ -279,6 +279,12 @@ public class AnimationController {
 //        System.out.println(INSPECT);
         /** INSPECT **/
         if (INSPECT == 0) {
+
+            if (DRAW < 1.0) {
+                INSPECT = 1.0;
+                return;
+            }
+
             if (player.getHeldItemMainhand().getItem() instanceof ItemGun&&player==Minecraft.getMinecraft().player) {
                 
                 if(inspectSound!=null) {
@@ -297,7 +303,15 @@ public class AnimationController {
                     inspectSound=PositionedSoundRecord.getRecord(se, 1, 1);
                     Minecraft.getMinecraft().getSoundHandler().playSound(inspectSound);  
                 }
+            } else if (player.getHeldItemMainhand().getItem() instanceof ItemGrenade && player == Minecraft.getMinecraft().player) {
+                GrenadeType type = ((ItemGrenade)player.getHeldItemMainhand().getItem()).type;
+                SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.Inspect);
+                if(se != null) {
+                    inspectSound = PositionedSoundRecord.getRecord(se, 1, 1);
+                    Minecraft.getMinecraft().getSoundHandler().playSound(inspectSound);  
+                }
             }
+            
             PANEL_INSPECT=0;
         }
         if(INSPECT == 1) {

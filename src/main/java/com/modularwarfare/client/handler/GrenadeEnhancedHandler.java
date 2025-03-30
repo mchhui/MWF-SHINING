@@ -62,18 +62,18 @@ public class GrenadeEnhancedHandler {
         KeyBinding.setKeyBindState(keyBinding.getKeyCode(), false);
     }
 
-    private static boolean isTimerStarted(ItemStack stack) {
-        if (stack.hasTagCompound() && stack.getTagCompound().hasKey("timerStarted")) {
-            return stack.getTagCompound().getBoolean("timerStarted");
-        }
-        return false;
-    }
-
     private static void setTimerStarted(ItemStack stack, boolean started) {
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }
         stack.getTagCompound().setBoolean("timerStarted", started);
+    }
+
+    public static boolean isTimerStarted(ItemStack stack) {
+        if (stack.hasTagCompound() && stack.getTagCompound().hasKey("timerStarted")) {
+            return stack.getTagCompound().getBoolean("timerStarted");
+        }
+        return false;
     }
 
     private static long getTimerStartTime(ItemStack stack) {
@@ -123,31 +123,33 @@ public class GrenadeEnhancedHandler {
         AnimationType controllerState = AnimationController.getClientController().getPlayingAnimation();
         boolean isDraw = controllerState == AnimationType.DRAW;
 
-        if (isDraw) {
-            resetGrenadeState();
-            return;
-        }
-        
         int currentSlot = mc.player.inventory.currentItem;
         if (lastSlot != currentSlot) {
+            ItemStack currentStack = mc.player.inventory.getStackInSlot(currentSlot);
+            ItemStack lastStack = lastSlot >= 0 ? mc.player.inventory.getStackInSlot(lastSlot) : ItemStack.EMPTY;
+            
             if (holdingStack != null && holdingStack.getItem() instanceof ItemGrenade) {
-                ItemStack lastSlotStack = mc.player.inventory.getStackInSlot(lastSlot);
-                if (!lastSlotStack.isEmpty() && lastSlotStack.getItem() instanceof ItemGrenade
-                        && isTimerStarted(lastSlotStack)) {
-                    GrenadeType type = ((ItemGrenade) lastSlotStack.getItem()).type;
+                if (!lastStack.isEmpty() && lastStack.getItem() instanceof ItemGrenade
+                        && isTimerStarted(lastStack)) {
+                    GrenadeType type = ((ItemGrenade) lastStack.getItem()).type;
                     float remainingTime = type.fuseTime
-                            - (System.currentTimeMillis() - getTimerStartTime(lastSlotStack)) / 1000f;
+                            - (System.currentTimeMillis() - getTimerStartTime(lastStack)) / 1000f;
                     ModularWarfare.NETWORK.sendToServer(new PacketGrenadeThrow(false, remainingTime, 0));
-                    setTimerStarted(lastSlotStack, false);
+                    setTimerStarted(lastStack, false);
                     ModularWarfare.NETWORK.sendToServer(new PacketGrenadeConsume());
                 }
-                if (!lastSlotStack.isEmpty() && lastSlotStack.getItem() instanceof ItemGrenade
+                if (!lastStack.isEmpty() && lastStack.getItem() instanceof ItemGrenade
                         && isConsumed) {
                     ModularWarfare.NETWORK.sendToServer(new PacketGrenadeConsume());
                 }
                 resetGrenadeState();
             }
             lastSlot = currentSlot;
+        }
+        
+        if (isDraw) {
+            resetGrenadeState();
+            return;
         }
         
         ItemStack stack = mc.player.getHeldItemMainhand();
@@ -167,7 +169,6 @@ public class GrenadeEnhancedHandler {
         }
 
         updateKeyStates(mc);
-
         handleThrowingState(mc, stack, type, machine);
         handleGrenadeTimer(mc, stack, type);
     }
@@ -205,6 +206,9 @@ public class GrenadeEnhancedHandler {
                 setTimerStarted(stack, false);
                 isConsumed = false;
                 if (type.enhancedModel != null) {
+                    if (AnimationController.getClientController().INSPECT < 1.0f) {
+                        AnimationController.getClientController().INSPECT = 1.0f;
+                    }
                     machine.triggerThrow(AnimationController.getClientController(), mc.player,
                             (ModelEnhancedGrenade) type.enhancedModel);
                 }

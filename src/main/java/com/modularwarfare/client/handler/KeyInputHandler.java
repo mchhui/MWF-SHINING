@@ -157,9 +157,23 @@ public final class KeyInputHandler {
                     break;
                 case Inspect:
                     if(!entityPlayer.isSpectator()) {
-                        if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                            if(AnimationController.getController(entityPlayer, null)!=null) {
-                                AnimationController.getController(entityPlayer, null).INSPECT=0;
+                        if (entityPlayer.getHeldItemMainhand() != null) {
+                            if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
+                                if(AnimationController.getController(entityPlayer, null)!=null) {
+                                    AnimationController.getController(entityPlayer, null).INSPECT=0;
+                                }
+                            } else if (entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGrenade) {
+                                ItemGrenade itemGrenade = (ItemGrenade) entityPlayer.getHeldItemMainhand().getItem();
+                                if (itemGrenade.type.animationType == WeaponAnimationType.ENHANCED) {
+                                    // 检查是否可以进行视检
+                                    if (!GrenadeEnhancedHandler.isHolding && 
+                                        !GrenadeEnhancedHandler.isTimerStarted(entityPlayer.getHeldItemMainhand()) && 
+                                        !ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).throwing) {
+                                        if (AnimationController.getController(entityPlayer, null) != null) {
+                                            AnimationController.getController(entityPlayer, null).INSPECT = 0;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
