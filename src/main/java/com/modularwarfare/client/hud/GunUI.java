@@ -141,8 +141,9 @@ public class GunUI {
                                                     GL11.glTranslatef(-size, -size, 0);
                                                     ModelAttachment modelAttachment = (ModelAttachment)itemAttachment.type.model;
                                                     float rotateRad = (float)Math.toRadians(CROSS_ROTATE);
-                                                    float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * modelAttachment.config.sight.recoilOverlayFactor;
-                                                    float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * modelAttachment.config.sight.recoilOverlayFactor;
+                                                    float recoilFactor = modelAttachment.config.sight.recoilOverlayFactor != 1.0f ? modelAttachment.config.sight.recoilOverlayFactor : modelAttachment.config.sight.fovZoom;
+                                                    float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
+                                                    float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
                                                     GL11.glTranslatef(recoilOffsetX, -recoilOffsetY, 0);
                                                     RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
                                                 }

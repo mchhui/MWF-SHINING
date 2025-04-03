@@ -433,8 +433,9 @@ public class ScopeUtils {
             // 计算倾斜角度的弧度值
             float rotateRad = (float)Math.toRadians(CROSS_ROTATE);
             // 根据倾斜角度旋转后坐力偏移向量
-            float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * config.recoilOverlayFactor;
-            float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * config.recoilOverlayFactor;
+            float recoilFactor = config.recoilOverlayFactor != 1.0f ? config.recoilOverlayFactor : config.fovZoom;
+            float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
+            float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
             GlStateManager.translate(recoilOffsetX, -recoilOffsetY, 0);
             GlStateManager.rotate(CROSS_ROTATE,0,0,1);
             GlStateManager.translate(-width/2f, -height/2f, 0);
