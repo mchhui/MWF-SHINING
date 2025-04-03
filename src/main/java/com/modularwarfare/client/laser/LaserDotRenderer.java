@@ -9,12 +9,19 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.optifine.shaders.MWFOptifineShadesHelper;
 import net.optifine.shaders.Shaders;
+import net.minecraft.inventory.EntityEquipmentSlot;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 
 import com.modularwarfare.client.laser.LaserRenderManager.LaserDotInfo;
 import com.modularwarfare.utility.OptifineHelper;
+import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemAttachment;
+import com.modularwarfare.common.guns.AttachmentPresetEnum;
+import com.modularwarfare.client.model.ModelAttachment;
+import com.modularwarfare.client.ClientRenderHooks;
 
 public class LaserDotRenderer {
     
@@ -94,7 +101,33 @@ public class LaserDotRenderer {
         float x = resolution.getScaledWidth() / 2f;
         float y = resolution.getScaledHeight() / 2f;
 
+        // 计算后坐力偏移
+        float rotateRad = (float)Math.toRadians(RenderParameters.CROSS_ROTATE);
+        
+        // 从当前瞄具获取 recoilFactor
+        float recoilFactor = 1.0f;
         EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().player;
+        if (player != null) {
+            if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight) != null && ClientRenderHooks.isAimingScope) {
+                ItemAttachment attachment = (ItemAttachment) GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight).getItem();
+                if (attachment.type.model instanceof ModelAttachment) {
+                    ModelAttachment modelAttachment = (ModelAttachment)attachment.type.model;
+                    recoilFactor = modelAttachment.config.sight.recoilOverlayFactor != 1.0f ? modelAttachment.config.sight.recoilOverlayFactor : modelAttachment.config.sight.fovZoom;
+                }
+            }
+        }
+
+        float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
+        float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
+        
+        // 应用后坐力偏移
+        x += recoilOffsetX;
+        y -= recoilOffsetY;
+
+        if (player == null) {
+            return;
+        }
+
         Vec3d origin = player.getPositionEyes(1.0F);
         Vec3d look = player.getLookVec();
         Vec3d endVec = origin.add(look.scale(dot.maxDistance));
