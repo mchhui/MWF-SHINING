@@ -31,6 +31,7 @@ import net.minecraftforge.common.MinecraftForge;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +44,13 @@ public class DefaultRayCasting extends RayCasting {
     private static boolean shouldRenderShot = false; // 控制射线渲染的标记
     private static long lastShotTime = 0; // 记录上次射击时间
     private static final long RENDER_DURATION = 1; // 渲染持续时间(毫秒)
+
+    // 添加射线穿透方块列表
+    private static final List<String> PENETRABLE_BLOCKS = Arrays.asList(
+        "minecraft:tallgrass",  // 高草丛
+        "minecraft:double_plant", // 高草
+        "minecraft:barrier"  // 屏障方块
+    );
 
     public static void onShot() {
         shouldRenderShot = true;
@@ -323,6 +331,12 @@ public class DefaultRayCasting extends RayCasting {
                 IBlockState iblockstate = world.getBlockState(blockpos);
                 Block block = iblockstate.getBlock();
 
+                // 检查是否是需要穿透的方块
+                String blockName = block.getRegistryName().toString();
+                if (PENETRABLE_BLOCKS.contains(blockName)) {
+                    return result;
+                }
+
                 if ((!ignoreBlockWithoutBoundingBox || iblockstate.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) && block.canCollideCheck(iblockstate, stopOnLiquid)) {
                     RayTraceResult raytraceresult = iblockstate.collisionRayTrace(world, blockpos, vec31, vec32);
                     if (raytraceresult != null) {
@@ -439,7 +453,13 @@ public class DefaultRayCasting extends RayCasting {
                     IBlockState iblockstate1 = world.getBlockState(blockpos);
                     Block block1 = iblockstate1.getBlock();
 
-                    if (!ignoreBlockWithoutBoundingBox || iblockstate1.getMaterial() == Material.BARRIER || iblockstate1.getMaterial() == Material.PORTAL || iblockstate1.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) {
+                    if (!ignoreBlockWithoutBoundingBox || iblockstate1.getMaterial() == Material.PORTAL || iblockstate1.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) {
+                        // 检查是否是需要穿透的方块
+                        String blockName1 = block1.getRegistryName().toString();
+                        if (PENETRABLE_BLOCKS.contains(blockName1)) {
+                            continue;
+                        }
+
                         if (block1.canCollideCheck(iblockstate1, stopOnLiquid)) {
                             RayTraceResult raytraceresult1 = iblockstate1.collisionRayTrace(world, blockpos, vec31, vec32);
                             if (raytraceresult1 != null) {
