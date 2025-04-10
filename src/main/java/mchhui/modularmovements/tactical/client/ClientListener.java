@@ -2,6 +2,7 @@ package mchhui.modularmovements.tactical.client;
 
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.type.BaseItem;
+import com.modularwarfare.ModularWarfare;
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
@@ -338,6 +339,30 @@ public class ClientListener {
             float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
         setRotationAngles((ModelBiped) model, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch,
                 scaleFactor, entityIn);
+                
+        if (entityIn instanceof EntityPlayer && entityIn.isEntityAlive()) {
+            PlayerState state = null;
+            if (entityIn == Minecraft.getMinecraft().player) {
+                state = clientPlayerState;
+            } else if (ohterPlayerStateMap.containsKey(entityIn.getEntityId())) {
+                state = ohterPlayerStateMap.get(entityIn.getEntityId());
+            }
+            
+            if (state != null && state.isCrawling) {
+                if (model.rightArmPose == ModelBiped.ArmPose.BOW_AND_ARROW) {
+                    model.bipedRightArmwear.rotateAngleY = -0.1F + model.bipedHead.rotateAngleY;
+                    model.bipedRightArmwear.rotateAngleX = -((float)Math.PI / 2F) + model.bipedHead.rotateAngleX;
+                    model.bipedLeftArmwear.rotateAngleY = 0.1F + model.bipedHead.rotateAngleY;
+                    model.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + model.bipedHead.rotateAngleX;
+                } else {
+                    model.bipedLeftArmwear.rotateAngleY = 0;
+                    model.bipedRightArmwear.rotateAngleY = 0;
+                    model.bipedLeftArmwear.rotateAngleX = (float) (180 * 3.14 / 180);
+                    model.bipedRightArmwear.rotateAngleX = (float) (180 * 3.14 / 180);
+                }
+            }
+        }
+        
         model.copyModelAngles(model.bipedLeftLeg, model.bipedLeftLegwear);
         model.copyModelAngles(model.bipedRightLeg, model.bipedRightLegwear);
         model.copyModelAngles(model.bipedLeftArm, model.bipedLeftArmwear);
@@ -372,27 +397,37 @@ public class ClientListener {
             }
 
             if (state.isCrawling) {
-                model.bipedHead.rotateAngleX -= 70 * 3.14 / 180;
-                model.bipedRightArm.rotateAngleX *= 0.2;
-                model.bipedLeftArm.rotateAngleX *= 0.2;
-                model.bipedRightArm.rotateAngleX += 180 * 3.14 / 180;
-                model.bipedLeftArm.rotateAngleX += 180 * 3.14 / 180;
-                if (entityIn instanceof AbstractClientPlayer) {
-                    ItemStack itemstack = ((AbstractClientPlayer) entityIn).getHeldItemMainhand();
+                model.bipedHead.rotateAngleX -= 70 * 3.14F / 180F;
+                model.bipedRightArm.rotateAngleX *= 0.2F;
+                model.bipedLeftArm.rotateAngleX *= 0.2F;
+                model.bipedRightArm.rotateAngleX += 180F * 3.14F / 180F;
+                model.bipedLeftArm.rotateAngleX += 180F * 3.14F / 180F;
+                
+                if (entityIn instanceof EntityPlayer) {
+                    ItemStack itemstack = ((EntityPlayer) entityIn).getHeldItemMainhand();
                     if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
                         if (ModularMovements.mwfEnable) {
                             if (itemstack.getItem() instanceof BaseItem) {
-                                model.bipedLeftArm.rotateAngleY = 0;
-                                model.bipedRightArm.rotateAngleY = 0;
-                                model.bipedLeftArm.rotateAngleX = (float) (180 * 3.14 / 180);
-                                model.bipedRightArm.rotateAngleX = (float) (180 * 3.14 / 180);
+                                if (model.rightArmPose == ModelBiped.ArmPose.BOW_AND_ARROW) {
+                                    model.bipedRightArm.rotateAngleY = -0.1F + model.bipedHead.rotateAngleY;
+                                    model.bipedRightArm.rotateAngleX = -((float)Math.PI / 2F) + model.bipedHead.rotateAngleX;
+                                    model.bipedLeftArm.rotateAngleY = 0.1F + model.bipedHead.rotateAngleY;
+                                    model.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + model.bipedHead.rotateAngleX;
+                                } else {
+                                    model.bipedLeftArm.rotateAngleY = 0;
+                                    model.bipedRightArm.rotateAngleY = 0;
+                                    model.bipedLeftArm.rotateAngleX = (float) (180 * 3.14 / 180);
+                                    model.bipedRightArm.rotateAngleX = (float) (180 * 3.14 / 180);
+                                }
                             }
                         }
                     }
                 }
-                model.bipedRightLeg.rotateAngleX *= 0.2;
-                model.bipedLeftLeg.rotateAngleX *= 0.2;
+                
+                model.bipedRightLeg.rotateAngleX *= 0.2F;
+                model.bipedLeftLeg.rotateAngleX *= 0.2F;
             }
+            
             if (offest >= 0) {
                 model.bipedRightLeg.rotateAngleZ += offest * 20 * 3.14 / 180;
             } else {
