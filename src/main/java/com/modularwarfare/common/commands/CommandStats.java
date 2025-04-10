@@ -40,7 +40,6 @@ public class CommandStats extends CommandBase {
 
         if (args[0].equalsIgnoreCase("hand")) {
             stats = WeaponStats.getHeldWeaponStats(player);
-            System.out.println("stats: " + stats);
             if (stats == null) {
                 sender.sendMessage(new TextComponentString(TextFormatting.RED + "You are not holding a weapon"));
                 return;
