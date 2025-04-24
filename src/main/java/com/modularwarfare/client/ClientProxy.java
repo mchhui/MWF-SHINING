@@ -129,6 +129,7 @@ import static com.modularwarfare.ModularWarfare.contentPacks;
 import com.modularwarfare.client.handler.SensitivityHandler;
 import com.modularwarfare.common.entity.EntityCustomFire;
 import com.modularwarfare.client.renderer.RenderCustomFire;
+import com.modularwarfare.client.sound.DSSoundSystem;
 
 public class ClientProxy extends CommonProxy {
 
@@ -159,8 +160,8 @@ public class ClientProxy extends CommonProxy {
     public static AutoSwitchToFirstView autoSwitchToFirstView;
     
     public static boolean shoulderSurfingLoaded=false;
-
     public static boolean SGFXloaded=false;
+    public static boolean dsSurroundLoaded=false;
     
     /**
      * Patches
@@ -214,6 +215,20 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void preload() {
+        shoulderSurfingLoaded = Loader.isModLoaded("shouldersurfing");
+        SGFXloaded = Loader.isModLoaded("sgfx");
+        dsSurroundLoaded = Loader.isModLoaded("dsurround");  // 检测DS模组是否加载
+        
+        if(shoulderSurfingLoaded) {
+            ModularWarfare.LOGGER.info("ShoulderSurfing detected!");
+        }
+        if(SGFXloaded) {
+            ModularWarfare.LOGGER.info("SGFX detected!");
+        }
+        if(dsSurroundLoaded) {
+            ModularWarfare.LOGGER.info("Dynamic Surroundings detected! Using DS sound system.");
+        }
+        
         //Smooth Swing Ticker Runnable
         SmoothSwingTicker.startSmoothSwingTimer();
 
@@ -224,9 +239,6 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void startPatches() {
-        if (Loader.isModLoaded("shouldersurfing")) {
-            shoulderSurfingLoaded=true;
-        }
         if (Loader.isModLoaded("customnpcs")) {
             CustomNPCListener customNPCListener = new CustomNPCListener();
             MinecraftForge.EVENT_BUS.register(customNPCListener);
@@ -242,9 +254,6 @@ public class ClientProxy extends CommonProxy {
             }
         } else {
             ClientProxy.galacticraftInterop = new GCDummyInterop();
-        }
-        if (Loader.isModLoaded("SGFX")) {
-            ClientProxy.SGFXloaded=true;
         }
     }
 
@@ -777,8 +786,14 @@ public class ClientProxy extends CommonProxy {
             ModularWarfare.LOGGER.error(String.format("The sound named '%s' does not exist. Skipping playSound", sound.soundName));
             return;
         }
-        //System.out.println(sound.soundName);
-        Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player, sound.blockPos, soundEvent, SoundCategory.PLAYERS, sound.volume, sound.pitch);
+        
+        // 如果DS模组已加载，使用DS音效系统
+        if(dsSurroundLoaded) {
+            DSSoundSystem.playSound(sound.blockPos, soundEvent, sound.volume, sound.pitch);
+        } else {
+            // 使用原版音效系统
+            Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player, sound.blockPos, soundEvent, SoundCategory.PLAYERS, sound.volume, sound.pitch);
+        }
     }
 
     @Override
@@ -925,7 +940,22 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void playHitmarker(boolean headshot) {
         if (ModConfig.INSTANCE.hud.hitmarkers) {
-            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.getRecord(ClientProxy.modSounds.get("hitmarker"), 1f, 4f));
+            if(dsSurroundLoaded) {
+                DSSoundSystem.playSelfSound(
+                    ClientProxy.modSounds.get("hitmarker"), 
+                    1.0f,  // 音量
+                    headshot ? 4.0f : 1.0f  // 爆头时音调更高
+                );
+            } else {
+                // 原版音效播放逻辑
+                Minecraft.getMinecraft().getSoundHandler().playSound(
+                    PositionedSoundRecord.getRecord(
+                        ClientProxy.modSounds.get("hitmarker"), 
+                        1f, 
+                        headshot ? 4f : 1f
+                    )
+                );
+            }
             ClientProxy.gunUI.addHitMarker(headshot);
         }
     }

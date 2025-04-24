@@ -6,6 +6,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.IMWModel;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
+import com.modularwarfare.client.sound.DSSoundSystem;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.SkinType;
 import com.modularwarfare.common.guns.WeaponSoundType;
@@ -196,7 +197,12 @@ public class BaseType {
                     ModularWarfare.LOGGER.error(String.format("[%s] Sound '%s' for event '%s' is not registered", this.internalName, soundEntry.soundName, weaponSoundType.eventName));
                     continue;
                 }
-                Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), SoundCategory.PLAYERS, 1f, 1f);
+                if(ClientProxy.dsSurroundLoaded) {
+                    DSSoundSystem.playSound(player, ClientProxy.modSounds.get(soundEntry.soundName), 1f, 1f);
+                } else {
+                    // 使用原版音效系统
+                    Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), SoundCategory.PLAYERS, 1f, 1f);
+                }
             }
         } else if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
             if(!ClientProxy.modSounds.containsKey(weaponSoundType.defaultSound)) {
