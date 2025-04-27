@@ -787,11 +787,23 @@ public class ClientProxy extends CommonProxy {
             return;
         }
         
-        // 如果DS模组已加载，使用DS音效系统
         if(dsSurroundLoaded) {
             DSSoundSystem.playSound(sound.blockPos, soundEvent, sound.volume, sound.pitch);
         } else {
-            // 使用原版音效系统
+            Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player, sound.blockPos, soundEvent, SoundCategory.PLAYERS, sound.volume, sound.pitch);
+        }
+    }
+
+    public void playSoundLinear(MWSound sound) {
+        SoundEvent soundEvent = modSounds.get(sound.soundName);
+        if (soundEvent == null) {
+            ModularWarfare.LOGGER.error(String.format("The sound named '%s' does not exist. Skipping playSound", sound.soundName));
+            return;
+        }
+        
+        if(dsSurroundLoaded) {
+            DSSoundSystem.playSoundLinear(sound.blockPos, soundEvent, sound.volume, sound.pitch);
+        } else {
             Minecraft.getMinecraft().world.playSound(Minecraft.getMinecraft().player, sound.blockPos, soundEvent, SoundCategory.PLAYERS, sound.volume, sound.pitch);
         }
     }

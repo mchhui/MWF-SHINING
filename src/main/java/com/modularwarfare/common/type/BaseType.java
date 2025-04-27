@@ -11,6 +11,7 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.SkinType;
 import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.common.network.PacketPlaySound;
+import com.modularwarfare.common.network.PacketPlaySoundLinear;
 import com.modularwarfare.loader.MWModelBase;
 import com.modularwarfare.loader.MWModelBipedBase;
 import com.modularwarfare.loader.ObjModel;
@@ -198,7 +199,7 @@ public class BaseType {
                     continue;
                 }
                 if(ClientProxy.dsSurroundLoaded) {
-                    DSSoundSystem.playSound(player, ClientProxy.modSounds.get(soundEntry.soundName), 1f, 1f);
+                    DSSoundSystem.playSoundLinear(player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), 1f, 1f);
                 } else {
                     // 使用原版音效系统
                     Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), SoundCategory.PLAYERS, 1f, 1f);
@@ -209,7 +210,11 @@ public class BaseType {
                 ModularWarfare.LOGGER.error(String.format("[%s] Default sound '%s' for event '%s' is not registered", this.internalName, weaponSoundType.defaultSound, weaponSoundType.eventName));
                 return;
             }
-            Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(weaponSoundType.defaultSound), SoundCategory.PLAYERS, 1f, 1f);
+            if(ClientProxy.dsSurroundLoaded) {
+                DSSoundSystem.playSoundLinear(player.getPosition(), ClientProxy.modSounds.get(weaponSoundType.defaultSound), 1f, 1f);
+            } else {
+                Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(weaponSoundType.defaultSound), SoundCategory.PLAYERS, 1f, 1f);
+            }
         }
     }
     
@@ -231,10 +236,10 @@ public class BaseType {
     }
 
     public void playSoundPos(BlockPos pos, World world, WeaponSoundType weaponSoundType) {
-        playSoundPos(pos, world, weaponSoundType, null, 1f);
+        playSoundPos(pos, world, weaponSoundType, null, 1f, false);
     }
 
-    public void playSoundPos(BlockPos pos, World world, WeaponSoundType weaponSoundType, EntityPlayer excluded, float volume) {
+    public void playSoundPos(BlockPos pos, World world, WeaponSoundType weaponSoundType, EntityPlayer excluded, float volume, boolean linear) {
         if (weaponSoundType != null) {
             if (weaponSoundMap.containsKey(weaponSoundType)) {
                 Random random = new Random();
@@ -244,6 +249,9 @@ public class BaseType {
                         //Send sound packet for simple sounds (no distant sound effect)
                         if (!(hearingPlayer.equals(excluded))) {
                             ModularWarfare.NETWORK.sendTo(new PacketPlaySound(pos, soundEntry.soundName, (soundRange / 16) * soundEntry.soundVolumeMultiplier * volume, soundEntry.soundPitch + (random.nextFloat() * soundEntry.soundRandomPitch)), (EntityPlayerMP) hearingPlayer);
+                        }
+                        if(linear) {
+                            ModularWarfare.NETWORK.sendTo(new PacketPlaySoundLinear(pos, soundEntry.soundName, (soundRange / 16) * soundEntry.soundVolumeMultiplier * volume, soundEntry.soundPitch + (random.nextFloat() * soundEntry.soundRandomPitch)), (EntityPlayerMP) hearingPlayer);
                         }
                     }
                 }

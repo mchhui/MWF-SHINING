@@ -24,14 +24,32 @@ public class DSSoundSystem {
     public static void playSound(BlockPos pos, SoundEvent sound, float volume, float pitch) {
         if (!ClientProxy.dsSurroundLoaded) return;
         
-        Vec3d soundPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+        // 使用Builder创建音效
+        ISoundInstance soundInstance = new SoundEffect.Builder(sound.getSoundName(), SoundCategory.PLAYERS)
+            .setVolume(volume)
+            .setPitch(pitch)
+            .build()
+            .createSoundAt(pos)
+            .setAttenuationType(ISoundInstance.AttenuationType.NONE);
+            
+        // 使用DS引擎播放音效
+        SoundEngine.instance().playSound(soundInstance);
+        //System.out.println("DSplayPosSound: " + sound.getSoundName());
+    }
+
+    /**
+     * 播放3D位置音效(线性衰减)
+     */
+    public static void playSoundLinear(BlockPos pos, SoundEvent sound, float volume, float pitch) {
+        if (!ClientProxy.dsSurroundLoaded) return;
         
         // 使用Builder创建音效
         ISoundInstance soundInstance = new SoundEffect.Builder(sound.getSoundName(), SoundCategory.PLAYERS)
             .setVolume(volume)
             .setPitch(pitch)
             .build()
-            .createSoundAt(pos);
+            .createSoundAt(pos)
+            .setAttenuationType(ISoundInstance.AttenuationType.LINEAR);
             
         // 使用DS引擎播放音效
         SoundEngine.instance().playSound(soundInstance);
@@ -41,7 +59,7 @@ public class DSSoundSystem {
     /**
      * 播放绑定到实体音效
      */
-    public static void playSound(Entity entity, SoundEvent sound, float volume, float pitch) {
+    public static void playEntitySound(Entity entity, SoundEvent sound, float volume, float pitch) {
         if (!ClientProxy.dsSurroundLoaded) return;
         
         // 使用Builder创建音效
@@ -49,7 +67,8 @@ public class DSSoundSystem {
             .setVolume(volume)
             .setPitch(pitch)
             .build()
-            .createSoundNear(entity);
+            .createSoundNear(entity)
+            .setAttenuationType(ISoundInstance.AttenuationType.NONE);
             
         // 使用DS引擎播放音效
         SoundEngine.instance().playSound(soundInstance);

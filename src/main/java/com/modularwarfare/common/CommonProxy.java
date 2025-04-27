@@ -201,6 +201,9 @@ public class CommonProxy {
     public void playSound(MWSound sound) {
     }
 
+    public void playSoundLinear(MWSound sound) {
+    }
+
     public void playHitmarker(boolean headshot) {
     }
 

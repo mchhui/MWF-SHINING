@@ -397,7 +397,7 @@ public class ShotManager {
                     if (rayTrace.rayTraceResult != null && rayTrace.rayTraceResult.hitVec != null) {
                         BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
                         ItemGun.playImpactSound(world, rayTrace.rayTraceResult, gunType);
-                        gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entityPlayer, 1.0f);
+                        gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entityPlayer, 1.0f, true);
                         ItemGun.doHit(rayTrace.rayTraceResult, entityPlayer);
                         ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
                     }
