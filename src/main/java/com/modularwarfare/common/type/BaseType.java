@@ -199,7 +199,7 @@ public class BaseType {
                     continue;
                 }
                 if(ClientProxy.dsSurroundLoaded) {
-                    DSSoundSystem.playSoundLinear(player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), 1f, 1f);
+                    DSSoundSystem.playSound(player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), 1f, 1f);
                 } else {
                     // 使用原版音效系统
                     Minecraft.getMinecraft().world.playSound(player, player.getPosition(), ClientProxy.modSounds.get(soundEntry.soundName), SoundCategory.PLAYERS, 1f, 1f);

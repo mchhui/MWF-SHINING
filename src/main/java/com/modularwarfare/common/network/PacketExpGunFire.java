@@ -168,7 +168,7 @@ public class PacketExpGunFire extends PacketBase {
                     if (entityId == -1) {
                         BlockPos blockPos = new BlockPos(posX, posY, posZ);
                         ItemGun.playImpactSound(entityPlayer.world, posX, posY, posZ, facing, blockPos, itemGun.type);
-                        itemGun.type.playSoundPos(blockPos, entityPlayer.world, WeaponSoundType.Crack, entityPlayer, 1.0f, true);
+                        itemGun.type.playSoundPos(blockPos, entityPlayer.world, WeaponSoundType.Crack, entityPlayer, 1.0f, false);
                         ItemGun.doHit(posX, posY, posZ, facing, entityPlayer);
                         ItemGun.playHitEffect(entityPlayer.world, posX, posY, posZ, facing, blockPos);
                         return;
