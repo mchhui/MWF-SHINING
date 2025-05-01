@@ -20,6 +20,7 @@ import com.modularwarfare.common.commands.CommandClear;
 import com.modularwarfare.common.commands.CommandDebug;
 import com.modularwarfare.common.commands.CommandNBT;
 import com.modularwarfare.common.commands.CommandPlay;
+import com.modularwarfare.common.commands.CommandStats;
 import com.modularwarfare.common.commands.kits.CommandKit;
 import com.modularwarfare.common.effect.ModPotions;
 import com.modularwarfare.common.entity.EntityCustomFire;
@@ -583,6 +584,7 @@ public class ModularWarfare {
         event.registerServerCommand(new CommandDebug());
         event.registerServerCommand(new CommandKit());
         event.registerServerCommand(new CommandPlay());
+        event.registerServerCommand(new CommandStats());
     }
 
     // Registers protected content-pack before preInit, to allow making a custom ResourcePackLoader allowing protected .zip

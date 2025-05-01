@@ -314,7 +314,7 @@ public class ItemGun extends BaseItem {
         }
         
         BlockPos hitPos = new BlockPos(posX, posY, posZ);
-        gunType.playSoundPos(hitPos, world, soundType, null, 1f);
+        gunType.playSoundPos(hitPos, world, soundType, null, 1f, true);
     }
 
     public static void playImpactSound(World world, RayTraceResult rayTrace, GunType gunType) {
