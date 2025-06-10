@@ -158,7 +158,9 @@ public class ClientProxy extends CommonProxy {
     public static KillFeedManager killFeedManager;
 
     public static AutoSwitchToFirstView autoSwitchToFirstView;
-    
+
+    public static boolean customNpcLoaded=false;
+    public static boolean galacticraftcoreLoaded=false;
     public static boolean shoulderSurfingLoaded=false;
     public static boolean SGFXloaded=false;
     public static boolean dsSurroundLoaded=false;
@@ -215,6 +217,8 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void preload() {
+        customNpcLoaded = Loader.isModLoaded("customnpcs");
+        galacticraftcoreLoaded = Loader.isModLoaded("galacticraftcore");
         shoulderSurfingLoaded = Loader.isModLoaded("shouldersurfing");
         SGFXloaded = Loader.isModLoaded("sgfx");
         dsSurroundLoaded = Loader.isModLoaded("dsurround");  // 检测DS模组是否加载
@@ -239,11 +243,11 @@ public class ClientProxy extends CommonProxy {
     }
 
     public void startPatches() {
-        if (Loader.isModLoaded("customnpcs")) {
+        if (customNpcLoaded) {
             CustomNPCListener customNPCListener = new CustomNPCListener();
             MinecraftForge.EVENT_BUS.register(customNPCListener);
         }
-        if (Loader.isModLoaded("galacticraftcore")) {
+        if (galacticraftcoreLoaded) {
             try {
                 ClientProxy.galacticraftInterop = Class.forName("com.modularwarfare.client.patch.galacticraft.GCInteropImpl").asSubclass(GCCompatInterop.class).newInstance();
                 ModularWarfare.LOGGER.info("Galatic Craft has been detected! Will attempt to patch.");
@@ -251,6 +255,24 @@ public class ClientProxy extends CommonProxy {
             } catch (Exception e) {
                 e.printStackTrace();
                 ClientProxy.galacticraftInterop = new GCDummyInterop();
+            }
+        } if (dsSurroundLoaded) {
+            try {
+                Class<?> modInfoClass = Class.forName("org.orecruncher.dsurround.ModInfo");
+                java.lang.reflect.Field field = modInfoClass.getDeclaredField("IS_DISTANCE_VERSION");
+                String isDistanceVersion = (String) field.get(null);
+                
+                if (isDistanceVersion != null && "true".equals(isDistanceVersion)) {
+                    ModularWarfare.LOGGER.info("Dynamic Surroundings distance version detected - remote gun sounds will work properly!");
+                } else {
+                    ModularWarfare.LOGGER.warn("Dynamic Surroundings standard version detected - please use the distance-modified version for proper remote gun sound effects!");
+                }
+            } catch (ClassNotFoundException e) {
+                ModularWarfare.LOGGER.warn("Could not find Dynamic Surroundings ModInfo class - remote gun sounds may not work properly!");
+            } catch (NoSuchFieldException e) {
+                ModularWarfare.LOGGER.warn("Dynamic Surroundings standard version detected - please use the distance-modified version for proper remote gun sound effects!");
+            } catch (Exception e) {
+                ModularWarfare.LOGGER.warn("Error checking Dynamic Surroundings version - remote gun sounds may not work properly: " + e.getMessage());
             }
         } else {
             ClientProxy.galacticraftInterop = new GCDummyInterop();

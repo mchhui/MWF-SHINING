@@ -59,8 +59,10 @@ public class ItemAmmo extends BaseItem {
             } else {
                 GunType gunType = ((ItemGun) gunStack.getItem()).type;
                 if (gunType.acceptedAmmo != null) {
-                    if (((ItemAmmo) ammoStack.getItem()).type.subAmmo != null) {
-                        return ModularWarfare.bulletTypes.get(((ItemAmmo) ammoStack.getItem()).type.subAmmo[0]);
+                    if (ammoStack != null && ammoStack.getItem() instanceof ItemAmmo) {
+                        if (((ItemAmmo) ammoStack.getItem()).type.subAmmo != null) {
+                            return ModularWarfare.bulletTypes.get(((ItemAmmo) ammoStack.getItem()).type.subAmmo[0]);
+                        }
                     }
                 }
             }
