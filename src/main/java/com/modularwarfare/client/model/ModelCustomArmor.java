@@ -20,6 +20,9 @@ import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.GlStateManager.CullFace;
+import net.minecraft.client.renderer.GlStateManager.DestFactor;
+import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 import net.minecraft.entity.Entity;
 import net.minecraftforge.common.MinecraftForge;
 
@@ -174,10 +177,19 @@ public class ModelCustomArmor extends MWModelBipedBase {
                     boolean glow = ObjModelRenderer.glowTxtureMode;
                     ObjModelRenderer.glowTxtureMode = true;
                     part.render(f5);
+                    //只开不关 shit habit
+                    GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
+                        SourceFactor.ONE, DestFactor.ZERO);
+                    GlStateManager.enableCull();
+                    GlStateManager.depthMask(false);
+                    this.staticModel.renderPart(f5, "translucent");
+                    this.staticModel.renderPart(f5, "translucent1");
+                    this.staticModel.renderPart(f5, "translucent2");
+                    GlStateManager.disableCull();
+                    GlStateManager.depthMask(true);
                     ObjModelRenderer.glowTxtureMode = glow;
                 }
             }
-
             GlStateManager.popMatrix();
         }
     }
