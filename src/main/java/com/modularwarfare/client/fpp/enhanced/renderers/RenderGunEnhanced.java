@@ -268,6 +268,26 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         mat.rotate(config.global.globalRotate.z/180*3.14f, new Vector3f(0, 0, 1));
         
         /**
+         * camera
+         * 如果想保证mwf和blender视角强一致性
+         * 请不要使用hip调位置参数 并在blender中镜头对象默认位置设置在原点 然后在您的动画中调整镜头位置
+         * */
+        if(model.model.geoModel.nodes.get("mwf_camera")!=null && model == firstPersonModel) {
+            Matrix4f cameraMat=model.getGlobalTransform("mwf_camera");
+            AxisAngle4d cam_aa=mwf_camera_rot;
+            Vector3f cam_pos=mwf_camera_pos;
+            Vector3f cam_begin_pos=model.model.geoModel.nodes.get("mwf_camera").pos;
+            cameraMat.getRotation(cam_aa);
+            cameraMat.getTranslation(cam_pos);
+            cam_pos.sub(cam_begin_pos).negate();
+            mat.rotate((float)cam_aa.angle,(float)-cam_aa.x,(float)-cam_aa.y,(float)-cam_aa.z);
+            mat.translate(cam_pos);
+        }else {
+            mwf_camera_pos.set(0,0,0);
+            mwf_camera_rot.set(0, 0, 0, 0);
+        }
+        
+        /**
          * ACTION GUN MOTION
          */
         float gunRotX = RenderParameters.GUN_ROT_X_LAST
@@ -578,20 +598,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     }
                 }      
             }
-        }
-        if(model.model.geoModel.nodes.get("mwf_camera")!=null && model == firstPersonModel) {
-            Matrix4f cameraMat=model.getGlobalTransform("mwf_camera");
-            AxisAngle4d cam_aa=mwf_camera_rot;
-            Vector3f cam_pos=mwf_camera_pos;
-            Vector3f cam_begin_pos=model.model.geoModel.nodes.get("mwf_camera").pos;
-            cameraMat.getRotation(cam_aa);
-            cameraMat.getTranslation(cam_pos);
-            cam_pos.sub(cam_begin_pos).negate();
-            mat.translate(cam_pos);
-            mat.rotate((float)cam_aa.angle,(float)-cam_aa.x,(float)-cam_aa.y,(float)-cam_aa.z);
-        }else {
-            mwf_camera_pos.set(0,0,0);
-            mwf_camera_rot.set(0, 0, 0, 0);
         }
         
         floatBuffer.clear();
