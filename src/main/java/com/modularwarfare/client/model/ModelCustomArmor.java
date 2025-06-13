@@ -178,10 +178,12 @@ public class ModelCustomArmor extends MWModelBipedBase {
                     ObjModelRenderer.glowTxtureMode = true;
                     part.render(f5);
                     //只开不关 shit habit
+                    GlStateManager.enableBlend();
                     GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
                         SourceFactor.ONE, DestFactor.ZERO);
                     GlStateManager.enableCull();
                     GlStateManager.depthMask(false);
+                    //不兼容水和史莱姆
                     this.staticModel.renderPart(f5, "translucent");
                     this.staticModel.renderPart(f5, "translucent1");
                     this.staticModel.renderPart(f5, "translucent2");
