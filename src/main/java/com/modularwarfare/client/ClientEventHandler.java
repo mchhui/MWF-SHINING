@@ -188,11 +188,8 @@ public class ClientEventHandler {
                     GlStateManager.rotate((float)Math.toDegrees(RenderGunEnhanced.mwf_camera_rot.angle),
                         (float)-RenderGunEnhanced.mwf_camera_rot.x, (float)-RenderGunEnhanced.mwf_camera_rot.y,
                         (float)-RenderGunEnhanced.mwf_camera_rot.z);
-                    GlStateManager.translate(RenderGunEnhanced.mwf_camera_pos.x / 10,
-                        RenderGunEnhanced.mwf_camera_pos.y / 10, RenderGunEnhanced.mwf_camera_pos.z / 10);
                     GlStateManager.rotate(90, 0, -1, 0);
-                    if (RenderGunEnhanced.mwf_camera_pos.x != 0 || RenderGunEnhanced.mwf_camera_pos.y != 0
-                        || RenderGunEnhanced.mwf_camera_pos.z != 0 || RenderGunEnhanced.mwf_camera_rot.angle != 0) {
+                    if (RenderGunEnhanced.mwf_camera_rot.angle != 0) {
                         Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
                     }
                 }

@@ -220,8 +220,11 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
 
-        Matrix4f mat = new Matrix4f();
+        if(!model.initCal) {
+            model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS), true);
+        }
         
+        Matrix4f mat = new Matrix4f();
         GlStateManager.matrixMode(GL11.GL_MODELVIEW);
         GlStateManager.loadIdentity();
         
