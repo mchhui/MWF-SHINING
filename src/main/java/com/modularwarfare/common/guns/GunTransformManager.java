@@ -7,6 +7,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import java.util.Map;
+import java.util.UUID;
+
 import net.minecraft.client.Minecraft;
 
 public class GunTransformManager {
@@ -46,7 +48,7 @@ public class GunTransformManager {
      * @param player 玩家
      * @param targetGunName 目标枪械注册名
      */
-    public static void transformGun(EntityPlayer player, String targetGunName) {
+    public static void transformGun(EntityPlayer player, String targetGunName,UUID versionID) {
         ItemStack gunStack = player.getHeldItemMainhand();
         if(!(gunStack.getItem() instanceof ItemGun)) {
             ModularWarfare.LOGGER.warn("[Transform] Cannot transform non-gun item");
@@ -72,7 +74,7 @@ public class GunTransformManager {
         if(!gunStack.hasTagCompound()) {
             gunStack.setTagCompound(new NBTTagCompound());
         }
-        gunStack.getTagCompound().setBoolean(TRANSFORM_DRAW_SKIP, true);
+//        gunStack.getTagCompound().setBoolean(TRANSFORM_DRAW_SKIP, true);
         
         AnimationController controller = null;
         if(player.world.isRemote) {
@@ -85,9 +87,9 @@ public class GunTransformManager {
             controller.pendingTransformGun = targetGunName;
         } else {
             if(player.world.isRemote) {
-                ModularWarfare.NETWORK.sendToServer(new PacketGunTransform(targetGunName));
+                ModularWarfare.NETWORK.sendToServer(new PacketGunTransform(targetGunName,versionID));
             } else {
-                handleTransformOnServer(player, targetGunName);
+                handleTransformOnServer(player, targetGunName,versionID);
             }
         }
     }
@@ -347,7 +349,7 @@ public class GunTransformManager {
     /**
      * 处理服务器端的枪械变换
      */
-    public static void handleTransformOnServer(EntityPlayer player, String targetGunName) {
+    public static void handleTransformOnServer(EntityPlayer player, String targetGunName,UUID versionID) {
         ItemStack currentGun = player.getHeldItemMainhand();
         if(!(currentGun.getItem() instanceof ItemGun)) {
             ModularWarfare.LOGGER.warn("Server: Player's held item is not a gun");
@@ -417,12 +419,10 @@ public class GunTransformManager {
             }
         }
         
-        newNBT.setBoolean(TRANSFORM_DRAW_SKIP, true);
-        
+        newNBT.setUniqueId(TRANSFORM_DRAW_SKIP, versionID);
         newGun.setTagCompound(newNBT);
         
         player.setHeldItem(player.getActiveHand() != null ? player.getActiveHand() : net.minecraft.util.EnumHand.MAIN_HAND, newGun);
-        
         if(!player.world.isRemote) {
             player.inventory.markDirty();
             player.inventoryContainer.detectAndSendChanges();

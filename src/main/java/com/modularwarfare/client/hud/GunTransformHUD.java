@@ -17,6 +17,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.lwjgl.input.Mouse;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 public class GunTransformHUD {
     
@@ -330,7 +331,7 @@ public class GunTransformHUD {
                         }
                     }
                     
-                    GunTransformManager.transformGun(player, targetGun);
+                    GunTransformManager.transformGun(player, targetGun,UUID.randomUUID());
                     lastTransformTime = System.currentTimeMillis();
                 }
             }

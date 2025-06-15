@@ -42,6 +42,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 @SideOnly(Side.CLIENT)
 @Mod.EventBusSubscriber(modid = ModularWarfare.MOD_ID, value = Side.CLIENT)
@@ -336,7 +337,7 @@ public final class KeyInputHandler {
         if(gunType.transformations != null && !gunType.transformations.isEmpty()) {
             if(entityPlayer.isSneaking()) {
                 ItemGun.switchToLastTransformState(heldItem);
-                GunTransformManager.transformGun(entityPlayer, gunType.transformations.get(ItemGun.getTransformState(heldItem)));
+                GunTransformManager.transformGun(entityPlayer, gunType.transformations.get(ItemGun.getTransformState(heldItem)),UUID.randomUUID());
             } else if(!GunTransformHUD.isVisible()) {
                 GunTransformHUD.setVisible(true);
             }
