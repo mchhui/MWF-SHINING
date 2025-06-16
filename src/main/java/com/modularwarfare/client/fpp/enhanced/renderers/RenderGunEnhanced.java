@@ -620,7 +620,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         color(1, 1, 1, 1f);
         
-        boolean applySprint = controller.SPRINT > 0.1 && controller.INSPECT >= 1;
+        boolean applySprint = controller.SPRINT > 0.1 && controller.INSPECT >= 1 && controller.TRANSFORM >= 1;
         boolean isRenderHand0 = ScopeUtils.isRenderHand0||!OptifineHelper.isShadersEnabled();
         boolean isRenderHand1 = (OptifineHelper.isShadersEnabled()&&!ScopeUtils.isRenderHand0)||!OptifineHelper.isShadersEnabled();
         HashSet<String> exceptParts=new HashSet<String>();
