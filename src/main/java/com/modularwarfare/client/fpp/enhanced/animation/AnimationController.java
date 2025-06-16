@@ -557,7 +557,7 @@ public class AnimationController {
             sprintCoolTime = time + 100;
             sprintValue = SPRINT - sprintSpeed;
         }
-        if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0 || INSPECT < 1 || TAKEDOWN > 0) {
+        if (anim.gunRecoil > 0.1F || ADS > 0.8 || RELOAD > 0 || INSPECT < 1 || TAKEDOWN > 0 || TRANSFORM < 1) {
             sprintValue = SPRINT - sprintSpeed * 2.5f;
         }
 
@@ -689,7 +689,7 @@ public class AnimationController {
         }else if(keepTransformAnimation) {
             this.playback.action = AnimationType.valueOf("TRANSFORM_" + keepTransformTargetState);
         } else if (TRANSFORM < 1F) {
-            ModularWarfare.LOGGER.debug("[Transform] Updating transform action");
+            //ModularWarfare.LOGGER.debug("[Transform] Updating transform action");
             if(!hasPlayedTransformSound) {
                 Item item = player.getHeldItemMainhand().getItem();
                 if (item instanceof ItemGun) {
@@ -713,7 +713,7 @@ public class AnimationController {
                                     }
                                 }
                             }
-                            ModularWarfare.LOGGER.debug("[Transform] Playing sound for target state: " + targetState);
+                            //ModularWarfare.LOGGER.debug("[Transform] Playing sound for target state: " + targetState);
                             
                             WeaponSoundType transformSoundType = null;
                             switch(targetState) {
@@ -737,11 +737,11 @@ public class AnimationController {
                             if(transformSoundType != null) {
                                 SoundEvent se = type.getSound((EntityPlayer)player, transformSoundType);
                                 if(se != null) {
-                                    ModularWarfare.LOGGER.debug("[Transform] Found sound event for type: " + transformSoundType);
+                                    //ModularWarfare.LOGGER.debug("[Transform] Found sound event for type: " + transformSoundType);
                                     transformSound = PositionedSoundRecord.getRecord(se, 1, 1);
                                     Minecraft.getMinecraft().getSoundHandler().playSound(transformSound);
                                 } else {
-                                    ModularWarfare.LOGGER.debug("[Transform] No sound event found for type: " + transformSoundType);
+                                    //ModularWarfare.LOGGER.debug("[Transform] No sound event found for type: " + transformSoundType);
                                 }
                             }
                         }
@@ -765,23 +765,23 @@ public class AnimationController {
             }
             
             this.playback.action = AnimationType.valueOf("TRANSFORM_" + targetState);
-            ModularWarfare.LOGGER.debug("[Transform] Set playback action to: " + this.playback.action);
+            //ModularWarfare.LOGGER.debug("[Transform] Set playback action to: " + this.playback.action);
         } else if (TRANSFORM >= 1F && pendingTransformGun != null) {
 
-            ModularWarfare.LOGGER.debug("[Transform] Transform complete, switching to: " + pendingTransformGun);
+            //ModularWarfare.LOGGER.debug("[Transform] Transform complete, switching to: " + pendingTransformGun);
             
             if(player != null && player instanceof EntityPlayer && !player.getHeldItemMainhand().isEmpty() 
                && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 
-                ModularWarfare.LOGGER.debug("[Transform] Player holding valid gun, executing transform");
+                //ModularWarfare.LOGGER.debug("[Transform] Player holding valid gun, executing transform");
 
                 if(player.world.isRemote) {
                     transformVersionUUID=UUID.randomUUID();
                     ModularWarfare.NETWORK.sendToServer(new PacketGunTransform(pendingTransformGun,transformVersionUUID));
-                    ModularWarfare.LOGGER.debug("[Transform] Sent transform packet to server: " + pendingTransformGun);
+                    //ModularWarfare.LOGGER.debug("[Transform] Sent transform packet to server: " + pendingTransformGun);
                 }
             } else {
-                ModularWarfare.LOGGER.warn("[Transform] Cannot execute transform - invalid item in hand");
+                //ModularWarfare.LOGGER.warn("[Transform] Cannot execute transform - invalid item in hand");
             }
             
             int targetState = 0;
