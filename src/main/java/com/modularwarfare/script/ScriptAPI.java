@@ -33,6 +33,7 @@ public class ScriptAPI {
     public Ammo Ammo = new Ammo();
     public Input Input =new Input();
     public Bullet Bullet =new Bullet();
+    public Logger Logger = new Logger();
 
     public static class Lang {
         public String format(String key, Object... parms) {
@@ -108,8 +109,20 @@ public class ScriptAPI {
             for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
                 ItemStack itemStack = GunType.getAttachment(stack, attachment);
                 if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                    AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-                    list.add(attachmentType.displayName);
+                    try {
+                        AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
+                        if (attachmentType != null && attachmentType.displayName != null) {
+                            list.add(attachmentType.displayName);
+                        } else {
+                            if (ModularWarfare.DEV_ENV) {
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Installed attachment type or displayName is null for attachment: " + attachment.name());
+                            }
+                        }
+                    } catch (Exception e) {
+                        if (ModularWarfare.DEV_ENV) {
+                            ModularWarfare.LOGGER.warn("[ScriptAPI] Error processing installed attachment: " + attachment.name() + " - " + e.getMessage());
+                        }
+                    }
                 }
             }
             return list;
@@ -170,7 +183,20 @@ public class ScriptAPI {
                     map.put(k.typeName, new ArrayList<String>());
                 }
                 v.forEach((name)->{
-                    map.get(k.typeName).add(ModularWarfare.attachmentTypes.get(name).type.displayName);
+                    if (ModularWarfare.attachmentTypes.containsKey(name) && ModularWarfare.attachmentTypes.get(name) != null) {
+                        AttachmentType attachmentType = ModularWarfare.attachmentTypes.get(name).type;
+                        if (attachmentType != null && attachmentType.displayName != null) {
+                            map.get(k.typeName).add(attachmentType.displayName);
+                        } else {
+                            if (ModularWarfare.DEV_ENV) {
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Attachment type or displayName is null for: " + name);
+                            }
+                        }
+                    } else {
+                        if (ModularWarfare.DEV_ENV) {
+                            ModularWarfare.LOGGER.warn("[ScriptAPI] Attachment not registered: " + name);
+                        }
+                    }
                 });
             });
             return map;
@@ -183,12 +209,38 @@ public class ScriptAPI {
             }
             if(((ItemGun)stack.getItem()).type.acceptedAmmo!=null) {
                 for(String name:((ItemGun)stack.getItem()).type.acceptedAmmo) {
-                    list.add(ModularWarfare.ammoTypes.get(name).type.displayName);
+                    if (ModularWarfare.ammoTypes.containsKey(name) && ModularWarfare.ammoTypes.get(name) != null) {
+                        AmmoType ammoType = ModularWarfare.ammoTypes.get(name).type;
+                        if (ammoType != null && ammoType.displayName != null) {
+                            list.add(ammoType.displayName);
+                        } else {
+                            if (ModularWarfare.DEV_ENV) {
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Ammo type or displayName is null for: " + name);
+                            }
+                        }
+                    } else {
+                        if (ModularWarfare.DEV_ENV) {
+                            ModularWarfare.LOGGER.warn("[ScriptAPI] Ammo not registered: " + name);
+                        }
+                    }
                 }  
             }
             if(((ItemGun)stack.getItem()).type.acceptedBullets!=null) {
                 for(String name:((ItemGun)stack.getItem()).type.acceptedBullets) {
-                    list.add(ModularWarfare.bulletTypes.get(name).type.displayName);
+                    if (ModularWarfare.bulletTypes.containsKey(name) && ModularWarfare.bulletTypes.get(name) != null) {
+                        BulletType bulletType = ModularWarfare.bulletTypes.get(name).type;
+                        if (bulletType != null && bulletType.displayName != null) {
+                            list.add(bulletType.displayName);
+                        } else {
+                            if (ModularWarfare.DEV_ENV) {
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet type or displayName is null for: " + name);
+                            }
+                        }
+                    } else {
+                        if (ModularWarfare.DEV_ENV) {
+                            ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet not registered: " + name);
+                        }
+                    }
                 }
             }
             return list;
@@ -221,7 +273,20 @@ public class ScriptAPI {
             }
             if(((ItemAmmo)stack.getItem()).type.subAmmo!=null) {
                 for(String name:((ItemAmmo)stack.getItem()).type.subAmmo) {
-                    list.add(ModularWarfare.bulletTypes.get(name).type.displayName);
+                    if (ModularWarfare.bulletTypes.containsKey(name) && ModularWarfare.bulletTypes.get(name) != null) {
+                        BulletType bulletType = ModularWarfare.bulletTypes.get(name).type;
+                        if (bulletType != null && bulletType.displayName != null) {
+                            list.add(bulletType.displayName);
+                        } else {
+                            if (ModularWarfare.DEV_ENV) {
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet type or displayName is null for: " + name);
+                            }
+                        }
+                    } else {
+                        if (ModularWarfare.DEV_ENV) {
+                            ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet not registered: " + name);
+                        }
+                    }
                 }
             }
             return list;
@@ -270,4 +335,23 @@ public class ScriptAPI {
         }
     }
     
+    public static class Logger {
+        public void warn(String message) {
+            if (ModularWarfare.DEV_ENV) {
+                ModularWarfare.LOGGER.warn("[ScriptAPI] " + message);
+            }
+        }
+        
+        public void error(String message) {
+            if (ModularWarfare.DEV_ENV) {
+                ModularWarfare.LOGGER.error("[ScriptAPI] " + message);
+            }
+        }
+        
+        public void info(String message) {
+            if (ModularWarfare.DEV_ENV) {
+                ModularWarfare.LOGGER.info("[ScriptAPI] " + message);
+            }
+        }
+    }
 }

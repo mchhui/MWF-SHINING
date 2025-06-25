@@ -201,30 +201,54 @@ public class GunTransformManager {
         }
     }
 
-    private static void loadStateAmmoData(ItemStack gunStack, int state, boolean useRatio) {
+    /**
+     * 获取指定状态的弹药转换选项
+     * @param gunType 枪械类型
+     * @param targetState 目标状态
+     * @return 弹药转换选项
+     */
+    private static GunType.TransformAmmoOption getAmmoOptionForState(GunType gunType, int targetState) {
+        if(gunType.transformAmmoOptions != null && gunType.transformAmmoOptions.containsKey(targetState)) {
+            return gunType.transformAmmoOptions.get(targetState);
+        }
+        return new GunType.TransformAmmoOption(true, false);
+    }
+
+    private static void loadStateAmmoData(ItemStack gunStack, int state, int stateBefore, GunType currentType, GunType targetType, GunType.TransformAmmoOption ammoOption) {
         if(!gunStack.hasTagCompound()) {
             gunStack.setTagCompound(new NBTTagCompound());
         }
 
         NBTTagCompound nbt = gunStack.getTagCompound();
-        GunType gunType = ((ItemGun)gunStack.getItem()).type;
 
-        String stateKey = gunType.internalAmmoStorage != null ? 
-            STATE_BULLET_PREFIX + state : 
-            STATE_AMMO_PREFIX + state;
-
-        if(gunType.internalAmmoStorage != null) {
+        if(targetType.internalAmmoStorage != null) {
             nbt.removeTag("ammocount");
             nbt.removeTag("bullet");
         } else {
             nbt.removeTag("ammo");
         }
 
+        if(ammoOption.sameAmmo && currentType.internalAmmoStorage == null && targetType.internalAmmoStorage == null) {
+            String beforeStateKey = STATE_AMMO_PREFIX + stateBefore;
+            if(nbt.hasKey(beforeStateKey)) {
+                NBTTagCompound beforeStateData = nbt.getCompoundTag(beforeStateKey);
+                if(beforeStateData.hasKey("tag")) {
+                    nbt.setTag("ammo", beforeStateData.copy());
+                    gunStack.setTagCompound(nbt);
+                    return;
+                }
+            }
+        }
+
+        String stateKey = targetType.internalAmmoStorage != null ? 
+            STATE_BULLET_PREFIX + state : 
+            STATE_AMMO_PREFIX + state;
+
         if(nbt.hasKey(stateKey)) {
             NBTTagCompound stateData = nbt.getCompoundTag(stateKey);
             
             float exactRatio;
-            if(useRatio) {
+            if(ammoOption.ammoRatio) {
                 if(nbt.hasKey(EXACT_AMMO_RATIO)) {
                     exactRatio = nbt.getFloat(EXACT_AMMO_RATIO);
                 } else {
@@ -235,7 +259,7 @@ public class GunTransformManager {
                             if(bulletData != null && bulletData.hasKey("ammocount")) {
                                 String stateId = key.substring(STATE_BULLET_PREFIX.length());
                                 String stateGunName = null;
-                                for(Map.Entry<Integer, String> entry : gunType.transformations.entrySet()) {
+                                for(Map.Entry<Integer, String> entry : currentType.transformations.entrySet()) {
                                     if(String.valueOf(entry.getKey()).equals(stateId)) {
                                         stateGunName = entry.getValue();
                                         break;
@@ -267,9 +291,9 @@ public class GunTransformManager {
                     }
                     
                     if(stateData.hasKey("ammocount")) {
-                        String currentGunName = gunType.internalName;
-                        if(gunType.internalAmmoStorage != null) {
-                            float ratio = (float)stateData.getInteger("ammocount") / gunType.internalAmmoStorage;
+                        String currentGunName = currentType.internalName;
+                        if(currentType.internalAmmoStorage != null) {
+                            float ratio = (float)stateData.getInteger("ammocount") / currentType.internalAmmoStorage;
                             exactRatio = Math.min(exactRatio, ratio);
                         }
                     }
@@ -292,11 +316,11 @@ public class GunTransformManager {
                 exactRatio = 1.0f;
             }
             
-            if(gunType.internalAmmoStorage != null) {
+            if(targetType.internalAmmoStorage != null) {
                 if(stateData.hasKey("ammocount")) {
-                    if(useRatio) {
+                    if(ammoOption.ammoRatio) {
                         int newAmmoCount = Math.min(
-                            Math.round(gunType.internalAmmoStorage * exactRatio),
+                            Math.round(targetType.internalAmmoStorage * exactRatio),
                             stateData.getInteger("ammocount")
                         );
                         nbt.setInteger("ammocount", newAmmoCount);
@@ -307,9 +331,9 @@ public class GunTransformManager {
                     if(stateData.hasKey("bullet")) {
                         nbt.setTag("bullet", stateData.getCompoundTag("bullet").copy());
                     } else {
-                        String defaultBulletName = gunType.defaultBullet;
-                        if(defaultBulletName == null && gunType.acceptedBullets != null && gunType.acceptedBullets.length > 0) {
-                            defaultBulletName = gunType.acceptedBullets[0];
+                        String defaultBulletName = targetType.defaultBullet;
+                        if(defaultBulletName == null && targetType.acceptedBullets != null && targetType.acceptedBullets.length > 0) {
+                            defaultBulletName = targetType.acceptedBullets[0];
                         }
                         if(defaultBulletName != null) {
                             ItemBullet defaultBullet = ModularWarfare.bulletTypes.get(defaultBulletName);
@@ -325,7 +349,7 @@ public class GunTransformManager {
                     NBTTagCompound targetAmmo = stateData.copy();
                     NBTTagCompound targetAmmoTag = targetAmmo.getCompoundTag("tag");
                     
-                    if(useRatio && targetAmmoTag.hasKey("ammocount")) {
+                    if(ammoOption.ammoRatio && targetAmmoTag.hasKey("ammocount")) {
                         String ammoId = targetAmmo.getString("id").replace("modularwarfare:", "");
                         ItemAmmo itemAmmo = ModularWarfare.ammoTypes.get(ammoId);
                         if(itemAmmo != null) {
@@ -371,12 +395,10 @@ public class GunTransformManager {
         if(currentGun.hasTagCompound()) {
             NBTTagCompound oldNBT = currentGun.getTagCompound();
  
-            if(currentType.inheritAttachments) {
-                for(AttachmentPresetEnum type : AttachmentPresetEnum.values()) {
-                    String key = "attachment_" + type.typeName;
-                    if(oldNBT.hasKey(key)) {
-                        newNBT.setTag(key, oldNBT.getTag(key).copy());
-                    }
+            for(AttachmentPresetEnum type : AttachmentPresetEnum.values()) {
+                String key = "attachment_" + type.typeName;
+                if(oldNBT.hasKey(key)) {
+                    newNBT.setTag(key, oldNBT.getTag(key).copy());
                 }
             }
             
@@ -405,7 +427,8 @@ public class GunTransformManager {
                 
                 newNBT.setInteger(CURRENT_STATE, targetGunState);
                 
-                loadStateAmmoData(newGun, targetGunState, currentType.transformAmmoRatio);
+                GunType.TransformAmmoOption ammoOption = getAmmoOptionForState(currentType, targetGunState);
+                loadStateAmmoData(newGun, targetGunState, currentGunState, currentType, targetType, ammoOption);
             }
             
             newNBT.setInteger("init", 1);

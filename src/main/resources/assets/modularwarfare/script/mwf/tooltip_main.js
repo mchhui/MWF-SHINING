@@ -54,7 +54,12 @@ function updateAmmoTooltip(stack, tiplist) {
                 tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.helpinfo.bullet"));
             }
             for (var i = 0; i < ammoBullets.size(); i++) {
-                tiplist.add(ScriptAPI.Lang.format("§7 -" + ammoBullets.get(i)));
+                var bulletName = ammoBullets.get(i);
+                if (bulletName != null) {
+                    tiplist.add(ScriptAPI.Lang.format("§7 -" + bulletName));
+                } else {
+                    ScriptAPI.Logger.warn("Accepted bullet at index " + i + " is null for ammo: " + ScriptAPI.Stack.getDisplayName(stack));
+                }
             }
         }
         return;
@@ -218,7 +223,12 @@ function updateGunTooltip(stack, tiplist) {
                 tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.helpinfo.ammo"));
             }
             for (var i = 0; i < ammoBullets.size(); i++) {
-                tiplist.add(ScriptAPI.Lang.format("§7 -" + ammoBullets.get(i)));
+                var ammoOrBulletName = ammoBullets.get(i);
+                if (ammoOrBulletName != null) {
+                    tiplist.add(ScriptAPI.Lang.format("§7 -" + ammoOrBulletName));
+                } else {
+                    ScriptAPI.Logger.warn("Accepted ammo/bullet at index " + i + " is null for gun: " + ScriptAPI.Stack.getDisplayName(stack));
+                }
             }
         }
 
@@ -227,10 +237,24 @@ function updateGunTooltip(stack, tiplist) {
             tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.helpinfo.attachment"));
             var types = attmap.keySet().toArray();
             for (var i = 0; i < types.length; i++) {
-                tiplist.add("§3" + ScriptAPI.Lang.format("mwf.dictionary." + types[i]) + ":");
-                var atts = attmap.get(types[i]);
-                for (var x = 0; x < atts.size(); x++) {
-                    tiplist.add(ScriptAPI.Lang.format("§7 -" + atts.get(x)));
+                var typeName = types[i];
+                if (typeName != null) {
+                    tiplist.add("§3" + ScriptAPI.Lang.format("mwf.dictionary." + typeName) + ":");
+                    var atts = attmap.get(typeName);
+                    if (atts != null) {
+                        for (var x = 0; x < atts.size(); x++) {
+                            var attachmentName = atts.get(x);
+                            if (attachmentName != null) {
+                                tiplist.add(ScriptAPI.Lang.format("§7 -" + attachmentName));
+                            } else {
+                                ScriptAPI.Logger.warn("Attachment at index " + x + " is null for type " + typeName + " in gun: " + ScriptAPI.Stack.getDisplayName(stack));
+                            }
+                        }
+                    } else {
+                        ScriptAPI.Logger.warn("Attachment list is null for type " + typeName + " in gun: " + ScriptAPI.Stack.getDisplayName(stack));
+                    }
+                } else {
+                    ScriptAPI.Logger.warn("Attachment type at index " + i + " is null for gun: " + ScriptAPI.Stack.getDisplayName(stack));
                 }
             }
         }
@@ -322,7 +346,12 @@ function updateGunTooltip(stack, tiplist) {
         if (attachmentList.size() > 0) {
             tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.attachmentinfo"));
             for (var i = 0; i < attachmentList.size(); i++) {
-                tiplist.add("§7- " + attachmentList.get(i));
+                var attachmentName = attachmentList.get(i);
+                if (attachmentName != null) {
+                    tiplist.add("§7- " + attachmentName);
+                } else {
+                    ScriptAPI.Logger.warn("Installed attachment at index " + i + " is null for gun: " + ScriptAPI.Stack.getDisplayName(stack));
+                }
             }
         }
     }
