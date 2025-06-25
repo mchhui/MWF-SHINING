@@ -330,14 +330,11 @@ public class GunType extends BaseType {
     public HashMap<Integer, String> transformations;
     
     /**
-     * 变换时是否按比例转换弹药
+     * 变换弹药选项配置
+     * key: 变换状态ID
+     * value: 弹药处理选项
      */
-    public boolean transformAmmoRatio = true;
-    
-    /**
-     * 变换时是否继承配件
-     */
-    public boolean inheritAttachments = true;
+    public HashMap<Integer, TransformAmmoOption> transformAmmoOptions;
     
     /**
      * 形态变换所需的配件条件
@@ -345,6 +342,28 @@ public class GunType extends BaseType {
      * value: 所需配件Map<AttachmentPresetEnum, String>，键为配件类型，值为配件内部名称
      */
     public HashMap<Integer, HashMap<AttachmentPresetEnum, String>> transformationRequirements;
+
+    /**
+     * 变换弹药选项类
+     */
+    public static class TransformAmmoOption {
+        /**
+         * 是否按比例转换弹药
+         */
+        public boolean ammoRatio = true;
+        
+        /**
+         * 是否完全同步弹匣NBT（仅对弹匣类武器有效）
+         */
+        public boolean sameAmmo = false;
+        
+        public TransformAmmoOption() {}
+        
+        public TransformAmmoOption(boolean ammoRatio, boolean sameAmmo) {
+            this.ammoRatio = ammoRatio;
+            this.sameAmmo = sameAmmo;
+        }
+    }
 
     public static boolean isPackAPunched(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {
