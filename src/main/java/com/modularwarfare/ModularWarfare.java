@@ -18,6 +18,7 @@ import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.commands.CommandClear;
 import com.modularwarfare.common.commands.CommandDebug;
+import com.modularwarfare.common.commands.CommandFX;
 import com.modularwarfare.common.commands.CommandNBT;
 import com.modularwarfare.common.commands.CommandPlay;
 import com.modularwarfare.common.commands.CommandStats;
@@ -585,6 +586,7 @@ public class ModularWarfare {
         event.registerServerCommand(new CommandKit());
         event.registerServerCommand(new CommandPlay());
         event.registerServerCommand(new CommandStats());
+        event.registerServerCommand(new CommandFX());
     }
 
     // Registers protected content-pack before preInit, to allow making a custom ResourcePackLoader allowing protected .zip
