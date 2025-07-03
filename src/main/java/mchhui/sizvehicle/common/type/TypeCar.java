@@ -1,6 +1,6 @@
 package mchhui.sizvehicle.common.type;
 
-public class TypeCar implements IType{
+public class TypeCar extends TypeBase{
     //基础驾驶参数
     public float maxForwardSpeed;
     public float maxBackwardSpeed;

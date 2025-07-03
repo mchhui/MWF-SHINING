@@ -27,7 +27,7 @@ import org.lwjgl.opengl.GL11;
 import mchhui.sizvehicle.client.handler.DebugHUDHandler;
 import mchhui.sizvehicle.common.physics.MassPoint;
 import mchhui.sizvehicle.common.physics.Pose;
-import mchhui.sizvehicle.common.type.IType;
+import mchhui.sizvehicle.common.type.TypeBase;
 import mchhui.sizvehicle.common.type.TypeCar;
 
 // 注意：该实体需要在EntityRegistry中注册，详见EntityRegistrySIZVehicle.java
@@ -298,7 +298,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     }
 
     @Override
-    public IType getType() {
+    public TypeBase getType() {
         // TODO Auto-generated method stub
         return this.type;
     }
