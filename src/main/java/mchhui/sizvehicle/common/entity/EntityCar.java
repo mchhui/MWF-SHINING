@@ -43,9 +43,11 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     private float speed = 0;
 
     //物理模拟
+    @Deprecated
     private MassPoint massPoint = new MassPoint();
 
     //姿态
+    @Deprecated
     private Pose pose = new Pose();
     private Pose lastPose = new Pose();
 
@@ -53,6 +55,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     private float inputPowerFactor = 0;
     private float inputAngleFactor = 0;
     private boolean inputBrake = false;
+    private boolean inputShift = false;
 
     public static enum CarState {
         Drive, Shift, Physics
@@ -62,6 +65,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         super(worldIn);
         setNoGravity(true);
         this.type = new TypeCar();
+        this.type.mass = 1000;
         this.type.maxForwardSpeed = 30;
         this.type.maxForwardAcceleration = 2.8f;
         this.type.maxBackwardSpeed = 3;
@@ -75,13 +79,35 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     public void onUpdate() {
         super.onUpdate();
         if (!this.world.isRemote) {
-            this.handleSteering();
-            this.updateSpeed();
-            Vector3f moveVec = pose.getForward().mul(this.speed * TIME_PERTICK);
-            this.move(MoverType.SELF, moveVec.x, moveVec.y, moveVec.z);
-            if (!this.lastPose.getQuaternion().equals(this.pose.getQuaternion())) {
+            this.getMassPoint().setMass(getMass());
+            if (inputShift) {
+                if (state == CarState.Drive) {
+                    Vector3f moveVec = this.getPose().getForward().mul(this.speed);
+                    this.getMassPoint().setSpeed(moveVec.x, moveVec.y, moveVec.z);
+                }
+                state = CarState.Shift;
+            } else {
+                if (state == CarState.Shift) {
+                    this.speed = this.getMassPoint().getSpeed().dot(this.getPose().getForward());
+                }
+                state = CarState.Drive;
+            }
+            switch (state) {
+                case Drive:
+                    this.handleSteering();
+                    this.updateSpeed();
+                    Vector3f moveVec = this.getPose().getForward().mul(this.speed * TIME_PERTICK);
+                    this.move(MoverType.SELF, moveVec.x, moveVec.y, moveVec.z);
+                    break;
+                case Shift:
+                    this.handleShift();
+                    break;
+                case Physics:
+                    break;
+            }
+            if (!this.lastPose.getQuaternion().equals(this.getPose().getQuaternion())) {
                 ServerSIZVehicle.boardCastVehiclePose(this);
-                this.lastPose.getQuaternion().set(this.pose.getQuaternion());
+                this.lastPose.getQuaternion().set(this.getPose().getQuaternion());
             }
         } else {
             this.world.spawnParticle(EnumParticleTypes.VILLAGER_HAPPY, this.posX, this.posY + 1, this.posZ, 0, 0, 0);
@@ -89,12 +115,39 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     }
 
     public void handleSteering() {
-        if (this.speed <= getMaxSafeSteeringSpeed()) {
-            this.pose.rotateYRad(this.speed * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * inputAngleFactor))) / 4.5f * TIME_PERTICK);
+        float carLength = 4.5f;
+        //wv是一个界定是否为安全驾驶的指标
+        float wv = getMaxSafeSteeringSpeed() * getMaxSafeSteeringSpeed() * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle()))) / carLength;
+        if (this.speed * this.speed * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * Math.abs(inputAngleFactor)))) / carLength <= wv) {
+            //使用完全抓地情况下车辆转弯半径推导而来
+            this.getPose().rotateYRad(this.speed * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * inputAngleFactor))) / carLength * TIME_PERTICK);
         } else {
-            float wv = getMaxSafeSteeringSpeed() * getMaxSafeSteeringSpeed() * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * inputAngleFactor))) / 4.5f;
-            this.pose.rotateYRad(wv / this.speed * TIME_PERTICK);
+            if (inputAngleFactor >= 0) {
+                this.getPose().rotateYRad(wv / this.speed * TIME_PERTICK);
+            } else {
+                this.getPose().rotateYRad(-wv / this.speed * TIME_PERTICK);
+            }
         }
+    }
+
+    public void handleShift() {
+        //显然 车必须得动才能漂移
+        if (this.getMassPoint().getSpeed().length() <= 0) {
+            return;
+        }
+        float carLength = 4.5f;
+        float fac = 0.8f;
+        this.getPose().rotateYRad(Math.min(getMaxSafeSteeringSpeed(), this.getMassPoint().getSpeed().length()) * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * inputAngleFactor))) / (carLength * fac) * TIME_PERTICK);
+        //如果速度向量与左向量或右向量越接近 减速越快
+        float sideFactor = this.getMassPoint().getSpeed().dot(this.getPose().getLeft()) / this.getMassPoint().getSpeed().length();
+        Vector3f dragForce = this.getMassPoint().getSpeed().normalize().negate().mul(Math.abs(sideFactor) * getMass() * 10 + getMass() * 2);
+        this.getMassPoint().addResistanceForce(dragForce.x, dragForce.y, dragForce.z);
+        float power = (inputPowerFactor > 0) ? 1 : ((inputPowerFactor < 0) ? 0 : 0.5f);
+        Vector3f pushForce = this.getPose().getForward().mul(Math.abs(sideFactor) * getMass() * 20 * power);
+        this.getMassPoint().addDriveForce(pushForce.x, pushForce.y, pushForce.z);
+        this.getMassPoint().update(TIME_PERTICK);
+        Vector3f moveVec = this.getMassPoint().getSpeed().mul(TIME_PERTICK);
+        this.move(MoverType.SELF, moveVec.x, moveVec.y, moveVec.z);
     }
 
     public void updateSpeed() {
@@ -108,7 +161,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
             if (this.inputPowerFactor != 0 && (this.speed <= getMaxSafeSteeringSpeed() || this.inputAngleFactor == 0)) {
                 this.speed += (this.inputPowerFactor >= 0) ? getMaxForwardAcceleration() * this.inputPowerFactor * TIME_PERTICK : getMaxBackwardAcceleration() * this.inputPowerFactor * TIME_PERTICK;
                 this.speed = Math.max(-getMaxBackwardSpeed(), Math.min(getMaxForwardSpeed(), this.speed));
-            } else {
+            } else if (this.speed != 0) {
                 float preSpeed = this.speed;
                 float acceleration = 0.01f;
                 if (this.onGround) {
@@ -124,6 +177,10 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
             }
         }
     };
+
+    public float getMass() {
+        return this.type.mass;
+    }
 
     public float getMaxForwardSpeed() {
         return this.type.maxForwardSpeed;
@@ -187,10 +244,11 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
      * @param angleFactor 转向因子 (-1.0 到 1.0)
      * @param brake 刹车状态
      */
-    public void setPlayerInput(float powerFactor, float angleFactor, boolean brake) {
+    public void setPlayerInput(float powerFactor, float angleFactor, boolean brake, boolean shift) {
         this.inputPowerFactor = powerFactor;
         this.inputAngleFactor = angleFactor;
         this.inputBrake = brake;
+        this.inputShift = shift;
     }
 
     @SideOnly(Side.CLIENT)

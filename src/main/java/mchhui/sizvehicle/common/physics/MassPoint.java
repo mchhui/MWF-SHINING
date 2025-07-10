@@ -43,7 +43,11 @@ public class MassPoint {
     }
 
     public Vector3f getSpeed() {
-        return speed;
+        return new Vector3f(speed);
+    }
+    
+    public Vector3f getSpeed(Vector3f dest) {
+        return dest.set(speed);
     }
 
     public Vector3f getLastDriveForce() {

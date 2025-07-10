@@ -1,6 +1,9 @@
 package mchhui.sizvehicle.common.type;
 
 public class TypeCar extends TypeBase{
+    //质量
+    public float mass;
+    
     //基础驾驶参数
     public float maxForwardSpeed;
     public float maxBackwardSpeed;
@@ -17,4 +20,7 @@ public class TypeCar extends TypeBase{
      * 二、若速度过大，则转向时转向角减小（更难转弯）
      * */
     public float maxSafeSteeringSpeed;
+    
+    public float shiftDragAcceleration;
+    public float shiftDragFactor;
 }

@@ -8,4 +8,6 @@ import org.joml.Vector3f;
 
 public class TypeBase {
     public String internalName;
+    
+    public ArrayList<Component> components;
 }
