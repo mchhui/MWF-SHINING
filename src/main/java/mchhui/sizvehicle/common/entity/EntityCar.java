@@ -37,7 +37,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     private static final float SPEED_THRESHOLD = 0.01f;
 
     private TypeCar type;
-    private CarState state;
+    private CarState state=CarState.Drive;
 
     //普通驾驶
     private float speed = 0;
@@ -72,7 +72,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         this.type.maxBackwardAcceleration = 1.5f;
         this.type.maxWhellAngle = 30;
         this.type.brakeAcceleration = 20;
-        this.type.maxSafeSteeringSpeed = 10;
+        this.type.maxSafeSteeringSpeed = 8;
     }
 
     @Override
@@ -88,10 +88,13 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
                 state = CarState.Shift;
             } else {
                 if (state == CarState.Shift) {
-                    this.speed = this.getMassPoint().getSpeed().dot(this.getPose().getForward());
+                    if (this.getMassPoint().getSpeed().dot(this.getPose().getLeft()) >= -1f && this.getMassPoint().getSpeed().dot(this.getPose().getLeft()) <= 1f) {
+                        this.speed = this.getMassPoint().getSpeed().dot(this.getPose().getForward());
+                        state = CarState.Drive;
+                    }
                 }
-                state = CarState.Drive;
             }
+            System.out.println(state);
             switch (state) {
                 case Drive:
                     this.handleSteering();
@@ -135,6 +138,9 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         if (this.getMassPoint().getSpeed().length() <= 0) {
             return;
         }
+        if (!this.onGround) {
+            return;
+        }
         float carLength = 4.5f;
         float fac = 0.8f;
         this.getPose().rotateYRad(Math.min(getMaxSafeSteeringSpeed(), this.getMassPoint().getSpeed().length()) * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * inputAngleFactor))) / (carLength * fac) * TIME_PERTICK);
@@ -142,6 +148,11 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         float sideFactor = this.getMassPoint().getSpeed().dot(this.getPose().getLeft()) / this.getMassPoint().getSpeed().length();
         Vector3f dragForce = this.getMassPoint().getSpeed().normalize().negate().mul(Math.abs(sideFactor) * getMass() * 10 + getMass() * 2);
         this.getMassPoint().addResistanceForce(dragForce.x, dragForce.y, dragForce.z);
+        if (!inputShift) {
+            IBlockState state = this.world.getBlockState(this.getPosition().down());
+            Vector3f sideForce = this.getPose().getLeft().mul((sideFactor > 0 ? -1 : 1) * 10 * getMass() * getRelativeFrictionCoefficient() * state.getBlock().getSlipperiness(state, world, this.getPosition().down(), this));
+            this.getMassPoint().addResistanceForce(sideForce.x, sideForce.y, sideForce.z);
+        }
         float power = (inputPowerFactor > 0) ? 1 : ((inputPowerFactor < 0) ? 0 : 0.5f);
         Vector3f pushForce = this.getPose().getForward().mul(Math.abs(sideFactor) * getMass() * 20 * power);
         this.getMassPoint().addDriveForce(pushForce.x, pushForce.y, pushForce.z);
@@ -151,14 +162,14 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     }
 
     public void updateSpeed() {
-        if (this.inputBrake) {
+        if (this.inputBrake && this.onGround) {
             if (this.speed != 0) {
                 float preSpeed = this.speed;
                 this.speed += (this.speed >= 0) ? -getBrakeAcceleration() * TIME_PERTICK : getBrakeAcceleration() * TIME_PERTICK;
                 this.speed = ((preSpeed > 0 && this.speed < 0) || (preSpeed < 0 && this.speed > 0)) ? 0 : this.speed;
             }
         } else {
-            if (this.inputPowerFactor != 0 && (this.speed <= getMaxSafeSteeringSpeed() || this.inputAngleFactor == 0)) {
+            if (this.inputPowerFactor != 0 && (this.speed <= getMaxSafeSteeringSpeed() || this.inputAngleFactor == 0) && this.onGround) {
                 this.speed += (this.inputPowerFactor >= 0) ? getMaxForwardAcceleration() * this.inputPowerFactor * TIME_PERTICK : getMaxBackwardAcceleration() * this.inputPowerFactor * TIME_PERTICK;
                 this.speed = Math.max(-getMaxBackwardSpeed(), Math.min(getMaxForwardSpeed(), this.speed));
             } else if (this.speed != 0) {
