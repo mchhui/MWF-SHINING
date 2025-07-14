@@ -15,7 +15,6 @@ import org.lwjgl.BufferUtils;
 import net.minecraft.client.renderer.GlStateManager;
 
 public class Model {
-     private static final FloatBuffer MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
      
      public final GltfRenderModel model;
      public boolean initCal = false;
@@ -113,22 +112,5 @@ public class Model {
              return new Matrix4f();
          }
          return state.mat;
-     }
-     
-     public void applyGlobalTransformToOther(String binding, Runnable run) {
-         if (!initCal) {
-             return;
-         }
-         NodeState state = model.nodeStates.get(binding);
-         if(state == null) {
-             return;
-         }
-         GlStateManager.pushMatrix();
-         if (state != null) {
-             GlStateManager.multMatrix(state.mat.get(MATRIX_BUFFER));
-         }
-         run.run();
-         
-         GlStateManager.popMatrix();
      }
 }
