@@ -45,7 +45,8 @@ import mchhui.sizvehicle.common.type.TypeCar;
 
 // 注意：该实体需要在EntityRegistry中注册，详见EntityRegistrySIZVehicle.java
 public class EntityCar extends EntitySIZVehicle implements IControllableVehicleGround, IPhysicsObject {
-    private static final Model model = new Model(new GltfRenderModel(GltfDataModel.load(new ResourceLocation("modularwarfare:gltf/赛博基尼.glb"))));
+    // 移除静态model字段，因为它会在服务器端触发LWJGL类加载
+    // private static final Model model = new Model(new GltfRenderModel(GltfDataModel.load(new ResourceLocation("modularwarfare:gltf/赛博基尼.glb"))));
 
     private static final float TIME_PERTICK = 1 / 20f;
     private static final Vector3f AXI_Z = new Vector3f(0, 0, 1);
@@ -102,6 +103,13 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     private static final float MIN_ANGLE_THRESHOLD = 1f; // 最小角度阈值，小于此值的变化将被忽略
     private static final float LARGE_ANGLE_THRESHOLD = 15.0f; // 大角度阈值，超过此值的变化将立即响应
 
+    // 轮子位置缓存（由客户端发送给服务器）
+    private Matrix4f leftFrontOffset;
+    private Matrix4f rightFrontOffset;
+    private Matrix4f leftBackOffset;
+    private Matrix4f rightBackOffset;
+    private boolean wheelOffsetsInitialized = false;
+
     public static enum CarState {
         Drive, Shift, Physics
     }
@@ -117,6 +125,31 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         this.type.maxWhellAngle = 30;
         this.type.brakeAcceleration = 20;
         this.type.maxSafeSteeringSpeed = 8;
+        
+        // 初始化默认轮子位置（如果客户端没有发送）
+        this.leftFrontOffset = new Matrix4f().translate(-1.0f, -0.5f, 2.0f);
+        this.rightFrontOffset = new Matrix4f().translate(1.0f, -0.5f, 2.0f);
+        this.leftBackOffset = new Matrix4f().translate(-1.0f, -0.5f, -2.0f);
+        this.rightBackOffset = new Matrix4f().translate(1.0f, -0.5f, -2.0f);
+    }
+
+    /**
+     * 设置轮子位置偏移量（由客户端通过网络包调用）
+     */
+    public void setWheelOffsets(Matrix4f leftFrontOffset, Matrix4f rightFrontOffset, 
+                               Matrix4f leftBackOffset, Matrix4f rightBackOffset) {
+        this.leftFrontOffset = new Matrix4f(leftFrontOffset);
+        this.rightFrontOffset = new Matrix4f(rightFrontOffset);
+        this.leftBackOffset = new Matrix4f(leftBackOffset);
+        this.rightBackOffset = new Matrix4f(rightBackOffset);
+        this.wheelOffsetsInitialized = true;
+    }
+
+    /**
+     * 检查轮子位置是否已初始化
+     */
+    public boolean areWheelOffsetsInitialized() {
+        return wheelOffsetsInitialized;
     }
 
     @Override
@@ -218,14 +251,15 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     }
 
     public void terrainTest() {
-        model.updateAnimation(0, false);
+        // 使用缓存的轮子位置偏移量
         float testHeight=stepHeight;
         Vector3f forwardLeft = new Vector3f();
         Vector3f forwardRight = new Vector3f();
         Vector3f backwardLeft = new Vector3f();
         Vector3f backwardRight = new Vector3f();
+        
         forwardLeft:{
-            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(model.getGlobalTransform("l_f_tp")));
+            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(leftFrontOffset));
             AxisAlignedBB testAABB = new AxisAlignedBB(testPoint.x, testPoint.y, testPoint.z, testPoint.x, testPoint.y, testPoint.z).grow(0.2f, testHeight, 0.2f);
             List<AxisAlignedBB> result = world.getCollisionBoxes(null, testAABB);
             double maxY = posY - testHeight;
@@ -238,7 +272,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
             break forwardLeft;
         }
         forwardRight:{
-            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(model.getGlobalTransform("r_f_tp")));
+            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(rightFrontOffset));
             AxisAlignedBB testAABB = new AxisAlignedBB(testPoint.x, testPoint.y, testPoint.z, testPoint.x, testPoint.y, testPoint.z).grow(0.2f, testHeight, 0.2f);
             List<AxisAlignedBB> result = world.getCollisionBoxes(null, testAABB);
             double maxY = posY - testHeight;
@@ -251,7 +285,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
             break forwardRight;
         }
         backwardLeft:{
-            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(model.getGlobalTransform("l_b_tp")));
+            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(leftBackOffset));
             AxisAlignedBB testAABB = new AxisAlignedBB(testPoint.x, testPoint.y, testPoint.z, testPoint.x, testPoint.y, testPoint.z).grow(0.2f, testHeight, 0.2f);
             List<AxisAlignedBB> result = world.getCollisionBoxes(null, testAABB);
             double maxY = posY - testHeight;
@@ -264,7 +298,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
             break backwardLeft;
         }
         backwardRight:{
-            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(model.getGlobalTransform("r_b_tp")));
+            Vector4f testPoint = new Vector4f(0, 0, 0, 1).mul(new Matrix4f().translate((float)posX, (float)posY, (float)posZ).rotate(getPose().getQuaternion()).mul(rightBackOffset));
             AxisAlignedBB testAABB = new AxisAlignedBB(testPoint.x, testPoint.y, testPoint.z, testPoint.x, testPoint.y, testPoint.z).grow(0.2f, testHeight, 0.2f);
             List<AxisAlignedBB> result = world.getCollisionBoxes(null, testAABB);
             double maxY = posY - testHeight;
