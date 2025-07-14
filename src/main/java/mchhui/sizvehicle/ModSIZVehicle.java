@@ -1,7 +1,8 @@
 package mchhui.sizvehicle;
 
 import mchhui.sizvehicle.client.handler.ClientInputHandler;
-import mchhui.sizvehicle.client.handler.DebugHUDHandler;
+import mchhui.sizvehicle.client.handler.DebugRenderHandler;
+import mchhui.sizvehicle.client.handler.RenderPlayerHandler;
 import mchhui.sizvehicle.client.render.SIZEntityRenderFactory;
 import mchhui.sizvehicle.common.entity.EntityCar;
 import mchhui.sizvehicle.network.NetworkManager;
@@ -24,16 +25,17 @@ public class ModSIZVehicle {
     public void preInit(FMLPreInitializationEvent event) {
         EntityRegistry.registerModEntity(new ResourceLocation("sizvehicle", "siz_vehicle"), EntityCar.class, "siz_vehicle", 1, this, 80, 3, true);
         NetworkManager.init();
-        if(FMLCommonHandler.instance().getSide()==Side.CLIENT) {
+        if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
             RenderingRegistry.registerEntityRenderingHandler(EntityCar.class, SIZEntityRenderFactory.FACTORY);
         }
     }
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
-        if(FMLCommonHandler.instance().getSide()==Side.CLIENT) {
+        if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
             MinecraftForge.EVENT_BUS.register(new ClientInputHandler());
-            MinecraftForge.EVENT_BUS.register(new DebugHUDHandler());
+            MinecraftForge.EVENT_BUS.register(new DebugRenderHandler());
+            MinecraftForge.EVENT_BUS.register(new RenderPlayerHandler());
         }
     }
 

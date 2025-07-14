@@ -1,7 +1,15 @@
 package mchhui.sizvehicle.common.entity;
 
 public interface IControllableVehicleGround {
-    public void setPlayerInput(float powerFactor, float angleFactor, boolean brake,boolean shift);
+    public void setPlayerInput(float powerFactor, float angleFactor, boolean brake, boolean shift);
+
+    public float getInputPowerFactor();
+
+    public float getInputAngleFactor();
+
+    public boolean isInputBrake();
+
+    public boolean isInputShift();
 
     public float getMaxForwardSpeed();
 

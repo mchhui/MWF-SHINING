@@ -3,12 +3,12 @@ package mchhui.sizvehicle.network;
 import net.minecraft.entity.player.EntityPlayerMP;
 import mchhui.sizvehicle.common.entity.EntityCar;
 import mchhui.sizvehicle.network.server.PacketVehicleDebugState;
-import mchhui.sizvehicle.network.server.PacketVehiclePose;
+import mchhui.sizvehicle.network.server.PacketVehicleState;
 
 public class ServerSIZVehicle {
     public static void boardCastVehiclePose(EntityCar vehicle) {
         // 创建车辆状态同步数据包
-        PacketVehiclePose packet = new PacketVehiclePose(vehicle);
+        PacketVehicleState packet = new PacketVehicleState(vehicle);
 
         // 向所有追踪该车辆的玩家发送数据包
         NetworkManager.sendToAllTracking(packet, vehicle);

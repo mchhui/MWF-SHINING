@@ -4,7 +4,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import io.netty.buffer.ByteBuf;
-import mchhui.sizvehicle.client.handler.DebugHUDHandler;
+import mchhui.sizvehicle.client.handler.DebugRenderHandler;
 import mchhui.sizvehicle.common.entity.EntityCar;
 import mchhui.sizvehicle.common.physics.MassPoint;
 import net.minecraft.client.Minecraft;
@@ -22,6 +22,10 @@ public class PacketVehicleDebugState implements IMessage {
     private Vector3f speed;
     private Vector3f driveForce;
     private Vector3f resistanceForce;
+    private Vector3f debugPoint1;
+    private Vector3f debugPoint2;
+    private Vector3f debugPoint3;
+    private Vector3f debugPoint4;
     
     public PacketVehicleDebugState() {}
     
@@ -32,6 +36,11 @@ public class PacketVehicleDebugState implements IMessage {
         this.speed = new Vector3f(massPoint.getSpeed());
         this.driveForce = new Vector3f(massPoint.getLastDriveForce());
         this.resistanceForce = new Vector3f(massPoint.getLastResistanceForce());
+        // 获取 debugPoint 数据
+        this.debugPoint1 = vehicle.debugPoint1;
+        this.debugPoint2 = vehicle.debugPoint2;
+        this.debugPoint3 = vehicle.debugPoint3;
+        this.debugPoint4 = vehicle.debugPoint4;
     }
     
     @Override
@@ -51,6 +60,26 @@ public class PacketVehicleDebugState implements IMessage {
         float resistY = buf.readFloat();
         float resistZ = buf.readFloat();
         resistanceForce = new Vector3f(resistX, resistY, resistZ);
+        
+        float debugX = buf.readFloat();
+        float debugY = buf.readFloat();
+        float debugZ = buf.readFloat();
+        debugPoint1 = new Vector3f(debugX, debugY, debugZ);
+        
+        float debug2X = buf.readFloat();
+        float debug2Y = buf.readFloat();
+        float debug2Z = buf.readFloat();
+        debugPoint2 = new Vector3f(debug2X, debug2Y, debug2Z);
+        
+        float debug3X = buf.readFloat();
+        float debug3Y = buf.readFloat();
+        float debug3Z = buf.readFloat();
+        debugPoint3 = new Vector3f(debug3X, debug3Y, debug3Z);
+        
+        float debug4X = buf.readFloat();
+        float debug4Y = buf.readFloat();
+        float debug4Z = buf.readFloat();
+        debugPoint4 = new Vector3f(debug4X, debug4Y, debug4Z);
     }
     
     @Override
@@ -65,6 +94,18 @@ public class PacketVehicleDebugState implements IMessage {
         buf.writeFloat(resistanceForce.x);
         buf.writeFloat(resistanceForce.y);
         buf.writeFloat(resistanceForce.z);
+        buf.writeFloat(debugPoint1.x);
+        buf.writeFloat(debugPoint1.y);
+        buf.writeFloat(debugPoint1.z);
+        buf.writeFloat(debugPoint2.x);
+        buf.writeFloat(debugPoint2.y);
+        buf.writeFloat(debugPoint2.z);
+        buf.writeFloat(debugPoint3.x);
+        buf.writeFloat(debugPoint3.y);
+        buf.writeFloat(debugPoint3.z);
+        buf.writeFloat(debugPoint4.x);
+        buf.writeFloat(debugPoint4.y);
+        buf.writeFloat(debugPoint4.z);
     }
     
     /**
@@ -77,12 +118,16 @@ public class PacketVehicleDebugState implements IMessage {
             // 在客户端主线程中处理
             Minecraft.getMinecraft().addScheduledTask(() -> {
                 // 更新DebugHUDHandler的数据
-                DebugHUDHandler debugHandler = DebugHUDHandler.INSTANCE;
+                DebugRenderHandler debugHandler = DebugRenderHandler.INSTANCE;
                 if (debugHandler != null) {
                     debugHandler.entityID = message.entityID;
                     debugHandler.speed = message.speed;
                     debugHandler.driveForce = message.driveForce;
                     debugHandler.resistanceForce = message.resistanceForce;
+                    debugHandler.debugPoint1 = message.debugPoint1;
+                    debugHandler.debugPoint2 = message.debugPoint2;
+                    debugHandler.debugPoint3 = message.debugPoint3;
+                    debugHandler.debugPoint4 = message.debugPoint4;
                 }
             });
             

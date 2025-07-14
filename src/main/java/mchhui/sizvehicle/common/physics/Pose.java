@@ -50,27 +50,27 @@ public class Pose {
     }
 
     public void rotateX(float angle) {
-        pose.rotateLocalX(Math.toRadians(angle));
+        pose.rotateX(Math.toRadians(angle));
     }
 
     public void rotateY(float angle) {
-        pose.rotateLocalY(Math.toRadians(angle));
+        pose.rotateY(Math.toRadians(angle));
     }
 
     public void rotateZ(float angle) {
-        pose.rotateLocalZ(Math.toRadians(angle));
+        pose.rotateZ(Math.toRadians(angle));
     }
 
     public void rotateXRad(float angle) {
-        pose.rotateLocalX(angle);
+        pose.rotateX(angle);
     }
 
     public void rotateYRad(float angle) {
-        pose.rotateLocalY(angle);
+        pose.rotateY(angle);
     }
 
     public void rotateZRad(float angle) {
-        pose.rotateLocalZ(angle);
+        pose.rotateZ(angle);
     }
 
     @SideOnly(Side.CLIENT)

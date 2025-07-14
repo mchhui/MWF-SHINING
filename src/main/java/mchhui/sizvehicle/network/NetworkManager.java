@@ -2,7 +2,7 @@ package mchhui.sizvehicle.network;
 
 import mchhui.sizvehicle.ModSIZVehicle;
 import mchhui.sizvehicle.network.client.PacketPlayerDriveInput;
-import mchhui.sizvehicle.network.server.PacketVehiclePose;
+import mchhui.sizvehicle.network.server.PacketVehicleState;
 import mchhui.sizvehicle.network.server.PacketVehicleDebugState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -28,7 +28,7 @@ public class NetworkManager {
     public static void init() {
         
         // 注册车辆状态同步数据包
-        registerPacket(PacketVehiclePose.class, PacketVehiclePose.Handler.class, Side.CLIENT);
+        registerPacket(PacketVehicleState.class, PacketVehicleState.Handler.class, Side.CLIENT);
         
         // 注册车辆调试状态数据包
         registerPacket(PacketVehicleDebugState.class, PacketVehicleDebugState.Handler.class, Side.CLIENT);
