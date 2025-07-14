@@ -653,8 +653,10 @@ public class EnhancedStateMachine {
                 }
             } else if (reloadType == ReloadType.Full) {
                 if (type.acceptedAmmo != null) {
-                    if (reloadPhase == Phase.POST || reloadPhase == Phase.SECOND) {
+                    if (reloadPhase == Phase.POST) {
                         packet = new PacketGunReloadEnhancedStop(0, true, true);
+                    } else if (reloadPhase == Phase.SECOND) {
+                        packet = new PacketGunReloadEnhancedStop(0, true, false);
                     } else if (reloadPhase == Phase.FIRST) {
                         packet = new PacketGunReloadEnhancedStop(0, true, false);
                     } else {
