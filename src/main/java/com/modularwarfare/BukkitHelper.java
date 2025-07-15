@@ -60,45 +60,45 @@ public class BukkitHelper {
         // Bukkit.getPluginManager().callEvent(bukkitEvent);
     }
 
-    @SubscribeEvent
-    public static void onAttachmentLoad(WeaponAttachmentEvent.Load event) {
-        scriptEngine.put("event", event);
-        try {
-            scriptEngine.eval(
-                "       var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),false,false,null,toBukkitItemstack(event.gun),toBukkitItemstack(event.attach));\r\n"
-                + "       Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n"
-                + "       if(bukkitEvent.isCanceled){\r\n" + "                event.setCanceled(true);\r\n"
-                + "       }\r\n" + "       event.attach=toForgeItemstack(bukkitEvent.loadAttach);");
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
-        // var bukkitEvent=new
-        // BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),false,false,null,toBukkitItemstack(event.gun),toBukkitItemstack(event.attach));
-        // Bukkit.getPluginManager().callEvent(bukkitEvent);
-        // if(bukkitEvent.isCanceled){
-        // event.setCanceled(true);
-        // }
-        // event.attach=toForgeItemstack(bukkitEvent.loadAttach);
-    }
+    // @SubscribeEvent
+    // public static void onAttachmentLoad(WeaponAttachmentEvent.Load event) {
+    //     scriptEngine.put("event", event);
+    //     try {
+    //         scriptEngine.eval(
+    //             "       var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),false,false,null,toBukkitItemstack(event.gun),toBukkitItemstack(event.attach));\r\n"
+    //             + "       Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n"
+    //             + "       if(bukkitEvent.isCanceled){\r\n" + "                event.setCanceled(true);\r\n"
+    //             + "       }\r\n" + "       event.attach=toForgeItemstack(bukkitEvent.loadAttach);");
+    //     } catch (ScriptException e) {
+    //         e.printStackTrace();
+    //     }
+    //     // var bukkitEvent=new
+    //     // BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),false,false,null,toBukkitItemstack(event.gun),toBukkitItemstack(event.attach));
+    //     // Bukkit.getPluginManager().callEvent(bukkitEvent);
+    //     // if(bukkitEvent.isCanceled){
+    //     // event.setCanceled(true);
+    //     // }
+    //     // event.attach=toForgeItemstack(bukkitEvent.loadAttach);
+    // }
 
-    @SubscribeEvent
-    public static void onAttachmentUnload(WeaponAttachmentEvent.Unload event) {
-        scriptEngine.put("event", event);
-        try {
-            scriptEngine.eval(
-                "var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),true,event.unloadAll,event.type,toBukkitItemstack(event.gun),null);\r\n"
-                + "Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n" + "if(bukkitEvent.isCanceled){\r\n"
-                + "    event.setCanceled(true);\r\n" + "}");
-        } catch (ScriptException e) {
-            e.printStackTrace();
-        }
-        // var bukkitEvent=new
-        // BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),true,event.unloadAll,event.type,toBukkitItemstack(event.gun),null);
-        // Bukkit.getPluginManager().callEvent(bukkitEvent);
-        // if(bukkitEvent.isCanceled){
-        // event.setCanceled(true);
-        // }
-    }
+    // @SubscribeEvent
+    // public static void onAttachmentUnload(WeaponAttachmentEvent.Unload event) {
+    //     scriptEngine.put("event", event);
+    //     try {
+    //         scriptEngine.eval(
+    //             "var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),true,event.unloadAll,event.type,toBukkitItemstack(event.gun),null);\r\n"
+    //             + "Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n" + "if(bukkitEvent.isCanceled){\r\n"
+    //             + "    event.setCanceled(true);\r\n" + "}");
+    //     } catch (ScriptException e) {
+    //         e.printStackTrace();
+    //     }
+    //     // var bukkitEvent=new
+    //     // BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),true,event.unloadAll,event.type,toBukkitItemstack(event.gun),null);
+    //     // Bukkit.getPluginManager().callEvent(bukkitEvent);
+    //     // if(bukkitEvent.isCanceled){
+    //     // event.setCanceled(true);
+    //     // }
+    // }
 
     public static class BukkitEntityHeadShotEvent extends Event {
         public static final HandlerList handlerList = new HandlerList();

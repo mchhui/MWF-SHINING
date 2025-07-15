@@ -2,6 +2,7 @@ package mchhui.sizvehicle.network;
 
 import mchhui.sizvehicle.ModSIZVehicle;
 import mchhui.sizvehicle.network.client.PacketPlayerDriveInput;
+import mchhui.sizvehicle.network.client.PacketWheelPositions;
 import mchhui.sizvehicle.network.server.PacketVehicleState;
 import mchhui.sizvehicle.network.server.PacketVehicleDebugState;
 import net.minecraft.entity.Entity;
@@ -35,6 +36,9 @@ public class NetworkManager {
         
         // 注册玩家驾驶输入数据包
         registerPacket(PacketPlayerDriveInput.class, PacketPlayerDriveInput.Handler.class, Side.SERVER);
+        
+        // 注册轮子位置数据包
+        registerPacket(PacketWheelPositions.class, PacketWheelPositions.Handler.class, Side.SERVER);
     }
     
     /**
