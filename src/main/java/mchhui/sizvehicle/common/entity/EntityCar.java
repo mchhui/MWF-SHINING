@@ -43,10 +43,7 @@ import mchhui.sizvehicle.common.physics.Pose;
 import mchhui.sizvehicle.common.type.TypeBase;
 import mchhui.sizvehicle.common.type.TypeCar;
 
-// 注意：该实体需要在EntityRegistry中注册，详见EntityRegistrySIZVehicle.java
 public class EntityCar extends EntitySIZVehicle implements IControllableVehicleGround, IPhysicsObject {
-    // 移除静态model字段，因为它会在服务器端触发LWJGL类加载
-    // private static final Model model = new Model(new GltfRenderModel(GltfDataModel.load(new ResourceLocation("modularwarfare:gltf/赛博基尼.glb"))));
 
     private static final float TIME_PERTICK = 1 / 20f;
     private static final Vector3f AXI_Z = new Vector3f(0, 0, 1);
@@ -55,22 +52,18 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     private TypeCar type;
     private CarState state = CarState.Drive;
 
-    //普通驾驶
     public float speed = 0;
     public float lastSpeed = 0;
 
-    //物理模拟
     @Deprecated
     private MassPoint massPoint = new MassPoint();
 
-    //姿态
     public Pose syncPose = new Pose();
     @Deprecated
     private Pose pose = new Pose();
     @Deprecated
     private Pose lastPose = new Pose();
 
-    //输入
     @Deprecated
     private float inputPowerFactor = 0;
     @Deprecated
@@ -85,7 +78,6 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     public boolean lastInputBrake = false;
     public boolean lastInputShift = false;
 
-    //客户端效果参数
     public float whellProcess;
     public float lastWhellProcess;
     
@@ -96,14 +88,12 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     public Vector3f debugPoint3 = new Vector3f();
     public Vector3f debugPoint4 = new Vector3f();
     
-    // 姿态缓冲变量，用于平滑微小抖动
     private float lastRollAngle = 0.0f;
     private float lastPitchAngle = 0.0f;
-    private static final float SMOOTHING_FACTOR = 0.3f; // 平滑因子，值越小越平滑
-    private static final float MIN_ANGLE_THRESHOLD = 1f; // 最小角度阈值，小于此值的变化将被忽略
-    private static final float LARGE_ANGLE_THRESHOLD = 15.0f; // 大角度阈值，超过此值的变化将立即响应
+    private static final float SMOOTHING_FACTOR = 0.3f;
+    private static final float MIN_ANGLE_THRESHOLD = 1f;
+    private static final float LARGE_ANGLE_THRESHOLD = 15.0f;
 
-    // 轮子位置缓存（由客户端发送给服务器）
     private Matrix4f leftFrontOffset;
     private Matrix4f rightFrontOffset;
     private Matrix4f leftBackOffset;
@@ -122,11 +112,12 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         this.type.maxForwardAcceleration = 2.8f;
         this.type.maxBackwardSpeed = 3;
         this.type.maxBackwardAcceleration = 1.5f;
-        this.type.maxWhellAngle = 30;
+        this.type.maxWhellAngle = 20;
         this.type.brakeAcceleration = 20;
-        this.type.maxSafeSteeringSpeed = 8;
+        this.type.maxSafeSteeringSpeed = 15;
+        this.type.relativeFrictionCoefficient = 1.0f;
+        this.type.relativeFrictionCoefficientInSteering = 2.2f;
         
-        // 初始化默认轮子位置（如果客户端没有发送）
         this.leftFrontOffset = new Matrix4f().translate(-1.0f, -0.5f, 2.0f);
         this.rightFrontOffset = new Matrix4f().translate(1.0f, -0.5f, 2.0f);
         this.leftBackOffset = new Matrix4f().translate(-1.0f, -0.5f, -2.0f);
@@ -134,7 +125,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     }
 
     /**
-     * 设置轮子位置偏移量（由客户端通过网络包调用）
+     * 设置轮子位置偏移量
      */
     public void setWheelOffsets(Matrix4f leftFrontOffset, Matrix4f rightFrontOffset, 
                                Matrix4f leftBackOffset, Matrix4f rightBackOffset) {
@@ -220,7 +211,6 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
             lastInputShift = isInputShift();
             this.getLastPose().getQuaternion().set(this.getPose().getQuaternion());
             if (this.getPassengers().size() > 0) {
-//                System.out.println(this.state+","+lastInputPowerFactor+","+inputAngleFactor+","+lastInputBrake+","+lastInputShift+","+this.speed+","+this.onGround);
                 ServerSIZVehicle.sendDebugVehicleState((EntityPlayerMP)this.getPassengers().get(0));
             }
         } else {
@@ -315,58 +305,43 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         debugPoint3.set(backwardLeft.x,backwardLeft.y,backwardLeft.z);
         debugPoint4.set(backwardRight.x,backwardRight.y,backwardRight.z);
         
-        // 根据四个轮子坐标调整车辆姿态
-        float centerHeight = (float)(forwardLeft.y+forwardRight.y+backwardLeft.y+backwardRight.y)/4;
-        float carLength = 4.5f; // 车辆长度
-        float carWidth = 2.0f;  // 车辆宽度
+        float carLength = 4.5f;
+        float carWidth = 2.0f;
         
-        // 计算roll角度（左右倾斜）
         float leftAvgHeight = (forwardLeft.y + backwardLeft.y) / 2.0f;
         float rightAvgHeight = (forwardRight.y + backwardRight.y) / 2.0f;
         float heightDiffLR = rightAvgHeight - leftAvgHeight;
         float rawRollAngle = (float) Math.toDegrees(Math.atan2(heightDiffLR, carWidth));
         
-        // 计算pitch角度（前后俯仰）
         float frontAvgHeight = (forwardLeft.y + forwardRight.y) / 2.0f;
         float backAvgHeight = (backwardLeft.y + backwardRight.y) / 2.0f;
         float heightDiffFB = backAvgHeight - frontAvgHeight;
         float rawPitchAngle = (float) Math.toDegrees(Math.atan2(heightDiffFB, carLength));
         
-        // 应用智能缓冲系统，平衡平滑性和响应性
         float rollAngleDiff = rawRollAngle - lastRollAngle;
         float pitchAngleDiff = rawPitchAngle - lastPitchAngle;
         
         float smoothedRollAngle, smoothedPitchAngle;
         
-        // 处理roll角度
         if (Math.abs(rollAngleDiff) < MIN_ANGLE_THRESHOLD) {
-            // 微小变化：忽略
             smoothedRollAngle = lastRollAngle;
         } else if (Math.abs(rollAngleDiff) > LARGE_ANGLE_THRESHOLD) {
-            // 大变化：立即响应
             smoothedRollAngle = rawRollAngle;
         } else {
-            // 中等变化：平滑过渡
             smoothedRollAngle = lastRollAngle + rollAngleDiff * SMOOTHING_FACTOR;
         }
         
-        // 处理pitch角度
         if (Math.abs(pitchAngleDiff) < MIN_ANGLE_THRESHOLD) {
-            // 微小变化：忽略
             smoothedPitchAngle = lastPitchAngle;
         } else if (Math.abs(pitchAngleDiff) > LARGE_ANGLE_THRESHOLD) {
-            // 大变化：立即响应
             smoothedPitchAngle = rawPitchAngle;
         } else {
-            // 中等变化：平滑过渡
             smoothedPitchAngle = lastPitchAngle + pitchAngleDiff * SMOOTHING_FACTOR;
         }
         
-        // 更新上一帧的角度值
         lastRollAngle = smoothedRollAngle;
         lastPitchAngle = smoothedPitchAngle;
         
-        // 应用智能缓冲后的roll和pitch角度
         this.getPose().rotateZ(-smoothedRollAngle);
         this.getPose().rotateX(smoothedPitchAngle);
     }
@@ -444,19 +419,16 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
-        // TODO Auto-generated method stub
         return getEntityBoundingBox().grow(2, 0, 2);
     }
 
     @Override
     public AxisAlignedBB getCollisionBoundingBox() {
-        // TODO Auto-generated method stub
         return super.getCollisionBoundingBox();
     }
 
     @Override
     public AxisAlignedBB getCollisionBox(Entity entityIn) {
-        // TODO Auto-generated method stub
         return super.getCollisionBox(entityIn);
     }
 
@@ -477,28 +449,57 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
 
     @Override
     public boolean canBePushed() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     public void handleSteering() {
         float carLength = 4.5f;
-        //wv是一个界定是否为安全驾驶的指标
-        float wv = getMaxSafeSteeringSpeed() * getMaxSafeSteeringSpeed() * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle()))) / carLength;
-        if (this.speed * this.speed * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * Math.abs(getInputAngleFactor())))) / carLength <= wv) {
-            //使用完全抓地情况下车辆转弯半径推导而来
-            this.rotationYaw += Math.toDegrees(this.speed * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * getInputAngleFactor()))) / carLength * TIME_PERTICK);
+        
+        float minSteeringSpeed = 2.0f;
+        float comfortableSteeringSpeed = 6.0f;
+        float maxComfortableSteeringSpeed = 12.0f;
+        
+        float speedBasedSteeringFactor = 1.0f;
+        float currentSpeed = Math.abs(this.speed);
+        
+        if (currentSpeed < minSteeringSpeed) {
+            speedBasedSteeringFactor = currentSpeed / minSteeringSpeed * 0.2f;
+        } else if (currentSpeed < comfortableSteeringSpeed) {
+            float ratio = (currentSpeed - minSteeringSpeed) / (comfortableSteeringSpeed - minSteeringSpeed);
+            speedBasedSteeringFactor = 0.2f + ratio * 0.4f;
+        } else if (currentSpeed < maxComfortableSteeringSpeed) {
+            float ratio = (currentSpeed - comfortableSteeringSpeed) / (maxComfortableSteeringSpeed - comfortableSteeringSpeed);
+            speedBasedSteeringFactor = 0.6f + ratio * 0.4f;
+        } else if (currentSpeed > getMaxSafeSteeringSpeed()) {
+            float overspeedRatio = (currentSpeed - getMaxSafeSteeringSpeed()) / (getMaxForwardSpeed() - getMaxSafeSteeringSpeed());
+            overspeedRatio = Math.min(overspeedRatio, 1.0f);
+            speedBasedSteeringFactor = 1.0f - overspeedRatio * 0.7f;
+        }
+        
+        float effectiveMaxWheelAngle = getMaxWhellAngle();
+        if (currentSpeed > comfortableSteeringSpeed) {
+            float speedRatio = Math.min(currentSpeed / getMaxForwardSpeed(), 1.0f);
+            effectiveMaxWheelAngle = getMaxWhellAngle() * (1.0f - speedRatio * 0.4f);
+        }
+        
+        float effectiveAngleFactor = getInputAngleFactor() * speedBasedSteeringFactor;
+        float actualWheelAngle = effectiveMaxWheelAngle * effectiveAngleFactor;
+        
+        float wv = getMaxSafeSteeringSpeed() * getMaxSafeSteeringSpeed() * 2 * MathHelper.sin((float)(Math.toRadians(effectiveMaxWheelAngle))) / carLength;
+        
+        if (this.speed * this.speed * 2 * MathHelper.sin((float)(Math.toRadians(Math.abs(actualWheelAngle)))) / carLength <= wv) {
+            this.rotationYaw += Math.toDegrees(this.speed * 2 * MathHelper.sin((float)(Math.toRadians(actualWheelAngle))) / carLength * TIME_PERTICK);
         } else {
-            if (getInputAngleFactor() >= 0) {
-                this.rotationYaw += Math.toDegrees(wv / this.speed * TIME_PERTICK);
+            float safeSteeringRate = wv / this.speed * TIME_PERTICK * 0.8f;
+            if (effectiveAngleFactor >= 0) {
+                this.rotationYaw += Math.toDegrees(safeSteeringRate);
             } else {
-                this.rotationYaw += Math.toDegrees(-wv / this.speed * TIME_PERTICK);
+                this.rotationYaw += Math.toDegrees(-safeSteeringRate);
             }
         }
     }
 
     public void handleShift() {
-        //显然 车必须得动才能漂移
         if (this.getMassPoint().getSpeed().length() <= 0) {
             return;
         }
@@ -508,7 +509,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         float carLength = 4.5f;
         float fac = 0.8f;
         this.rotationYaw += Math.toDegrees(Math.min(getMaxSafeSteeringSpeed(), this.getMassPoint().getSpeed().length()) * 2 * MathHelper.sin((float)(Math.toRadians(getMaxWhellAngle() * getInputAngleFactor()))) / (carLength * fac) * TIME_PERTICK);
-        //如果速度向量与左向量或右向量越接近 减速越快
+        
         float sideFactor = this.getMassPoint().getSpeed().dot(this.getPose().getLeft()) / this.getMassPoint().getSpeed().length();
         Vector3f dragForce = this.getMassPoint().getSpeed().normalize().negate().mul(Math.abs(sideFactor) * getMass() * 10 + getMass() * 2);
         this.getMassPoint().addResistanceForce(dragForce.x, dragForce.y, dragForce.z);
@@ -545,6 +546,16 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
                         acceleration = getRelativeFrictionCoefficient() * state.getBlock().getSlipperiness(state, world, this.getPosition().down(), this);
                     } else {
                         acceleration = getRelativeFrictionCoefficientInSteering() * state.getBlock().getSlipperiness(state, world, this.getPosition().down(), this);
+                        
+                        float steeringIntensity = Math.abs(getInputAngleFactor());
+                        float speedFactor = Math.abs(this.speed) / getMaxForwardSpeed();
+                        float steeringDeceleration = steeringIntensity * speedFactor * 4.0f;
+                        
+                        if (Math.abs(this.speed) > getMaxSafeSteeringSpeed() * 0.8f) {
+                            steeringDeceleration *= 1.3f;
+                        }
+                        
+                        acceleration += steeringDeceleration;
                     }
                 }
                 this.speed += (this.speed >= 0) ? -acceleration * TIME_PERTICK : acceleration * TIME_PERTICK;
@@ -623,7 +634,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     }
 
     /**
-     * 获取车辆的质点对象，用于访问物理数据
+     * 获取车辆的质点对象
      */
     public MassPoint getMassPoint() {
         return massPoint;
@@ -631,9 +642,6 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
 
     /**
      * 设置玩家驾驶输入
-     * @param powerFactor 动力因子 (-1.0 到 1.0)
-     * @param angleFactor 转向因子 (-1.0 到 1.0)
-     * @param brake 刹车状态
      */
     public void setPlayerInput(float powerFactor, float angleFactor, boolean brake, boolean shift) {
         this.inputPowerFactor = powerFactor;
@@ -649,31 +657,26 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
 
     @Override
     public TypeBase getType() {
-        // TODO Auto-generated method stub
         return this.type;
     }
 
     @Override
     public float getInputPowerFactor() {
-        // TODO Auto-generated method stub
         return this.inputPowerFactor;
     }
 
     @Override
     public float getInputAngleFactor() {
-        // TODO Auto-generated method stub
         return this.inputAngleFactor;
     }
 
     @Override
     public boolean isInputBrake() {
-        // TODO Auto-generated method stub
         return this.inputBrake;
     }
 
     @Override
     public boolean isInputShift() {
-        // TODO Auto-generated method stub
         return this.inputShift;
     }
 }
