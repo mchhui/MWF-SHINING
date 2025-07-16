@@ -21,6 +21,8 @@ public class PacketVehicleState implements IMessage {
     private boolean inputBrake;
     private boolean inputShift;
     private float speed;
+    private float whellProcess;
+    
     public PacketVehicleState() {}
     
     public PacketVehicleState(EntityCar vehicle) {
@@ -30,6 +32,7 @@ public class PacketVehicleState implements IMessage {
         this.inputBrake=vehicle.isInputBrake();
         this.inputShift=vehicle.isInputShift();
         this.speed=vehicle.speed;
+        this.whellProcess=vehicle.whellProcess;
     }
     
     @Override
@@ -44,6 +47,7 @@ public class PacketVehicleState implements IMessage {
         inputBrake = buf.readBoolean();
         inputShift = buf.readBoolean();
         speed = buf.readFloat();
+        whellProcess = buf.readFloat();
     }
     
     @Override
@@ -57,6 +61,7 @@ public class PacketVehicleState implements IMessage {
         buf.writeBoolean(inputBrake);
         buf.writeBoolean(inputShift);
         buf.writeFloat(speed);
+        buf.writeFloat(whellProcess);
     }
     
     /**
@@ -71,14 +76,18 @@ public class PacketVehicleState implements IMessage {
                 if(Minecraft.getMinecraft().world.getEntityByID(message.entityID) instanceof EntityCar) {
                     EntityCar vehicle = (EntityCar) Minecraft.getMinecraft().world.getEntityByID(message.entityID);
                     if(vehicle!=null) {
-                        vehicle.speed=message.speed;
-                        vehicle.syncPose.getQuaternion().set(message.pose);
+                        // 使用插值方法设置服务器状态
+                        vehicle.setServerState(message.speed, message.pose);
+                        // 仍然需要同步输入状态用于渲染
                         vehicle.setPlayerInput(0, message.inputAngleFactor, message.inputBrake, message.inputShift);
+                        // 同步轮胎旋转状态
+                        vehicle.lastWhellProcess = vehicle.whellProcess;
+                        vehicle.whellProcess = message.whellProcess;
                     }
                 }
             });
             
-            return null; // 不需要回复
+            return null;
         }
     }
 } 
