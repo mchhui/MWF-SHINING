@@ -20,7 +20,7 @@ public class ClientInputHandler {
     private boolean playerInputBrake = false;
     private boolean playerInputShift = false;
     private long lastHandleTime;
-    
+
     private long leftKeyPressTime = 0;
     private long rightKeyPressTime = 0;
     private long leftKeyReleaseTime = 0;

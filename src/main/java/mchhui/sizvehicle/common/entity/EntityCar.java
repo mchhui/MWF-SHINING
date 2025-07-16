@@ -78,6 +78,17 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
     public boolean lastInputBrake = false;
     public boolean lastInputShift = false;
 
+    // 客户端状态插值相关变量
+    private float clientSpeed = 0;
+    private float targetSpeed = 0;
+    private float lastClientSpeed = 0;
+    private Pose clientPose = new Pose();
+    private Pose targetPose = new Pose();
+    private long lastUpdateTime = 0;
+    private static final float INTERPOLATION_TIME = 20f; // 插值时间 20ms
+    private static final float SPEED_INTERPOLATION_FACTOR = 0.1f;
+    private static final float POSE_INTERPOLATION_FACTOR = 0.15f;
+
     public float whellProcess;
     public float lastWhellProcess;
     
@@ -122,6 +133,14 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         this.rightFrontOffset = new Matrix4f().translate(1.0f, -0.5f, 2.0f);
         this.leftBackOffset = new Matrix4f().translate(-1.0f, -0.5f, -2.0f);
         this.rightBackOffset = new Matrix4f().translate(1.0f, -0.5f, -2.0f);
+        
+        // 初始化客户端插值状态
+        this.clientSpeed = 0;
+        this.targetSpeed = 0;
+        this.lastClientSpeed = 0;
+        this.clientPose.getQuaternion().identity();
+        this.targetPose.getQuaternion().identity();
+        this.lastUpdateTime = System.currentTimeMillis();
     }
 
     /**
@@ -162,6 +181,24 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         this.setSize(3f, 2);
         super.onUpdate();
         this.prevRotationYaw = this.rotationYaw;
+        
+        // 更新轮胎旋转动画
+        this.lastWhellProcess = this.whellProcess;
+        if (this.onGround) {
+            // 轮胎半径（米）
+            float wheelRadius = 0.8f;
+            // 根据速度计算轮胎旋转角度（弧度）
+            float wheelRotation = this.speed * TIME_PERTICK / wheelRadius;
+            this.whellProcess += wheelRotation;
+            
+            // 限制在合理范围内，避免浮点数溢出
+            if (this.whellProcess > Math.PI * 2) {
+                this.whellProcess -= Math.PI * 2;
+            } else if (this.whellProcess < -Math.PI * 2) {
+                this.whellProcess += Math.PI * 2;
+            }
+        }
+        
         if (!this.world.isRemote) {
             this.getMassPoint().setMass(getMass());
             if (isInputShift()) {
@@ -201,6 +238,7 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
             update = update || lastInputBrake != isInputBrake();
             update = update || lastInputShift != isInputShift();
             update = update || !this.getLastPose().getQuaternion().equals(this.getPose().getQuaternion());
+            update = update || lastWhellProcess != whellProcess;
             if (update) {
                 ServerSIZVehicle.boardCastVehiclePose(this);
             }
@@ -214,15 +252,11 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
                 ServerSIZVehicle.sendDebugVehicleState((EntityPlayerMP)this.getPassengers().get(0));
             }
         } else {
-            this.getLastPose().getQuaternion().set(this.getPose().getQuaternion());
-            this.getPose().getQuaternion().set(this.syncPose.getQuaternion());
+            // 客户端更新插值
+            updateClientInterpolation();
+            
             this.world.spawnParticle(EnumParticleTypes.VILLAGER_HAPPY, this.posX, this.posY + 1, this.posZ, 0, 0, 0);
-            float whellR = 0.3f;
-            lastWhellProcess = whellProcess;
-            whellProcess += (this.speed / whellR) * TIME_PERTICK;
-            if (isInputBrake()) {
-                whellProcess = 0;
-            }
+            
             double px=posX;
             double py=posY;
             double pz=posZ;
@@ -650,9 +684,88 @@ public class EntityCar extends EntitySIZVehicle implements IControllableVehicleG
         this.inputShift = shift;
     }
 
+    /**
+     * 设置服务器状态用于客户端插值
+     */
+    public void setServerState(float serverSpeed, org.joml.Quaternionf serverPose) {
+        if (this.world.isRemote) {
+            this.targetSpeed = serverSpeed;
+            this.targetPose.getQuaternion().set(serverPose);
+            
+            // 如果是首次接收到服务器状态，直接设置客户端状态以避免大幅跳跃
+            if (this.lastUpdateTime == 0 || System.currentTimeMillis() - this.lastUpdateTime > 1000) {
+                this.clientSpeed = serverSpeed;
+                this.clientPose.getQuaternion().set(serverPose);
+            }
+            
+            this.lastUpdateTime = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * 客户端状态插值更新
+     */
+    private void updateClientInterpolation() {
+        if (!this.world.isRemote) return;
+        
+        long currentTime = System.currentTimeMillis();
+        float deltaTime = (currentTime - this.lastUpdateTime) / 1000f;
+        
+        // 基于时间的插值因子计算
+        float timeBasedFactor = Math.min(deltaTime / (INTERPOLATION_TIME / 1000f), 1.0f);
+        
+        // 速度插值
+        float speedDiff = this.targetSpeed - this.clientSpeed;
+        if (Math.abs(speedDiff) > 0.01f) {
+            this.clientSpeed += speedDiff * timeBasedFactor * SPEED_INTERPOLATION_FACTOR;
+        } else {
+            this.clientSpeed = this.targetSpeed;
+        }
+        
+        // 姿态插值
+        float poseInterpolationFactor = timeBasedFactor * POSE_INTERPOLATION_FACTOR;
+        this.clientPose.getQuaternion().slerp(this.targetPose.getQuaternion(), poseInterpolationFactor);
+        
+        // 更新实际使用的状态
+        this.lastClientSpeed = this.speed;
+        this.speed = this.clientSpeed;
+        this.getLastPose().getQuaternion().set(this.getPose().getQuaternion());
+        this.getPose().getQuaternion().set(this.clientPose.getQuaternion());
+    }
+
+    /**
+     * 获取客户端插值后的速度（仅客户端）
+     */
+    public float getClientSpeed() {
+        return this.world.isRemote ? this.clientSpeed : this.speed;
+    }
+
+    /**
+     * 获取客户端插值后的姿态（仅客户端）
+     */
+    public Pose getClientPose() {
+        return this.world.isRemote ? this.clientPose : this.getPose();
+    }
+
+    /**
+     * 调试用：输出插值状态
+     */
+    @SideOnly(Side.CLIENT)
+    public void debugInterpolationState() {
+        if (this.world.isRemote) {
+            System.out.println("Client Speed: " + this.clientSpeed + " Target: " + this.targetSpeed + " Server: " + this.speed);
+            System.out.println("Client Pose: " + this.clientPose.getQuaternion() + " Target: " + this.targetPose.getQuaternion());
+        }
+    }
+
     @SideOnly(Side.CLIENT)
     public void renderDebugAxis() {
-        this.pose.renderDebugAxis();
+        // 在客户端使用插值后的姿态进行渲染
+        if (this.world.isRemote) {
+            this.clientPose.renderDebugAxis();
+        } else {
+            this.pose.renderDebugAxis();
+        }
     }
 
     @Override
