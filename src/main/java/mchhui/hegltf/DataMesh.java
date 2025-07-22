@@ -17,14 +17,13 @@ import java.util.List;
 public class DataMesh {
     public String material;
     public boolean skin;
-
+    public int unit;
+    public int glDrawingMode = GL11.GL_TRIANGLES;
     protected List<Float> geoList = new ArrayList<>();
     protected int geoCount;
     protected ByteBuffer geoBuffer;
     protected IntBuffer elementBuffer;
     protected int elementCount;
-    public int unit;
-    public int glDrawingMode = GL11.GL_TRIANGLES;
     private int displayList = -1;
     private int ssboVao = -1;
     private int vertexCount = 0;
@@ -41,7 +40,7 @@ public class DataMesh {
     private int ssbo = -1;
 
     public void render() {
-         if (!this.compiled) {
+        if (!this.compiled) {
             try {
                 compileVAO(1);
                 return;
@@ -51,14 +50,14 @@ public class DataMesh {
         }
         // 如果需要 可加入纹理处理内容
         this.callVAO();
-        
-        if(ObjModelRenderer.glowTxtureMode) {
-            if(!ObjModelRenderer.customItemRenderer.bindTextureGlow(ObjModelRenderer.glowType, ObjModelRenderer.glowPath)) {
+
+        if (ObjModelRenderer.glowTxtureMode) {
+            if (!ObjModelRenderer.customItemRenderer.bindTextureGlow(ObjModelRenderer.glowType, ObjModelRenderer.glowPath)) {
                 return;
             }
             float x = OpenGlHelper.lastBrightnessX;
             float y = OpenGlHelper.lastBrightnessY;
-            ObjModelRenderer.glowTxtureMode=false;
+            ObjModelRenderer.glowTxtureMode = false;
             GlStateManager.depthMask(false);
             //GlStateManager.enableBlend();
             GlStateManager.depthFunc(GL11.GL_EQUAL);
@@ -70,11 +69,11 @@ public class DataMesh {
             GlStateManager.depthFunc(GL11.GL_LEQUAL);
             //GlStateManager.disableBlend();
             GlStateManager.depthMask(true);
-            ObjModelRenderer.glowTxtureMode=true;
+            ObjModelRenderer.glowTxtureMode = true;
             ObjModelRenderer.customItemRenderer.bindTexture(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
-            
+
             //垃圾bug 迟早把这改装界面扬了
-            if(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
+            if (Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
                 GlStateManager.disableLighting();
             }
         }
@@ -173,7 +172,7 @@ public class DataMesh {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, this.ssbo);
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, this.geoBuffer, GL15.GL_DYNAMIC_COPY);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-            
+
             GL30.glBindVertexArray(this.ssboVao);
 
             GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
@@ -184,7 +183,7 @@ public class DataMesh {
             GL11.glVertexPointer(3, GL11.GL_FLOAT, 8 * Float.BYTES, 0);
             GL11.glNormalPointer(GL11.GL_FLOAT, 8 * Float.BYTES, 3 * Float.BYTES);
             GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 8 * Float.BYTES, 6 * Float.BYTES);
-            
+
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.ebo);
 
             GL30.glBindVertexArray(0);
@@ -202,20 +201,25 @@ public class DataMesh {
         }
 
         //内存优化
-        if(this.geoList != null) {
+        if (this.geoList != null) {
             this.geoList.clear();
             this.geoList = null;
         }
-        if(this.geoBuffer != null) {
-            if(((sun.nio.ch.DirectBuffer)this.geoBuffer).cleaner() != null) {
-                ((sun.nio.ch.DirectBuffer)this.geoBuffer).cleaner().clean();
-            }
-        }
-        if(this.elementBuffer!=null) {
-            if(((sun.nio.ch.DirectBuffer)this.elementBuffer).cleaner() != null) {
-                ((sun.nio.ch.DirectBuffer)this.elementBuffer).cleaner().clean();
-            }
-        }
+
+
+//        if(this.geoBuffer != null) {
+//            if(((DirectBuffer)this.geoBuffer).cleaner() != null) {
+//                ((DirectBuffer)this.geoBuffer).cleaner().clean();
+//            }
+//        }
+//        if(this.elementBuffer!=null) {
+//            if(((DirectBuffer)this.elementBuffer).cleaner() != null) {
+//                ((DirectBuffer)this.elementBuffer).cleaner().clean();
+//            }
+//        }
+        this.geoBuffer = null;
+        this.elementBuffer = null;
+        //MrNorwood: GC should get that
     }
 
     public void callSkinning() {
@@ -274,4 +278,6 @@ public class DataMesh {
             GL15.glDeleteBuffers(this.ssbo);
         }
     }
+
+
 }
