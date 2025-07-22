@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonReader;
-import com.modularwarfare.addon.AddonLoaderManager;
-import com.modularwarfare.addon.LibClassLoader;
 import com.modularwarfare.api.ItemRegisterEvent;
 import com.modularwarfare.client.customplayer.CPEventHandler;
 import com.modularwarfare.client.customplayer.CustomPlayerConfig;
@@ -156,14 +154,6 @@ public class ModularWarfare {
      * Custom RayCasting
      */
     public RayCasting RAY_CASTING;
-
-    public static final LibClassLoader LOADER = new LibClassLoader(ModularWarfare.class.getClassLoader());
-
-    /**
-     * ModularWarfare Addon System
-     */
-    public static File addonDir;
-    public static AddonLoaderManager loaderManager;
 
     public static boolean isLoadedModularMovements = false;
 
@@ -520,7 +510,6 @@ public class ModularWarfare {
         NetworkRegistry.INSTANCE.newEventDrivenChannel("MWF_sync_disableHideGui_" + (ModConfig.INSTANCE.general.disableHideGui ? "enabled" : "disabled"));
 
         registerRayCasting(new DefaultRayCasting());
-        loaderManager.preInitAddons(event);
 
         // Loads Content Packs
         ContentTypes.registerTypes();
@@ -566,7 +555,6 @@ public class ModularWarfare {
         NETWORK = new NetworkHandler();
         NETWORK.initialise();
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularWarfare.INSTANCE, new GuiHandler());
-        loaderManager.initAddons(event);
     }
 
     // Last loading things
@@ -574,7 +562,6 @@ public class ModularWarfare {
     private void onPostInitialization(FMLPostInitializationEvent event) {
         NETWORK.postInitialise();
         PROXY.init();
-        loaderManager.postInitAddons(event);
     }
 
     // Registers commands and server sided regions
@@ -593,28 +580,6 @@ public class ModularWarfare {
     @Mod.EventHandler
     private void constructionEvent(FMLConstructionEvent event) {
         LOGGER = LogManager.getLogger(ModularWarfare.MOD_ID);
-        /*
-         * Create & Check Addon System
-         */
-
-        addonDir = new File(ModUtil.getGameFolder() + "/addons_mwf_shining");
-
-        if (!addonDir.exists() && !addonDir.mkdirs()) {
-            LOGGER.error("Failed to create Addon Directory");
-        }
-        loaderManager = new AddonLoaderManager();
-        loaderManager.constructAddons(addonDir, event.getSide());
-
-        /*
-         * Load the addon from the gradle project compilation (.class folder) instead of final .jar
-         * in order to allow HotSwap changes
-         */
-        if(FMLLaunchHandler.isDeobfuscatedEnvironment()) {
-            File file = new File(ModUtil.getGameFolder()).getParentFile().getParentFile();
-            String folder = file.toString().replace("\\", "/");
-            loaderManager.constructDevAddons(new File(folder + "/melee-addon/build/classes/java/main"), "com.modularwarfare.melee.ModularWarfareMelee", event.getSide());
-        }
-
         PROXY.construction(event);
     }
 
