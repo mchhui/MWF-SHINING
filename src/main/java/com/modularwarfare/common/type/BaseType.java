@@ -65,7 +65,9 @@ public class BaseType {
      */
     public String displayName;
     public String iconName;
-
+    
+    //为毛不用enum
+    @Deprecated
     public transient int id;
     public transient String contentPack;
     public transient boolean isInDirectory;

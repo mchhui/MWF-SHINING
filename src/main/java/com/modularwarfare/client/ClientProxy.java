@@ -68,6 +68,10 @@ import com.modularwarfare.common.particle.EntityBloodFX;
 import com.modularwarfare.common.particle.ParticleExplosion;
 import com.modularwarfare.common.particle.ParticleRocket;
 import com.modularwarfare.common.type.BaseType;
+import com.modularwarfare.melee.client.ClientEvents;
+import com.modularwarfare.melee.client.HEClientEvents;
+import com.modularwarfare.melee.client.RenderMelee;
+import com.modularwarfare.melee.common.melee.ItemMelee;
 import com.modularwarfare.objects.SoundEntry;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.utility.MWResourcePack;
@@ -142,6 +146,7 @@ public class ClientProxy extends CommonProxy {
     public static RenderAttachment attachmentRenderer;
     public static RenderGrenade grenadeStaticRenderer;
     public static RenderGrenadeEnhanced grenadeEnhancedRenderer;
+    public static RenderMelee meleeRenderer;
 
     public static HashMap<String, SoundEvent> modSounds = new HashMap<String, SoundEvent>();
 
@@ -240,6 +245,12 @@ public class ClientProxy extends CommonProxy {
         MinecraftForge.EVENT_BUS.register(new CPEventHandler());
         startPatches();
         Minecraft.getMinecraft().gameSettings.useVbo = false;
+        
+        //melee
+        MinecraftForge.EVENT_BUS.register(new ClientEvents());
+        if(Loader.isModLoaded("hueihueaengine")) {
+            MinecraftForge.EVENT_BUS.register(new HEClientEvents());
+        }
     }
 
     public void startPatches() {
@@ -447,6 +458,11 @@ public class ClientProxy extends CommonProxy {
             ModelLoader.setCustomModelResourceLocation(itemGun, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemGun.type.internalName));
         }
 
+        for (ItemMelee itemMelee : ModularWarfare.meleeTypes.values()) {
+            ModelLoader.setCustomModelResourceLocation(itemMelee, 0,
+                    new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemMelee.type.internalName));
+        }
+        
         for (ItemAmmo itemAmmo : ModularWarfare.ammoTypes.values()) {
             ModelLoader.setCustomModelResourceLocation(itemAmmo, 0, new ModelResourceLocation(ModularWarfare.MOD_ID + ":" + itemAmmo.type.internalName));
         }

@@ -163,7 +163,7 @@ public class GuiGunModify extends GuiScreen {
 	}
 	@Override
 	public void initGui() {
-        RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
+        RenderGunEnhanced rge = ClientProxy.gunEnhancedRenderer;
         // model.updateAnimation(rge.getClientController().getTime(),"");
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
 		if (((GunType) type).animationType == WeaponAnimationType.ENHANCED) {
@@ -760,120 +760,109 @@ public class GuiGunModify extends GuiScreen {
 			break;
 		}
 	}
-	public void renderBasicModel(EntityLivingBase entitylivingbaseIn,BaseType type,double scale,ItemStack itemstack,double sFactor,ScaledResolution scaledresolution,float partialTicks) {
-		// this.translateToHand(EnumHandSide.RIGHT);
-		// GlStateManager.translate(-0.06, 0.38, -0.02);
 
-		if (false) {
-			if (ClientRenderHooks.customRenderers[type.id] != null) {
-				ClientRenderHooks.customRenderers[type.id].renderItem(CustomItemRenderType.ENTITY, null, itemstack,
-						entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
-			}
-		} else {
-			ItemGun gun = (ItemGun) itemstack.getItem();
-			GunType gunType = gun.type;
-			ModelGun model = (ModelGun) gunType.model;
-			float modelScale = (model != null) ? model.config.extra.modelScale : 1f;
-            GlStateManager.rotate(180, 1, 0, 0);
-            RenderHelper.enableStandardItemLighting();
-            GlStateManager.rotate(-180, 1, 0, 0);
-          GlStateManager.enableRescaleNormal();
-			GlStateManager.enableDepth();
-			GlStateManager.translate(0, 0, 600);
-			double centerOffsetY = 0;
-			double centerOffsetX = 0;
-			centerOffsetX = model.config.extra.modelGuiRotateCenter.x;
-			centerOffsetY=model.config.extra.modelGuiRotateCenter.y;
-			double basicS=300;
-			scale = basicS*model.config.extra.modelGuiScale * sFactor / scaledresolution.getScaleFactor();
-			GlStateManager.translate(
-					(scaledresolution.getScaledWidth() / 2) ,
-					(scaledresolution.getScaledHeight() / 2) , 0);
-			GlStateManager.scale(scale, scale, -scale);
-			GlStateManager.scale(modelScale * 0.8, modelScale * 0.8, modelScale * 0.8);
-			GlStateManager.rotate(180, 0, 0, 1);
-			GlStateManager.rotate((float) rotateY, 0, 1, 0);
-			GlStateManager.rotate((float) rotateZ, 1, 0, 0);
-			GlStateManager.color(1, 1, 1);
-			GlStateManager.translate(centerOffsetX,centerOffsetY,0);
-			float worldScale = 1F / 16F;
-			if (model != null) {
-				int skinId = 0;
-				if (itemstack.hasTagCompound()) {
-					if (itemstack.getTagCompound().hasKey("skinId")) {
-						skinId = itemstack.getTagCompound().getInteger("skinId");
-					}
-				}
+    public void renderBasicModel(EntityLivingBase entitylivingbaseIn, BaseType type, double scale, ItemStack itemstack, double sFactor, ScaledResolution scaledresolution, float partialTicks) {
 
-				String path = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
-				ClientRenderHooks.customRenderers[1].bindTexture("guns", path);
-				model.renderPart("gunModel", worldScale);
-				model.renderPart("slideModel", worldScale);
-				model.renderPart("boltModel", worldScale);
-				model.renderPart("defaultBarrelModel", worldScale);
-				model.renderPart("defaultStockModel", worldScale);
-				model.renderPart("defaultGripModel", worldScale);
-				model.renderPart("defaultGadgetModel", worldScale);
-				if (ItemGun.hasAmmoLoaded(itemstack)) {
-					model.renderPart("ammoModel", worldScale);
-				}
+        ItemGun gun = (ItemGun)itemstack.getItem();
+        GunType gunType = gun.type;
+        ModelGun model = (ModelGun)gunType.model;
+        float modelScale = (model != null) ? model.config.extra.modelScale : 1f;
+        GlStateManager.rotate(180, 1, 0, 0);
+        RenderHelper.enableStandardItemLighting();
+        GlStateManager.rotate(-180, 1, 0, 0);
+        GlStateManager.enableRescaleNormal();
+        GlStateManager.enableDepth();
+        GlStateManager.translate(0, 0, 600);
+        double centerOffsetY = 0;
+        double centerOffsetX = 0;
+        centerOffsetX = model.config.extra.modelGuiRotateCenter.x;
+        centerOffsetY = model.config.extra.modelGuiRotateCenter.y;
+        double basicS = 300;
+        scale = basicS * model.config.extra.modelGuiScale * sFactor / scaledresolution.getScaleFactor();
+        GlStateManager.translate((scaledresolution.getScaledWidth() / 2), (scaledresolution.getScaledHeight() / 2), 0);
+        GlStateManager.scale(scale, scale, -scale);
+        GlStateManager.scale(modelScale * 0.8, modelScale * 0.8, modelScale * 0.8);
+        GlStateManager.rotate(180, 0, 0, 1);
+        GlStateManager.rotate((float)rotateY, 0, 1, 0);
+        GlStateManager.rotate((float)rotateZ, 1, 0, 0);
+        GlStateManager.color(1, 1, 1);
+        GlStateManager.translate(centerOffsetX, centerOffsetY, 0);
+        float worldScale = 1F / 16F;
+        if (model != null) {
+            int skinId = 0;
+            if (itemstack.hasTagCompound()) {
+                if (itemstack.getTagCompound().hasKey("skinId")) {
+                    skinId = itemstack.getTagCompound().getInteger("skinId");
+                }
+            }
 
-				boolean hasScopeAttachment = false;
-				GlStateManager.pushMatrix();
-				for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
-					GlStateManager.pushMatrix();
-					ItemStack itemStack = GunType.getAttachment(itemstack, attachment);
-					if (itemStack != null && itemStack.getItem() != Items.AIR) {
-						AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-						ModelAttachment attachmentModel = (ModelAttachment) attachmentType.model;
-						if (attachmentType.attachmentType == AttachmentPresetEnum.Sight)
-							hasScopeAttachment = true;
-						
-						
-						boolean drawEdge=false;
-						for(GuiButton button:this.buttonList) {
-							TextureButton tb=(TextureButton) button;
-							if(tb.getType().equals(TextureButton.TypeEnum.Slot)&&tb.isMouseOver()&&tb.getAttachmentType()==attachment) {
-								drawEdge=true;
-							}
-						}
-//						
-						if (attachmentModel != null) {
-							//draw attachment edge
-							if(drawEdge) {//
-								//GL11.glPolygonOffset(-1.0f, -1.0f);
-								GL11.glEnable(GL11.GL_POLYGON_OFFSET_LINE);
-								GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
-								GlStateManager.glLineWidth(10f);
-								GlStateManager.pushMatrix();
-								//GlStateManager.translate(0, -0.03d, 0);
-								//GlStateManager.scale(1.02d, 1.02d, 1.02d);
-								
-								GlStateManager.color(1, 1, 1);
-								GlStateManager.disableLighting();
-								GlStateManager.disableTexture2D();
-								GlStateManager.disableDepth();
-								renderAttachModel(attachmentModel, attachment, model, attachmentType, worldScale, itemStack, skinId, path);
-								GlStateManager.popMatrix();
-								GlStateManager.enableDepth();
-								GlStateManager.enableLighting();
-								GlStateManager.enableTexture2D();
-								GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
-							}
-							renderAttachModel(attachmentModel, attachment, model, attachmentType, worldScale, itemStack, skinId, path);
-						}
-					}
-					GlStateManager.popMatrix();
-				}
-				if (!hasScopeAttachment)
-					model.renderPart("defaultScopeModel", worldScale);
+            String path = skinId > 0 ? gunType.modelSkins[skinId].getSkin() : gunType.modelSkins[0].getSkin();
+            ClientProxy.gunStaticRenderer.bindTexture("guns", path);
+            model.renderPart("gunModel", worldScale);
+            model.renderPart("slideModel", worldScale);
+            model.renderPart("boltModel", worldScale);
+            model.renderPart("defaultBarrelModel", worldScale);
+            model.renderPart("defaultStockModel", worldScale);
+            model.renderPart("defaultGripModel", worldScale);
+            model.renderPart("defaultGadgetModel", worldScale);
+            if (ItemGun.hasAmmoLoaded(itemstack)) {
+                model.renderPart("ammoModel", worldScale);
+            }
 
-				GlStateManager.popMatrix();
-			}
-			//GlStateManager.popMatrix();
-		}
-		RenderHelper.disableStandardItemLighting();
-	}
+            boolean hasScopeAttachment = false;
+            GlStateManager.pushMatrix();
+            for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+                GlStateManager.pushMatrix();
+                ItemStack itemStack = GunType.getAttachment(itemstack, attachment);
+                if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                    AttachmentType attachmentType = ((ItemAttachment)itemStack.getItem()).type;
+                    ModelAttachment attachmentModel = (ModelAttachment)attachmentType.model;
+                    if (attachmentType.attachmentType == AttachmentPresetEnum.Sight)
+                        hasScopeAttachment = true;
+
+                    boolean drawEdge = false;
+                    for (GuiButton button : this.buttonList) {
+                        TextureButton tb = (TextureButton)button;
+                        if (tb.getType().equals(TextureButton.TypeEnum.Slot) && tb.isMouseOver() && tb.getAttachmentType() == attachment) {
+                            drawEdge = true;
+                        }
+                    }
+                    //						
+                    if (attachmentModel != null) {
+                        //draw attachment edge
+                        if (drawEdge) {//
+                            //GL11.glPolygonOffset(-1.0f, -1.0f);
+                            GL11.glEnable(GL11.GL_POLYGON_OFFSET_LINE);
+                            GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+                            GlStateManager.glLineWidth(10f);
+                            GlStateManager.pushMatrix();
+                            //GlStateManager.translate(0, -0.03d, 0);
+                            //GlStateManager.scale(1.02d, 1.02d, 1.02d);
+
+                            GlStateManager.color(1, 1, 1);
+                            GlStateManager.disableLighting();
+                            GlStateManager.disableTexture2D();
+                            GlStateManager.disableDepth();
+                            renderAttachModel(attachmentModel, attachment, model, attachmentType, worldScale, itemStack, skinId, path);
+                            GlStateManager.popMatrix();
+                            GlStateManager.enableDepth();
+                            GlStateManager.enableLighting();
+                            GlStateManager.enableTexture2D();
+                            GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+                        }
+                        renderAttachModel(attachmentModel, attachment, model, attachmentType, worldScale, itemStack, skinId, path);
+                    }
+                }
+                GlStateManager.popMatrix();
+            }
+            if (!hasScopeAttachment)
+                model.renderPart("defaultScopeModel", worldScale);
+
+            GlStateManager.popMatrix();
+        }
+
+        RenderHelper.disableStandardItemLighting();
+    }
 	public void renderAttachModel(ModelAttachment attachmentModel,AttachmentPresetEnum attachment,ModelGun model,AttachmentType attachmentType,float worldScale,ItemStack itemStack,int skinId,String path) {
 		Vector3f adjustedScale = new Vector3f(attachmentModel.config.extra.modelScale,
 				attachmentModel.config.extra.modelScale, attachmentModel.config.extra.modelScale);
@@ -920,11 +909,11 @@ public class GuiGunModify extends GuiScreen {
 			}
 		}
 		if (attachmentType.sameTextureAsGun) {
-			ClientRenderHooks.customRenderers[3].bindTexture("guns", path);
+		    ClientProxy.attachmentRenderer.bindTexture("guns", path);
 		} else {
 			path = skinId > 0 ? attachmentType.modelSkins[skinId].getSkin()
 					: attachmentType.modelSkins[0].getSkin();
-			ClientRenderHooks.customRenderers[3].bindTexture("attachments", path);
+			ClientProxy.attachmentRenderer.bindTexture("attachments", path);
 		}
 		attachmentModel.renderAttachment(worldScale);
 	}
@@ -942,7 +931,7 @@ public class GuiGunModify extends GuiScreen {
 	        boolean glowTxtureMode=ObjModelRenderer.glowTxtureMode;
 	        ObjModelRenderer.glowTxtureMode=true;
 	        
-			RenderGunEnhanced rge = ((RenderGunEnhanced) ClientRenderHooks.customRenderers[0]);
+			RenderGunEnhanced rge = ClientProxy.gunEnhancedRenderer;
 			// model.updateAnimation(rge.getClientController().getTime(),"");
 			//rge.getClientController().reset(true);
 			AnimationController.getClientController().updateCurrentItem();

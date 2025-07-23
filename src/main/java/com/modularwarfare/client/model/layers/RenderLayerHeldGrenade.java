@@ -28,18 +28,15 @@ public class RenderLayerHeldGrenade extends LayerHeldItem {
     }
 
     @Override
-    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float limbSwing, float limbSwingAmount,
-                             float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
+    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
         ItemStack itemstack = entitylivingbaseIn.getHeldItemMainhand();
         if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
-
             RenderHeldItemLayerEvent event = new RenderHeldItemLayerEvent(itemstack, this, entitylivingbaseIn, partialTicks);
             MinecraftForge.EVENT_BUS.post(event);
-
             if (!(itemstack.getItem() instanceof ItemGrenade)) {
                 return;
             }
-            BaseType type = ((BaseItem) itemstack.getItem()).baseType;
+            BaseType type = ((BaseItem)itemstack.getItem()).baseType;
             if (!type.hasModel()) {
                 return;
             }
@@ -48,25 +45,16 @@ public class RenderLayerHeldGrenade extends LayerHeldItem {
             if (entitylivingbaseIn.isSneaking()) {
                 GlStateManager.translate(0.0F, 0.2F, 0.0F);
             }
-
-            if(((GrenadeType)type).animationType == WeaponAnimationType.BASIC) {
+            if (((GrenadeType)type).animationType == WeaponAnimationType.BASIC) {
                 this.translateToHand(EnumHandSide.RIGHT);
                 GlStateManager.translate(-0.06, 0.38, -0.02);
-                if (ClientRenderHooks.customRenderers[type.id] != null) {
-                    ClientRenderHooks.customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED, null, itemstack,
-                            entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
-                }
-            } else if(((GrenadeType)type).animationType == WeaponAnimationType.ENHANCED) {
-
-                GrenadeType grenadeType = (GrenadeType) type;
+                ClientProxy.grenadeStaticRenderer.renderItem(CustomItemRenderType.EQUIPPED, null, itemstack, entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
+            } else if (((GrenadeType)type).animationType == WeaponAnimationType.ENHANCED) {
+                GrenadeType grenadeType = (GrenadeType)type;
                 EnhancedModel model = type.enhancedModel;
-
-                GrenadeEnhancedRenderConfig config = (GrenadeEnhancedRenderConfig) grenadeType.enhancedModel.config;
-                
+                GrenadeEnhancedRenderConfig config = (GrenadeEnhancedRenderConfig)grenadeType.enhancedModel.config;
                 ClientProxy.grenadeEnhancedRenderer.renderThirdPersonGrenade(livingEntityRenderer, RenderType.PLAYER, entitylivingbaseIn, itemstack, entitylivingbaseIn.isSneaking());
-
             }
-
             GlStateManager.popMatrix();
         }
     }

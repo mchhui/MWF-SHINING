@@ -49,50 +49,38 @@ public class RenderLayerHeldGun extends LayerHeldItem {
         super(livingEntityRendererIn);
     }
 
-    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float limbSwing, float limbSwingAmount,
-                              float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
+    public void doRenderLayer(EntityLivingBase entitylivingbaseIn, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, float scale) {
         ItemStack itemstack = entitylivingbaseIn.getHeldItemMainhand();
         if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
-
             RenderHeldItemLayerEvent event = new RenderHeldItemLayerEvent(itemstack, this, entitylivingbaseIn, partialTicks);
             MinecraftForge.EVENT_BUS.post(event);
-
             if (!(itemstack.getItem() instanceof ItemGun)) {
                 return;
             }
-            BaseType type = ((BaseItem) itemstack.getItem()).baseType;
+            BaseType type = ((BaseItem)itemstack.getItem()).baseType;
             if (!type.hasModel()) {
                 return;
             }
-
             GlStateManager.pushMatrix();
             if (entitylivingbaseIn.isSneaking()) {
                 GlStateManager.translate(0.0F, 0.2F, 0.0F);
             }
-
-            if(((GunType)type).animationType == WeaponAnimationType.BASIC) {
+            if (((GunType)type).animationType == WeaponAnimationType.BASIC) {
                 this.translateToHand(EnumHandSide.RIGHT);
                 GlStateManager.translate(-0.06, 0.38, -0.02);
-                if (ClientRenderHooks.customRenderers[type.id] != null) {
-                    ClientRenderHooks.customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED, null, itemstack,
-                            entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
-                }
-            } else if(((GunType)type).animationType == WeaponAnimationType.ENHANCED) {
-
-                GunType gunType = (GunType) type;
+                ClientProxy.gunStaticRenderer.renderItem(CustomItemRenderType.EQUIPPED, null, itemstack, entitylivingbaseIn.world, entitylivingbaseIn, partialTicks);
+            } else if (((GunType)type).animationType == WeaponAnimationType.ENHANCED) {
+                GunType gunType = (GunType)type;
                 EnhancedModel model = type.enhancedModel;
 
-                GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
-                
-                ClientProxy.gunEnhancedRenderer.drawThirdGun(livingEntityRenderer,RenderType.PLAYER, entitylivingbaseIn, itemstack);
-                if(config.renderOffhandPart) {
-                    ClientProxy.gunEnhancedRenderer.drawThirdGun(livingEntityRenderer,RenderType.PLAYER_OFFHAND, entitylivingbaseIn, itemstack);  
+                GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)gunType.enhancedModel.config;
+
+                ClientProxy.gunEnhancedRenderer.drawThirdGun(livingEntityRenderer, RenderType.PLAYER, entitylivingbaseIn, itemstack);
+                if (config.renderOffhandPart) {
+                    ClientProxy.gunEnhancedRenderer.drawThirdGun(livingEntityRenderer, RenderType.PLAYER_OFFHAND, entitylivingbaseIn, itemstack);
                 }
-
             }
-
             GlStateManager.popMatrix();
-
         }
     }
 }

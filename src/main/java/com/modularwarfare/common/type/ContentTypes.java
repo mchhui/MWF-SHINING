@@ -16,6 +16,9 @@ import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.textures.TextureType;
+import com.modularwarfare.melee.common.melee.ItemMelee;
+import com.modularwarfare.melee.common.melee.MeleeType;
+
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.relauncher.Side;
@@ -122,6 +125,9 @@ public class ContentTypes {
             }
         });
 
+        registerType("melee", MeleeType.class, (type, reload) -> {
+            ContentTypes.assignType(ModularWarfare.meleeTypes, ItemMelee.factory, (MeleeType) type, reload);
+        });
 
         /**
          * Send TypeRegisterEvent

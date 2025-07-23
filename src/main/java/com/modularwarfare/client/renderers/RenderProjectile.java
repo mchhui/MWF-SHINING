@@ -1,6 +1,7 @@
 package com.modularwarfare.client.renderers;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelBullet;
 import com.modularwarfare.common.entity.EntityBullet;
@@ -47,7 +48,8 @@ public class RenderProjectile extends Render<EntityBullet> {
         if (ModularWarfare.bulletTypes.containsKey(entityIn.getBulletName())) {
             ItemBullet itemBullet = ModularWarfare.bulletTypes.get(entityIn.getBulletName());
             ModelBullet bullet = (ModelBullet) itemBullet.type.model;
-            ClientRenderHooks.customRenderers[1].bindTexture("bullets", entityIn.getBulletName());
+            //借用人家的材质绑定方法 有点逆天
+            ClientProxy.gunStaticRenderer.bindTexture("bullets", entityIn.getBulletName());
             bullet.renderBullet(worldScale);
         }
 

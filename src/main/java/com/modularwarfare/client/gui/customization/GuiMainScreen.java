@@ -1,6 +1,7 @@
 package com.modularwarfare.client.gui.customization;
 
 import com.modularwarfare.api.IMWModel;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.gui.api.GuiMWContainer;
 import com.modularwarfare.client.gui.api.GuiMWScreen;
@@ -121,15 +122,17 @@ public class GuiMainScreen extends GuiMWScreen {
                 GlStateManager.scale(200F, 200F, 200F);
 
                 IMWModel model=null;
+                boolean isEnhanced=false;
                 if(gun.type.animationType.equals(WeaponAnimationType.BASIC)) {
                     model=gun.type.model;
                 }else {
                     model = gun.type.enhancedModel;
+                    isEnhanced=true;
                 }
                 
                 for(String part : this.containerGunParts.partsSets.keySet()){
                     if(this.containerGunParts.partsSets.get(part)){
-                        ClientRenderHooks.customRenderers[gun.type.id].bindTexture(gun.type.getAssetDir(), gun.type.modelSkins[0].getSkin());
+                        (isEnhanced? ClientProxy.gunEnhancedRenderer:ClientProxy.gunStaticRenderer).bindTexture(gun.type.getAssetDir(), gun.type.modelSkins[0].getSkin());
                         if(part.equalsIgnoreCase("gunModel")){
                             GlStateManager.pushMatrix();
                             GlStateManager.color(1.0F, 1.0F, 1.0F, 0.15F);

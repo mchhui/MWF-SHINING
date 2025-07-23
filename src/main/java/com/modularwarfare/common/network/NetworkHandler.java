@@ -1,6 +1,10 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.melee.comon.PacketAreaAttack;
+import com.modularwarfare.melee.comon.PacketBounced;
+import com.modularwarfare.melee.comon.PacketSwing;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
@@ -226,6 +230,10 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
 
         registerPacket(PacketGunTransform.class);
 
+        registerPacket(PacketAreaAttack.class);
+        registerPacket(PacketSwing.class);
+        registerPacket(PacketBounced.class);
+        
     }
 
     /**

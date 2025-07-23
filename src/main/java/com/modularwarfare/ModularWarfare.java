@@ -45,6 +45,7 @@ import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
+import com.modularwarfare.melee.common.melee.ItemMelee;
 import com.modularwarfare.raycast.DefaultRayCasting;
 import com.modularwarfare.raycast.RayCasting;
 import com.modularwarfare.script.ScriptHost;
@@ -131,6 +132,7 @@ public class ModularWarfare {
 
     // Arrays for the varied types
     public static HashMap<String, ItemGun> gunTypes = new HashMap<>();
+    public static HashMap<String, ItemMelee> meleeTypes = new HashMap<String, ItemMelee>();
     public static HashMap<String, ItemAmmo> ammoTypes = new HashMap<>();
     public static HashMap<String, ItemAttachment> attachmentTypes = new HashMap<>();
     public static LinkedHashMap<String, ItemMWArmor> armorTypes = new LinkedHashMap<>();
@@ -590,17 +592,10 @@ public class ModularWarfare {
             final String fname = file.getName();
             final List<Item> tabOrder = new ArrayList<>();
 
-            Stream.of(gunTypes, ammoTypes, bulletTypes, attachmentTypes, specialArmorTypes, sprayTypes, backpackTypes, grenadeTypes)
+            Stream.of(gunTypes,meleeTypes, ammoTypes, bulletTypes, attachmentTypes, specialArmorTypes, sprayTypes, backpackTypes, grenadeTypes)
                 .map(HashMap::values)
                 .flatMap(Collection::stream)
                 .filter(it -> it.baseType.contentPack.equals(fname))
-                .forEachOrdered(it -> {
-                    registry.register(it);
-                    tabOrder.add(it);
-                });
-
-            armorTypes.values().stream()
-                .filter(it -> it.type.contentPack.equals(fname))
                 .forEachOrdered(it -> {
                     registry.register(it);
                     tabOrder.add(it);

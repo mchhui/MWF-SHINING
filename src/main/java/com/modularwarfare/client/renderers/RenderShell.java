@@ -1,6 +1,7 @@
 package com.modularwarfare.client.renderers;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelShell;
 import com.modularwarfare.common.entity.decals.EntityShell;
@@ -62,18 +63,19 @@ public class RenderShell extends Render<EntityShell> {
                 GunType gunType=ModularWarfare.gunTypes.get(entityIn.getGunName()).type;
                 if(gunType.modelSkins!=null&&gunType.modelSkins.length>entityIn.getGunSkinID()) {
                     flag=false;
-                    ClientRenderHooks.customRenderers[1].bindTexture("gun",gunType.modelSkins[entityIn.getGunSkinID()].getSkin());
+                    //借用人家的材质绑定方法 有点逆天
+                    ClientProxy.gunStaticRenderer.bindTexture("gun",gunType.modelSkins[entityIn.getGunSkinID()].getSkin());
                 }
             }
             if(flag) {
                 if (itemBullet.type.shellModelFileName.equals(itemBullet.type.defaultModel)) {
-                    ClientRenderHooks.customRenderers[1].bindTexture("bullets", "default");
+                    ClientProxy.gunStaticRenderer.bindTexture("bullets", "default");
                 } else {
                     String path=entityIn.getBulletName();
                     if(itemBullet.type.modelSkins!=null&&itemBullet.type.modelSkins.length>0) {
                         path= itemBullet.type.modelSkins[0].getSkin();
                     }
-                    ClientRenderHooks.customRenderers[1].bindTexture("bullets",path);
+                    ClientProxy.gunStaticRenderer.bindTexture("bullets",path);
                 }  
             }
             shell.renderShell(1);

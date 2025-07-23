@@ -70,7 +70,8 @@ public class ClientRenderHooks {
     public static HashMap<EntityLivingBase, AnimStateMachine> weaponBasicAnimations = new HashMap<EntityLivingBase, AnimStateMachine>();
     public static IdentityHashMap<EntityLivingBase, EnhancedStateMachine> weaponEnhancedAnimations = new IdentityHashMap<EntityLivingBase, EnhancedStateMachine>();
 
-    public static CustomItemRenderer[] customRenderers = new CustomItemRenderer[20];
+    //这个数组到底是那个蠢蛋想出来的
+//    public static CustomItemRenderer[] customRenderers = new CustomItemRenderer[20];
     public static boolean isAimingScope;
     public static boolean isAiming;
     public float partialTicks;
@@ -88,12 +89,18 @@ public class ClientRenderHooks {
 
     public ClientRenderHooks() {
         mc = Minecraft.getMinecraft();
-        customRenderers[0] = ClientProxy.gunEnhancedRenderer = new RenderGunEnhanced();
-        customRenderers[1] = ClientProxy.gunStaticRenderer = new RenderGunStatic();
-        customRenderers[2] = ClientProxy.ammoRenderer = new RenderAmmo();
-        customRenderers[3] = ClientProxy.attachmentRenderer = new RenderAttachment();
-        customRenderers[8] = ClientProxy.grenadeStaticRenderer = new RenderGrenade();
-        customRenderers[10] = ClientProxy.grenadeEnhancedRenderer = new RenderGrenadeEnhanced();
+//        customRenderers[0] = ClientProxy.gunEnhancedRenderer = new RenderGunEnhanced();
+//        customRenderers[1] = ClientProxy.gunStaticRenderer = new RenderGunStatic();
+//        customRenderers[2] = ClientProxy.ammoRenderer = new RenderAmmo();
+//        customRenderers[3] = ClientProxy.attachmentRenderer = new RenderAttachment();
+//        customRenderers[8] = ClientProxy.grenadeStaticRenderer = new RenderGrenade();
+//        customRenderers[10] = ClientProxy.grenadeEnhancedRenderer = new RenderGrenadeEnhanced();
+        ClientProxy.gunEnhancedRenderer = new RenderGunEnhanced();
+        ClientProxy.gunStaticRenderer = new RenderGunStatic();
+        ClientProxy.ammoRenderer = new RenderAmmo();
+        ClientProxy.attachmentRenderer = new RenderAttachment();
+        ClientProxy.grenadeStaticRenderer = new RenderGrenade();
+        ClientProxy.grenadeEnhancedRenderer = new RenderGrenadeEnhanced();
     }
 
     public static AnimStateMachine getAnimMachine(EntityLivingBase entityPlayer) {
@@ -199,7 +206,7 @@ public class ClientRenderHooks {
                 float scale = 0.75F;
                 GlStateManager.scale(scale, scale, scale);
                 GlStateManager.translate(0.15F, -0.15F, 0F);
-                customRenderers[type.id].renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
+                ClientProxy.gunStaticRenderer.renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
                 GlStateManager.popMatrix();
             }
         } else if (item instanceof ItemGrenade) {
@@ -226,7 +233,7 @@ public class ClientRenderHooks {
                 float scale = 0.75F;
                 GlStateManager.scale(scale, scale, scale);
                 GlStateManager.translate(0.15F, -0.15F, 0F);
-                customRenderers[type.id].renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
+                ClientProxy.grenadeStaticRenderer.renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
                 GlStateManager.popMatrix();
             }
         }
@@ -308,11 +315,7 @@ public class ClientRenderHooks {
                 return true;
             }
 
-            if (type.id > customRenderers.length) {
-                return result;
-            }
-
-            if (item.render3d && customRenderers[type.id] != null && type.hasModel() && !type.getAssetDir().equalsIgnoreCase("attachments")) {
+            if (item.render3d&& type.hasModel() && !type.getAssetDir().equalsIgnoreCase("attachments")) {
                 result=true;
 
                 float partialTicks = partialTicksTime;
@@ -402,7 +405,7 @@ public class ClientRenderHooks {
                     //Check if model is Basic or Enhanced for gun render
                     if(item instanceof ItemGun) {
                         if(((GunType)type).animationType.equals(WeaponAnimationType.BASIC)){
-                            customRenderers[1].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, (ClientTickHandler.lastItemStack.isEmpty() ? stack : ClientTickHandler.lastItemStack), mc.world, mc.player);
+                            ClientProxy.gunStaticRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, (ClientTickHandler.lastItemStack.isEmpty() ? stack : ClientTickHandler.lastItemStack), mc.world, mc.player);
                         } else{
                             //客户端预测需要 必须是即时物品
                             ItemStack heldStack = mc.player.getHeldItemMainhand();
@@ -421,17 +424,23 @@ public class ClientRenderHooks {
                                     GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
                                 }
                             }
-                            customRenderers[0].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, heldStack, mc.world, mc.player);
+                            ClientProxy.gunEnhancedRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, heldStack, mc.world, mc.player);
                             ScopeUtils.needRenderHand1=true;
                         }
                     } else if (item instanceof ItemGrenade) {
                         if(((GrenadeType)type).animationType.equals(WeaponAnimationType.BASIC)){
-                            customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
+                            ClientProxy.grenadeStaticRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
                         }else {
-                            customRenderers[10].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, mc.player.getHeldItemMainhand(), mc.world, mc.player);
+                            ClientProxy.grenadeEnhancedRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, mc.player.getHeldItemMainhand(), mc.world, mc.player);
                         }
                     } else {
-                        customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
+//                        customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
+                        //这结构也是shit mount无疑了 想用java17的模式匹配ing
+                        if(type instanceof AmmoType) {
+                            ClientProxy.ammoRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
+                        }else if(type instanceof AttachmentType){
+                            ClientProxy.attachmentRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
+                        }
                     }
                     
                     GlStateManager.popMatrix();

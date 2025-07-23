@@ -78,7 +78,7 @@ public class RenderGrenadeEntity extends Render<EntityGrenade> {
                 GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
                 final float worldScale = 1F / 16F;
                 ModelGrenade grenade = (ModelGrenade) (itemGrenade.type.model);
-                ClientRenderHooks.customRenderers[1].bindTexture("grenades", itemGrenade.type.internalName);
+                ClientProxy.grenadeStaticRenderer.bindTexture("grenades", itemGrenade.type.internalName);
                 grenade.renderPart("grenadeModel", worldScale);
             }
 
