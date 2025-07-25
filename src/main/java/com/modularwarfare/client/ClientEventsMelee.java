@@ -106,36 +106,21 @@ public class ClientEventsMelee {
                     if (!dir.exists()) {
                         dir.mkdirs();
                     }
-                    final File renderFile = new File(dir, type.internalName + ".render.json");
-                    if (!renderFile.exists()) {
-                        try {
-                            FileWriter fileWriter = new FileWriter(renderFile, false);
 
-                            MeleeRenderConfig renderConfig = new MeleeRenderConfig();
-                            renderConfig.modelFileName = type.internalName.replaceAll(type.contentPack + ".", "");
-                            renderConfig.modelFileName = renderConfig.modelFileName + ".glb";
-                            gson.toJson(renderConfig, fileWriter);
-
-                            fileWriter.flush();
-                            fileWriter.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
                 }
             }
         }
     }
 
-    @SubscribeEvent
-    public void onRenderTickEvent(OnTickRenderEvent event) {
-        if (RenderMelee.controller != null) {
-            if (Minecraft.getMinecraft().player != null) {
-                RenderMelee.controller.updateCurrentItem();
-                RenderMelee.controller.onTickRender(event.smooth);
-            }
-        }
-    }
+//    @SubscribeEvent
+//    public void onRenderTickEvent(OnTickRenderEvent event) {
+//        if (RenderMelee.controller != null) {
+//            if (Minecraft.getMinecraft().player != null) {
+//                RenderMelee.controller.updateCurrentItem();
+//                RenderMelee.controller.onTickRender(event.smooth);
+//            }
+//        }
+//    }
 
     @SubscribeEvent
     public void onClientTickEvent(ClientTickEvent event) {
@@ -302,60 +287,58 @@ public class ClientEventsMelee {
     // }
     // }
 
-    @SubscribeEvent
-    public void onRenderHeldLayer(RenderHeldItemLayerEvent event) {
-        if (!(event.stack.getItem() instanceof ItemMelee)) {
-            return;
-        }
-        BaseType type = ((BaseItem) event.stack.getItem()).baseType;
-        if (!type.hasModel()) {
-            return;
-        }
-
-        EnhancedModel model = type.enhancedModel;
-        MeleeRenderConfig config = (MeleeRenderConfig) type.enhancedModel.config;
-        GlStateManager.pushMatrix();
-        if (config.extra.thirdPersonRender3D) {
-            RenderPlayer renderplayer = (RenderPlayer) Minecraft.getMinecraft().getRenderManager()
-                    .<AbstractClientPlayer>getEntityRenderObject(event.entitylivingbaseIn);
-            renderplayer.getMainModel().postRenderArm(0.0625F, EnumHandSide.RIGHT);
-
-            GlStateManager.translate(-0.06, 0.38, -0.02);
-
-            GL11.glRotatef(-90F, 0F, 1F, 0F);
-            GL11.glRotatef(90F, 0F, 0F, 1F);
-            GL11.glTranslatef(0.25F, 0.2F, -0.05F);
-            GL11.glScalef(1 / 16F, 1 / 16F, 1 / 16F);
-
-            GL11.glRotatef(config.extra.thirdPersonRotation.x, 1F, 0F, 0F);
-            GL11.glRotatef(config.extra.thirdPersonRotation.y, 0F, 1F, 0F);
-            GL11.glRotatef(config.extra.thirdPersonRotation.z, 0F, 0F, 1F);
-
-            GL11.glTranslatef(config.extra.thirdPersonOffset.x, config.extra.thirdPersonOffset.y,
-                    config.extra.thirdPersonOffset.z);
-
-            GL11.glScalef(config.extra.thirdPersonScale, config.extra.thirdPersonScale, config.extra.thirdPersonScale);
-
-            model.updateAnimation(
-                    (float) config.meleeAnimations.get(AnimationMeleeType.DEFAULT).get(0).getStartTime(config.FPS));
-
-            int skinId = 0;
-            if (event.stack.hasTagCompound()) {
-                if (event.stack.getTagCompound().hasKey("skinId")) {
-                    skinId = event.stack.getTagCompound().getInteger("skinId");
-                }
-            }
-            String path = skinId > 0 ? type.modelSkins[skinId].getSkin() : type.modelSkins[0].getSkin();
-            RenderMelee meleeRender = ClientProxy.meleeRenderer;
-            meleeRender.bindTexture("melee", path);
-
-            boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
-            ObjModelRenderer.glowTxtureMode = true;
-
-            model.renderPartExcept(RenderParameters.partsWithAmmo);
-
-            ObjModelRenderer.glowTxtureMode = glowTxtureMode;
-        }
-        GlStateManager.popMatrix();
-    }
+//    @SubscribeEvent
+//    public void onRenderHeldLayer(RenderHeldItemLayerEvent event) {
+//        if (!(event.stack.getItem() instanceof ItemMelee)) {
+//            return;
+//        }
+//        BaseType type = ((BaseItem) event.stack.getItem()).baseType;
+//        if (!type.hasModel()) {
+//            return;
+//        }
+//
+//        EnhancedModel model = type.enhancedModel;
+//        MeleeRenderConfig config = (MeleeRenderConfig) type.enhancedModel.config;
+//        GlStateManager.pushMatrix();
+//        RenderPlayer renderplayer = (RenderPlayer) Minecraft.getMinecraft().getRenderManager()
+//            .<AbstractClientPlayer>getEntityRenderObject(event.entitylivingbaseIn);
+//    renderplayer.getMainModel().postRenderArm(0.0625F, EnumHandSide.RIGHT);
+//
+//    GlStateManager.translate(-0.06, 0.38, -0.02);
+//
+//    GL11.glRotatef(-90F, 0F, 1F, 0F);
+//    GL11.glRotatef(90F, 0F, 0F, 1F);
+//    GL11.glTranslatef(0.25F, 0.2F, -0.05F);
+//    GL11.glScalef(1 / 16F, 1 / 16F, 1 / 16F);
+//
+//    GL11.glRotatef(config.extra.thirdPersonRotation.x, 1F, 0F, 0F);
+//    GL11.glRotatef(config.extra.thirdPersonRotation.y, 0F, 1F, 0F);
+//    GL11.glRotatef(config.extra.thirdPersonRotation.z, 0F, 0F, 1F);
+//
+//    GL11.glTranslatef(config.extra.thirdPersonOffset.x, config.extra.thirdPersonOffset.y,
+//            config.extra.thirdPersonOffset.z);
+//
+//    GL11.glScalef(config.extra.thirdPersonScale, config.extra.thirdPersonScale, config.extra.thirdPersonScale);
+//
+//    model.updateAnimation(
+//            (float) config.meleeAnimations.get(AnimationMeleeType.DEFAULT).get(0).getStartTime(config.FPS));
+//
+//    int skinId = 0;
+//    if (event.stack.hasTagCompound()) {
+//        if (event.stack.getTagCompound().hasKey("skinId")) {
+//            skinId = event.stack.getTagCompound().getInteger("skinId");
+//        }
+//    }
+//    String path = skinId > 0 ? type.modelSkins[skinId].getSkin() : type.modelSkins[0].getSkin();
+//    RenderMelee meleeRender = ClientProxy.meleeRenderer;
+//    meleeRender.bindTexture("melee", path);
+//
+//    boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
+//    ObjModelRenderer.glowTxtureMode = true;
+//
+//    model.renderPartExcept(RenderParameters.partsWithAmmo);
+//
+//    ObjModelRenderer.glowTxtureMode = glowTxtureMode;
+//        GlStateManager.popMatrix();
+//    }
 }

@@ -6,6 +6,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.model.layers.RenderLayerBackpack;
 import com.modularwarfare.client.model.layers.RenderLayerBody;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
+import com.modularwarfare.client.model.layers.RenderLayerHeldMelee;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGrenade;
 import com.modularwarfare.client.model.layers.ResetHiddenModelLayer;
 
@@ -39,6 +40,7 @@ public class FakeRenderPlayer extends RenderPlayer {
         this.addLayer(new RenderLayerBackpack(this, this.getMainModel().bipedBodyWear));
         this.addLayer(new RenderLayerBody(this, this.getMainModel().bipedBodyWear));
         this.addLayer(new RenderLayerHeldGun(this));
+        this.addLayer(new RenderLayerHeldMelee(this));
         this.addLayer(new RenderLayerHeldGrenade(this));
     }
 

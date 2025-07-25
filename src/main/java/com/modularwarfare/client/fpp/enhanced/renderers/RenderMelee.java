@@ -1,15 +1,28 @@
 package com.modularwarfare.client.fpp.enhanced.renderers;
 
 import com.modularwarfare.client.ClientProxy;
+import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
+import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
+import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.animation.melee.AnimationMeleeController;
+import com.modularwarfare.client.fpp.enhanced.configs.GrenadeEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
+import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGrenade;
+import com.modularwarfare.common.grenades.GrenadeType;
+import com.modularwarfare.common.grenades.ItemGrenade;
+import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.melee.MeleeType;
+import com.modularwarfare.common.type.BaseItem;
+import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import mchhui.hegltf.DataNode;
@@ -18,10 +31,13 @@ import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.Render;
+import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.RenderPlayer;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
@@ -52,24 +68,26 @@ import org.lwjgl.util.vector.Quaternion;
 
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 
 public class RenderMelee extends CustomItemRenderer {
 
     public static final float PI = 3.14159265f;
-    private static final String[] LEFT_HAND_PART = new String[] {
-            "leftArmModel", "leftArmLayerModel"
-    };
-    private static final String[] LEFT_SLIM_HAND_PART = new String[] {
-            "leftArmSlimModel", "leftArmLayerSlimModel"
-    };
-    private static final String[] RIGHT_HAND_PART = new String[] {
-            "rightArmModel", "rightArmLayerModel"
-    };
-    private static final String[] RIGHT_SLIM_HAND_PART = new String[] {
-            "rightArmSlimModel", "rightArmLayerSlimModel"
-    };
+    private static final String[] LEFT_HAND_PART = new String[] {"leftArmModel", "leftArmLayerModel"};
+    private static final String[] LEFT_SLIM_HAND_PART = new String[] {"leftArmSlimModel", "leftArmLayerSlimModel"};
+    private static final String[] RIGHT_HAND_PART = new String[] {"rightArmModel", "rightArmLayerModel"};
+    private static final String[] RIGHT_SLIM_HAND_PART = new String[] {"rightArmSlimModel", "rightArmLayerSlimModel"};
+    public static final HashSet<String> DEFAULT_EXCEPT = new HashSet<String>();
+    public static final List<String> defaultHideList = Arrays.asList("leftArmModel", "leftArmLayerModel", "leftArmSlimModel", "leftArmLayerSlimModel", "rightArmModel", "rightArmLayerModel", "rightArmSlimModel", "rightArmLayerSlimModel", "sprint_righthand", "sprint_lefthand");
+    static {
+        for (String str : defaultHideList) {
+            DEFAULT_EXCEPT.add(str);
+        }
+    }
     public static AnimationMeleeController controller;
     public FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(16);
     private Timer timer;
@@ -110,7 +128,12 @@ public class RenderMelee extends CustomItemRenderer {
         if (this.controller == null || this.controller.getConfig() != config) {
             this.controller = new AnimationMeleeController(config, meleeType);
         }
-
+        
+        HashSet<String> renderSetExpect=new HashSet<>(DEFAULT_EXCEPT);
+        config.defaultHidePart.forEach((part)->{
+            renderSetExpect.add(part);
+        });
+        
         if (type.equals(CustomItemRenderType.EQUIPPED_FIRST_PERSON)) {
 
             EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().getRenderViewEntity();
@@ -271,7 +294,7 @@ public class RenderMelee extends CustomItemRenderer {
                 String meleePath = skinId > 0 ? meleeType.modelSkins[skinId].getSkin()
                         : meleeType.modelSkins[0].getSkin();
                 bindTexture("melee", meleePath);
-                model.renderPart("meleeModel");
+                model.renderPartExcept(renderSetExpect);
 
                 /**
                  * player left hand
@@ -296,6 +319,71 @@ public class RenderMelee extends CustomItemRenderer {
             }
             GlStateManager.popMatrix();
         }
+    }
+    
+    public void drawThirdMelee(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player, ItemStack demoStack, boolean sneakFlag) {
+        if (!(demoStack.getItem() instanceof ItemMelee)) {
+            return;
+        }
+        BaseType type = ((BaseItem)demoStack.getItem()).baseType;
+        if (!type.hasModel()) {
+            return;
+        }
+
+        EnhancedModel model = type.enhancedModel;
+        MeleeRenderConfig config = (MeleeRenderConfig)type.enhancedModel.config;
+        
+        HashSet<String> renderSetExpect=new HashSet<>(DEFAULT_EXCEPT);
+        config.defaultHidePart.forEach((part)->{
+            renderSetExpect.add(part);
+        });
+        config.thirdHidePart.forEach((part)->{
+            renderSetExpect.add(part);
+        });
+        config.thirdShowPart.forEach((part)->{
+            renderSetExpect.remove(part);
+        });
+        
+        GlStateManager.pushMatrix();
+
+        if (player != null && sneakFlag) {
+            GlStateManager.translate(0.0F, 0.2F, 0.0F);
+        }
+        if (renderPlayer != null && renderPlayer.getMainModel() instanceof ModelBiped) {
+            if (renderType == RenderType.PLAYER_OFFHAND) {
+                ((ModelBiped) renderPlayer.getMainModel()).bipedLeftArm.postRender(0.0625F);
+            } else {
+                ((ModelBiped) renderPlayer.getMainModel()).bipedRightArm.postRender(0.0625F);
+            }
+        }
+        
+        RenderElement renderConfigElement = config.thirdPerson.renderElements.get(renderType.serializedName);
+        GlStateManager.translate(renderConfigElement.pos.x, renderConfigElement.pos.y, renderConfigElement.pos.z);
+        GlStateManager.scale(1 / 10f, 1 / 10f, 1 / 10f);
+        GlStateManager.scale(renderConfigElement.size.x, renderConfigElement.size.y, renderConfigElement.size.z);
+        GlStateManager.rotate(renderConfigElement.rot.y, 0, -1, 0);
+        GlStateManager.rotate(renderConfigElement.rot.x, -1, 0, 0);
+        GlStateManager.rotate(renderConfigElement.rot.z, 0, 0, -1);
+        
+        model.updateAnimation((float)config.meleeAnimations.get(AnimationMeleeType.DEFAULT).get(0).getStartTime(config.FPS));
+
+        int skinId = 0;
+        if (demoStack.hasTagCompound()) {
+            if (demoStack.getTagCompound().hasKey("skinId")) {
+                skinId = demoStack.getTagCompound().getInteger("skinId");
+            }
+        }
+        String path = skinId > 0 ? type.modelSkins[skinId].getSkin() : type.modelSkins[0].getSkin();
+        RenderMelee meleeRender = ClientProxy.meleeRenderer;
+        meleeRender.bindTexture("melee", path);
+
+        boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode = true;
+
+        model.renderPartExcept(RenderParameters.partsWithAmmo);
+
+        ObjModelRenderer.glowTxtureMode = glowTxtureMode;
+        GlStateManager.popMatrix();
     }
 
     @Override

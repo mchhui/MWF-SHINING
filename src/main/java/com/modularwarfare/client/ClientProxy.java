@@ -16,6 +16,7 @@ import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.*;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
@@ -66,6 +67,7 @@ import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.particle.EntityBloodFX;
 import com.modularwarfare.common.particle.ParticleExplosion;
 import com.modularwarfare.common.particle.ParticleRocket;
@@ -626,6 +628,16 @@ public class ClientProxy extends CommonProxy {
                                 renderConfig.modelFileName = renderConfig.modelFileName + ".obj";
                                 gson.toJson(renderConfig, fileWriter);
                             }
+                            fileWriter.flush();
+                            fileWriter.close();
+                        }else if(type instanceof GrenadeType){
+                            
+                        } if(type instanceof MeleeType) {
+                            MeleeRenderConfig renderConfig = new MeleeRenderConfig();
+                            renderConfig.modelFileName = type.internalName.replaceAll(type.contentPack + ".", "");
+                            renderConfig.modelFileName = renderConfig.modelFileName + ".glb";
+                            gson.toJson(renderConfig, fileWriter);
+
                             fileWriter.flush();
                             fileWriter.close();
                         }

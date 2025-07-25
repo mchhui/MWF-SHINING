@@ -10,6 +10,8 @@ import com.modularwarfare.client.fpp.basic.animations.StateEntry;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
+import com.modularwarfare.client.fpp.enhanced.animation.melee.AnimationMeleeController;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.hud.GunUI;
 import com.modularwarfare.client.laser.LaserRenderManager;
@@ -157,6 +159,13 @@ public final class ClientTickHandler {
                         } else {
                             ClientEventHandler.cemeraBobbing += offset;
                         }
+                        
+                        /**
+                         * For melee
+                         * */
+                        if(RenderMelee.controller!=null) {
+                            RenderMelee.controller.onTickRender(stepTick);  
+                        }
                     }
                     lastSyncTime = time;
                 }
@@ -199,6 +208,13 @@ public final class ClientTickHandler {
         AnimationController.getOtherControllers().values().forEach((ctrl)->{
             ctrl.updateCurrentItem();
         });
+        
+        /**
+         * For melee
+         * */
+        if(RenderMelee.controller!=null) {
+            RenderMelee.controller.updateCurrentItem();  
+        }
 
         for (EntityLivingBase entity : ClientRenderHooks.weaponEnhancedAnimations.keySet()) {
             if(entity!=null) {
