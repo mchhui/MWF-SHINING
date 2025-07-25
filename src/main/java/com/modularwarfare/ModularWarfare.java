@@ -592,10 +592,17 @@ public class ModularWarfare {
             final String fname = file.getName();
             final List<Item> tabOrder = new ArrayList<>();
 
-            Stream.of(gunTypes,meleeTypes, ammoTypes, bulletTypes, attachmentTypes, specialArmorTypes, sprayTypes, backpackTypes, grenadeTypes)
+            Stream.of(gunTypes, meleeTypes, ammoTypes, bulletTypes, attachmentTypes, specialArmorTypes, sprayTypes, backpackTypes, grenadeTypes)
                 .map(HashMap::values)
                 .flatMap(Collection::stream)
                 .filter(it -> it.baseType.contentPack.equals(fname))
+                .forEachOrdered(it -> {
+                    registry.register(it);
+                    tabOrder.add(it);
+                });
+                
+                armorTypes.values().stream()
+                .filter(it -> it.type.contentPack.equals(fname))
                 .forEachOrdered(it -> {
                     registry.register(it);
                     tabOrder.add(it);
