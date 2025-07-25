@@ -1,4 +1,4 @@
-package com.modularwarfare.melee.client;
+package com.modularwarfare.client;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -7,27 +7,26 @@ import com.modularwarfare.api.GenerateJsonModelsEvent;
 import com.modularwarfare.api.HandleKeyEvent;
 import com.modularwarfare.api.OnTickRenderEvent;
 import com.modularwarfare.api.RenderHeldItemLayerEvent;
-import com.modularwarfare.client.ClientProxy;
-import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
+import com.modularwarfare.client.fpp.enhanced.animation.melee.AnimationMeleeController;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.input.KeyType;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
+import com.modularwarfare.common.melee.MeleeType.AnimationInfo;
+import com.modularwarfare.common.network.PacketSwing;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
-import com.modularwarfare.melee.client.configs.AnimationMeleeType;
-import com.modularwarfare.melee.client.configs.MeleeRenderConfig;
-import com.modularwarfare.melee.client.animation.AnimationMeleeController;
-import com.modularwarfare.melee.common.melee.ItemMelee;
-import com.modularwarfare.melee.common.melee.MeleeType;
-import com.modularwarfare.melee.common.melee.MeleeType.AnimationInfo;
-import com.modularwarfare.melee.comon.PacketSwing;
 
 import mchhui.he.api.event.entitydisplay.EasyLivingModelEvent.RenderOverlay;
 import net.minecraft.client.Minecraft;
@@ -69,7 +68,7 @@ import java.io.FileWriter;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 
-public class ClientEvents {
+public class ClientEventsMelee {
 
     public static float cemeraBobbing=0f;
 

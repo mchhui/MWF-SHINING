@@ -1,16 +1,16 @@
-package com.modularwarfare.melee.client;
+package com.modularwarfare.client.fpp.enhanced.renderers;
 
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
+import com.modularwarfare.client.fpp.enhanced.animation.melee.AnimationMeleeController;
+import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
-import com.modularwarfare.melee.client.animation.AnimationMeleeController;
-import com.modularwarfare.melee.client.configs.AnimationMeleeType;
-import com.modularwarfare.melee.client.configs.MeleeRenderConfig;
-import com.modularwarfare.melee.common.melee.ItemMelee;
-import com.modularwarfare.melee.common.melee.MeleeType;
 
 import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;

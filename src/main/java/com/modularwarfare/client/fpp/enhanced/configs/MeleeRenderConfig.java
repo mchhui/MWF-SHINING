@@ -1,7 +1,8 @@
-package com.modularwarfare.melee.client.configs;
+package com.modularwarfare.client.fpp.enhanced.configs;
 
 import com.modularwarfare.client.fpp.basic.configs.GrenadeRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
+
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.ArrayList;

@@ -1,6 +1,4 @@
-package com.modularwarfare.melee.comon;
-
-import com.modularwarfare.common.network.PacketBase;
+package com.modularwarfare.common.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

@@ -1,13 +1,13 @@
-package com.modularwarfare.melee.common.melee;
+package com.modularwarfare.common.melee;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
+import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.melee.client.configs.AnimationMeleeType;
-import com.modularwarfare.melee.client.configs.MeleeRenderConfig;
 import com.modularwarfare.objects.SoundEntry;
 
 public class MeleeType extends BaseType {
@@ -48,12 +48,7 @@ public class MeleeType extends BaseType {
     }
 
     public AnimationInfo getAnimationInfo(AnimationMeleeType type, int index) {
-        // ArrayList<AnimationInfo> list=animations.get(type);
-        // if(list==null)
-        // return null;
-        // return list.get(index);
         boolean isHeavy = type.serializedName.lastIndexOf("heavy") != -1;
-
         return isHeavy ? attackHeavy[index] : attack[index];
     }
 

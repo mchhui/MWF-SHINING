@@ -1,20 +1,20 @@
-package com.modularwarfare.melee.client.animation;
+package com.modularwarfare.client.fpp.enhanced.animation.melee;
 
 import com.google.common.base.Predicate;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.animation.melee.MeleeStateMachine.Phase;
+import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.gui.api.GuiUtils;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponSoundType;
-import com.modularwarfare.melee.client.RenderMelee;
-import com.modularwarfare.melee.client.animation.MeleeStateMachine.Phase;
-import com.modularwarfare.melee.client.configs.AnimationMeleeType;
-import com.modularwarfare.melee.client.configs.MeleeRenderConfig;
-import com.modularwarfare.melee.common.melee.ItemMelee;
-import com.modularwarfare.melee.common.melee.MeleeType;
-import com.modularwarfare.melee.common.melee.MeleeType.AnimationInfo;
-import com.modularwarfare.melee.comon.PacketBounced;
-import com.modularwarfare.melee.comon.PacketSwing;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
+import com.modularwarfare.common.melee.MeleeType.AnimationInfo;
+import com.modularwarfare.common.network.PacketBounced;
+import com.modularwarfare.common.network.PacketSwing;
 import com.modularwarfare.utility.maths.Interpolation;
 
 import it.unimi.dsi.fastutil.Hash;

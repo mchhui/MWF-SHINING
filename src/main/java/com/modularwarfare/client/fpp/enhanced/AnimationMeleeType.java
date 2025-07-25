@@ -1,4 +1,4 @@
-package com.modularwarfare.melee.client.configs;
+package com.modularwarfare.client.fpp.enhanced;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;

@@ -20,6 +20,7 @@ import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.handler.RenderGuiHandler;
@@ -64,14 +65,11 @@ import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.init.ModSounds;
+import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.particle.EntityBloodFX;
 import com.modularwarfare.common.particle.ParticleExplosion;
 import com.modularwarfare.common.particle.ParticleRocket;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.melee.client.ClientEvents;
-import com.modularwarfare.melee.client.HEClientEvents;
-import com.modularwarfare.melee.client.RenderMelee;
-import com.modularwarfare.melee.common.melee.ItemMelee;
 import com.modularwarfare.objects.SoundEntry;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.utility.MWResourcePack;
@@ -247,10 +245,7 @@ public class ClientProxy extends CommonProxy {
         Minecraft.getMinecraft().gameSettings.useVbo = false;
         
         //melee
-        MinecraftForge.EVENT_BUS.register(new ClientEvents());
-        if(Loader.isModLoaded("hueihueaengine")) {
-            MinecraftForge.EVENT_BUS.register(new HEClientEvents());
-        }
+        MinecraftForge.EVENT_BUS.register(new ClientEventsMelee());
     }
 
     public void startPatches() {

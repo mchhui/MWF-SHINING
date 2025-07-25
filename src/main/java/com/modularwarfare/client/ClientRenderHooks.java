@@ -13,6 +13,7 @@ import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.model.ModelCustomArmor;
@@ -25,6 +26,7 @@ import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
@@ -101,6 +103,7 @@ public class ClientRenderHooks {
         ClientProxy.attachmentRenderer = new RenderAttachment();
         ClientProxy.grenadeStaticRenderer = new RenderGrenade();
         ClientProxy.grenadeEnhancedRenderer = new RenderGrenadeEnhanced();
+        ClientProxy.meleeRenderer = new RenderMelee();
     }
 
     public static AnimStateMachine getAnimMachine(EntityLivingBase entityPlayer) {
@@ -436,10 +439,12 @@ public class ClientRenderHooks {
                     } else {
 //                        customRenderers[type.id].renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
                         //这结构也是shit mount无疑了 想用java17的模式匹配ing
-                        if(type instanceof AmmoType) {
+                        if (type instanceof AmmoType) {
                             ClientProxy.ammoRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
-                        }else if(type instanceof AttachmentType){
+                        } else if (type instanceof AttachmentType) {
                             ClientProxy.attachmentRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
+                        } else if (type instanceof MeleeType) {
+                            ClientProxy.meleeRenderer.renderItem(CustomItemRenderType.EQUIPPED_FIRST_PERSON, hand, stack, mc.world, mc.player);
                         }
                     }
                     

@@ -1,7 +1,7 @@
-package com.modularwarfare.melee.client.animation;
+package com.modularwarfare.client.fpp.enhanced.animation.melee;
 
-import com.modularwarfare.melee.client.configs.AnimationMeleeType;
-import com.modularwarfare.melee.client.configs.MeleeRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
+import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
 import com.modularwarfare.utility.maths.Interpolation;
 
 public class ActionPlaybackMelee {

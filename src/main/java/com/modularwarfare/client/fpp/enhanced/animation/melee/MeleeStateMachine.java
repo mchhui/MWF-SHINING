@@ -1,22 +1,22 @@
-package com.modularwarfare.melee.client.animation;
+package com.modularwarfare.client.fpp.enhanced.animation.melee;
 
 import java.util.ArrayList;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientProxy;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
+import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponSoundType;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
+import com.modularwarfare.common.melee.MeleeType.AnimationInfo;
+import com.modularwarfare.common.network.PacketAreaAttack;
 import com.modularwarfare.common.network.PacketGunReload;
-import com.modularwarfare.melee.client.RenderMelee;
-import com.modularwarfare.melee.client.configs.AnimationMeleeType;
-import com.modularwarfare.melee.client.configs.MeleeRenderConfig;
-import com.modularwarfare.melee.common.melee.ItemMelee;
-import com.modularwarfare.melee.common.melee.MeleeType;
-import com.modularwarfare.melee.common.melee.MeleeType.AnimationInfo;
-import com.modularwarfare.melee.comon.PacketAreaAttack;
-import com.modularwarfare.melee.comon.PacketSwing;
+import com.modularwarfare.common.network.PacketSwing;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;

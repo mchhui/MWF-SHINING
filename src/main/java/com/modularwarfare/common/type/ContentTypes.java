@@ -15,9 +15,9 @@ import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.textures.TextureType;
-import com.modularwarfare.melee.common.melee.ItemMelee;
-import com.modularwarfare.melee.common.melee.MeleeType;
 
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.FMLCommonHandler;

@@ -1,11 +1,10 @@
-package com.modularwarfare.melee.comon;
+package com.modularwarfare.common.network;
 
 import java.util.ArrayList;
 
+import com.modularwarfare.client.fpp.enhanced.animation.melee.MeleeStateMachine.Phase;
 import com.modularwarfare.common.guns.WeaponSoundType;
-import com.modularwarfare.common.network.PacketBase;
-import com.modularwarfare.melee.client.animation.MeleeStateMachine.Phase;
-import com.modularwarfare.melee.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.ItemMelee;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

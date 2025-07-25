@@ -1,14 +1,14 @@
-package com.modularwarfare.melee.common.melee;
+package com.modularwarfare.common.melee;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
+import com.modularwarfare.common.melee.MeleeType.AnimationInfo;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.melee.client.RenderMelee;
-import com.modularwarfare.melee.client.configs.AnimationMeleeType;
-import com.modularwarfare.melee.common.melee.MeleeType.AnimationInfo;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;

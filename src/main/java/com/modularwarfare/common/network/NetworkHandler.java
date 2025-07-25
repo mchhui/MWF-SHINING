@@ -1,9 +1,6 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.melee.comon.PacketAreaAttack;
-import com.modularwarfare.melee.comon.PacketBounced;
-import com.modularwarfare.melee.comon.PacketSwing;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
