@@ -467,7 +467,7 @@ public class AnimationMeleeController {
     public void onTickRender(float stepTick) {
         Minecraft mc = Minecraft.getMinecraft();
         EntityPlayerSP player = mc.player;
-        if (player != null && !(player.getHeldItemMainhand().getItem() instanceof ItemMelee)) {
+        if (player == null || (!(player.getHeldItemMainhand().getItem() instanceof ItemMelee))) {
             return;
         }
         stateMachine.onRenderTickUpdate(stepTick);

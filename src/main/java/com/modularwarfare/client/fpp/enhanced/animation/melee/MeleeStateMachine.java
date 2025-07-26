@@ -49,6 +49,9 @@ public class MeleeStateMachine {
 	public void onRenderTickUpdate(float partialTick) {
 		Minecraft mc = Minecraft.getMinecraft();
 		EntityPlayerSP player = mc.player;
+		if(player==null) {
+		    return;
+		}
 		ItemStack stack = player.getHeldItemMainhand();
 		Item item = stack.getItem();
 		if (item instanceof ItemMelee) {
