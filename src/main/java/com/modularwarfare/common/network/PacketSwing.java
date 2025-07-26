@@ -1,8 +1,9 @@
 package com.modularwarfare.common.network;
 
+import com.modularwarfare.ModularWarfare;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import mchhui.he.api.ELMAPI;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
@@ -41,8 +42,11 @@ public class PacketSwing extends PacketBase {
 
     @Override
     public void handleServerSide(EntityPlayerMP playerEntity) {
-        if (Loader.isModLoaded("hueihueaengine")) {
-            ELMAPI.playAni(playerEntity.getUniqueID(), ani, 1);
+        /**
+         * For HE Bridge
+         * */
+        if (ModularWarfare.aniPlayer != null) {
+            ModularWarfare.aniPlayer.playAni(playerEntity.getUniqueID(), ani, 1);
         }
     }
 
