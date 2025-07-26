@@ -133,7 +133,7 @@ public class RenderMelee extends CustomItemRenderer {
         config.defaultHidePart.forEach((part)->{
             renderSetExpect.add(part);
         });
-        
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
         if (type.equals(CustomItemRenderType.EQUIPPED_FIRST_PERSON)) {
 
             EntityPlayerSP player = (EntityPlayerSP) Minecraft.getMinecraft().getRenderViewEntity();
@@ -319,6 +319,7 @@ public class RenderMelee extends CustomItemRenderer {
             }
             GlStateManager.popMatrix();
         }
+        GlStateManager.shadeModel(GL11.GL_FLAT);
     }
     
     public void drawThirdMelee(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player, ItemStack demoStack, boolean sneakFlag) {
@@ -345,7 +346,7 @@ public class RenderMelee extends CustomItemRenderer {
         });
         
         GlStateManager.pushMatrix();
-
+        GlStateManager.shadeModel(GL11.GL_SMOOTH);
         if (player != null && sneakFlag) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
         }
@@ -384,6 +385,7 @@ public class RenderMelee extends CustomItemRenderer {
 
         ObjModelRenderer.glowTxtureMode = glowTxtureMode;
         GlStateManager.popMatrix();
+        GlStateManager.shadeModel(GL11.GL_FLAT);
     }
 
     @Override
