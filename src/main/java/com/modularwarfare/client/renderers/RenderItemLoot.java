@@ -7,6 +7,7 @@ import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.GrenadeEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
@@ -14,6 +15,8 @@ import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import net.minecraft.block.BlockLiquid;
@@ -250,6 +253,18 @@ public class RenderItemLoot extends Render<EntityItemLoot> {
                 GlStateManager.rotate(ranrot % 360f, 0, 1, 0);
             }
             ClientProxy.grenadeEnhancedRenderer.renderThirdPersonGrenade(null, RenderType.ITEMLOOT, null, itemstack, false);
+            GlStateManager.popMatrix();
+        }else if((itemstack.getItem() instanceof ItemMelee)) {
+            MeleeType meleeType = ((ItemMelee)itemstack.getItem()).type;
+            
+            float ranrot=(float) (((0.1f*(entity.posX+entity.posZ-entity.posY)+entity.getEntityId()*3f*itemstack.hashCode())));
+            
+            GlStateManager.pushMatrix();
+            GlStateManager.translate((float) x, (float) y+0.5f, (float) z);
+            if (((EnhancedRenderConfig)meleeType.enhancedModel.config).thirdPerson.renderElements.get(RenderType.ITEMLOOT.serializedName).randomYaw) {
+                GlStateManager.rotate(ranrot % 360f, 0, 1, 0);
+            }
+            ClientProxy.meleeRenderer.drawThirdMelee(null, RenderType.ITEMLOOT, null, itemstack, false);
             GlStateManager.popMatrix();
         } else {
             int i;

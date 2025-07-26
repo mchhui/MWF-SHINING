@@ -26,6 +26,7 @@ import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.network.PacketAimingRequest;
 import com.modularwarfare.common.type.BaseItem;
@@ -239,6 +240,17 @@ public class ClientRenderHooks {
                 ClientProxy.grenadeStaticRenderer.renderItem(CustomItemRenderType.ENTITY, EnumHand.MAIN_HAND, event.getItem());
                 GlStateManager.popMatrix();
             }
+        }else if(item instanceof ItemMelee) {
+            BaseType type = ((BaseItem) event.getItem().getItem()).baseType;
+            MeleeType meleeType = (MeleeType) type;
+            event.setCanceled(true);
+            int rotation = event.getEntityItemFrame().getRotation();
+            GlStateManager.rotate(-rotation * 45F, 0F, 0F, 1F);
+            RenderHelper.enableStandardItemLighting();
+            GlStateManager.rotate(rotation * 45F, 0F, 0F, 1F);
+            GlStateManager.pushMatrix();
+            ClientProxy.meleeRenderer.drawThirdMelee(null, RenderType.ITEMFRAME, null, event.getItem(), false);
+            GlStateManager.popMatrix();
         }
     }
 
