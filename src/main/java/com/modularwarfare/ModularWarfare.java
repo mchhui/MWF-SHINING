@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.google.gson.stream.JsonReader;
 import com.modularwarfare.api.ItemRegisterEvent;
+import com.modularwarfare.api.hebridge.IAniPlayer;
 import com.modularwarfare.client.customplayer.CPEventHandler;
 import com.modularwarfare.client.customplayer.CustomPlayerConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
@@ -158,6 +159,11 @@ public class ModularWarfare {
     public RayCasting RAY_CASTING;
 
     public static boolean isLoadedModularMovements = false;
+    
+    /**
+     * HE Bridge
+     * */
+    public static IAniPlayer aniPlayer=null;
 
     public static IZip getiZip(File file) throws IOException {
         try {
