@@ -8,7 +8,6 @@ import com.modularwarfare.common.melee.ItemMelee;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import mchhui.he.api.ELMAPI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
