@@ -24,6 +24,8 @@ public enum AnimationMeleeType {
     POSTHEAVYATTACK("postheavyattack"),
     HEAVYATTACKBOUNCED("heavyattackbounced"),
 
+    THIRDDEFAULT("thirdDefault"),
+
     SPRINT("sprint");
 
     public String serializedName;

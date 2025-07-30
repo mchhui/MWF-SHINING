@@ -366,7 +366,11 @@ public class RenderMelee extends CustomItemRenderer {
         GlStateManager.rotate(renderConfigElement.rot.x, -1, 0, 0);
         GlStateManager.rotate(renderConfigElement.rot.z, 0, 0, -1);
         
-        model.updateAnimation((float)config.meleeAnimations.get(AnimationMeleeType.DEFAULT).get(0).getStartTime(config.FPS));
+        if(config.meleeAnimations.containsKey(AnimationMeleeType.THIRDDEFAULT)) {
+            model.updateAnimation((float)config.meleeAnimations.get(AnimationMeleeType.THIRDDEFAULT).get(0).getStartTime(config.FPS));
+        }else {
+            model.updateAnimation((float)config.meleeAnimations.get(AnimationMeleeType.DEFAULT).get(0).getStartTime(config.FPS));
+        }
 
         int skinId = 0;
         if (demoStack.hasTagCompound()) {
