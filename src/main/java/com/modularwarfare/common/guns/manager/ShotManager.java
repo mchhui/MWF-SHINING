@@ -646,7 +646,7 @@ public class ShotManager {
                 }
                 
                 rayTraceList.clear();
-                if (isSlug || itemGun.type.weaponType != WeaponType.Shotgun) {
+                if (isSlug || numBullets <= 1) {
                     List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.CLIENT, player.world, pitch, yaw, player, itemGun.type.weaponMaxRange, itemGun, false);
                     if(rayTrace != null) {
                         rayTraceList.addAll(rayTrace);
