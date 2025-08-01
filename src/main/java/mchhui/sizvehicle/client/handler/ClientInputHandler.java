@@ -21,20 +21,6 @@ public class ClientInputHandler {
     private boolean playerInputShift = false;
     private long lastHandleTime;
 
-    private long leftKeyPressTime = 0;
-    private long rightKeyPressTime = 0;
-    private long leftKeyReleaseTime = 0;
-    private long rightKeyReleaseTime = 0;
-    private boolean leftKeyPressed = false;
-    private boolean rightKeyPressed = false;
-    private float targetAngleFactor = 0;
-    private float lastActiveAngleFactor = 0;
-    
-    private static final float STEERING_RAMP_UP_TIME = 300f;
-    private static final float STEERING_DECAY_TIME = 150f;
-    private static final float MAX_STEERING_FACTOR = 1.0f;
-    private static final float STEERING_SMOOTHING = 0.15f;
-
     public ClientInputHandler() {
         ClientRegistry.registerKeyBinding(keyShift);
         ClientRegistry.registerKeyBinding(keyBrake);
@@ -46,6 +32,9 @@ public class ClientInputHandler {
         if (time - this.lastHandleTime < 5) {
             return;
         }
+        float step = (time - this.lastHandleTime) / 1000f;
+
+        // 处理键盘输入
 
         playerInputBrake = keyBrake.isKeyDown();
         playerInputShift = keyShift.isKeyDown();
@@ -57,58 +46,13 @@ public class ClientInputHandler {
         if (Keyboard.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindBack.getKeyCode()) || Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
             playerInputPowerFactor -= 1;
         }
-        
-        boolean leftPressed = Keyboard.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindLeft.getKeyCode()) || Keyboard.isKeyDown(Keyboard.KEY_LEFT);
-        boolean rightPressed = Keyboard.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindRight.getKeyCode()) || Keyboard.isKeyDown(Keyboard.KEY_RIGHT);
-        
-        if (leftPressed && !leftKeyPressed) {
-            leftKeyPressTime = time;
-            leftKeyPressed = true;
-        } else if (!leftPressed && leftKeyPressed) {
-            leftKeyReleaseTime = time;
-            lastActiveAngleFactor = playerInputAngleFactor;
-            leftKeyPressed = false;
+        playerInputAngleFactor = 0;
+        if (Keyboard.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindLeft.getKeyCode()) || Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+            playerInputAngleFactor += 1;
         }
-        
-        if (rightPressed && !rightKeyPressed) {
-            rightKeyPressTime = time;
-            rightKeyPressed = true;
-        } else if (!rightPressed && rightKeyPressed) {
-            rightKeyReleaseTime = time;
-            lastActiveAngleFactor = playerInputAngleFactor;
-            rightKeyPressed = false;
+        if (Keyboard.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindRight.getKeyCode()) || Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+            playerInputAngleFactor -= 1;
         }
-        
-        if (leftPressed && rightPressed) {
-            targetAngleFactor = 0;
-        } else if (leftPressed) {
-            float holdTime = time - leftKeyPressTime;
-            float strength = Math.min(holdTime / STEERING_RAMP_UP_TIME, 1.0f);
-            targetAngleFactor = strength * MAX_STEERING_FACTOR;
-        } else if (rightPressed) {
-            float holdTime = time - rightKeyPressTime;
-            float strength = Math.min(holdTime / STEERING_RAMP_UP_TIME, 1.0f);
-            targetAngleFactor = -strength * MAX_STEERING_FACTOR;
-        } else {
-            // 计算基于时间的衰减
-            long releaseTime = Math.max(leftKeyReleaseTime, rightKeyReleaseTime);
-            float decayTime = time - releaseTime;
-            float decayProgress = Math.min(decayTime / STEERING_DECAY_TIME, 1.0f);
-            targetAngleFactor = lastActiveAngleFactor * (1.0f - decayProgress);
-        }
-        
-        float diff = targetAngleFactor - playerInputAngleFactor;
-        if (Math.abs(diff) > 0.001f) {
-            float smoothingRate = STEERING_SMOOTHING;
-            if (Math.abs(targetAngleFactor) < 0.01f) {
-                smoothingRate = STEERING_SMOOTHING * 2.0f;
-            }
-            playerInputAngleFactor += diff * smoothingRate;
-        } else {
-            playerInputAngleFactor = targetAngleFactor;
-        }
-        
-        playerInputAngleFactor = Math.max(-MAX_STEERING_FACTOR, Math.min(MAX_STEERING_FACTOR, playerInputAngleFactor));
 
         this.lastHandleTime = time;
     }
