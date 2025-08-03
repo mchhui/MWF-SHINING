@@ -315,7 +315,6 @@ public class CommandEntityShoot extends CommandBase {
             return;
         }
 
-        // 执行延迟射击
         boolean success = EntityShootingAPI.delayedShootEntityAtTarget(shooterEntity, targetEntity, shotCount, maxDistance, 
                                                                        delayTicks, offsetX, offsetY, offsetZ,
                                                                        useHeldWeapon, weaponName, ammoName, magazineName);
@@ -324,14 +323,12 @@ public class CommandEntityShoot extends CommandBase {
             sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + shooterEntity.getName() + " delayed shoot at " + targetEntity.getName() + " " + shotCount + " times"));
             sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Distance: " + String.format("%.2f", distance) + " blocks, Max distance: " + maxDistance + " blocks, Delay: " + delayTicks + " ticks"));
             
-            // 显示详细信息
             if (useHeldWeapon) {
                 sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
             } else {
                 sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
             }
             
-            // 检查射击冷却
             long cooldown = EntityShootingAPI.getEntityShootCooldown(shooterEntity);
             if (cooldown > 0) {
                 sender.sendMessage(new TextComponentString(TextFormatting.BLUE + "Shooting cooldown: " + cooldown + "ms"));
@@ -339,7 +336,6 @@ public class CommandEntityShoot extends CommandBase {
         } else {
             sender.sendMessage(new TextComponentString(TextFormatting.RED + "Failed to make entity " + shooterEntity.getName() + " delayed shoot at " + targetEntity.getName()));
             
-            // 检查原因
             if (!EntityShootingAPI.canEntityShoot(shooterEntity, useHeldWeapon)) {
                 if (useHeldWeapon) {
                     sender.sendMessage(new TextComponentString(TextFormatting.RED + "Reason: Shooter entity cannot shoot (may not have weapon or ammo)"));

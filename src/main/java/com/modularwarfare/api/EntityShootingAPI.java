@@ -33,6 +33,11 @@ import com.modularwarfare.common.guns.ItemBullet;
  */
 public class EntityShootingAPI {
     
+    // 静态初始化器，注册事件处理器
+    static {
+        MinecraftForge.EVENT_BUS.register(EntityShootingAPI.class);
+    }
+    
     // ==================== 事件类定义 ====================
     
     /**
@@ -212,12 +217,13 @@ public class EntityShootingAPI {
         public final int delayTicks;
         public final float offsetX, offsetY, offsetZ;
         public final boolean isCoordinateShoot;
+        public final boolean useHeldWeapon;
         public int remainingTicks;
         public boolean rayStarted;
         
         public DelayedShootTask(EntityLivingBase entity, EntityLivingBase target, double targetX, double targetY, double targetZ,
                               ItemStack weaponStack, ItemGun weapon, int shotCount, double maxDistance,
-                              int delayTicks, float offsetX, float offsetY, float offsetZ, boolean isCoordinateShoot) {
+                              int delayTicks, float offsetX, float offsetY, float offsetZ, boolean isCoordinateShoot, boolean useHeldWeapon) {
             this.entity = entity;
             this.target = target;
             this.targetX = targetX;
@@ -232,6 +238,7 @@ public class EntityShootingAPI {
             this.offsetY = offsetY;
             this.offsetZ = offsetZ;
             this.isCoordinateShoot = isCoordinateShoot;
+            this.useHeldWeapon = useHeldWeapon;
             this.remainingTicks = delayTicks;
             this.rayStarted = false;
         }
@@ -780,10 +787,8 @@ public class EntityShootingAPI {
             return false;
         }
         
-        if (!forceEntityFaceTargetAndWait(entity, target, 20)) {
-            ModularWarfare.LOGGER.warn("Entity cannot face target");
-            return false;
-        }
+        // 强制实体面向目标（不等待）
+        forceEntityFaceTarget(entity, target);
         
         WeaponConfig weaponConfig = createWeaponConfig(entity, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
         if (weaponConfig == null) {
@@ -805,14 +810,16 @@ public class EntityShootingAPI {
         DelayedShootTask task = new DelayedShootTask(
             entity, target, target.posX, target.posY, target.posZ,
             weaponConfig.weaponStack, weaponConfig.weapon, shotCount, maxDistance, delayTicks,
-            offsetX, offsetY, offsetZ, false
+            offsetX, offsetY, offsetZ, false, useHeldWeapon
         );
         delayedShootTasks.put(entity.getUniqueID(), task);
         
         if (!entity.world.isRemote) {
+            // 使用目标的眼睛位置而不是脚下位置
+            Vec3d targetEyePos = target.getPositionEyes(1.0f);
             ModularWarfare.NETWORK.sendToAllAround(
                 new PacketDelayedShoot(
-                    entity.getEntityId(), target.getEntityId(), target.posX, target.posY, target.posZ,
+                    entity.getEntityId(), target.getEntityId(), targetEyePos.x, targetEyePos.y, targetEyePos.z,
                     offsetX, offsetY, offsetZ, delayTicks, false
                 ),
                 entity.posX, entity.posY, entity.posZ, 64.0f, entity.world.provider.getDimension()
@@ -870,7 +877,7 @@ public class EntityShootingAPI {
         DelayedShootTask task = new DelayedShootTask(
             entity, null, targetX, targetY, targetZ,
             weaponConfig.weaponStack, weaponConfig.weapon, shotCount, maxDistance, delayTicks,
-            offsetX, offsetY, offsetZ, true
+            offsetX, offsetY, offsetZ, true, useHeldWeapon
         );
         delayedShootTasks.put(entity.getUniqueID(), task);
         
@@ -919,11 +926,29 @@ public class EntityShootingAPI {
                 
                 if (task.remainingTicks <= 0) {
                     if (task.target != null) {
-                        shootEntityAtTarget(task.entity, task.target, task.shotCount, task.maxDistance,
-                                         true, null, null, null);
+                        forceEntityFaceTarget(task.entity, task.target);
+                        
+                        boolean success = false;
+                        for (int i = 0; i < task.shotCount; i++) {
+                            if (executeSingleShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
+                                success = true;
+                            }
+                        }
                     } else {
-                        shootEntityAtCoordinates(task.entity, task.targetX, task.targetY, task.targetZ,
-                                              task.shotCount, task.maxDistance, true, null, null, null);
+                        float[] angles = calculateCoordinateAngles(task.entity, task.targetX, task.targetY, task.targetZ);
+                        if (!(task.entity instanceof EntityPlayer)) {
+                            task.entity.rotationPitch = angles[0];
+                            task.entity.rotationYaw = angles[1];
+                            task.entity.rotationYawHead = angles[1];
+                            task.entity.renderYawOffset = angles[1];
+                        }
+                        
+                        boolean success = false;
+                        for (int i = 0; i < task.shotCount; i++) {
+                            if (executeSingleShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
+                                success = true;
+                            }
+                        }
                     }
                     
                     return true;
