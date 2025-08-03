@@ -3,6 +3,7 @@ package com.modularwarfare.api;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
@@ -13,8 +14,8 @@ import java.util.List;
 @Deprecated
 public class WeaponHitEvent extends WeaponEvent {
 
-    public WeaponHitEvent(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon) {
-        super(entityPlayer, stackWeapon, itemWeapon);
+    public WeaponHitEvent(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon) {
+        super(entityLivingBase, stackWeapon, itemWeapon);
     }
 
     /**
@@ -33,8 +34,8 @@ public class WeaponHitEvent extends WeaponEvent {
         private Entity victim;
         private double distance;
 
-        public Pre(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, float penetrateDamageFactor, float penetrateBlockDamageFactor, Entity victim, double distance) {
-            super(entityPlayer, stackWeapon, itemWeapon);
+        public Pre(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, float penetrateDamageFactor, float penetrateBlockDamageFactor, Entity victim, double distance) {
+            super(entityLivingBase, stackWeapon, itemWeapon);
             this.isHeadshot = isHeadshot;
             this.damage = damage;
             this.penetrateDamageFactor = penetrateDamageFactor;
@@ -95,8 +96,8 @@ public class WeaponHitEvent extends WeaponEvent {
         private List<BulletHit> hits;
         private float finalDamage;
 
-        public Post(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits, float finalDamage) {
-            super(entityPlayer, stackWeapon, itemWeapon);
+        public Post(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits, float finalDamage) {
+            super(entityLivingBase, stackWeapon, itemWeapon);
             this.hits = hits;
             this.finalDamage = finalDamage;
         }

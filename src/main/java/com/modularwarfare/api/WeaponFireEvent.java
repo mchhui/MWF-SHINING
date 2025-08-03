@@ -4,6 +4,7 @@ import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
@@ -16,8 +17,8 @@ import java.util.List;
 @Deprecated
 public class WeaponFireEvent extends WeaponEvent {
 
-    public WeaponFireEvent(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon) {
-        super(entityPlayer, stackWeapon, itemWeapon);
+    public WeaponFireEvent(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon) {
+        super(entityLivingBase, stackWeapon, itemWeapon);
     }
 
     /**
@@ -31,8 +32,8 @@ public class WeaponFireEvent extends WeaponEvent {
     public static class PreClient extends WeaponFireEvent {
         private int weaponRange;
 
-        public PreClient(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, int weaponRange) {
-            super(entityPlayer, stackWeapon, itemWeapon);
+        public PreClient(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, int weaponRange) {
+            super(entityLivingBase, stackWeapon, itemWeapon);
             this.weaponRange = weaponRange;
         }
 
@@ -56,8 +57,8 @@ public class WeaponFireEvent extends WeaponEvent {
     public static class PreServer extends WeaponFireEvent {
         private int weaponRange;
 
-        public PreServer(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, int weaponRange) {
-            super(entityPlayer, stackWeapon, itemWeapon);
+        public PreServer(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, int weaponRange) {
+            super(entityLivingBase, stackWeapon, itemWeapon);
             this.weaponRange = weaponRange;
         }
 
@@ -82,8 +83,8 @@ public class WeaponFireEvent extends WeaponEvent {
         private int fireTickDelay;
         private float damage;
 
-        public Post(EntityPlayer entityPlayer, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits) {
-            super(entityPlayer, stackWeapon, itemWeapon);
+        public Post(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits) {
+            super(entityLivingBase, stackWeapon, itemWeapon);
             this.hits = hits;
 
             GunType type = itemWeapon.type;

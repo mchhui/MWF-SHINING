@@ -404,4 +404,70 @@ public class RayUtil {
             return null;
         }
     }
+
+    /**
+     * 为实体设计的射线追踪方法
+     * 移除了玩家特定的逻辑，如战术动作、ping值等
+     * 
+     * @param side 服务端或客户端
+     * @param world 世界
+     * @param rotationPitch 俯仰角度
+     * @param rotationYaw 偏航角度
+     * @param entity 实体
+     * @param range 射程
+     * @param item 武器
+     * @param isPunched 是否被击中
+     * @param weaponStack 武器堆栈（可为null，如果不使用手中武器）
+     * @return 射线追踪结果
+     */
+    @Nullable
+    public static List<BulletHit> standardEntityRayTraceForEntity(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase entity, double range, ItemGun item, boolean isPunched, ItemStack weaponStack) {
+        // 基础检查
+        if (world == null || entity == null || item == null || item.type == null) {
+            return null;
+        }
+
+        // 检查武器堆栈（如果提供）
+        if (weaponStack != null && (weaponStack.isEmpty() || !(weaponStack.getItem() instanceof ItemGun))) {
+            return null;
+        }
+
+        HashSet<Entity> hashset = new HashSet<Entity>(1);
+        hashset.add(entity);
+
+        try {
+            // 使用服务端精度计算（已在EntityShootingAPI中计算过）
+            float accuracy = calculateAccuracy(item, entity);
+            float penetrate = item.type.gunPenetrateSize;
+            float maxPenetrateBlockResistance = item.type.gunMaxPenetrateBlockResistance;
+            float penetrateBlocksResistance = item.type.gunPenetrateBlocksResistance;
+
+            // 获取子弹信息
+            ItemBullet usedBullet = null;
+            if (weaponStack != null) {
+                usedBullet = ItemAmmo.getUsedBullet(weaponStack);
+            }
+            
+            if (usedBullet != null) {
+                penetrate *= usedBullet.type.bulletPenetrateFactor;
+                maxPenetrateBlockResistance *= usedBullet.type.bulletBlockPenetrateFactor;
+                penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
+            }
+            
+            // 使用传入的角度进行射线追踪
+            Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, entity);
+
+            // 获取实体眼睛位置（不使用战术动作系统）
+            Vec3d origin = entity.getPositionEyes(1.0f);
+
+            // 实体不使用ping值
+            int ping = 0;
+
+            return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
+                    maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
+        } catch (Exception e) {
+            // 如果发生任何错误，返回null
+            return null;
+        }
+    }
 }

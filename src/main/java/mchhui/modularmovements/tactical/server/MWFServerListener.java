@@ -20,10 +20,12 @@ public class MWFServerListener {
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void onGunFirePost(WeaponFireEvent.Post event) {
+        if (event.getWeaponUser() instanceof EntityPlayerMP) {
         Vec3d vec3d = new Vec3d(ServerListener.getCameraProbeOffset(event.getWeaponUser().getEntityId()) * -0.6, 0, 0)
                 .rotateYaw((float) (-event.getWeaponUser().rotationYaw * Math.PI / 180f));
-        event.getWeaponUser().posX -= vec3d.x;
-        event.getWeaponUser().posZ -= vec3d.z;
+            event.getWeaponUser().posX -= vec3d.x;
+            event.getWeaponUser().posZ -= vec3d.z;
+        }
     }
 
     @SubscribeEvent

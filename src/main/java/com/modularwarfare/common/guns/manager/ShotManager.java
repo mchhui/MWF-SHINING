@@ -68,6 +68,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 public class ShotManager {
     public static boolean defemptyclickLock=true;
@@ -419,7 +420,7 @@ public class ShotManager {
                         }
 
                         // Weapon pre hit event
-                        WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre(entityPlayer, gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
+                        WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityPlayer)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
                         MinecraftForge.EVENT_BUS.post(preHitEvent);
                         if (preHitEvent.isCanceled())
                             return;
@@ -474,9 +475,9 @@ public class ShotManager {
                         }
 
                         if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                            RayUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                            RayUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causePlayerDamage((EntityPlayer)preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
                         } else {
-                            targetEntity.attackEntityFrom(DamageSource.causePlayerDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                            targetEntity.attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer) preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
                         }
                         targetEntity.hurtResistantTime = 0;
 
@@ -844,4 +845,318 @@ public class ShotManager {
           }
         return objectMouseOver;
       }
+      
+    /**
+     * 为实体设计的服务端射击方法
+     * 移除了玩家特有的验证，保留武器射击类型和伤害判定
+     * 
+     * @param entity 射击实体
+     * @param rotationPitch 俯仰角度
+     * @param rotationYaw 偏航角度
+     * @param world 世界
+     * @param gunStack 武器堆栈
+     * @param itemGun 武器对象
+     * @param fireMode 射击模式
+     * @param clientFireTickDelay 客户端射击延迟
+     * @param recoilPitch 后坐力俯仰
+     * @param recoilYaw 后坐力偏航
+     * @param recoilAimReducer 瞄准后坐力减少
+     * @param bulletSpread 子弹散射
+     * @param useHeldWeapon 是否使用手中武器
+     */
+    public static boolean fireServerForEntity(EntityLivingBase entity, float rotationPitch, float rotationYaw, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode, final int clientFireTickDelay, final float recoilPitch, final float recoilYaw, final float recoilAimReducer, final float bulletSpread, boolean useHeldWeapon) {
+        GunType gunType = itemGun.type;
+        
+        if (!validateEntityShot(entity, gunStack, itemGun, fireMode, useHeldWeapon)) {
+            return false;
+        }
+
+        // Weapon pre fire event
+        WeaponFireEvent.PreServer preFireEvent = new WeaponFireEvent.PreServer(entity, gunStack, itemGun, gunType.weaponMaxRange);
+        MinecraftForge.EVENT_BUS.post(preFireEvent);
+        if (preFireEvent.isCanceled())
+            return false;
+            
+        int shotCount = fireMode == WeaponFireMode.BURST ? gunStack.getTagCompound().getInteger("shotsremaining") > 0 ? gunStack.getTagCompound().getInteger("shotsremaining") : gunType.numBurstRounds : 1;
+
+        if (preFireEvent.getResult() == Event.Result.DEFAULT || preFireEvent.getResult() == Event.Result.ALLOW) {
+            if (useHeldWeapon) {
+                if (!ItemGun.hasNextShot(gunStack)) {
+                    if (ItemGun.canDryFire) {
+                        gunType.playSound(entity, WeaponSoundType.DryFire, gunStack);
+                        ItemGun.canDryFire = false;
+                    }
+                    if (fireMode == WeaponFireMode.BURST) gunStack.getTagCompound().setInteger("shotsremaining", 0);
+                    return false;
+                }
+            }
+        }
+
+        // Sound
+        if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Barrel) != null) {
+            gunType.playSound(entity, WeaponSoundType.FireSuppressed, gunStack, entity instanceof EntityPlayer ? (EntityPlayer) entity : null);
+        } else if (GunType.isPackAPunched(gunStack)) {
+            gunType.playSound(entity, WeaponSoundType.Punched, gunStack, entity instanceof EntityPlayer ? (EntityPlayer) entity : null);
+            gunType.playSound(entity, WeaponSoundType.Fire, gunStack, entity instanceof EntityPlayer ? (EntityPlayer) entity : null);
+        } else {
+            gunType.playSound(entity, WeaponSoundType.Fire, gunStack, entity instanceof EntityPlayer ? (EntityPlayer) entity : null);
+        }
+        
+        int numBullets = gunType.numBullets;
+        ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
+        if (bulletItem == null) {
+            return false;
+        }
+        
+        if (bulletItem.type.isSlug) {
+            numBullets = 1;
+        }
+
+        if(gunType.weaponType != WeaponType.Launcher && gunType.weaponType != WeaponType.Thrower) {
+            List<BulletHit> rayTraceList = new ArrayList<>();
+            
+            for (int i = 0; i < numBullets; i++) {
+                List<BulletHit> rayTrace = RayUtil.standardEntityRayTraceForEntity(Side.SERVER, world, rotationPitch, rotationYaw, entity, preFireEvent.getWeaponRange(), itemGun, GunType.isPackAPunched(gunStack), gunStack);
+                if (rayTrace == null) {
+                    continue;
+                }
+                rayTraceList.addAll(rayTrace);
+            }
+
+            Vec3d origin = entity.getPositionEyes(1.0f);
+            Vec3d endVec = null;
+            
+            if (!rayTraceList.isEmpty()) {
+                BulletHit firstHit = rayTraceList.get(0);
+                if (firstHit.rayTraceResult != null && firstHit.rayTraceResult.hitVec != null) {
+                    endVec = firstHit.rayTraceResult.hitVec;
+                }
+            }
+            
+            if (endVec == null) {
+                float accuracy = RayUtil.calculateAccuracy(itemGun, entity);
+                Vec3d forward = RayUtil.getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, entity);
+                endVec = origin.add(forward.scale(gunType.weaponMaxRange));
+            }
+            
+            Vec3d direction = endVec.subtract(origin).normalize();
+            
+            String model = gunType.customTrailModel;
+            String tex = gunType.customTrailTexture;
+            boolean glow = gunType.customTrailGlow;
+            
+            if (model == null) model = "";
+            if (tex == null) tex = "";
+            
+            if (gunType.useTeslaTrails) {
+                ModularWarfare.NETWORK.sendToDimension(new PacketTeslaTrailAskServer(
+                    origin.x, origin.y, origin.z,
+                    endVec.x, endVec.y, endVec.z,
+                    10f,
+                    gunType
+                ), entity.dimension);
+            } else {
+                ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(
+                    gunType.internalName, model, tex, glow,
+                    origin.x, origin.y, origin.z,
+                    entity.motionX, entity.motionZ,
+                    direction.x, direction.y, direction.z,
+                    origin.distanceTo(endVec),
+                    10,
+                    GunType.isPackAPunched(gunStack)
+                ), entity.dimension);
+            }
+
+            boolean headshot = false;
+            Iterator<BulletHit> rayTraceIterator = rayTraceList.iterator();
+            while (rayTraceIterator.hasNext() && !world.isRemote) {
+                BulletHit rayTrace = rayTraceIterator.next();
+                if (rayTrace instanceof PlayerHit) {
+                    final EntityPlayer victim = ((PlayerHit) rayTrace).getEntity();
+                    if (victim == null || victim.isDead || victim.getHealth() <= 0.f) {
+                        rayTraceIterator.remove();
+                        continue;
+                    }
+                    gunType.playSoundPos(victim.getPosition(), world, WeaponSoundType.Penetration);
+                    headshot = ((PlayerHit) rayTrace).hitbox.type.equals(EnumHitboxType.HEAD);
+                    if (entity instanceof EntityPlayerMP) {
+                        ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(headshot), (EntityPlayerMP) entity);
+                        ModularWarfare.NETWORK.sendTo(new PacketPlaySound(victim.getPosition(), "flyby", 1f, 1f), (EntityPlayerMP) victim);
+                        if (ModConfig.INSTANCE.hud.snap_fade_hit) {
+                            ModularWarfare.NETWORK.sendTo(new PacketPlayerHit(), (EntityPlayerMP) victim);
+                        }
+                    }
+                    continue;
+                }
+                Entity targetEnt = rayTrace.getEntity();
+                if (targetEnt == null) {
+                    rayTraceIterator.remove();
+                    continue;
+                }
+                if (targetEnt instanceof EntityGrenade) {
+                    ((EntityGrenade) targetEnt).explode();
+                    continue;
+                }
+                if (targetEnt instanceof EntityLivingBase) {
+                    final EntityLivingBase victim = (EntityLivingBase) targetEnt;
+                    gunType.playSoundPos(victim.getPosition(), world, WeaponSoundType.Penetration);
+                    headshot = ItemGun.canEntityGetHeadshot(victim) && rayTrace.rayTraceResult.hitVec.y >= victim.getPosition().getY() + victim.getEyeHeight() - 0.15f;
+                    if (entity instanceof EntityPlayerMP) {
+                        ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(headshot), (EntityPlayerMP) entity);
+                    }
+                    continue;
+                }
+                if (rayTrace.rayTraceResult != null && rayTrace.rayTraceResult.hitVec != null) {
+                    BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
+                    ItemGun.playImpactSound(world, rayTrace.rayTraceResult, gunType);
+                    gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entity instanceof EntityPlayer ? (EntityPlayer) entity : null, 1.0f, false);
+                    if (entity instanceof EntityPlayer) {
+                        ItemGun.doHit(rayTrace.rayTraceResult, (EntityPlayer) entity);
+                    }
+                    ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
+                }
+            }
+
+            // Weapon post fire event
+            WeaponFireEvent.Post postFireEvent = new WeaponFireEvent.Post(entity instanceof EntityPlayer ? (EntityPlayer) entity : null, gunStack, itemGun, rayTraceList);
+            MinecraftForge.EVENT_BUS.post(postFireEvent);
+
+            if (postFireEvent.getHits() != null && !postFireEvent.getHits().isEmpty()) {
+                List<BulletHit> hits = postFireEvent.getHits();
+                for (BulletHit bulletHit : hits) {
+                    if (bulletHit == null) {
+                        continue;
+                    }
+                    Entity targetEntity = bulletHit.getEntity();
+                    if (targetEntity == null || targetEntity == entity) {
+                        continue;
+                    }
+
+                    // Weapon pre hit event
+                    WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityLivingBase)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
+                    MinecraftForge.EVENT_BUS.post(preHitEvent);
+                    if (preHitEvent.isCanceled()) {
+                        return false;
+                    }
+
+                    if (headshot) {
+                        preHitEvent.setDamage(preHitEvent.getDamage() + gunType.gunDamageHeadshotBonus);
+                    }
+                    if (gunType.gunPenetrationDamageFalloff && preHitEvent.getPenetrateDamageFactor() > 0) {
+                        preHitEvent.setDamage(preHitEvent.getDamage() * preHitEvent.getPenetrateDamageFactor());
+                    }
+                    if (gunType.gunPenetrateBlocksDamageFalloffFactor > 0 && preHitEvent.getPenetrateBlockDamageFactor() > 0 && preHitEvent.getPenetrateBlockDamageFactor() < 1) {
+                        preHitEvent.setDamage(preHitEvent.getDamage() * preHitEvent.getPenetrateBlockDamageFactor() * gunType.gunPenetrateBlocksDamageFalloffFactor);
+                    }
+                    if (preHitEvent.getDistance() > gunType.weaponEffectiveRange) {
+                        preHitEvent.setDamage((float) (preHitEvent.getDamage() * (1 - (preHitEvent.getDistance() - gunType.weaponEffectiveRange) / (gunType.weaponMaxRange - gunType.weaponEffectiveRange))));
+                    }  else if (preHitEvent.getDistance() >= gunType.weaponMaxRange) {
+                        preHitEvent.setDamage((float) (preHitEvent.getDamage() * 0));
+                    }
+
+                    if (targetEntity instanceof EntityLivingBase) {
+                        EntityLivingBase targetELB = (EntityLivingBase) targetEntity;
+                        if (bulletItem.type != null) {
+                            preHitEvent.setDamage(preHitEvent.getDamage() * bulletItem.type.bulletDamageFactor);
+                            if (bulletItem.type.bulletProperties != null) {
+                                if (!bulletItem.type.bulletProperties.isEmpty()) {
+                                    BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? 
+                                        bulletItem.type.bulletProperties.get(targetELB.getName()) : 
+                                        bulletItem.type.bulletProperties.get("All");
+                                    if (bulletProperty.potionEffects != null) {
+                                        for (PotionEntry potionEntry : bulletProperty.potionEffects) {
+                                            targetELB.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (bulletHit instanceof PlayerHit && ((PlayerHit) bulletHit).hitbox.type.equals(EnumHitboxType.BODY) && targetEntity instanceof EntityPlayer) {
+                        EntityPlayer player = (EntityPlayer) targetEntity;
+                        if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
+                            final IExtraItemHandler extraSlots = player.getCapability(CapabilityExtra.CAPABILITY, null);
+                            if (extraSlots != null) {
+                                final ItemStack plate = extraSlots.getStackInSlot(1);
+                                if (plate != null && plate.getItem() instanceof ItemSpecialArmor) {
+                                    ArmorType armorType = ((ItemSpecialArmor) plate.getItem()).type;
+                                    float damage = preHitEvent.getDamage();
+                                    preHitEvent.setDamage((float) (damage - (damage * armorType.defense)));
+                                }
+                            }
+                        }
+                    }
+
+                    if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
+                        RayUtil.attackEntityWithoutKnockback(targetEntity, DamageSource.causeMobDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                    } else {
+                        targetEntity.attackEntityFrom(DamageSource.causeMobDamage(preFireEvent.getWeaponUser()).setProjectile(), preHitEvent.getDamage());
+                    }
+                    targetEntity.hurtResistantTime = 0;
+
+                    // Weapon pre hit event
+                    WeaponHitEvent.Post postHitEvent = new WeaponHitEvent.Post((EntityLivingBase)preFireEvent.getWeaponUser(), gunStack, itemGun, postFireEvent.getHits(), preHitEvent.getDamage());
+                    MinecraftForge.EVENT_BUS.post(postHitEvent);
+                }
+            }
+        } else if (gunType.weaponType == WeaponType.Launcher){
+            //抛射物玩家参数过多，后续再调整
+            if (entity instanceof EntityPlayer) {
+                final float accuracy = RayUtil.calculateAccuracy(itemGun, entity);
+                EntityExplosiveProjectile projectile = new EntityExplosiveProjectile(world, (EntityPlayer) entity, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke, bulletItem.type.isExplosion);
+                world.spawnEntity(projectile);
+            }
+        } else if (gunType.weaponType == WeaponType.Thrower){
+            //抛射物玩家参数过多，后续再调整
+            if (entity instanceof EntityPlayer) {
+                final float accuracy = RayUtil.calculateAccuracy(itemGun, entity);
+                EntityThrowerProjectile projectile = new EntityThrowerProjectile(world, (EntityPlayer) entity, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke);
+                world.spawnEntity(projectile);
+            }
+        }
+
+        // Burst Stuff
+        if (fireMode == WeaponFireMode.BURST) {
+            if (useHeldWeapon) {
+                shotCount = shotCount - 1;
+                gunStack.getTagCompound().setInteger("shotsremaining", shotCount);
+            }
+        }
+
+        if (preFireEvent.getResult() == Event.Result.DEFAULT || preFireEvent.getResult() == Event.Result.ALLOW) {
+            if (useHeldWeapon) {
+                ItemGun.consumeShot(gunStack);
+            }
+        }
+
+        return true;
+    }
+    
+    /**
+     * 验证实体射击的有效性
+     */
+    private static boolean validateEntityShot(EntityLivingBase entity, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode, boolean useHeldWeapon) {
+        GunType gunType = itemGun.type;
+        
+        if (entity == null || entity.isDead || entity.getHealth() <= 0) {
+            return false;
+        }
+        
+        if (gunStack == null || gunStack.isEmpty() || !(gunStack.getItem() instanceof ItemGun)) {
+            return false;
+        }
+        
+        if (!gunType.hasFireMode(fireMode)) {
+            return false;
+        }
+        
+        if (useHeldWeapon) {
+            if (!ItemGun.hasNextShot(gunStack)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
 }
