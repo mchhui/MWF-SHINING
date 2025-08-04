@@ -948,6 +948,18 @@ public class EntityShootingAPI {
                 if (task.shootIntervalMs > 0) {
                     long currentTimeMs = System.currentTimeMillis();
                     if (currentTimeMs >= task.nextShootTime) {
+                        if (task.target != null) {
+                            forceEntityFaceTarget(task.entity, task.target);
+                        } else if (task.isCoordinateShoot) {
+                            float[] angles = calculateCoordinateAngles(task.entity, task.targetX, task.targetY, task.targetZ);
+                            if (!(task.entity instanceof EntityPlayer)) {
+                                task.entity.rotationPitch = angles[0];
+                                task.entity.rotationYaw = angles[1];
+                                task.entity.rotationYawHead = angles[1];
+                                task.entity.renderYawOffset = angles[1];
+                            }
+                        }
+                        
                         if (executeSingleShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
                             task.shotCount--;
                             if (task.shotCount <= 0) {
