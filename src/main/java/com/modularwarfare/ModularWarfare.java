@@ -92,6 +92,7 @@ import static com.modularwarfare.common.CommonProxy.zipJar;
 
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.client.hud.GunTransformHUD;
+import com.modularwarfare.common.commands.CommandEntityShoot;
 
 @Mod(
     modid = ModularWarfare.MOD_ID,
@@ -582,6 +583,7 @@ public class ModularWarfare {
         event.registerServerCommand(new CommandPlay());
         event.registerServerCommand(new CommandStats());
         event.registerServerCommand(new CommandFX());
+        event.registerServerCommand(new CommandEntityShoot());
     }
 
     // Registers protected content-pack before preInit, to allow making a custom ResourcePackLoader allowing protected .zip
