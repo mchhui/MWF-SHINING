@@ -28,7 +28,6 @@ import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
-import mchhui.he.api.event.entitydisplay.EasyLivingModelEvent.RenderOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
