@@ -1,7 +1,11 @@
 package com.modularwarfare.utility;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.EntityShootingAPI;
+import com.modularwarfare.api.ballistics.GetLivingAABBEvent;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
@@ -21,6 +25,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -28,6 +33,8 @@ import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.ArrayList;
+import net.minecraft.util.math.AxisAlignedBB;
 
 public class RayUtil {
 
@@ -137,6 +144,11 @@ public class RayUtil {
     }
 
     public static float calculateAccuracy(final ItemGun item, final EntityLivingBase player) {
+        // 在服务器端，使用EntityShootingAPI的精度计算
+        if (!player.world.isRemote) {
+            return EntityShootingAPI.calculateServerAccuracy(item, player);
+        }
+        
         final GunType gun = item.type;
         //新增枪管散射影响
         float accuracyBarrelFactor = 1.0f;
@@ -422,12 +434,10 @@ public class RayUtil {
      */
     @Nullable
     public static List<BulletHit> standardEntityRayTraceForEntity(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase entity, double range, ItemGun item, boolean isPunched, ItemStack weaponStack) {
-        // 基础检查
         if (world == null || entity == null || item == null || item.type == null) {
             return null;
         }
 
-        // 检查武器堆栈（如果提供）
         if (weaponStack != null && (weaponStack.isEmpty() || !(weaponStack.getItem() instanceof ItemGun))) {
             return null;
         }
@@ -436,13 +446,11 @@ public class RayUtil {
         hashset.add(entity);
 
         try {
-            // 使用服务端精度计算（已在EntityShootingAPI中计算过）
             float accuracy = calculateAccuracy(item, entity);
             float penetrate = item.type.gunPenetrateSize;
             float maxPenetrateBlockResistance = item.type.gunMaxPenetrateBlockResistance;
             float penetrateBlocksResistance = item.type.gunPenetrateBlocksResistance;
 
-            // 获取子弹信息
             ItemBullet usedBullet = null;
             if (weaponStack != null) {
                 usedBullet = ItemAmmo.getUsedBullet(weaponStack);
@@ -454,20 +462,140 @@ public class RayUtil {
                 penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
             }
             
-            // 使用传入的角度进行射线追踪
-            Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, entity);
+            Vec3d dir;
+            if (side.isServer()) {
+                dir = EntityShootingAPI.getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, world.rand);
+            } else {
+                dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, entity);
+            }
 
-            // 获取实体眼睛位置（不使用战术动作系统）
             Vec3d origin = entity.getPositionEyes(1.0f);
 
-            // 实体不使用ping值
             int ping = 0;
 
+
+            if (side.isServer()) {
+                return performSimpleAABBRayTrace(world, origin, dir, range, penetrate, maxPenetrateBlockResistance, penetrateBlocksResistance, hashset);
+            } else {
             return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
                     maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
+            }
         } catch (Exception e) {
-            // 如果发生任何错误，返回null
             return null;
         }
+    }
+    
+    /**
+     * 执行简单的AABB射线检测（服务器端专用）
+     */
+    private static List<BulletHit> performSimpleAABBRayTrace(World world, Vec3d origin, Vec3d dir, double range, float penetrate, float maxPenetrateBlockResistance, float penetrateBlocksResistance, HashSet<Entity> excluded) {
+        List<BulletHit> hits = new ArrayList<>();
+        
+        final float originPenetrateSize = penetrate;
+        final float originBlockPenetrate = penetrateBlocksResistance;
+        
+        Vec3d endVec = origin.add(dir.scale(range));
+        
+        RayTraceResult blockResult = world.rayTraceBlocks(origin, endVec, false, true, false);
+        if (blockResult != null && blockResult.typeOfHit == RayTraceResult.Type.BLOCK) {
+            double distance = blockResult.hitVec.distanceTo(origin);
+            hits.add(new BulletHit(blockResult, distance, 0.0f, 0.0f));
+            endVec = blockResult.hitVec;
+        }
+        
+        AxisAlignedBB rayBox = new AxisAlignedBB(origin.x, origin.y, origin.z, endVec.x, endVec.y, endVec.z).grow(1.0);
+        List<Entity> entities = world.getEntitiesWithinAABBExcludingEntity(null, rayBox);
+        
+        for (Entity ent : entities) {
+            if (excluded.contains(ent) || !ent.canBeCollidedWith() || ent.isDead) {
+                continue;
+            }
+            
+            if (ent instanceof EntityPlayer) {
+                EntityPlayer player = (EntityPlayer) ent;
+                if (player.getHealth() > 0.0F) {
+                    double entBorder = ent.getCollisionBorderSize();
+                    if (entBorder == 0) {
+                        entBorder = ModConfig.INSTANCE.general.collisionBorderSizeFixNonPlayer;
+                    }
+                    
+                    AxisAlignedBB entityBb = ent.getEntityBoundingBox();
+                    if (entityBb != null) {
+                        entityBb = entityBb.grow(entBorder);
+                        
+                        try {
+                            GetLivingAABBEvent aabbEvent = new GetLivingAABBEvent(player, entityBb);
+                            MinecraftForge.EVENT_BUS.post(aabbEvent);
+                            entityBb = aabbEvent.box;
+                        } catch (Exception e) {
+                        }
+                        
+                        RayTraceResult intercept = entityBb.calculateIntercept(origin, endVec);
+                        if (intercept != null) {
+                            double currentHitDistance = intercept.hitVec.distanceTo(origin);
+                            if (currentHitDistance < range) {
+                                RayTraceResult entityResult = new RayTraceResult(player, intercept.hitVec);
+                                float remainingPenetrate = originPenetrateSize == 0 ? 1.0f : penetrate / originPenetrateSize;
+                                float remainingBlockPenetrate = originBlockPenetrate == 0 ? 1.0f : penetrateBlocksResistance / originBlockPenetrate;
+                                hits.add(new BulletHit(entityResult, currentHitDistance, remainingPenetrate, remainingBlockPenetrate));
+                            }
+                        }
+                    }
+                }
+            }
+            else if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
+                EntityLivingBase entityLivingBase = (EntityLivingBase) ent;
+                if (entityLivingBase.getHealth() > 0.0F) {
+                    double entBorder = ent.getCollisionBorderSize();
+                    if (entBorder == 0) {
+                        entBorder = ModConfig.INSTANCE.general.collisionBorderSizeFixNonPlayer;
+                    }
+                    
+                    AxisAlignedBB entityBb = ent.getEntityBoundingBox();
+                    if (entityBb != null) {
+                        entityBb = entityBb.grow(entBorder);
+                        
+                        try {
+                            GetLivingAABBEvent aabbEvent = new GetLivingAABBEvent(entityLivingBase, entityBb);
+                            MinecraftForge.EVENT_BUS.post(aabbEvent);
+                            entityBb = aabbEvent.box;
+                        } catch (Exception e) {
+                        }
+                        
+                        RayTraceResult intercept = entityBb.calculateIntercept(origin, endVec);
+                        if (intercept != null) {
+                            double currentHitDistance = intercept.hitVec.distanceTo(origin);
+                            if (currentHitDistance < range) {
+                                RayTraceResult entityResult = new RayTraceResult(entityLivingBase, intercept.hitVec);
+                                float remainingPenetrate = originPenetrateSize == 0 ? 1.0f : penetrate / originPenetrateSize;
+                                float remainingBlockPenetrate = originBlockPenetrate == 0 ? 1.0f : penetrateBlocksResistance / originBlockPenetrate;
+                                hits.add(new BulletHit(entityResult, currentHitDistance, remainingPenetrate, remainingBlockPenetrate));
+                            }
+                        }
+                    }
+                }
+            } 
+            else if (ent instanceof EntityGrenade) {
+                float entBorder = ent.getCollisionBorderSize();
+                AxisAlignedBB entityBb = ent.getEntityBoundingBox();
+                if (entityBb != null) {
+                    entityBb = entityBb.grow(entBorder, entBorder, entBorder);
+                    RayTraceResult intercept = entityBb.calculateIntercept(origin, endVec);
+                    if (intercept != null) {
+                        double currentHitDistance = intercept.hitVec.distanceTo(origin);
+                        if (currentHitDistance < range) {
+                            RayTraceResult entityResult = new RayTraceResult(ent, intercept.hitVec);
+                            float remainingPenetrate = originPenetrateSize == 0 ? 1.0f : penetrate / originPenetrateSize;
+                            float remainingBlockPenetrate = originBlockPenetrate == 0 ? 1.0f : penetrateBlocksResistance / originBlockPenetrate;
+                            hits.add(new BulletHit(entityResult, currentHitDistance, remainingPenetrate, remainingBlockPenetrate));
+                        }
+                    }
+                }
+            }
+        }
+        
+        hits.sort((a, b) -> Double.compare(a.distance, b.distance));
+        
+        return hits;
     }
 }
