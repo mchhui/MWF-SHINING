@@ -251,7 +251,7 @@ public class EntityShootingAPI {
     
     // ==================== 工具方法 ====================
     
-    private static Vec3d getServerDefaultAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
+    public static Vec3d getServerDefaultAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
         final float randAccPitch = rand.nextFloat() * accuracy;
         final float randAccYaw = rand.nextFloat() * accuracy;
         Vec3d vec3d = new Vec3d(rand.nextBoolean() ? randAccYaw : (-randAccYaw), 
@@ -261,7 +261,7 @@ public class EntityShootingAPI {
                    .rotateYaw((float)(-yaw * Math.PI / 180));
     }
     
-    private static float calculateServerAccuracy(final ItemGun item, final EntityLivingBase entity) {
+    public static float calculateServerAccuracy(final ItemGun item, final EntityLivingBase entity) {
         final GunType gun = item.type;
         if (gun == null) {
             return 1.0f;
@@ -536,6 +536,60 @@ public class EntityShootingAPI {
         return true;
     }
     
+    // 任务内执行：忽略实体冷却，允许同tick内多发
+    private static boolean executeScheduledShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon) {
+        if (entity == null) {
+            return false;
+        }
+        if (weapon == null || weaponStack == null) {
+            return true;
+        }
+        GunType gunType = weapon.type;
+        if (gunType == null) {
+            return false;
+        }
+        if (useHeldWeapon) {
+            if (!ItemGun.hasNextShot(weaponStack)) {
+                return false;
+            }
+        }
+        WeaponFireMode fireMode = WeaponFireMode.SEMI;
+        if (entity instanceof EntityPlayer) {
+            fireMode = GunType.getFireMode(weaponStack);
+        } else if (gunType.fireModes != null && gunType.fireModes.length > 0) {
+            fireMode = gunType.fireModes[0];
+        }
+        float rotationPitch = entity.rotationPitch;
+        float rotationYaw = entity.rotationYaw;
+        if (!(entity instanceof EntityPlayer)) {
+            float accuracy = calculateServerAccuracy(weapon, entity);
+            Vec3d scatteredDirection = getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, entity.world.rand);
+            double x = scatteredDirection.x;
+            double y = scatteredDirection.y;
+            double z = scatteredDirection.z;
+            rotationYaw = (float) Math.toDegrees(Math.atan2(-x, z));
+            double horizontalDistance = Math.sqrt(x * x + z * z);
+            rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
+        }
+        if (!entity.world.isRemote) {
+            boolean shotSuccess = ShotManager.fireServerForEntity(
+                entity, rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode,
+                gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw,
+                gunType.recoilAimReducer, gunType.bulletSpread, useHeldWeapon
+            );
+            if (!shotSuccess) {
+                return false;
+            }
+        } else {
+            ModularWarfare.NETWORK.sendToServer(new PacketGunFire(
+                gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch,
+                gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread,
+                rotationPitch, rotationYaw
+            ));
+        }
+        return true;
+    }
+    
     // ==================== 公共API方法 ====================
     
     public static boolean shootEntity(UUID entityUUID, int shotCount, boolean useHeldWeapon, 
@@ -586,7 +640,7 @@ public class EntityShootingAPI {
             
             delayedShootTasks.put(UUID.randomUUID(), task);
             return true;
-        }
+    }
     }
     
     public static boolean shootEntityAtTarget(UUID entityUUID, UUID targetUUID, int shotCount, double maxDistance,
@@ -660,7 +714,7 @@ public class EntityShootingAPI {
             
             delayedShootTasks.put(UUID.randomUUID(), task);
             return true;
-        }
+    }
     }
     
     public static boolean shootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ, 
@@ -707,7 +761,7 @@ public class EntityShootingAPI {
             
             delayedShootTasks.put(UUID.randomUUID(), task);
             return true;
-        }
+    }
     }
     
     public static boolean delayedShootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
@@ -948,29 +1002,34 @@ public class EntityShootingAPI {
                 if (task.shootIntervalMs > 0) {
                     long currentTimeMs = System.currentTimeMillis();
                     if (currentTimeMs >= task.nextShootTime) {
-                        if (task.target != null) {
-                            forceEntityFaceTarget(task.entity, task.target);
-                        } else if (task.isCoordinateShoot) {
-                            float[] angles = calculateCoordinateAngles(task.entity, task.targetX, task.targetY, task.targetZ);
-                            if (!(task.entity instanceof EntityPlayer)) {
-                                task.entity.rotationPitch = angles[0];
-                                task.entity.rotationYaw = angles[1];
-                                task.entity.rotationYawHead = angles[1];
-                                task.entity.renderYawOffset = angles[1];
+                        int safetyCounter = 0;
+                        while (task.shotCount > 0 && currentTimeMs >= task.nextShootTime) {
+                            if (task.target != null) {
+                                forceEntityFaceTarget(task.entity, task.target);
+                            } else if (task.isCoordinateShoot) {
+                                float[] angles = calculateCoordinateAngles(task.entity, task.targetX, task.targetY, task.targetZ);
+                                if (!(task.entity instanceof EntityPlayer)) {
+                                    task.entity.rotationPitch = angles[0];
+                                    task.entity.rotationYaw = angles[1];
+                                    task.entity.rotationYawHead = angles[1];
+                                    task.entity.renderYawOffset = angles[1];
+                                }
+                            }
+                            if (executeScheduledShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
+                                task.shotCount--;
+                                task.nextShootTime += task.shootIntervalMs;
+                                safetyCounter++;
+                                if (safetyCounter > 100) { // 避免极端情况下的死循环
+                                    break;
+                                }
+                            } else {
+                                return true; // 执行失败，移除任务
                             }
                         }
-                        
-                        if (executeSingleShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
-                            task.shotCount--;
-                            if (task.shotCount <= 0) {
-                                return true;
-                            } else {
-                                task.nextShootTime = currentTimeMs + task.shootIntervalMs;
-                                return false;
-                            }
-                        } else {
+                        if (task.shotCount <= 0) {
                             return true;
                         }
+                        return false;
                     }
                     return false;
                 }
