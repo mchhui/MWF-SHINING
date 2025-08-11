@@ -105,19 +105,22 @@ public class CommandEntityShoot extends CommandBase {
         boolean success = EntityShootingAPI.shootEntity(targetEntity, shotCount, useHeldWeapon, weaponName, ammoName, magazineName);
         
         if (success) {
-            sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + targetEntity.getName() + " shoot " + shotCount + " times"));
-            
-            // 显示详细信息
-            if (useHeldWeapon) {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
-            } else {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
-            }
-            
-            // 检查射击冷却
-            long cooldown = EntityShootingAPI.getEntityShootCooldown(targetEntity);
-            if (cooldown > 0) {
-                sender.sendMessage(new TextComponentString(TextFormatting.BLUE + "Shooting cooldown: " + cooldown + "ms"));
+            // 只有玩家执行时才显示成功信息
+            if (sender instanceof EntityPlayer) {
+                sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + targetEntity.getName() + " shoot " + shotCount + " times"));
+                
+                // 显示详细信息
+                if (useHeldWeapon) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
+                } else {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
+                }
+                
+                // 检查射击冷却
+                long cooldown = EntityShootingAPI.getEntityShootCooldown(targetEntity);
+                if (cooldown > 0) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.BLUE + "Shooting cooldown: " + cooldown + "ms"));
+                }
             }
         } else {
             sender.sendMessage(new TextComponentString(TextFormatting.RED + "Failed to make entity " + targetEntity.getName() + " shoot"));
@@ -230,16 +233,19 @@ public class CommandEntityShoot extends CommandBase {
                                                               useHeldWeapon, weaponName, ammoName, magazineName);
         
         if (success) {
-            sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + shooterEntity.getName() + " shoot at " + targetEntity.getName() + " " + shotCount + " times"));
-            sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Distance: " + String.format("%.2f", distance) + " blocks, Max distance: " + maxDistance + " blocks"));
-            
-            // 显示详细信息
-            if (useHeldWeapon) {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
-            } else {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Ammo: " + ammoName));
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Magazine: " + magazineName));
+            // 只有玩家执行时才显示成功信息
+            if (sender instanceof EntityPlayer) {
+                sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + shooterEntity.getName() + " shoot at " + targetEntity.getName() + " " + shotCount + " times"));
+                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Distance: " + String.format("%.2f", distance) + " blocks, Max distance: " + maxDistance + " blocks"));
+                
+                // 显示详细信息
+                if (useHeldWeapon) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
+                } else {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Ammo: " + ammoName));
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Magazine: " + magazineName));
+                }
             }
         } else {
             sender.sendMessage(new TextComponentString(TextFormatting.RED + "Failed to make entity " + shooterEntity.getName() + " shoot at " + targetEntity.getName()));
@@ -320,18 +326,21 @@ public class CommandEntityShoot extends CommandBase {
                                                                        useHeldWeapon, weaponName, ammoName, magazineName);
         
         if (success) {
-            sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + shooterEntity.getName() + " delayed shoot at " + targetEntity.getName() + " " + shotCount + " times"));
-            sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Distance: " + String.format("%.2f", distance) + " blocks, Max distance: " + maxDistance + " blocks, Delay: " + delayTicks + " ticks"));
-            
-            if (useHeldWeapon) {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
-            } else {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
-            }
-            
-            long cooldown = EntityShootingAPI.getEntityShootCooldown(shooterEntity);
-            if (cooldown > 0) {
-                sender.sendMessage(new TextComponentString(TextFormatting.BLUE + "Shooting cooldown: " + cooldown + "ms"));
+            // 只有玩家执行时才显示成功信息
+            if (sender instanceof EntityPlayer) {
+                sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + shooterEntity.getName() + " delayed shoot at " + targetEntity.getName() + " " + shotCount + " times"));
+                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Distance: " + String.format("%.2f", distance) + " blocks, Max distance: " + maxDistance + " blocks, Delay: " + delayTicks + " ticks"));
+                
+                if (useHeldWeapon) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
+                } else {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
+                }
+                
+                long cooldown = EntityShootingAPI.getEntityShootCooldown(shooterEntity);
+                if (cooldown > 0) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.BLUE + "Shooting cooldown: " + cooldown + "ms"));
+                }
             }
         } else {
             sender.sendMessage(new TextComponentString(TextFormatting.RED + "Failed to make entity " + shooterEntity.getName() + " delayed shoot at " + targetEntity.getName()));
@@ -400,20 +409,23 @@ public class CommandEntityShoot extends CommandBase {
                                                                            delayTicks, offsetX, offsetY, offsetZ, useHeldWeapon, weaponName, ammoName, magazineName);
         
         if (success) {
-            sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + shooterEntity.getName() + " delayed shoot at coordinates (" + String.format("%.2f", targetX) + ", " + String.format("%.2f", targetY) + ", " + String.format("%.2f", targetZ) + ") " + shotCount + " times"));
-            sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Delay: " + delayTicks + " ticks, Offset: (" + String.format("%.2f", offsetX) + ", " + String.format("%.2f", offsetY) + ", " + String.format("%.2f", offsetZ) + ")"));
-            
-            // 显示详细信息
-            if (useHeldWeapon) {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
-            } else {
-                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
-            }
-            
-            // 检查射击冷却
-            long cooldown = EntityShootingAPI.getEntityShootCooldown(shooterEntity);
-            if (cooldown > 0) {
-                sender.sendMessage(new TextComponentString(TextFormatting.BLUE + "Shooting cooldown: " + cooldown + "ms"));
+            // 只有玩家执行时才显示成功信息
+            if (sender instanceof EntityPlayer) {
+                sender.sendMessage(new TextComponentString(TextFormatting.GREEN + "Successfully made entity " + shooterEntity.getName() + " delayed shoot at coordinates (" + String.format("%.2f", targetX) + ", " + String.format("%.2f", targetY) + ", " + String.format("%.2f", targetZ) + ") " + shotCount + " times"));
+                sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Delay: " + delayTicks + " ticks, Offset: (" + String.format("%.2f", offsetX) + ", " + String.format("%.2f", offsetY) + ", " + String.format("%.2f", offsetZ) + ")"));
+                
+                // 显示详细信息
+                if (useHeldWeapon) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
+                } else {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
+                }
+                
+                // 检查射击冷却
+                long cooldown = EntityShootingAPI.getEntityShootCooldown(shooterEntity);
+                if (cooldown > 0) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.BLUE + "Shooting cooldown: " + cooldown + "ms"));
+                }
             }
         } else {
             sender.sendMessage(new TextComponentString(TextFormatting.RED + "Failed to make entity " + shooterEntity.getName() + " delayed shoot at coordinates (" + String.format("%.2f", targetX) + ", " + String.format("%.2f", targetY) + ", " + String.format("%.2f", targetZ) + ")"));
