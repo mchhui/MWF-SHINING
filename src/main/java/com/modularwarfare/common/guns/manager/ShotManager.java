@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.EntityShootingAPI;
 import com.modularwarfare.api.WeaponFireEvent;
 import com.modularwarfare.api.WeaponHitEvent;
 import com.modularwarfare.client.ClientProxy;
@@ -934,8 +935,8 @@ public class ShotManager {
             }
             
             if (endVec == null) {
-                float accuracy = RayUtil.calculateAccuracy(itemGun, entity);
-                Vec3d forward = RayUtil.getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, entity);
+                float accuracy = EntityShootingAPI.calculateServerAccuracy(itemGun, entity);
+                Vec3d forward = EntityShootingAPI.getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, world.rand);
                 endVec = origin.add(forward.scale(gunType.weaponMaxRange));
             }
             
@@ -988,6 +989,21 @@ public class ShotManager {
                     }
                     continue;
                 }
+                
+                // 检查是否为方块命中，这里是特殊处理
+                if (rayTrace.rayTraceResult != null && rayTrace.rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
+                    BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
+                    ItemGun.playImpactSound(world, rayTrace.rayTraceResult, gunType);
+                    gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entity instanceof EntityPlayer ? (EntityPlayer) entity : null, 1.0f, false);
+                    if (entity instanceof EntityPlayer) {
+                        ItemGun.doHit(rayTrace.rayTraceResult, (EntityPlayer) entity);
+                    } else {
+                        ItemGun.doHit(rayTrace.rayTraceResult, null);
+                    }
+                    ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
+                    continue;
+                }
+                
                 Entity targetEnt = rayTrace.getEntity();
                 if (targetEnt == null) {
                     rayTraceIterator.remove();
@@ -1005,15 +1021,6 @@ public class ShotManager {
                         ModularWarfare.NETWORK.sendTo(new PacketPlayHitmarker(headshot), (EntityPlayerMP) entity);
                     }
                     continue;
-                }
-                if (rayTrace.rayTraceResult != null && rayTrace.rayTraceResult.hitVec != null) {
-                    BlockPos blockPos = rayTrace.rayTraceResult.getBlockPos();
-                    ItemGun.playImpactSound(world, rayTrace.rayTraceResult, gunType);
-                    gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, entity instanceof EntityPlayer ? (EntityPlayer) entity : null, 1.0f, false);
-                    if (entity instanceof EntityPlayer) {
-                        ItemGun.doHit(rayTrace.rayTraceResult, (EntityPlayer) entity);
-                    }
-                    ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
                 }
             }
 
@@ -1103,14 +1110,14 @@ public class ShotManager {
         } else if (gunType.weaponType == WeaponType.Launcher){
             //抛射物玩家参数过多，后续再调整
             if (entity instanceof EntityPlayer) {
-                final float accuracy = RayUtil.calculateAccuracy(itemGun, entity);
+                final float accuracy = EntityShootingAPI.calculateServerAccuracy(itemGun, entity);
                 EntityExplosiveProjectile projectile = new EntityExplosiveProjectile(world, (EntityPlayer) entity, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke, bulletItem.type.isExplosion);
                 world.spawnEntity(projectile);
             }
         } else if (gunType.weaponType == WeaponType.Thrower){
             //抛射物玩家参数过多，后续再调整
             if (entity instanceof EntityPlayer) {
-                final float accuracy = RayUtil.calculateAccuracy(itemGun, entity);
+                final float accuracy = EntityShootingAPI.calculateServerAccuracy(itemGun, entity);
                 EntityThrowerProjectile projectile = new EntityThrowerProjectile(world, (EntityPlayer) entity, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke);
                 world.spawnEntity(projectile);
             }
