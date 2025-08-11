@@ -168,27 +168,27 @@ public enum WeaponSoundType {
     /**
      * The sound to play when a bullet hit a block
      */
-    @SerializedName("impact.dirt") ImpactDirt("impact.dirt", 10, "impact.dirt"),
+    @SerializedName("impact.dirt") ImpactDirt("impact.dirt", 32, "impact.dirt"),
     /**
      * The sound to play when a bullet hit a block
      */
-    @SerializedName("impact.glass") ImpactGlass("impact.glass", 10, "impact.glass"),
+    @SerializedName("impact.glass") ImpactGlass("impact.glass", 32, "impact.glass"),
     /**
      * The sound to play when a bullet hit a block
      */
-    @SerializedName("impact.metal") ImpactMetal("impact.metal", 10, "impact.metal"),
+    @SerializedName("impact.metal") ImpactMetal("impact.metal", 32, "impact.metal"),
     /**
      * The sound to play when a bullet hit a block
      */
-    @SerializedName("impact.stone") ImpactStone("impact.stone", 10, "impact.stone"),
+    @SerializedName("impact.stone") ImpactStone("impact.stone", 32, "impact.stone"),
     /**
      * The sound to play when a bullet hit a block
      */
-    @SerializedName("impact.water") ImpactWater("impact.water", 10, "impact.water"),
+    @SerializedName("impact.water") ImpactWater("impact.water", 32, "impact.water"),
     /**
      * The sound to play when a bullet hit a block
      */
-    @SerializedName("impact.wood") ImpactWood("impact.wood", 10, "impact.wood"),
+    @SerializedName("impact.wood") ImpactWood("impact.wood", 32, "impact.wood"),
 
     /**
      * The sound played when drawing a melee weapon
