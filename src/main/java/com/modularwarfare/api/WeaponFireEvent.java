@@ -93,6 +93,17 @@ public class WeaponFireEvent extends WeaponEvent {
 
             fireTickDelay = type.fireTickDelay;
         }
+        
+        public Post(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits, float customDamage) {
+            super(entityLivingBase, stackWeapon, itemWeapon);
+            this.hits = hits;
+
+            GunType type = itemWeapon.type;
+
+            damage = customDamage > 0 ? customDamage : type.gunDamage;
+
+            fireTickDelay = type.fireTickDelay;
+        }
 
         public List<BulletHit> getHits() {
             return hits;

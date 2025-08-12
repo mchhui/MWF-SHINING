@@ -195,6 +195,7 @@ public class EntityShootingAPI {
         public final float offsetX, offsetY, offsetZ;
         public final boolean isCoordinateShoot;
         public final boolean useHeldWeapon;
+        public final float customDamage;
         public int remainingTicks;
         public boolean rayStarted;
         public long shootIntervalMs;
@@ -202,7 +203,7 @@ public class EntityShootingAPI {
         
         public DelayedShootTask(EntityLivingBase entity, EntityLivingBase target, double targetX, double targetY, double targetZ,
                               ItemStack weaponStack, ItemGun weapon, int shotCount, double maxDistance,
-                              int delayTicks, float offsetX, float offsetY, float offsetZ, boolean isCoordinateShoot, boolean useHeldWeapon) {
+                              int delayTicks, float offsetX, float offsetY, float offsetZ, boolean isCoordinateShoot, boolean useHeldWeapon, float customDamage) {
             this.entity = entity;
             this.target = target;
             this.targetX = targetX;
@@ -218,6 +219,7 @@ public class EntityShootingAPI {
             this.offsetZ = offsetZ;
             this.isCoordinateShoot = isCoordinateShoot;
             this.useHeldWeapon = useHeldWeapon;
+            this.customDamage = customDamage;
             this.remainingTicks = delayTicks;
             this.rayStarted = false;
             this.shootIntervalMs = 0;
@@ -251,7 +253,7 @@ public class EntityShootingAPI {
     
     // ==================== 工具方法 ====================
     
-    private static Vec3d getServerDefaultAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
+    public static Vec3d getServerDefaultAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
         final float randAccPitch = rand.nextFloat() * accuracy;
         final float randAccYaw = rand.nextFloat() * accuracy;
         Vec3d vec3d = new Vec3d(rand.nextBoolean() ? randAccYaw : (-randAccYaw), 
@@ -261,7 +263,7 @@ public class EntityShootingAPI {
                    .rotateYaw((float)(-yaw * Math.PI / 180));
     }
     
-    private static float calculateServerAccuracy(final ItemGun item, final EntityLivingBase entity) {
+    public static float calculateServerAccuracy(final ItemGun item, final EntityLivingBase entity) {
         final GunType gun = item.type;
         if (gun == null) {
             return 1.0f;
@@ -455,7 +457,7 @@ public class EntityShootingAPI {
         return new WeaponConfig(weaponStack, weapon, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
     }
     
-    private static boolean executeSingleShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon) {
+    private static boolean executeSingleShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon, float customDamage) {
         if (entity == null) {
             return false;
         }
@@ -519,7 +521,7 @@ public class EntityShootingAPI {
             boolean shotSuccess = ShotManager.fireServerForEntity(
                 entity, rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode,
                 gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw, 
-                gunType.recoilAimReducer, gunType.bulletSpread, useHeldWeapon
+                gunType.recoilAimReducer, gunType.bulletSpread, useHeldWeapon, customDamage
             );
             
             if (!shotSuccess) {
@@ -536,6 +538,60 @@ public class EntityShootingAPI {
         return true;
     }
     
+    // 任务内执行：忽略实体冷却，允许同tick内多发
+    private static boolean executeScheduledShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon) {
+        if (entity == null) {
+            return false;
+        }
+        if (weapon == null || weaponStack == null) {
+            return true;
+        }
+        GunType gunType = weapon.type;
+        if (gunType == null) {
+            return false;
+        }
+        if (useHeldWeapon) {
+            if (!ItemGun.hasNextShot(weaponStack)) {
+                return false;
+            }
+        }
+        WeaponFireMode fireMode = WeaponFireMode.SEMI;
+        if (entity instanceof EntityPlayer) {
+            fireMode = GunType.getFireMode(weaponStack);
+        } else if (gunType.fireModes != null && gunType.fireModes.length > 0) {
+            fireMode = gunType.fireModes[0];
+        }
+        float rotationPitch = entity.rotationPitch;
+        float rotationYaw = entity.rotationYaw;
+        if (!(entity instanceof EntityPlayer)) {
+            float accuracy = calculateServerAccuracy(weapon, entity);
+            Vec3d scatteredDirection = getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, entity.world.rand);
+            double x = scatteredDirection.x;
+            double y = scatteredDirection.y;
+            double z = scatteredDirection.z;
+            rotationYaw = (float) Math.toDegrees(Math.atan2(-x, z));
+            double horizontalDistance = Math.sqrt(x * x + z * z);
+            rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
+        }
+        if (!entity.world.isRemote) {
+            boolean shotSuccess = ShotManager.fireServerForEntity(
+                entity, rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode,
+                gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw,
+                gunType.recoilAimReducer, gunType.bulletSpread, useHeldWeapon, 0.0f
+            );
+            if (!shotSuccess) {
+                return false;
+            }
+        } else {
+            ModularWarfare.NETWORK.sendToServer(new PacketGunFire(
+                gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch,
+                gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread,
+                rotationPitch, rotationYaw
+            ));
+        }
+        return true;
+    }
+    
     // ==================== 公共API方法 ====================
     
     public static boolean shootEntity(UUID entityUUID, int shotCount, boolean useHeldWeapon, 
@@ -546,11 +602,16 @@ public class EntityShootingAPI {
             return false;
         }
         
-        return shootEntity(entity, shotCount, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
+        return shootEntity(entity, shotCount, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f);
     }
     
     public static boolean shootEntity(EntityLivingBase entity, int shotCount, boolean useHeldWeapon, 
                                     String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName) {
+        return shootEntity(entity, shotCount, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f);
+    }
+    
+    public static boolean shootEntity(EntityLivingBase entity, int shotCount, boolean useHeldWeapon, 
+                                    String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         if (!isValidEntity(entity)) {
             return false;
         }
@@ -571,7 +632,7 @@ public class EntityShootingAPI {
         }
         
         if (shotCount <= 1 || useHeldWeapon) {
-            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon);
+            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon, customDamage);
         } else {
             GunType gunType = weaponConfig.weapon.type;
             long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
@@ -579,14 +640,14 @@ public class EntityShootingAPI {
             DelayedShootTask task = new DelayedShootTask(
                 entity, null, 0, 0, 0,
                 weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-                0, 0, 0, 0, 0, true, useHeldWeapon
+                0, 0, 0, 0, 0, true, useHeldWeapon, customDamage
             );
             task.shootIntervalMs = shootInterval;
             task.nextShootTime = System.currentTimeMillis();
             
             delayedShootTasks.put(UUID.randomUUID(), task);
             return true;
-        }
+    }
     }
     
     public static boolean shootEntityAtTarget(UUID entityUUID, UUID targetUUID, int shotCount, double maxDistance,
@@ -611,6 +672,13 @@ public class EntityShootingAPI {
     public static boolean shootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                             double maxDistance, boolean useHeldWeapon, String specifiedWeaponName,
                                             String specifiedAmmoName, String specifiedMagazineName) {
+        return shootEntityAtTarget(entity, target, shotCount, maxDistance, useHeldWeapon, 
+                                 specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f);
+    }
+    
+    public static boolean shootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
+                                            double maxDistance, boolean useHeldWeapon, String specifiedWeaponName,
+                                            String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         if (!isValidEntity(entity)) {
             ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
             return false;
@@ -645,7 +713,7 @@ public class EntityShootingAPI {
         forceEntityFaceTarget(entity, target);
         
         if (shotCount <= 1 || useHeldWeapon) {
-            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon);
+            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon, customDamage);
         } else {
             GunType gunType = weaponConfig.weapon.type;
             long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
@@ -653,19 +721,26 @@ public class EntityShootingAPI {
             DelayedShootTask task = new DelayedShootTask(
                 entity, target, target.posX, target.posY, target.posZ,
                 weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-                maxDistance, 0, 0, 0, 0, false, useHeldWeapon
+                maxDistance, 0, 0, 0, 0, false, useHeldWeapon, customDamage
             );
             task.shootIntervalMs = shootInterval;
             task.nextShootTime = System.currentTimeMillis();
             
             delayedShootTasks.put(UUID.randomUUID(), task);
             return true;
-        }
+    }
     }
     
     public static boolean shootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ, 
                                                  int shotCount, double maxDistance, boolean useHeldWeapon, 
                                                  String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName) {
+        return shootEntityAtCoordinates(entity, targetX, targetY, targetZ, shotCount, maxDistance, useHeldWeapon, 
+                                      specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f);
+    }
+    
+    public static boolean shootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ, 
+                                                 int shotCount, double maxDistance, boolean useHeldWeapon, 
+                                                 String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         if (!isValidEntity(entity)) {
             ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
             return false;
@@ -692,7 +767,7 @@ public class EntityShootingAPI {
         }
         
         if (shotCount <= 1 || useHeldWeapon) {
-            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon);
+            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon, customDamage);
         } else {
             GunType gunType = weaponConfig.weapon.type;
             long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
@@ -700,20 +775,28 @@ public class EntityShootingAPI {
             DelayedShootTask task = new DelayedShootTask(
                 entity, null, targetX, targetY, targetZ,
                 weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-                maxDistance, 0, 0, 0, 0, true, useHeldWeapon
+                maxDistance, 0, 0, 0, 0, true, useHeldWeapon, customDamage
             );
             task.shootIntervalMs = shootInterval;
             task.nextShootTime = System.currentTimeMillis();
             
             delayedShootTasks.put(UUID.randomUUID(), task);
             return true;
-        }
+    }
     }
     
     public static boolean delayedShootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                                    double maxDistance, int delayTicks, float offsetX, float offsetY, float offsetZ,
                                                    boolean useHeldWeapon, String specifiedWeaponName, 
                                                    String specifiedAmmoName, String specifiedMagazineName) {
+        return delayedShootEntityAtTarget(entity, target, shotCount, maxDistance, delayTicks, offsetX, offsetY, offsetZ,
+                                        useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f);
+    }
+    
+    public static boolean delayedShootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
+                                                   double maxDistance, int delayTicks, float offsetX, float offsetY, float offsetZ,
+                                                   boolean useHeldWeapon, String specifiedWeaponName, 
+                                                   String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         if (!isValidEntity(entity)) {
             ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
             return false;
@@ -752,7 +835,7 @@ public class EntityShootingAPI {
         DelayedShootTask task = new DelayedShootTask(
             entity, target, target.posX, target.posY, target.posZ,
             weaponConfig.weaponStack, weaponConfig.weapon, shotCount, maxDistance, delayTicks,
-            offsetX, offsetY, offsetZ, false, useHeldWeapon
+            offsetX, offsetY, offsetZ, false, useHeldWeapon, customDamage
         );
         delayedShootTasks.put(entity.getUniqueID(), task);
         
@@ -775,6 +858,16 @@ public class EntityShootingAPI {
                                                         float offsetX, float offsetY, float offsetZ,
                                                         boolean useHeldWeapon, String specifiedWeaponName, 
                                                         String specifiedAmmoName, String specifiedMagazineName) {
+        return delayedShootEntityAtCoordinates(entity, targetX, targetY, targetZ, shotCount, maxDistance, delayTicks,
+                                             offsetX, offsetY, offsetZ, useHeldWeapon, specifiedWeaponName, 
+                                             specifiedAmmoName, specifiedMagazineName, 0.0f);
+    }
+    
+    public static boolean delayedShootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ,
+                                                        int shotCount, double maxDistance, int delayTicks, 
+                                                        float offsetX, float offsetY, float offsetZ,
+                                                        boolean useHeldWeapon, String specifiedWeaponName, 
+                                                        String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         if (!isValidEntity(entity)) {
             ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
             return false;
@@ -815,7 +908,7 @@ public class EntityShootingAPI {
         DelayedShootTask task = new DelayedShootTask(
             entity, null, targetX, targetY, targetZ,
             weaponConfig.weaponStack, weaponConfig.weapon, shotCount, maxDistance, delayTicks,
-            offsetX, offsetY, offsetZ, true, useHeldWeapon
+            offsetX, offsetY, offsetZ, true, useHeldWeapon, customDamage
         );
         delayedShootTasks.put(entity.getUniqueID(), task);
         
@@ -884,7 +977,7 @@ public class EntityShootingAPI {
             boolean shotSuccess = ShotManager.fireServerForEntity(
                 task.entity, rotationPitch, rotationYaw, task.entity.world, task.weaponStack, task.weapon, fireMode,
                 gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw, 
-                gunType.recoilAimReducer, gunType.bulletSpread, task.useHeldWeapon
+                gunType.recoilAimReducer, gunType.bulletSpread, task.useHeldWeapon, task.customDamage
             );
             
             if (!shotSuccess) {
@@ -948,29 +1041,34 @@ public class EntityShootingAPI {
                 if (task.shootIntervalMs > 0) {
                     long currentTimeMs = System.currentTimeMillis();
                     if (currentTimeMs >= task.nextShootTime) {
-                        if (task.target != null) {
-                            forceEntityFaceTarget(task.entity, task.target);
-                        } else if (task.isCoordinateShoot) {
-                            float[] angles = calculateCoordinateAngles(task.entity, task.targetX, task.targetY, task.targetZ);
-                            if (!(task.entity instanceof EntityPlayer)) {
-                                task.entity.rotationPitch = angles[0];
-                                task.entity.rotationYaw = angles[1];
-                                task.entity.rotationYawHead = angles[1];
-                                task.entity.renderYawOffset = angles[1];
+                        int safetyCounter = 0;
+                        while (task.shotCount > 0 && currentTimeMs >= task.nextShootTime) {
+                            if (task.target != null) {
+                                forceEntityFaceTarget(task.entity, task.target);
+                            } else if (task.isCoordinateShoot) {
+                                float[] angles = calculateCoordinateAngles(task.entity, task.targetX, task.targetY, task.targetZ);
+                                if (!(task.entity instanceof EntityPlayer)) {
+                                    task.entity.rotationPitch = angles[0];
+                                    task.entity.rotationYaw = angles[1];
+                                    task.entity.rotationYawHead = angles[1];
+                                    task.entity.renderYawOffset = angles[1];
+                                }
+                            }
+                            if (executeScheduledShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
+                                task.shotCount--;
+                                task.nextShootTime += task.shootIntervalMs;
+                                safetyCounter++;
+                                if (safetyCounter > 100) { // 避免极端情况下的死循环
+                                    break;
+                                }
+                            } else {
+                                return true; // 执行失败，移除任务
                             }
                         }
-                        
-                        if (executeSingleShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
-                            task.shotCount--;
-                            if (task.shotCount <= 0) {
-                                return true;
-                            } else {
-                                task.nextShootTime = currentTimeMs + task.shootIntervalMs;
-                                return false;
-                            }
-                        } else {
+                        if (task.shotCount <= 0) {
                             return true;
                         }
+                        return false;
                     }
                     return false;
                 }
