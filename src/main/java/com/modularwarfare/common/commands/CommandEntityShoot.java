@@ -28,10 +28,10 @@ public class CommandEntityShoot extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/entity-shoot <target> <shotCount> [useHeldWeapon] [weaponName] [ammoName] [magazineName]\n" +
-               "/entity-shoot target <shooter> <target> <shotCount> <maxDistance> [useHeldWeapon] [weaponName] [ammoName] [magazineName]\n" +
-               "/entity-shoot delayed <shooter> <target> <shotCount> <maxDistance> <delayTicks> <offsetX> <offsetY> <offsetZ> [useHeldWeapon] [weaponName] [ammoName] [magazineName]\n" +
-               "/entity-shoot delayed-coord <shooter> <targetX> <targetY> <targetZ> <shotCount> <maxDistance> <delayTicks> <offsetX> <offsetY> <offsetZ> [useHeldWeapon] [weaponName] [ammoName] [magazineName]";
+        return "/entity-shoot <target> <shotCount> [useHeldWeapon] [weaponName] [ammoName] [magazineName] [customDamage]\n" +
+               "/entity-shoot target <shooter> <target> <shotCount> <maxDistance> [useHeldWeapon] [weaponName] [ammoName] [magazineName] [customDamage]\n" +
+               "/entity-shoot delayed <shooter> <target> <shotCount> <maxDistance> <delayTicks> <offsetX> <offsetY> <offsetZ> [useHeldWeapon] [weaponName] [ammoName] [magazineName] [customDamage]\n" +
+               "/entity-shoot delayed-coord <shooter> <targetX> <targetY> <targetZ> <shotCount> <maxDistance> <delayTicks> <offsetX> <offsetY> <offsetZ> [useHeldWeapon] [weaponName] [ammoName] [magazineName] [customDamage]";
     }
 
     @Override
@@ -76,6 +76,7 @@ public class CommandEntityShoot extends CommandBase {
         String weaponName = null;
         String ammoName = null;
         String magazineName = null;
+        float customDamage = -1.0f;
         
         if (args.length > 2) {
             useHeldWeapon = parseBoolean(args[2]);
@@ -92,6 +93,10 @@ public class CommandEntityShoot extends CommandBase {
         if (args.length > 5) {
             magazineName = args[5];
         }
+        
+        if (args.length > 6) {
+            customDamage = (float)parseDouble(args[6]);
+        }
 
         // 查找目标实体
         EntityLivingBase targetEntity = findTargetEntity(sender, targetArg);
@@ -102,7 +107,7 @@ public class CommandEntityShoot extends CommandBase {
         }
 
         // 执行射击
-        boolean success = EntityShootingAPI.shootEntity(targetEntity, shotCount, useHeldWeapon, weaponName, ammoName, magazineName);
+        boolean success = EntityShootingAPI.shootEntity(targetEntity, shotCount, useHeldWeapon, weaponName, ammoName, magazineName, customDamage);
         
         if (success) {
             // 只有玩家执行时才显示成功信息
@@ -114,6 +119,10 @@ public class CommandEntityShoot extends CommandBase {
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
                 } else {
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
+                }
+                
+                if (customDamage > 0) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Custom damage: " + customDamage));
                 }
                 
                 // 检查射击冷却
@@ -155,6 +164,7 @@ public class CommandEntityShoot extends CommandBase {
         String weaponName = null;
         String ammoName = null;
         String magazineName = null;
+        float customDamage = -1.0f;
         
         if (args.length > 5) {
             useHeldWeapon = parseBoolean(args[5]);
@@ -170,6 +180,10 @@ public class CommandEntityShoot extends CommandBase {
         
         if (args.length > 8) {
             magazineName = args[8];
+        }
+        
+        if (args.length > 9) {
+            customDamage = (float)parseDouble(args[9]);
         }
 
         // 查找射击实体
@@ -230,7 +244,7 @@ public class CommandEntityShoot extends CommandBase {
 
         // 执行带目标射击
         boolean success = EntityShootingAPI.shootEntityAtTarget(shooterEntity, targetEntity, shotCount, maxDistance, 
-                                                              useHeldWeapon, weaponName, ammoName, magazineName);
+                                                              useHeldWeapon, weaponName, ammoName, magazineName, customDamage);
         
         if (success) {
             // 只有玩家执行时才显示成功信息
@@ -245,6 +259,10 @@ public class CommandEntityShoot extends CommandBase {
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Ammo: " + ammoName));
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Magazine: " + magazineName));
+                }
+                
+                if (customDamage > 0) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Custom damage: " + customDamage));
                 }
             }
         } else {
@@ -283,6 +301,7 @@ public class CommandEntityShoot extends CommandBase {
         String weaponName = null;
         String ammoName = null;
         String magazineName = null;
+        float customDamage = -1.0f;
         
         if (args.length > 9) {
             useHeldWeapon = parseBoolean(args[9]);
@@ -298,6 +317,10 @@ public class CommandEntityShoot extends CommandBase {
         
         if (args.length > 12) {
             magazineName = args[12];
+        }
+        
+        if (args.length > 13) {
+            customDamage = (float)parseDouble(args[13]);
         }
 
         // 查找射击实体
@@ -323,7 +346,7 @@ public class CommandEntityShoot extends CommandBase {
 
         boolean success = EntityShootingAPI.delayedShootEntityAtTarget(shooterEntity, targetEntity, shotCount, maxDistance, 
                                                                        delayTicks, offsetX, offsetY, offsetZ,
-                                                                       useHeldWeapon, weaponName, ammoName, magazineName);
+                                                                       useHeldWeapon, weaponName, ammoName, magazineName, customDamage);
         
         if (success) {
             // 只有玩家执行时才显示成功信息
@@ -335,6 +358,10 @@ public class CommandEntityShoot extends CommandBase {
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
                 } else {
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
+                }
+                
+                if (customDamage > 0) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Custom damage: " + customDamage));
                 }
                 
                 long cooldown = EntityShootingAPI.getEntityShootCooldown(shooterEntity);
@@ -380,6 +407,7 @@ public class CommandEntityShoot extends CommandBase {
         String weaponName = null;
         String ammoName = null;
         String magazineName = null;
+        float customDamage = -1.0f;
         
         if (args.length > 11) {
             useHeldWeapon = parseBoolean(args[11]);
@@ -396,6 +424,10 @@ public class CommandEntityShoot extends CommandBase {
         if (args.length > 14) {
             magazineName = args[14];
         }
+        
+        if (args.length > 15) {
+            customDamage = (float)parseDouble(args[15]);
+        }
 
         // 查找射击实体
         EntityLivingBase shooterEntity = findTargetEntity(sender, shooterArg);
@@ -406,7 +438,7 @@ public class CommandEntityShoot extends CommandBase {
 
         // 执行延迟坐标射击
         boolean success = EntityShootingAPI.delayedShootEntityAtCoordinates(shooterEntity, targetX, targetY, targetZ, shotCount, maxDistance, 
-                                                                           delayTicks, offsetX, offsetY, offsetZ, useHeldWeapon, weaponName, ammoName, magazineName);
+                                                                           delayTicks, offsetX, offsetY, offsetZ, useHeldWeapon, weaponName, ammoName, magazineName, customDamage);
         
         if (success) {
             // 只有玩家执行时才显示成功信息
@@ -419,6 +451,10 @@ public class CommandEntityShoot extends CommandBase {
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using held weapon"));
                 } else {
                     sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Using specified weapon: " + weaponName));
+                }
+                
+                if (customDamage > 0) {
+                    sender.sendMessage(new TextComponentString(TextFormatting.YELLOW + "Custom damage: " + customDamage));
                 }
                 
                 // 检查射击冷却

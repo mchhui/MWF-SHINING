@@ -865,7 +865,7 @@ public class ShotManager {
      * @param bulletSpread 子弹散射
      * @param useHeldWeapon 是否使用手中武器
      */
-    public static boolean fireServerForEntity(EntityLivingBase entity, float rotationPitch, float rotationYaw, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode, final int clientFireTickDelay, final float recoilPitch, final float recoilYaw, final float recoilAimReducer, final float bulletSpread, boolean useHeldWeapon) {
+    public static boolean fireServerForEntity(EntityLivingBase entity, float rotationPitch, float rotationYaw, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode, final int clientFireTickDelay, final float recoilPitch, final float recoilYaw, final float recoilAimReducer, final float bulletSpread, boolean useHeldWeapon, float customDamage) {
         GunType gunType = itemGun.type;
         
         if (!validateEntityShot(entity, gunStack, itemGun, fireMode, useHeldWeapon)) {
@@ -1025,7 +1025,7 @@ public class ShotManager {
             }
 
             // Weapon post fire event
-            WeaponFireEvent.Post postFireEvent = new WeaponFireEvent.Post(entity instanceof EntityPlayer ? (EntityPlayer) entity : null, gunStack, itemGun, rayTraceList);
+            WeaponFireEvent.Post postFireEvent = new WeaponFireEvent.Post(entity instanceof EntityPlayer ? (EntityPlayer) entity : null, gunStack, itemGun, rayTraceList, customDamage);
             MinecraftForge.EVENT_BUS.post(postFireEvent);
 
             if (postFireEvent.getHits() != null && !postFireEvent.getHits().isEmpty()) {
