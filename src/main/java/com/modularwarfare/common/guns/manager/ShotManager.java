@@ -865,7 +865,7 @@ public class ShotManager {
      * @param bulletSpread 子弹散射
      * @param useHeldWeapon 是否使用手中武器
      */
-    public static boolean fireServerForEntity(EntityLivingBase entity, float rotationPitch, float rotationYaw, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode, final int clientFireTickDelay, final float recoilPitch, final float recoilYaw, final float recoilAimReducer, final float bulletSpread, boolean useHeldWeapon, float customDamage) {
+    public static boolean fireServerForEntity(EntityLivingBase entity, float rotationPitch, float rotationYaw, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode, final int clientFireTickDelay, final float recoilPitch, final float recoilYaw, final float recoilAimReducer, final float bulletSpread, boolean useHeldWeapon, float customDamage, float customHeadshotBonus) {
         GunType gunType = itemGun.type;
         
         if (!validateEntityShot(entity, gunStack, itemGun, fireMode, useHeldWeapon)) {
@@ -1047,7 +1047,8 @@ public class ShotManager {
                     }
 
                     if (headshot) {
-                        preHitEvent.setDamage(preHitEvent.getDamage() + gunType.gunDamageHeadshotBonus);
+                        float headshotBonus = customHeadshotBonus >= 0 ? customHeadshotBonus : gunType.gunDamageHeadshotBonus;
+                        preHitEvent.setDamage(preHitEvent.getDamage() + headshotBonus);
                     }
                     if (gunType.gunPenetrationDamageFalloff && preHitEvent.getPenetrateDamageFactor() > 0) {
                         preHitEvent.setDamage(preHitEvent.getDamage() * preHitEvent.getPenetrateDamageFactor());
