@@ -61,7 +61,7 @@ public class FakeRenderPlayer extends RenderPlayer {
         }
 //        System.out.println("test");
         super.applyRotations(entityLiving, p_77043_2_, rotationYaw, partialTicks);
-        if(ModularWarfare.isLoadedVehicle) {
+        if(ModularWarfare.isLoadedObfuscate) {
             GlStateManager.rotate(180, 0, 0, 1);
             GlStateManager.scale(0.1, 0.1, 0.1);
             MinecraftForge.EVENT_BUS.post(new ModelPlayerEvent.Render.Pre(entityLiving, getMainModel(), partialTicks));

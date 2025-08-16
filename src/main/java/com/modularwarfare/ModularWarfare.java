@@ -161,7 +161,7 @@ public class ModularWarfare {
     public RayCasting RAY_CASTING;
 
     public static boolean isLoadedModularMovements = false;
-    public static boolean isLoadedVehicle = false;
+    public static boolean isLoadedObfuscate = false;
     
     /**
      * HE Bridge
@@ -483,8 +483,8 @@ public class ModularWarfare {
     }
     
     private void checkModCompat() {
-        if(Loader.isModLoaded("vehicle")) {
-            isLoadedVehicle=true;
+        if(Loader.isModLoaded("obfuscate")) {
+            isLoadedObfuscate=true;
         }
     }
 
