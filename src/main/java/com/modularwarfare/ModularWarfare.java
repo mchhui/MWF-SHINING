@@ -65,6 +65,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -160,6 +161,7 @@ public class ModularWarfare {
     public RayCasting RAY_CASTING;
 
     public static boolean isLoadedModularMovements = false;
+    public static boolean isLoadedVehicle = false;
     
     /**
      * HE Bridge
@@ -479,10 +481,17 @@ public class ModularWarfare {
             }
         }
     }
+    
+    private void checkModCompat() {
+        if(Loader.isModLoaded("vehicle")) {
+            isLoadedVehicle=true;
+        }
+    }
 
     // Registers items, blocks, renders, etc
     @Mod.EventHandler
     private void onPreInitialization(FMLPreInitializationEvent event) {
+        checkModCompat();
         
         // JACKSON 兼容处理
         if (getClass().getClassLoader() instanceof LaunchClassLoader) {
