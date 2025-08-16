@@ -111,8 +111,11 @@ dependencies {
     compile group: 'org.joml', name: 'joml', version: '1.10.5'
     compileOnly group: 'org.spigotmc', name: 'spigot', version: '1.12.2'
     // https://www.curseforge.com/minecraft/mc-mods/shoulder-surfing-reloaded/files/4876004
-    implementation fg.deobf("curse.maven:shoulder-surfing-reloaded-243190:4876004")
-    compileOnly files('libs/OptiFine_1.12.2_HD_U_G5.jar')
+    //implementation fg.deobf("curse.maven:shoulder-surfing-reloaded-243190:4876004")
+    compileOnly files('libs/dsurround-1.12.2-3.6.3-distance-deobf.jar')
+    compileOnly files('libs/OreLib-1.12.2-3.6.0.1-deobf.jar')
+    compileOnly files('libs/ShoulderSurfing-1.12.2-2.8.1-deobf.jar')
+    compileOnly files('libs/optifine-mwf.jar')
     compile files('libs/Nashorn.jar')
 }
 
