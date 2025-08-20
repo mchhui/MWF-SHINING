@@ -1,7 +1,5 @@
 package com.modularwarfare.client.model;
 
-
-
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.model.layers.RenderLayerBackpack;
 import com.modularwarfare.client.model.layers.RenderLayerBody;
@@ -29,6 +27,9 @@ public class FakeRenderPlayer extends RenderPlayer {
     public FakeRenderPlayer(RenderManager renderManager, boolean useSmallArms) {
         super(renderManager, useSmallArms);
         this.mainModel = new FakePlayerModel(0.0F, useSmallArms);
+        if(ModularWarfare.isLoadedObfuscate) {
+            this.mainModel= new FakePlayerModelForObfuscateCompat(0.0F, useSmallArms);
+        }
         for (int i = 0; i < this.layerRenderers.size(); i++) {
             if (this.layerRenderers.get(i).getClass() == LayerBipedArmor.class) {
                 //must to i-- next time
@@ -46,28 +47,26 @@ public class FakeRenderPlayer extends RenderPlayer {
         this.addLayer(new RenderLayerHeldGun(this));
         this.addLayer(new RenderLayerHeldMelee(this));
         this.addLayer(new RenderLayerHeldGrenade(this));
+        if(ModularWarfare.isLoadedObfuscate) {
+            this.addLayer(new LayerHeldVehicle());   
+        }
     }
 
     public FakeRenderPlayer(RenderManager renderManager) {
         this(renderManager, false);
     }
 
-    protected void applyRotations(AbstractClientPlayer entityLiving, float p_77043_2_, float rotationYaw,
-            float partialTicks) {
-        if(ModularWarfare.isLoadedModularMovements) {
-//            if (ClientListener.applyRotations(this, entityLiving, p_77043_2_, rotationYaw, partialTicks)) {
-//                return;
-//            }  
+    /*
+     * 设置整体的旋转
+     * 典例：鞘翅
+     * */
+    protected void applyRotations(AbstractClientPlayer entityLiving, float p_77043_2_, float rotationYaw, float partialTicks) {
+        if (ModularWarfare.isLoadedModularMovements) {
+            if (ClientListener.applyRotations(this, entityLiving, p_77043_2_, rotationYaw, partialTicks)) {
+                return;
+            }
         }
-//        System.out.println("test");
         super.applyRotations(entityLiving, p_77043_2_, rotationYaw, partialTicks);
-        if(ModularWarfare.isLoadedObfuscate) {
-            GlStateManager.rotate(180, 0, 0, 1);
-            GlStateManager.scale(0.1, 0.1, 0.1);
-            MinecraftForge.EVENT_BUS.post(new ModelPlayerEvent.Render.Pre(entityLiving, getMainModel(), partialTicks));
-            GlStateManager.scale(10, 10, 10);
-            GlStateManager.rotate(-180, 0, 0, 1);
-        }
     }
 
 }
