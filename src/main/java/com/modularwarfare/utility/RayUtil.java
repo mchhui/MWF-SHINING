@@ -144,10 +144,6 @@ public class RayUtil {
     }
 
     public static float calculateAccuracy(final ItemGun item, final EntityLivingBase player) {
-        // 在服务器端，使用EntityShootingAPI的精度计算
-        if (!player.world.isRemote) {
-            return EntityShootingAPI.calculateServerAccuracy(item, player);
-        }
         
         final GunType gun = item.type;
         //新增枪管散射影响
@@ -446,7 +442,7 @@ public class RayUtil {
         hashset.add(entity);
 
         try {
-            float accuracy = calculateAccuracy(item, entity);
+            float accuracy = EntityShootingAPI.calculateServerAccuracy(item, entity);
             float penetrate = item.type.gunPenetrateSize;
             float maxPenetrateBlockResistance = item.type.gunMaxPenetrateBlockResistance;
             float penetrateBlocksResistance = item.type.gunPenetrateBlocksResistance;
