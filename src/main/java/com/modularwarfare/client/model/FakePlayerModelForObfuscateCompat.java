@@ -74,6 +74,30 @@ public class FakePlayerModelForObfuscateCompat extends ModelPlayer {
         {
             this.setRotationAnglesMWF(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
             MinecraftForge.EVENT_BUS.post(new ModelPlayerEvent.SetupAngles.Post((EntityPlayer) entityIn, this, Minecraft.getMinecraft().getRenderPartialTicks()));
+            if (this.rightArmPose == ModelBiped.ArmPose.BOW_AND_ARROW)
+            {
+                this.bipedRightArm.rotateAngleY = -0.1F + this.bipedHead.rotateAngleY;
+                this.bipedRightArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY + 0.4F;
+                this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                ItemStack itemstack = ((EntityLivingBase)entityIn).getHeldItemMainhand();
+                if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
+                    if (itemstack.getItem() instanceof ItemGun) {
+                        BaseType type = ((BaseItem) itemstack.getItem()).baseType;
+                        if (type.hasModel()) {
+                            if (((GunType)type).animationType.equals(WeaponAnimationType.ENHANCED)) {
+                                GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)type.enhancedModel.config;
+                                if(config.renderOffhandPart) {
+                                    this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
+                                    this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                                    this.bipedLeftArmwear.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
+                                    this.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         this.setupRotationAngles();
     }

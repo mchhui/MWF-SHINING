@@ -3,6 +3,8 @@ package com.modularwarfare.api;
 import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.model.ModelCustomArmor.Bones;
 import com.modularwarfare.client.model.ModelCustomArmor.Bones.BonePart.EnumBoneType;
+
+import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.entity.Entity;
 import net.minecraftforge.fml.common.eventhandler.Event;
 
@@ -44,9 +46,9 @@ public class RenderBonesEvent extends Event {
     public static class RotationAngles extends Event {
         public float limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor;
         public Entity entityIn;
-        public Bones bones;
+        public ModelPlayer bones;
 
-        public RotationAngles(Bones bones, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
+        public RotationAngles(ModelPlayer bones, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
                               float headPitch, float scaleFactor, Entity entityIn) {
             this.bones = bones;
             this.limbSwing = limbSwing;
