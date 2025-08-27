@@ -1330,7 +1330,7 @@ HasVariations = true
 
 PowerWave {
 AnimationSpeed = 1 1
-Texture = tgfx:textures/fx/shock02.png
+Texture = safx:particles/ra2sa/shock02.png
 RenderType = ADDITIVE
 Rows = 4
 Columns = 4
