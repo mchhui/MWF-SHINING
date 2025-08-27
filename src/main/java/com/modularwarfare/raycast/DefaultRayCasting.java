@@ -77,7 +77,7 @@ public class DefaultRayCasting extends RayCasting {
         List<BulletHit> allHits = new ArrayList<>();
         
         // 进行方块检测
-        List<RayTraceResult> blockHits = rayTraceBlocks(world, origin, endVec, maxPenetrateBlockResistance, penetrateBlocksResistance, true, false, false);
+        List<RayTraceResult> blockHits = rayTraceBlocks(world, origin, endVec, maxPenetrateBlockResistance, penetrateBlocksResistance, false, false, false);
         if (blockHits != null && !blockHits.isEmpty()) {
             // 获取第一个命中的方块
             RayTraceResult firstHit = blockHits.get(0);
