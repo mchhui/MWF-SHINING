@@ -39,12 +39,18 @@
  */
 dependencies {
     implementation rfg.deobf("curse.maven:shoulder-surfing-reloaded-243190:4876004")
-    compileOnly files('libs/OptiFine_1.12.2_HD_U_G5.jar')
+    compileOnly files('libs/optifine-mwf.jar')
 
     shadowImplementation files('libs/Nashorn.jar')
     implementation("net.lingala.zip4j:zip4j:2.11.5")
     implementation("org.joml:joml:1.10.8")
     implementation("com.fasterxml.jackson.core:jackson-core:2.19.2")
+    implementation files('libs/dsurround-1.12.2-3.6.3-distance-deobf.jar')
+    implementation files('libs/OreLib-1.12.2-3.6.0.1-deobf.jar')
+    implementation files('libs/obfuscate-0.4.2-1.12.2-deobf.jar')
+    implementation files('libs/vehicle-mod-0.44.1-1.12.2-deobf.jar')
+    implementation files('libs/ShoulderSurfing-1.12.2-2.8.1-deobf.jar')
+
     implementation files('libs/dsurround-1.12.2-3.6.3-distance.jar')
     implementation files('libs/OreLib-1.12.2-3.6.0.1-deobf.jar')
     implementation("com.fasterxml.jackson.core:jackson-databind:2.19.2")
