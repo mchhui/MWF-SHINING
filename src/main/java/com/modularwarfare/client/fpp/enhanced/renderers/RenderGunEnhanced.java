@@ -2422,11 +2422,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             if (end_transform == null) {
                                 break sprint;
                             }
-                            if (!node.name.equals("root") && !node.name.equals("sprint_lefthand")
-                                    && !node.name.equals("sprint_righthand") && !node.name.equals("root_bone")
-                                    && !node.name.equals("sprint_lefthand_bone")
-                                    && !node.name.equals("sprint_righthand_bone")
-                                    && !node.name.endsWith("_sprint")) {
+                            if (!ModConfig.INSTANCE.sprintBlendNodes.isBlendableNode(node.name)) {
                                 break sprint;
                             }
                             Quaternionf quat = new Quaternionf();
