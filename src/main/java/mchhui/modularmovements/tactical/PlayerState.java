@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -25,6 +26,15 @@ public class PlayerState {
     private long lastSit;
     private long lastCrawl;
     private long lastProbe;
+    
+    public Vec3d rollVec;
+    public int rollTick=0;
+    public long lastRollTime;
+    public long nextDivingTime;
+    public long nextStepTime;
+    
+    public boolean isBackLying = false;
+    public int rollFace;
     
     public AxisAlignedBB lastAABB;
     public AxisAlignedBB lastModAABB;
@@ -92,8 +102,9 @@ public class PlayerState {
         this.lastSit = System.currentTimeMillis();
     }
 
-    public void enableCrawling() {
+    public void enableCrawling(boolean isBackLying) {
         isCrawling = true;
+        this.isBackLying = isBackLying;
         disableSit();
         this.lastCrawl = System.currentTimeMillis();  
     }
@@ -128,6 +139,10 @@ public class PlayerState {
         isSitting = code % 10 != 0;
         code /= 10;
         isSliding = code % 10 != 0;
+        code /= 10;
+        isBackLying = code % 10 != 0;
+        code /= 10;
+        rollFace = code % 10;
     }
 
     public void reset() {
@@ -135,7 +150,7 @@ public class PlayerState {
     }
 
     public int writeCode() {
-        return (isSliding ? 1 : 0) * 1000 + (isSitting ? 1 : 0) * 100 + (isCrawling ? 1 : 0) * 10 + probe + 1;
+        return rollFace*10000+(isBackLying? 1:0)*10000+(isSliding ? 1 : 0) * 1000 + (isSitting ? 1 : 0) * 100 + (isCrawling ? 1 : 0) * 10 + probe + 1;
     }
 
     @SideOnly(Side.CLIENT)
@@ -159,8 +174,8 @@ public class PlayerState {
         }
 
         @Override
-        public void enableCrawling() {
-            super.enableCrawling();
+        public void enableCrawling(boolean isBackLying) {
+            super.enableCrawling(isBackLying);
             ClientListener.crawlingMousePosXMove = 0;
         }
 
