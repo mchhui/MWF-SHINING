@@ -1,5 +1,6 @@
 package mchhui.modularmovements.network;
 
+import mchhui.modularmovements.tactical.network.AnimationHandler;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -28,6 +29,9 @@ public class Handler {
         switch (type) {
         case Tactical:
             TacticalHandler.onHandle(event);
+            break;
+        case Animation:
+            AnimationHandler.onHandle(event);
             break;
         default:
             break;
