@@ -33,8 +33,21 @@ public class PlayerState {
     public long nextDivingTime;
     public long nextStepTime;
     
+    public float rollProgress = 0.0f;
+    public float prevRollProgress = 0.0f;
+    
+    public long pounceGroundTime = 0;
+    public boolean wasInAirDuringPounce = false;
+    
     public boolean isBackLying = false;
     public int rollFace;
+    
+    public boolean isRolling = false;
+    public boolean isPouncing = false;
+    public long rollEndTime = 0;
+    public long pounceEndTime = 0;
+    
+    public Float lockedRenderYaw = null;
     
     public AxisAlignedBB lastAABB;
     public AxisAlignedBB lastModAABB;
@@ -78,12 +91,14 @@ public class PlayerState {
 
     @SideOnly(Side.CLIENT)
     public boolean canSit() {
-        return ModularMovements.REMOTE_CONFIG.sit.enable && ((System.currentTimeMillis() - lastSit) > 300);
+        return ModularMovements.REMOTE_CONFIG.sit.enable && 
+               ((System.currentTimeMillis() - lastSit) > ModularMovements.REMOTE_CONFIG.sit.cooldownMs);
     }
 
     @SideOnly(Side.CLIENT)
     public boolean canCrawl() {
-        return ModularMovements.REMOTE_CONFIG.crawl.enable && ((System.currentTimeMillis() - lastCrawl) > 500);
+        return ModularMovements.REMOTE_CONFIG.crawl.enable && 
+               ((System.currentTimeMillis() - lastCrawl) > ModularMovements.REMOTE_CONFIG.crawl.cooldownMs);
     }
 
     @SideOnly(Side.CLIENT)
@@ -111,7 +126,9 @@ public class PlayerState {
 
     public void disableCrawling() {
         isCrawling = false;
-        this.lastCrawl = System.currentTimeMillis();  
+        this.lastCrawl = System.currentTimeMillis();
+        this.pounceGroundTime = 0;
+        this.wasInAirDuringPounce = false;
     }
 
     public void resetProbe() {

@@ -41,18 +41,50 @@ public class TacticalHandler {
                 break;
 
             case MOD_CONFIG:
+                // Lean 配置
                 boolean leanEnable = buffer.readBoolean();
-                boolean sitEnable = buffer.readBoolean();
-                boolean slideEnable = buffer.readBoolean();
-                boolean crawlEnable = buffer.readBoolean();
                 boolean withGunsOnly = buffer.readBoolean();
+                
+                // Sit 配置
+                boolean sitEnable = buffer.readBoolean();
+                int sitCooldownMs = buffer.readInt();
+                
+                // Slide 配置
+                boolean slideEnable = buffer.readBoolean();
                 float slideMaxForce = buffer.readFloat();
+                
+                // Crawl 配置
+                boolean crawlEnable = buffer.readBoolean();
+                int crawlCooldownMs = buffer.readInt();
+                
+                // Dodge 配置
+                boolean dodgeEnable = buffer.readBoolean();
+                int divingThresholdMs = buffer.readInt();
+                int pounceCooldownMs = buffer.readInt();
+                int pounceGroundCooldownMs = buffer.readInt();
+                int rollCooldownMs = buffer.readInt();
+                int rollSecondCooldownMs = buffer.readInt();
 
+                // 应用配置
                 ModularMovements.REMOTE_CONFIG.lean.enable = leanEnable;
+                ModularMovements.REMOTE_CONFIG.lean.withGunsOnly = withGunsOnly;
+                
                 ModularMovements.REMOTE_CONFIG.sit.enable = sitEnable;
+                ModularMovements.REMOTE_CONFIG.sit.cooldownMs = sitCooldownMs;
+                
                 ModularMovements.REMOTE_CONFIG.slide.enable = slideEnable;
-                ModularMovements.REMOTE_CONFIG.crawl.enable = crawlEnable;
                 ModularMovements.REMOTE_CONFIG.slide.maxForce = slideMaxForce;
+                
+                ModularMovements.REMOTE_CONFIG.crawl.enable = crawlEnable;
+                ModularMovements.REMOTE_CONFIG.crawl.cooldownMs = crawlCooldownMs;
+                
+                ModularMovements.REMOTE_CONFIG.dodge.enable = dodgeEnable;
+                ModularMovements.REMOTE_CONFIG.dodge.divingThresholdMs = divingThresholdMs;
+                ModularMovements.REMOTE_CONFIG.dodge.pounceCooldownMs = pounceCooldownMs;
+                ModularMovements.REMOTE_CONFIG.dodge.pounceGroundCooldownMs = pounceGroundCooldownMs;
+                ModularMovements.REMOTE_CONFIG.dodge.rollCooldownMs = rollCooldownMs;
+                ModularMovements.REMOTE_CONFIG.dodge.rollSecondCooldownMs = rollSecondCooldownMs;
+                
                 break;
         }
     }
@@ -132,15 +164,32 @@ public class TacticalHandler {
         buffer.writeEnumValue(EnumFeatures.Tactical);
         buffer.writeEnumValue(EnumPacketType.MOD_CONFIG);
         
+        // Lean 配置
         buffer.writeBoolean(ModularMovements.CONFIG.lean.enable);
-        buffer.writeBoolean(ModularMovements.CONFIG.sit.enable);
-        buffer.writeBoolean(ModularMovements.CONFIG.slide.enable);
-        buffer.writeBoolean(ModularMovements.CONFIG.crawl.enable);
-        
         buffer.writeBoolean(ModularMovements.CONFIG.lean.withGunsOnly);
+        
+        // Sit 配置
+        buffer.writeBoolean(ModularMovements.CONFIG.sit.enable);
+        buffer.writeInt(ModularMovements.CONFIG.sit.cooldownMs);
+        
+        // Slide 配置
+        buffer.writeBoolean(ModularMovements.CONFIG.slide.enable);
         buffer.writeFloat(ModularMovements.CONFIG.slide.maxForce);
         
+        // Crawl 配置
+        buffer.writeBoolean(ModularMovements.CONFIG.crawl.enable);
+        buffer.writeInt(ModularMovements.CONFIG.crawl.cooldownMs);
+        
+        // Dodge 配置（新增）
+        buffer.writeBoolean(ModularMovements.CONFIG.dodge.enable);
+        buffer.writeInt(ModularMovements.CONFIG.dodge.divingThresholdMs);
+        buffer.writeInt(ModularMovements.CONFIG.dodge.pounceCooldownMs);
+        buffer.writeInt(ModularMovements.CONFIG.dodge.pounceGroundCooldownMs);
+        buffer.writeInt(ModularMovements.CONFIG.dodge.rollCooldownMs);
+        buffer.writeInt(ModularMovements.CONFIG.dodge.rollSecondCooldownMs);
+        
         ModularMovements.channel.sendTo(new FMLProxyPacket(buffer, "modularmovements"), entityPlayer);
+        
     }
 
     public enum EnumPacketType {

@@ -70,6 +70,20 @@ public class ServerListener {
         }
         return playerStateMap.get(id).isCrawling;
     }
+    
+    public static boolean isRolling(Integer id) {
+        if (!playerStateMap.containsKey(id)) {
+            return false;
+        }
+        return playerStateMap.get(id).isRolling;
+    }
+    
+    public static boolean isPouncing(Integer id) {
+        if (!playerStateMap.containsKey(id)) {
+            return false;
+        }
+        return playerStateMap.get(id).isPouncing;
+    }
 
     public static void updateOffset(Integer id) {
         if (!playerStateMap.containsKey(id)) {

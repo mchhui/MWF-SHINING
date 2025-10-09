@@ -10,6 +10,7 @@ import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.AnimationHandler;
 import mchhui.modularmovements.tactical.network.TacticalHandler;
 import mchhui.modularmovements.tactical.server.ServerListener;
+import com.modularwarfare.client.input.KeyBindingUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -125,7 +126,19 @@ public class ClientListener {
             if (Minecraft.getMinecraft().player.posZ != Minecraft.getMinecraft().player.lastTickPosZ) {
                 crawlingMousePosXMove = 0;
             }
-            if (Minecraft.getMinecraft().player.isSprinting() && !clientPlayerState.isSitting) {
+            
+            boolean inPounceCooldown = false;
+            if (clientPlayerState.isCrawling && clientPlayerState.pounceGroundTime > 0) {
+                long timeSinceGround = System.currentTimeMillis() - clientPlayerState.pounceGroundTime;
+                if (timeSinceGround < ModularMovements.REMOTE_CONFIG.dodge.pounceGroundCooldownMs) {
+                    inPounceCooldown = true;
+                    if (Minecraft.getMinecraft().player.isSprinting()) {
+                        Minecraft.getMinecraft().player.setSprinting(false);
+                    }
+                }
+            }
+            
+            if (Minecraft.getMinecraft().player.isSprinting() && !clientPlayerState.isSitting && !inPounceCooldown) {
                 clientPlayerSitMoveAmplifierCharging += 1.0 / (20.0 * 1.0);
                 clientPlayerSitMoveAmplifierCharging = Math.min(clientPlayerSitMoveAmplifierCharging, 1);
             } else {
@@ -438,6 +451,35 @@ public class ClientListener {
     @SubscribeEvent(priority = EventPriority.LOW, receiveCanceled = false)
     public void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
         isSneaking = event.getEntityPlayer().isSneaking();
+        
+        if (event.getEntityPlayer() == Minecraft.getMinecraft().player) {
+            if (clientPlayerState.isRolling && clientPlayerState.lockedRenderYaw != null) {
+                event.getEntityPlayer().renderYawOffset = clientPlayerState.lockedRenderYaw;
+                event.getEntityPlayer().rotationYawHead = clientPlayerState.lockedRenderYaw;
+            } else if (clientPlayerState.isPouncing) {
+                event.getEntityPlayer().renderYawOffset = interpolateRotation(
+                    event.getEntityPlayer().renderYawOffset, 
+                    event.getEntityPlayer().rotationYaw, 
+                    0.15f
+                );
+            }
+        } else {
+            // 其他玩家
+            if (ohterPlayerStateMap.containsKey(event.getEntityPlayer().getEntityId())) {
+                PlayerState state = ohterPlayerStateMap.get(event.getEntityPlayer().getEntityId());
+                if (state.isRolling && state.lockedRenderYaw != null) {
+                    event.getEntityPlayer().renderYawOffset = state.lockedRenderYaw;
+                    event.getEntityPlayer().rotationYawHead = state.lockedRenderYaw;
+                } else if (state.isRolling || state.isPouncing) {
+                    event.getEntityPlayer().renderYawOffset = interpolateRotation(
+                        event.getEntityPlayer().renderYawOffset, 
+                        event.getEntityPlayer().rotationYaw, 
+                        0.15f
+                    );
+                }
+            }
+        }
+        
         if (!clientPlayerState.isCrawling && !clientPlayerState.isSitting) {
             return;
         }
@@ -593,7 +635,30 @@ public class ClientListener {
     @SubscribeEvent
     public void onInputUpdate(InputUpdateEvent event) {
         EntityPlayer clientPlayer = Minecraft.getMinecraft().player;
-
+        
+        if (clientPlayerState.isCrawling && clientPlayerState.pounceGroundTime > 0) {
+            long timeSinceGround = System.currentTimeMillis() - clientPlayerState.pounceGroundTime;
+            if (timeSinceGround < ModularMovements.REMOTE_CONFIG.dodge.pounceGroundCooldownMs) {
+                
+                event.getMovementInput().moveForward = 0;
+                event.getMovementInput().moveStrafe = 0;
+                event.getMovementInput().jump = false;
+                event.getMovementInput().sneak = false;
+                
+                KeyBindingUtil.disableSprinting(true);
+                
+                if (clientPlayer.isSprinting()) {
+                    clientPlayer.setSprinting(false);
+                }
+                
+                return;
+            } else {
+                KeyBindingUtil.disableSprinting(false);
+            }
+        } else {
+            KeyBindingUtil.disableSprinting(false);
+        }
+ 
         if (clientPlayerState.isSitting) {
             event.getMovementInput().moveForward *= 0.3;
             event.getMovementInput().moveStrafe *= 0.3;
@@ -783,6 +848,50 @@ public class ClientListener {
                 clientPlayerState.disableCrawling();
             }
         }
+        
+        if (clientPlayerState.isPouncing && clientPlayerState.isCrawling) {
+            if (!event.player.onGround) {
+                clientPlayerState.wasInAirDuringPounce = true;
+            }
+            
+            if (event.player.onGround && clientPlayerState.pounceGroundTime == 0 
+                && clientPlayerState.wasInAirDuringPounce) {
+                clientPlayerState.pounceGroundTime = System.currentTimeMillis();
+            }
+        }
+        
+        if (!clientPlayerState.isPouncing) {
+            if (!event.player.onGround && clientPlayerState.pounceGroundTime > 0) {
+                clientPlayerState.pounceGroundTime = 0;
+                clientPlayerState.wasInAirDuringPounce = false;
+            }
+        }
+        
+        if (clientPlayerState.isCrawling && clientPlayerState.pounceGroundTime > 0) {
+            long timeSinceGround = System.currentTimeMillis() - clientPlayerState.pounceGroundTime;
+            if (timeSinceGround < ModularMovements.REMOTE_CONFIG.dodge.pounceGroundCooldownMs) {
+                event.player.motionX = 0;
+                event.player.motionZ = 0;
+                if (event.player.isSprinting()) {
+                    event.player.setSprinting(false);
+                }
+            }
+        }
+        
+        if (!clientPlayerState.isPouncing && clientPlayerState.isCrawling && !event.player.onGround) {
+            long timeSincePouncEnd = System.currentTimeMillis() - clientPlayerState.pounceEndTime;
+            if (timeSincePouncEnd > 100 && timeSincePouncEnd < 10000) { // 10秒内有效
+                double d0 = 0.3;
+                if (!event.player.world.collidesWithAnyBlock(new AxisAlignedBB(
+                    event.player.posX - d0, event.player.posY, event.player.posZ - d0,
+                    event.player.posX + d0, event.player.posY + 1.8, event.player.posZ + d0))) {
+                    clientPlayerState.disableCrawling();
+                    clientPlayerState.isBackLying = false;
+                    clientPlayerState.pounceGroundTime = 0;
+                }
+            }
+        }
+        
         if (event.phase != Phase.END) {
             if (lastAABB != null && event.player.getEntityBoundingBox() == lastModAABB) {
                 event.player.setEntityBoundingBox(lastAABB);
@@ -965,9 +1074,59 @@ public class ClientListener {
     }
 
     /**
-     * 此方法为对Dodge输入的处理
+     * 八方向枚举
      */
+    private enum Direction8 {
+        FORWARD,        // 前
+        FORWARD_LEFT,   // 左前
+        FORWARD_RIGHT,  // 右前
+        LEFT,           // 正左
+        RIGHT,          // 正右
+        BACKWARD,       // 后
+        BACKWARD_LEFT,  // 左后
+        BACKWARD_RIGHT, // 右后
+        NONE            // 无方向
+    }
+    
+    /**
+     * 检测玩家当前的八方向移动方向
+     */
+    private static Direction8 detectDirection8(GameSettings gs) {
+        boolean forward = Keyboard.isKeyDown(gs.keyBindForward.getKeyCode());
+        boolean back = Keyboard.isKeyDown(gs.keyBindBack.getKeyCode());
+        boolean left = Keyboard.isKeyDown(gs.keyBindLeft.getKeyCode());
+        boolean right = Keyboard.isKeyDown(gs.keyBindRight.getKeyCode());
+        
+        // 八方向判断
+        if (forward && left) return Direction8.FORWARD_LEFT;
+        if (forward && right) return Direction8.FORWARD_RIGHT;
+        if (forward) return Direction8.FORWARD;
+        
+        if (back && left) return Direction8.BACKWARD_LEFT;
+        if (back && right) return Direction8.BACKWARD_RIGHT;
+        if (back) return Direction8.BACKWARD;
+        
+        if (left) return Direction8.LEFT;
+        if (right) return Direction8.RIGHT;
+        
+        return Direction8.NONE;
+    }
+    
+    private static float interpolateRotation(float current, float target, float delta) {
+        float difference = target - current;
+        
+        while (difference < -180.0F) {
+            difference += 360.0F;
+        }
+        while (difference >= 180.0F) {
+            difference -= 360.0F;
+        }
+        
+        return current + difference * delta;
+    }
+
     public static void handleDodgeInput() {
+        EntityPlayerSP player=Minecraft.getMinecraft().player;
         if (Minecraft.getMinecraft().player == null) {
             return;
         }
@@ -977,9 +1136,27 @@ public class ClientListener {
         if (clientPlayerState == null) {
             return;
         }
-        boolean gunInHand=(Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun);
+        
         long time = System.currentTimeMillis();
-        EntityPlayerSP player=Minecraft.getMinecraft().player;
+        if (clientPlayerState.isRolling && time > clientPlayerState.rollEndTime) {
+            clientPlayerState.isRolling = false;
+            clientPlayerState.lockedRenderYaw = null;
+        }
+        if (clientPlayerState.isPouncing && time > clientPlayerState.pounceEndTime) {
+            clientPlayerState.isPouncing = false;
+            
+            if (!player.onGround && clientPlayerState.isCrawling) {
+                double d0 = 0.3;
+                if (!player.world.collidesWithAnyBlock(new AxisAlignedBB(
+                    player.posX - d0, player.posY, player.posZ - d0, 
+                    player.posX + d0, player.posY + 1.8, player.posZ + d0))) {
+                    clientPlayerState.disableCrawling();
+                    clientPlayerState.isBackLying = false;
+                }
+            }
+        }
+        
+        boolean gunInHand=(Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun);
         if(time<clientPlayerState.nextDivingTime) {
             clientPlayerState.enableCrawling(clientPlayerState.isBackLying);
         }else {
@@ -998,12 +1175,12 @@ public class ClientListener {
             return;
         }
         if(clientPlayerState.nextDivingTime==Long.MAX_VALUE) {
-            clientPlayerState.nextDivingTime=time+800;
+            clientPlayerState.nextDivingTime=time+ModularMovements.REMOTE_CONFIG.dodge.pounceCooldownMs;
         }
         if(!clientPlayerState.isStanding()) {
             return;
         }
-        final int DIVING_THRESHOLD=210;
+        final int DIVING_THRESHOLD=ModularMovements.REMOTE_CONFIG.dodge.divingThresholdMs;
         final int ROLL_THRESHOLD=500;
         boolean press = Keyboard.isKeyDown(dodge.getKeyCode());
         if (!holdingDodge && press) {
@@ -1011,73 +1188,175 @@ public class ClientListener {
         }
         if(press) {
             if(time - lastDodgePressTime>=DIVING_THRESHOLD) {
-                //飞扑
+                //飞扑（八方向优化）
+                if (clientPlayerState.rollTick > 0) {
+                    return;
+                }
                 if(clientPlayerState.nextDivingTime<=time) {
                     clientPlayerState.nextDivingTime=Long.MAX_VALUE;
                     float yaw = player.rotationYaw;
                     float f = MathHelper.cos(-yaw * 0.017453292F - (float)Math.PI);
                     float f1 = MathHelper.sin(-yaw * 0.017453292F - (float)Math.PI);
-                    Vec3d vec = new Vec3d(-f1, 0, -f);
-                    boolean back=false;
-                    GameSettings gs=Minecraft.getMinecraft().gameSettings;
-                    if (Keyboard.isKeyDown(gs.keyBindBack.getKeyCode())) {
-                        vec = new Vec3d(-vec.x, 0, -vec.z);
-                        back = true;
-                        AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce_back":"pounce_back"), 1);   
-                    } else if (Keyboard.isKeyDown(gs.keyBindLeft.getKeyCode())) {
-                        vec = new Vec3d(vec.z, 0, -vec.x);
-                        AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce_left":"pounce_left"), 1);   
-                    } else if (Keyboard.isKeyDown(gs.keyBindRight.getKeyCode())) {
-                        vec = new Vec3d(-vec.z, 0, vec.x);
-                        AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce_right":"pounce_right"), 1);   
-                    } else {
-                        AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce":"pounce"), 1);   
+                    Vec3d vec = new Vec3d(-f1, 0, -f); // 基础前方向量
+                    boolean back = false;
+                    GameSettings gs = Minecraft.getMinecraft().gameSettings;
+                    Direction8 dir = detectDirection8(gs);
+                    
+                    switch(dir) {
+                        case FORWARD_LEFT:
+                        case FORWARD:
+                        case FORWARD_RIGHT:
+                            if (dir == Direction8.FORWARD_LEFT) {
+                                vec = new Vec3d(-f1 - f * 0.5, 0, -f + f1 * 0.5).normalize();
+                            } else if (dir == Direction8.FORWARD_RIGHT) {
+                                vec = new Vec3d(-f1 + f * 0.5, 0, -f - f1 * 0.5).normalize();
+                            }
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce":"pounce"), 1);
+                            break;
+                            
+                        case LEFT:
+                            vec = new Vec3d(-f, 0, f1);
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce_left":"pounce_left"), 1);
+                            break;
+                            
+                        case RIGHT:
+                            vec = new Vec3d(f, 0, -f1);
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce_right":"pounce_right"), 1);
+                            break;
+                            
+                        case BACKWARD_LEFT:
+                        case BACKWARD:
+                        case BACKWARD_RIGHT:
+                            back = true;
+                            if (dir == Direction8.BACKWARD_LEFT) {
+                                vec = new Vec3d(f1 - f * 0.5, 0, f + f1 * 0.5).normalize();
+                            } else if (dir == Direction8.BACKWARD_RIGHT) {
+                                vec = new Vec3d(f1 + f * 0.5, 0, f - f1 * 0.5).normalize();
+                            } else {
+                                vec = new Vec3d(f1, 0, f);
+                            }
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce_back":"pounce_back"), 1);
+                            break;
+                            
+                        case NONE:
+                        default:
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_pounce":"pounce"), 1);
+                            break;
                     }
-                    vec=vec.normalize().scale(0.8);
-                    player.motionX=vec.x;
-                    player.motionY=0.45;
-                    player.motionZ=vec.z;
+                    
+                    vec = vec.normalize().scale(0.8);
+                    player.motionX = vec.x;
+                    player.motionY = 0.45;
+                    player.motionZ = vec.z;
                     clientPlayerState.enableCrawling(back);
+                    
+                    clientPlayerState.pounceGroundTime = 0;
+                    clientPlayerState.wasInAirDuringPounce = false;
+                    
+                    clientPlayerState.isPouncing = true;
+                    clientPlayerState.pounceEndTime = time + 1000;
                 }
             }
         }
         if (holdingDodge && !press) {
-            //翻滚
+            //翻滚（八方向优化）
+            if (clientPlayerState.isPouncing) {
+                return;
+            }
             if (time - lastDodgePressTime < DIVING_THRESHOLD) {
                 if(clientPlayerState.nextStepTime<=time) {
                     if(clientPlayerState.nextStepTime+500<=time) {
-                        clientPlayerState.nextStepTime=time+200;   
+                        clientPlayerState.nextStepTime=time+ModularMovements.REMOTE_CONFIG.dodge.rollCooldownMs;   
                     }else {
-                        clientPlayerState.nextStepTime=time+2200;
+                        clientPlayerState.nextStepTime=time+ModularMovements.REMOTE_CONFIG.dodge.rollSecondCooldownMs;
                     }
                     float yaw = player.rotationYaw;
                     float f = MathHelper.cos(-yaw * 0.017453292F - (float)Math.PI);
                     float f1 = MathHelper.sin(-yaw * 0.017453292F - (float)Math.PI);
-                    boolean flag=false;
                     Vec3d vec = new Vec3d(-f1, 0, -f);
-                    GameSettings gs=Minecraft.getMinecraft().gameSettings;
-                    if(Keyboard.isKeyDown(gs.keyBindBack.getKeyCode())) {
-                        vec=new Vec3d(-vec.x, 0, -vec.z);
-                        flag=true;
-                    }
-                    if(Keyboard.isKeyDown(gs.keyBindLeft.getKeyCode())) {
-                        vec=new Vec3d(vec.z, 0, -vec.x);
-                    }
-                    if(Keyboard.isKeyDown(gs.keyBindRight.getKeyCode())) {
-                        vec=new Vec3d(-vec.z, 0, vec.x);
-                    }
-                    if(!flag) {                    
-                        vec=vec.normalize().scale(0.3);
-                        clientPlayerState.rollVec=vec;
-                        clientPlayerState.rollTick=20;
-                        player.motionX=vec.x;
-                        player.motionZ=vec.z;
-                        AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_roll":"roll"), 1);   
-                    }else {
-                        vec=vec.normalize().scale(0.5);
-                        clientPlayerState.rollVec=vec;
-                        player.motionX=vec.x;
-                        player.motionZ=vec.z; 
+                    GameSettings gs = Minecraft.getMinecraft().gameSettings;
+                    Direction8 dir = detectDirection8(gs);
+                    boolean isBackward = false;
+                    
+                    switch(dir) {
+                        case FORWARD_LEFT:
+                        case FORWARD:
+                        case FORWARD_RIGHT:
+                            if (dir == Direction8.FORWARD_LEFT) {
+                                vec = new Vec3d(-f1 - f * 0.5, 0, -f + f1 * 0.5).normalize();
+                            } else if (dir == Direction8.FORWARD_RIGHT) {
+                                vec = new Vec3d(-f1 + f * 0.5, 0, -f - f1 * 0.5).normalize();
+                            }
+                            vec = vec.normalize().scale(0.3);
+                            clientPlayerState.rollVec = vec;
+                            clientPlayerState.rollTick = 20;
+                            player.motionX = vec.x;
+                            player.motionZ = vec.z;
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_roll":"roll"), 1);
+                            
+                            clientPlayerState.isRolling = true;
+                            clientPlayerState.rollEndTime = time + 1000;
+                            clientPlayerState.lockedRenderYaw = player.rotationYaw;
+                            break;
+                            
+                        case LEFT:
+                            vec = new Vec3d(-f, 0, f1);
+                            vec = vec.normalize().scale(0.3);
+                            clientPlayerState.rollVec = vec;
+                            clientPlayerState.rollTick = 20;
+                            player.motionX = vec.x;
+                            player.motionZ = vec.z;
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_roll":"roll"), 1);
+                            
+                            clientPlayerState.isRolling = true;
+                            clientPlayerState.rollEndTime = time + 1000;
+                            clientPlayerState.lockedRenderYaw = player.rotationYaw - 90.0f;
+                            break;
+                            
+                        case RIGHT:
+                            vec = new Vec3d(f, 0, -f1);
+                            vec = vec.normalize().scale(0.3);
+                            clientPlayerState.rollVec = vec;
+                            clientPlayerState.rollTick = 20;
+                            player.motionX = vec.x;
+                            player.motionZ = vec.z;
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_roll":"roll"), 1);
+                            
+                            clientPlayerState.isRolling = true;
+                            clientPlayerState.rollEndTime = time + 1000;
+                            clientPlayerState.lockedRenderYaw = player.rotationYaw + 90.0f;
+                            break;
+                            
+                        case BACKWARD_LEFT:
+                        case BACKWARD:
+                        case BACKWARD_RIGHT:
+                            isBackward = true;
+                            if (dir == Direction8.BACKWARD_LEFT) {
+                                vec = new Vec3d(f1 - f * 0.5, 0, f + f1 * 0.5).normalize();
+                            } else if (dir == Direction8.BACKWARD_RIGHT) {
+                                vec = new Vec3d(f1 + f * 0.5, 0, f - f1 * 0.5).normalize();
+                            } else {
+                                vec = new Vec3d(f1, 0, f);
+                            }
+                            vec = vec.normalize().scale(0.5);
+                            clientPlayerState.rollVec = vec;
+                            player.motionX = vec.x;
+                            player.motionZ = vec.z;
+                            break;
+                            
+                        case NONE:
+                        default:
+                            vec = vec.normalize().scale(0.3);
+                            clientPlayerState.rollVec = vec;
+                            clientPlayerState.rollTick = 20;
+                            player.motionX = vec.x;
+                            player.motionZ = vec.z;
+                            AnimationHandler.sendAnimation(player.getUniqueID(), (gunInHand ? "gun_roll":"roll"), 1);
+                            
+                            clientPlayerState.isRolling = true;
+                            clientPlayerState.rollEndTime = time + 1000;
+                            clientPlayerState.lockedRenderYaw = player.rotationYaw;
+                            break;
                     }
                 }
             }
@@ -1088,9 +1367,35 @@ public class ClientListener {
     
     public static void handleRoll() {
         if(clientPlayerState.rollTick>0) {
+            // 翻滚期间：强制使用固定的移动向量，完全不受视角影响
             Minecraft.getMinecraft().player.motionX=clientPlayerState.rollVec.x;
             Minecraft.getMinecraft().player.motionZ=clientPlayerState.rollVec.z;
             clientPlayerState.rollTick--;
+            
+            clientPlayerState.prevRollProgress = clientPlayerState.rollProgress;
+            
+            if (clientPlayerState.rollTick > 10) {
+                clientPlayerState.rollProgress = (20 - clientPlayerState.rollTick) / 10.0f;
+            } else {
+                clientPlayerState.rollProgress = clientPlayerState.rollTick / 10.0f;
+            }
+        } else {
+            // 翻滚结束：清除锁定，恢复正常
+            clientPlayerState.prevRollProgress = clientPlayerState.rollProgress;
+            clientPlayerState.rollProgress = 0.0f;
+            if (clientPlayerState.lockedRenderYaw != null && !clientPlayerState.isRolling) {
+                clientPlayerState.lockedRenderYaw = null;
+            }
         }
+    }
+    
+    /**
+     * 获取插值后的翻滚进度（用于渲染）
+     * @param partialTick 渲染的部分tick（0.0-1.0）
+     * @return 插值后的进度
+     */
+    public static float getRollProgressInterpolated(float partialTick) {
+        return clientPlayerState.prevRollProgress + 
+               (clientPlayerState.rollProgress - clientPlayerState.prevRollProgress) * partialTick;
     }
 }
