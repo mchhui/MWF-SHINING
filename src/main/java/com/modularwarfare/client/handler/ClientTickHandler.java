@@ -28,6 +28,9 @@ import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.common.guns.manager.ShotManager;
 import com.modularwarfare.common.type.BaseItem;
 
+import mchhui.modularmovements.ModularMovements;
+import mchhui.modularmovements.tactical.client.ClientListener;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLivingBase;
@@ -327,25 +330,35 @@ public final class ClientTickHandler {
             if(Mouse.isButtonDown(1)) {
                 recover=0.8f;
             }
+            
+            float rollAddition = 0f;
+            if (ModularWarfare.isLoadedModularMovements) {
+                float rollProgress = ClientListener.getRollProgressInterpolated(renderTick);
+                if (rollProgress > 0) {
+                    rollAddition = (float)(gun.type.gunHoldLength * 2.0 * rollProgress);
+                }
+            }
+            
             //枪械长度计算
             if(rayTraceResult != null) {
                 if (rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
                     if (rayTraceResult.hitVec != null) {
                         double d = vecStart.distanceTo(rayTraceResult.hitVec);
                         double length = gun.type.gunHoldLength;
+                        
                         if (d <= length) {
-                            RenderParameters.collideFrontDistance = (float) (RenderParameters.collideFrontDistance + ((length - d) - RenderParameters.collideFrontDistance) * renderTick * 0.5f);
+                            RenderParameters.collideFrontDistance = (float) (RenderParameters.collideFrontDistance + ((length - d + rollAddition) - RenderParameters.collideFrontDistance) * renderTick * 0.5f);
                         } else {
-                            RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
+                            RenderParameters.collideFrontDistance = Math.max(rollAddition, RenderParameters.collideFrontDistance - renderTick * recover);
                         }
                     } else {
-                        RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
+                        RenderParameters.collideFrontDistance = Math.max(rollAddition, RenderParameters.collideFrontDistance - renderTick * recover);
                     }
                 } else {
-                    RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
+                    RenderParameters.collideFrontDistance = Math.max(rollAddition, RenderParameters.collideFrontDistance - renderTick * recover);
                 }
             } else {
-                RenderParameters.collideFrontDistance = Math.max(0f, RenderParameters.collideFrontDistance - renderTick * recover);
+                RenderParameters.collideFrontDistance = Math.max(rollAddition, RenderParameters.collideFrontDistance - renderTick * recover);
             }
 
             /**

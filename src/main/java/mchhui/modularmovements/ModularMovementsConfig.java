@@ -14,9 +14,9 @@ public class ModularMovementsConfig {
 
     public Lean lean = new Lean();
     public Slide slide = new Slide();
-
     public Sit sit = new Sit();
     public Crawl crawl = new Crawl();
+    public Dodge dodge = new Dodge();
 
     public static class Lean {
         public boolean enable = true;
@@ -33,11 +33,22 @@ public class ModularMovementsConfig {
     public static class Sit {
         public boolean enable = true;
         public boolean autoHold = true;
+        public int cooldownMs = 300;
     }
 
     public static class Crawl {
         public boolean enable = true;
         public boolean sprintCancel = true;
+        public int cooldownMs = 500;
+    }
+    
+    public static class Dodge {
+        public boolean enable = true;
+        public int divingThresholdMs = 210;
+        public int pounceCooldownMs = 800;
+        public int pounceGroundCooldownMs = 600;
+        public int rollCooldownMs = 800;
+        public int rollSecondCooldownMs = 2200;
     }
 
     public String version = ModularMovements.MOD_VERSION;
