@@ -3,6 +3,7 @@ package com.modularwarfare.raycast.obb;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,6 +48,22 @@ public class OBBModelObject {
         for (int i = 0; i < boneUpdatePoseListeners.size(); i++) {
             boneUpdatePoseListeners.get(i).onBoneUpdatePose(bone);
         }
+    }
+    
+    /**
+     * 计算射线与OBB的碰撞
+     * @param testBox 测试用的OBB（通常是射线的包围盒）
+     * @return 所有相交的OBB列表
+     */
+    public List<OBBModelBox> calculateIntercept(OBBModelBox testBox) {
+        List<OBBModelBox> list = new ArrayList<OBBModelBox>();
+        for (int i = 0; i < boxes.size(); i++) {
+            OBBModelBox box = boxes.get(i);
+            if (OBBModelBox.testCollisionOBBAndOBB(box, testBox)) {
+                list.add(box.copy());
+            }
+        }
+        return list;
     }
 
     @SideOnly(Side.CLIENT)
