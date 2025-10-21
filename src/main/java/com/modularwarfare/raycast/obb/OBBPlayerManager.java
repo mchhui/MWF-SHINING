@@ -175,17 +175,8 @@ public class OBBPlayerManager {
                 }
             });
         }
-
-        public List<OBBModelBox> calculateIntercept(OBBModelBox testBox) {
-            List list = new ArrayList<OBBModelBox>();
-            for (int i = 0; i < boxes.size(); i++) {
-                OBBModelBox box = boxes.get(i);
-                if (OBBModelBox.testCollisionOBBAndOBB(box, testBox)) {
-                    list.add(box.copy());
-                }
-            }
-            return list;
-        }
+        
+        // calculateIntercept方法已移至基类OBBModelObject
     }
 
     public static PlayerOBBModelObject getPlayerOBBObject(String name) {
@@ -206,6 +197,14 @@ public class OBBPlayerManager {
         if(FMLCommonHandler.instance().getSide()==Side.CLIENT) {
             return;
         }
+        
+        // 【重要】如果玩家已经有ELM OBB，跳过内置OBB处理
+        if (EntityOBBManager.hasEntityOBB(event.player.getUniqueID())) {
+            // 移除内置OBB（如果存在）
+            playerOBBObjectMap.remove(event.player.getName());
+            return;
+        }
+        
         entityPlayer = event.player;
         PlayerOBBModelObject playerOBBObject = playerOBBObjectMap.get(event.player.getName());
         if (playerOBBObject == null) {
@@ -218,6 +217,14 @@ public class OBBPlayerManager {
     
     @SubscribeEvent
     public void onPlayerRender(RenderPlayerEvent.Post event) {
+        // 【重要】如果玩家已经有ELM OBB，跳过内置OBB处理
+        if (EntityOBBManager.hasEntityOBB(event.getEntityPlayer().getUniqueID())) {
+            // 移除内置OBB（如果存在）
+            playerOBBObjectMap.remove(event.getEntityPlayer().getName());
+            // ELM OBB的调试渲染由onrenderWorld事件统一处理
+            return;
+        }
+        
         float partialTick=event.getPartialRenderTick();
         entityPlayer = event.getEntityPlayer();
         PlayerOBBModelObject playerOBBObject = playerOBBObjectMap.get(event.getEntityPlayer().getName());
@@ -410,6 +417,11 @@ public class OBBPlayerManager {
             lines.forEach((line) -> {
                 line.render();
             });
+            
+            // 【新增】渲染所有ELM实体的OBB调试框（白色线框）
+            // 注意：已经应用了相机变换，直接在世界坐标系中渲染
+            EntityOBBManager.renderAllDebugBoxes();
+            
             GlStateManager.popMatrix();
         }
     }

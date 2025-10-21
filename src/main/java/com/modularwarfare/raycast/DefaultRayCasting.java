@@ -10,8 +10,10 @@ import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.playerdata.PlayerData;
 import com.modularwarfare.common.vector.Matrix4f;
 import com.modularwarfare.common.vector.Vector3f;
+import com.modularwarfare.raycast.obb.EntityOBBManager;
 import com.modularwarfare.raycast.obb.OBBModelBox;
 import com.modularwarfare.raycast.obb.OBBModelBox.RayCastResult;
+import com.modularwarfare.raycast.obb.OBBModelObject;
 import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.OBBDebugObject;
 import com.modularwarfare.raycast.obb.OBBPlayerManager.PlayerOBBModelObject;
@@ -116,9 +118,9 @@ public class DefaultRayCasting extends RayCasting {
 
         // 创建OBB射线
         OBBModelBox ray = new OBBModelBox();
-        ray.center = new Vector3f((float)(origin.x + endVec.x) * 0.5f,
-                                (float)(origin.y + endVec.y) * 0.5f,
-                                (float)(origin.z + endVec.z) * 0.5f);
+        ray.center = new Vector3f((float)((origin.x + endVec.x) * 0.5f),
+                                (float)((origin.y + endVec.y) * 0.5f),
+                                (float)((origin.z + endVec.z) * 0.5f));
         ray.axis.x = new Vector3f(0, 0, 0);
         ray.axis.y = new Vector3f(0, 0, 0);
         ray.axis.z = new Vector3f(rayVec.x * maxDistance * 0.5f,
@@ -188,31 +190,44 @@ public class DefaultRayCasting extends RayCasting {
                     }
                     */
                     //Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test:"+startVec+" "+endVec));
-                    PlayerOBBModelObject obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
-                    OBBModelBox finalBox=null;
-                    List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
-                    if (!boxes.isEmpty()) {
-                        double t = Double.MAX_VALUE;
-                        Vector3f hitFaceNormal=null;
-                        RayCastResult temp;
-                        Vector3f startVector=new Vector3f(origin);
-                        for (OBBModelBox obb : boxes) {
-                            temp=OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
-                            if(temp.t<t) {
-                                t=temp.t;
-                                hitFaceNormal=temp.normal;
-                                finalBox=obb;
+                    
+                    // 【优先】尝试使用EntityOBBManager的OBB（用于ELM模型）
+                    OBBModelObject obbModelObject = EntityOBBManager.getEntityOBB(obj.getUniqueID());
+                    
+                    // 【备用】如果没有ELM模型OBB，使用内置的PlayerOBBModelObject
+                    if (obbModelObject == null) {
+                        obbModelObject = OBBPlayerManager.getPlayerOBBObject(obj.getName());
+                    }
+                    
+                    OBBModelBox finalBox = null;
+                    if (obbModelObject != null) {
+                        List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
+                        if (!boxes.isEmpty()) {
+                            double t = Double.MAX_VALUE;
+                            RayCastResult temp;
+                            Vector3f startVector = new Vector3f(origin);
+                            for (OBBModelBox obb : boxes) {
+                                temp = OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
+                                if (temp.t < t) {
+                                    t = temp.t;
+                                    finalBox = obb;
+                                }
                             }
-                        }
 
-                        if(OBBPlayerManager.debug) {
-                            OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin.x+rayVec.x*t, origin.y+rayVec.y*t, origin.z+rayVec.z*t)));
-                        }
-                        if (finalBox != null) {
-                            PlayerData data = ModularWarfare.PLAYER_HANDLER.getPlayerData((EntityPlayer) obj);
-                            RayTraceResult intercept = new RayTraceResult(obj, new Vec3d(finalBox.center.x, finalBox.center.y, finalBox.center.z));
+                            if (OBBPlayerManager.debug) {
+                                OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin.x + rayVec.x * t, origin.y + rayVec.y * t, origin.z + rayVec.z * t)));
+                            }
+                            if (finalBox != null && t != Double.MAX_VALUE) {
+                                // 使用射线参数 t 计算实际命中点，而不是使用OBB中心
+                                Vec3d hitPoint = new Vec3d(
+                                    origin.x + rayVec.x * t,
+                                    origin.y + rayVec.y * t,
+                                    origin.z + rayVec.z * t
+                                );
+                                RayTraceResult intercept = new RayTraceResult(obj, hitPoint);
 
-                            allHits.add(new OBBHit((EntityPlayer)obj,finalBox.copy(), intercept, intercept.hitVec.distanceTo(origin), 0, 0));
+                                allHits.add(new OBBHit((EntityPlayer) obj, finalBox.copy(), intercept, intercept.hitVec.distanceTo(origin), 0, 0));
+                            }
                         }
                     }
                 }
@@ -229,23 +244,58 @@ public class DefaultRayCasting extends RayCasting {
                 if (ent instanceof EntityLivingBase && !(ent instanceof EntityPlayer)) {
                     EntityLivingBase entityLivingBase = (EntityLivingBase) ent;
                     if (!ent.isDead && entityLivingBase.getHealth() > 0.0F) {
-                        double entBorder = ent.getCollisionBorderSize();
-                        if (entBorder == 0) {
-                            entBorder = ModConfig.INSTANCE.general.collisionBorderSizeFixNonPlayer;
-                        }
-                        entityBb = ent.getEntityBoundingBox();
-                        if (entityBb != null) {
-                            entityBb = entityBb.grow(entBorder);
-                            GetLivingAABBEvent aabbEvent=new GetLivingAABBEvent(entityLivingBase, entityBb) ;
-                            MinecraftForge.EVENT_BUS.post(aabbEvent);
-                            entityBb=aabbEvent.box;
-                            intercept = entityBb.calculateIntercept(origin, endVec);
-//                            System.out.println("test:"+intercept);
-                            if (intercept != null) {
-                                double currentHitDistance = intercept.hitVec.distanceTo(origin);
-                                hit = intercept.hitVec;
-                                if (currentHitDistance < maxDistance) {
-                                    allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0, 0));
+                        // 【优先】尝试使用EntityOBBManager的OBB碰撞箱（支持HE引擎的ELM模型）
+                        OBBModelObject obbModelObject = EntityOBBManager.getEntityOBB(entityLivingBase.getUniqueID());
+                        if (obbModelObject != null && !obbModelObject.boxes.isEmpty()) {
+                            // 使用OBB检测
+                            OBBModelBox finalBox = null;
+                            List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
+                            if (!boxes.isEmpty()) {
+                                double t = Double.MAX_VALUE;
+                                RayCastResult temp;
+                                Vector3f startVector = new Vector3f(origin);
+                                for (OBBModelBox obb : boxes) {
+                                    temp = OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
+                                    if (temp.t < t) {
+                                        t = temp.t;
+                                        finalBox = obb;
+                                    }
+                                }
+                                
+                                if (OBBPlayerManager.debug) {
+                                    OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin.x + rayVec.x * t, origin.y + rayVec.y * t, origin.z + rayVec.z * t)));
+                                }
+                                
+                                if (finalBox != null && t != Double.MAX_VALUE) {
+                                    // 使用射线参数 t 计算实际命中点，而不是使用OBB中心
+                                    Vec3d hitPoint = new Vec3d(
+                                        origin.x + rayVec.x * t,
+                                        origin.y + rayVec.y * t,
+                                        origin.z + rayVec.z * t
+                                    );
+                                    RayTraceResult intercept2 = new RayTraceResult(ent, hitPoint);
+                                    allHits.add(new OBBHit(entityLivingBase, finalBox.copy(), intercept2, intercept2.hitVec.distanceTo(origin), 0, 0));
+                                }
+                            }
+                        } else {
+                            // 【备用】使用AABB检测
+                            double entBorder = ent.getCollisionBorderSize();
+                            if (entBorder == 0) {
+                                entBorder = ModConfig.INSTANCE.general.collisionBorderSizeFixNonPlayer;
+                            }
+                            entityBb = ent.getEntityBoundingBox();
+                            if (entityBb != null) {
+                                entityBb = entityBb.grow(entBorder);
+                                GetLivingAABBEvent aabbEvent = new GetLivingAABBEvent(entityLivingBase, entityBb);
+                                MinecraftForge.EVENT_BUS.post(aabbEvent);
+                                entityBb = aabbEvent.box;
+                                intercept = entityBb.calculateIntercept(origin, endVec);
+                                if (intercept != null) {
+                                    double currentHitDistance = intercept.hitVec.distanceTo(origin);
+                                    hit = intercept.hitVec;
+                                    if (currentHitDistance < maxDistance) {
+                                        allHits.add(new BulletHit(new RayTraceResult(ent, hit), currentHitDistance, 0, 0));
+                                    }
                                 }
                             }
                         }
