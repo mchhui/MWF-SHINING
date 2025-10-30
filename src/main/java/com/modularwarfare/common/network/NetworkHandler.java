@@ -232,6 +232,8 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketBounced.class);
         registerPacket(PacketDelayedShoot.class);
         
+        registerPacket(PacketBulletHole.class);
+        
     }
 
     /**

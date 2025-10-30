@@ -23,6 +23,7 @@ import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.handler.DecalDrawer;
 import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.handler.RenderGuiHandler;
 import com.modularwarfare.client.handler.SmoothSwingTicker;
@@ -241,6 +242,7 @@ public class ClientProxy extends CommonProxy {
         SmoothSwingTicker.startSmoothSwingTimer();
 
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(new DecalDrawer());
         MinecraftForge.EVENT_BUS.register(new CPEventHandler());
         startPatches();
         Minecraft.getMinecraft().gameSettings.useVbo = false;

@@ -6,6 +6,7 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.guns.manager.ShotManager;
 import com.modularwarfare.common.handler.ServerTickHandler;
+import com.modularwarfare.common.network.PacketBulletHole;
 import com.modularwarfare.common.network.PacketHitEffect;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
@@ -409,6 +410,32 @@ public class ItemGun extends BaseItem {
             double hitX = raytraceResultIn.hitVec.x;
             double hitY = raytraceResultIn.hitVec.y;
             double hitZ = raytraceResultIn.hitVec.z;
+            double aX = 0;
+            double aY = 0;
+            double aZ = 0;
+            switch(raytraceResultIn.sideHit) {
+                case EAST:
+                    aX = -1;
+                    break;
+                case SOUTH:
+                    aZ = -1;
+                    break;
+                case WEST:
+                    aX = 1;
+                    break;
+                case NORTH:
+                    aZ = 1;
+                    break;
+                case UP:
+                    aY = -1;
+                    break;
+                case DOWN:
+                    aY = 1;
+                    break;
+                default:
+                    break;
+            }
+            ModularWarfare.NETWORK.sendToAll(new PacketBulletHole(100, hitX, hitY, hitZ, aX, aY, aZ));
             ModularWarfare.NETWORK.sendToAll(new PacketHitEffect(hitX, hitY, hitZ));
         }
     }
