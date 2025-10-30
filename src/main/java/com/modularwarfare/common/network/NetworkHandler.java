@@ -192,7 +192,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketGunTrail.class);
         registerPacket(PacketAimingRequest.class);
         registerPacket(PacketAimingResponse.class);
-        registerPacket(PacketDecal.class);
+        registerPacket(PacketHitEffect.class);
         registerPacket(PacketOpenNormalInventory.class);
         registerPacket(PacketOpenExtraArmorInventory.class);
         registerPacket(PacketBulletSnap.class);

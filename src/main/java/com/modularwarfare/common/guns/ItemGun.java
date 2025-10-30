@@ -4,10 +4,9 @@ import com.google.common.collect.Multimap;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.handler.ClientTickHandler;
-import com.modularwarfare.common.entity.decals.EntityDecal;
 import com.modularwarfare.common.guns.manager.ShotManager;
 import com.modularwarfare.common.handler.ServerTickHandler;
-import com.modularwarfare.common.network.PacketDecal;
+import com.modularwarfare.common.network.PacketHitEffect;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import safx.SagerFX;
@@ -407,38 +406,10 @@ public class ItemGun extends BaseItem {
     public static void doHit(RayTraceResult raytraceResultIn, EntityPlayer shooter) {
         if (raytraceResultIn.getBlockPos() != null) {
             BlockPos pos = raytraceResultIn.getBlockPos();
-
-            EntityDecal.EnumDecalSide side = EntityDecal.EnumDecalSide.ALL;
-            boolean shouldRender = true;
             double hitX = raytraceResultIn.hitVec.x;
             double hitY = raytraceResultIn.hitVec.y;
             double hitZ = raytraceResultIn.hitVec.z;
-            switch (raytraceResultIn.sideHit) {
-                case UP:
-                    side= EntityDecal.EnumDecalSide.FLOOR;
-                    break;
-                case DOWN:
-                    side= EntityDecal.EnumDecalSide.CEILING;
-                    break;
-                case EAST:
-                    side= EntityDecal.EnumDecalSide.WEST;
-                    break;
-                case WEST:
-                    side= EntityDecal.EnumDecalSide.EAST;
-                    break;
-                case SOUTH:
-                    side= EntityDecal.EnumDecalSide.NORTH;
-                    break;
-                case NORTH:
-                    side= EntityDecal.EnumDecalSide.SOUTH;
-                    break;
-                default:
-                    shouldRender=false;
-                    break;
-            }
-            if (shouldRender) {
-                ModularWarfare.NETWORK.sendToAll(new PacketDecal(0, side, hitX, hitY, hitZ, false));
-            }
+            ModularWarfare.NETWORK.sendToAll(new PacketHitEffect(hitX, hitY, hitZ));
         }
     }
 

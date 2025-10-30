@@ -54,8 +54,7 @@ import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.entity.EntityBulletClient;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
 import com.modularwarfare.common.entity.EntityThrowerProjectile;
-import com.modularwarfare.common.entity.decals.EntityBulletHole;
-import com.modularwarfare.common.entity.decals.EntityShell;
+import com.modularwarfare.common.entity.environment.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
@@ -880,9 +879,6 @@ public class ClientProxy extends CommonProxy {
     public void registerEntities(RegistryEvent.Register<EntityEntry> event) {
 
         if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT) {
-
-            //BULLET HOLE
-            RenderingRegistry.registerEntityRenderingHandler(EntityBulletHole.class, RenderDecal.FACTORY);
 
             //RENDER SHELL EJECTION
             RenderingRegistry.registerEntityRenderingHandler(EntityShell.class, RenderShell.FACTORY);

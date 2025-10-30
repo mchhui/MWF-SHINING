@@ -1,6 +1,7 @@
 package com.modularwarfare.common.entity;
 
-import com.modularwarfare.common.entity.decals.EntityShell;
+import com.modularwarfare.common.entity.environment.EntityShell;
+
 import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;

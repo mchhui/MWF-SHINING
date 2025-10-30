@@ -1,4 +1,4 @@
-package com.modularwarfare.common.entity.decals;
+package com.modularwarfare.common.entity.environment;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
