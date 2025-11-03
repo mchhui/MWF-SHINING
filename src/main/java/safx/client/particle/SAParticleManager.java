@@ -3,11 +3,14 @@ package safx.client.particle;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import org.lwjgl.opengl.GL11;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import safx.SAConfig;
@@ -121,19 +124,46 @@ public class SAParticleManager {
         frust.setPosition(d0, d1, d2);*/
         
         GlStateManager.disableCull();
-        this.list.forEach(p -> {	
-        	//if(frust.isBoundingBoxInFrustum(p.getRenderBoundingBox(partialTicks, entity)))
-        	p.doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
+        GlStateManager.enableBlend();
+        GlStateManager.depthMask(false);
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        ResourceLocation[] loc = new ResourceLocation[1];
+        //使用魔法进行一个性能补丁 你不应该模仿这种写法
+        this.list.forEach(p -> {
+            if (loc[0] == null || !loc[0].equals(((SAParticle)p).type.texture)) {
+                if (loc[0] != null) {
+                    Tessellator.getInstance().draw();
+                }
+                loc[0] = ((SAParticle)p).type.texture;
+                Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
+                bufferbuilder.begin(GL11.GL_QUADS, SAParticle.VERTEX_FORMAT);
+            }
+            p.doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
         });
-        
-        this.list_nosort.forEach(p -> {	
-        	//if(frust.isBoundingBoxInFrustum(p.getRenderBoundingBox(partialTicks, entity)))
-        	p.doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
+        if (loc[0] != null) {
+            Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
+            Tessellator.getInstance().draw();
+            loc[0] = null;
+        }
+        this.list_nosort.forEach(p -> {
+            if (loc[0] == null || !loc[0].equals(((SAParticle)p).type.texture)) {
+                if (loc[0] != null) {
+                    Tessellator.getInstance().draw();
+                }
+                loc[0] = ((SAParticle)p).type.texture;
+                Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
+                bufferbuilder.begin(GL11.GL_QUADS, SAParticle.VERTEX_FORMAT);
+            }
+            p.doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
         });
-        GlStateManager.color(1f, 1f, 1f, 1f);
-        //GlStateManager.enableCull();
-
-
+        if (loc[0] != null) {
+            Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
+            Tessellator.getInstance().draw();
+            loc[0] = null;
+        }
+        GlStateManager.disableBlend();
+        GlStateManager.depthMask(true);
     }
 
 	

@@ -295,60 +295,26 @@ public class SAParticle extends Particle implements ISAParticle {
          * RENDER PARTICLE
          */
         this.particleScale = sizePrev + (size-sizePrev)*partialTickTime;
-    	
-        
-        //Minecraft.getMinecraft().renderEngine.bindTexture(type.texture);
-        Minecraft.getMinecraft().getTextureManager().bindTexture(type.texture);
-
-//        float f6 = ((float)this.particleTextureIndexX + this.particleTextureJitterX / 4.0F) / 16.0F;
-//        float f7 = f6 + 0.015609375F;
-//        float f8 = ((float)this.particleTextureIndexY + this.particleTextureJitterY / 4.0F) / 16.0F;
-//        float f9 = f8 + 0.015609375F;
+//        Minecraft.getMinecraft().getTextureManager().bindTexture(type.texture);
         float fscale = 0.1F * this.particleScale;
-
         float fPosX = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)partialTickTime - (!this.itemAttached ? SAParticleManager.interpPosX :0));
         float fPosY = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)partialTickTime - (!this.itemAttached ? SAParticleManager.interpPosY :0));
         float fPosZ = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)partialTickTime - (!this.itemAttached ? SAParticleManager.interpPosZ :0));
-        
         float r = fscale;
-
 		int col = currentFrame % type.columns;
 		int row = (currentFrame / type.columns);
-		
 		float u = 1.f/type.columns;
 		float v = 1.f/type.columns; 
 		float U1 = col*u;
 		float V1 = row*v;
 		float U2 = (col+1)*u;
 		float V2 = (row+1)*v;
-		
 		float ua, va, ub, vb, uc, vc, ud, vd;
 		ua=U2; va=V2; ub = U2; vb= V1; uc = U1; vc = V1; ud=U1; vd = V2;
-		
-//		switch (angle) {
-//			case 1:
-//				 ua=U1; va = V2; ub=U2; vb=V2; uc = U2; vc= V1; ud = U1; vd = V1;
-//				 break;
-//			case 2:
-//				 ua = U1; va = V1; ub=U1; vb = V2; uc=U2; vc=V2; ud = U2; vd= V1;
-//				 break;
-//			case 3:
-//				 ua = U2; va= V1; ub = U1; vb = V1; uc=U1; vc = V2; ud=U2; vd=V2;
-//				 break;
-//			case 0:					
-//			default:
-//				ua=U2; va=V2; ub = U2; vb= V1; uc = U1; vc = V1; ud=U1; vd = V2;
-//				break;
-//		}
-		
-		enableBlendMode();
-
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-
-        buffer.begin(7, VERTEX_FORMAT);
+//		enableBlendMode();
+//        buffer.begin(7, VERTEX_FORMAT);
         double a = (angle + (partialTickTime * angleRate)) * MathUtil.D2R;
 		Vec3d p1, p2, p3, p4;
-		
 		if (this.type.groundAligned) {
 			float s = fscale;
 			p1 = new Vec3d(-s,0,-s);
@@ -366,37 +332,6 @@ public class SAParticle extends Particle implements ISAParticle {
 	        p2 = new Vec3d((double)(- rotX * fscale + rotXY * fscale), (double)( + rotZ * fscale), (double)( - rotYZ * fscale + rotXZ * fscale));
 	        p3 = new Vec3d((double)( rotX * fscale + rotXY * fscale), (double)( + rotZ * fscale), (double)( + rotYZ * fscale + rotXZ * fscale));
 	        p4 = new Vec3d((double)( rotX * fscale - rotXY * fscale), (double)( - rotZ * fscale), (double)( + rotYZ * fscale - rotXZ * fscale));        
-		
-			//<TEST>
-//			Vec3d angles = RenderItemBase.getTransformAngles((EntityLivingBase)playerIn, EnumHandSide.RIGHT, partialTickTime);
-//			angles = angles.scale(-1.0);
-//			
-//			p1 = MathUtil.rotateVec3dAroundZ(p1, (float)angles.z);
-//			p1 = p1.rotateYaw((float)angles.y);
-//			p1 = p1.rotatePitch((float)angles.x);
-//		
-//			p2 = MathUtil.rotateVec3dAroundZ(p2, (float)angles.z);
-//			p2 = p2.rotateYaw((float)angles.y);
-//			p2 = p2.rotatePitch((float)angles.x);
-//			
-//			
-//			p3 = MathUtil.rotateVec3dAroundZ(p3, (float)angles.z);
-//			p3 = p3.rotateYaw((float)angles.y);
-//			p3 = p3.rotatePitch((float)angles.x);
-//
-//			
-//			p4 = MathUtil.rotateVec3dAroundZ(p4, (float)angles.z);
-//			p4 = p4.rotateYaw((float)angles.y);
-//			p4 = p4.rotatePitch((float)angles.x);
-//
-//			
-			//</TEST>
-			
-	        
-	        //AngleZ Rotation
-	        
-	        //double a = angle * MathUtil.D2R;
-	        
 	        if (a > 0.0001f) {
 		        Vec3d axis = p1.normalize().crossProduct(p2.normalize());
 				double cosa = Math.cos(a);
@@ -408,29 +343,12 @@ public class SAParticle extends Particle implements ISAParticle {
 		        p4 = rotAxis(p4, axis, sina, cosa);     
 	        }	        		
 		}
-		
-		/*p1 = new Vec3d(p1.x + fPosX, p1.y + fPosY, p1.z + fPosZ);
-		p2 = new Vec3d(p2.x + fPosX, p2.y + fPosY, p2.z + fPosZ);
-		p3 = new Vec3d(p3.x + fPosX, p3.y + fPosY, p3.z + fPosZ);
-		p4 = new Vec3d(p4.x + fPosX, p4.y + fPosY, p4.z + fPosZ);*/
-        
-		////System.out.println(String.format("p1 = %.2f, %.2f, %.2f, p2 = %.2f, %.2f, %.2f,  p3 = %.2f, %.2f, %.2f,  p4 = %.2f, %.2f, %.2f", p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z, p4.x, p4.y, p4.z));
-		////System.out.println(String.format("fpos = %.2f, %.2f, %.2f", fPosX, fPosY, fPosZ));
-	
-		
 		buffer.pos(p1.x + fPosX, p1.y + fPosY, p1.z + fPosZ).tex((double)ua, (double)va).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(0, 240).normal(0.0f, 1.0f, 0.0f).endVertex();
 		buffer.pos(p2.x + fPosX, p2.y + fPosY, p2.z + fPosZ).tex((double)ub, (double)vb).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(0, 240).normal(0.0f, 1.0f, 0.0f).endVertex();
 		buffer.pos(p3.x + fPosX, p3.y + fPosY, p3.z + fPosZ).tex((double)uc, (double)vc).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(0, 240).normal(0.0f, 1.0f, 0.0f).endVertex();
 		buffer.pos(p4.x + fPosX, p4.y + fPosY, p4.z + fPosZ).tex((double)ud, (double)vd).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(0, 240).normal(0.0f, 1.0f, 0.0f).endVertex();
-		
-
-        Tessellator.getInstance().draw();
-
-        //new ModelRocket().render(null, 0, 0, 0, 0, 0, 0.625f, 0, 0f, TransformType.GROUND, 0, 0f, 0f);
-        ////System.out.println("DoRender");
-        
-        disableBlendMode();
-
+//        Tessellator.getInstance().draw();
+//        disableBlendMode();
     }
     
     /**
