@@ -950,11 +950,11 @@ public class ShotManager {
             if (tex == null) tex = "";
             
             if (gunType.useTeslaTrails) {
-                ModularWarfare.NETWORK.sendToDimension(new PacketTeslaTrailAskServer(
+                ModularWarfare.NETWORK.sendToDimension(new PacketTeslaTrail(
                     origin.x, origin.y, origin.z,
                     endVec.x, endVec.y, endVec.z,
                     10f,
-                    gunType
+                    gunType.internalName
                 ), entity.dimension);
             } else {
                 ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(

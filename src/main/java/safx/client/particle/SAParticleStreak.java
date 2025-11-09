@@ -1,14 +1,10 @@
 package safx.client.particle;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import safx.client.ClientProxy;
-import safx.util.MathUtil;
 
 public class SAParticleStreak extends SAParticle{
 
@@ -58,21 +54,12 @@ public class SAParticleStreak extends SAParticle{
          */
         this.particleScale = sizePrev + (size-sizePrev)*partialTickTime;
     	
-        
-        //Minecraft.getMinecraft().renderEngine.bindTexture(type.texture);
-        Minecraft.getMinecraft().getTextureManager().bindTexture(type.texture);
-
-//        float f6 = ((float)this.particleTextureIndexX + this.particleTextureJitterX / 4.0F) / 16.0F;
-//        float f7 = f6 + 0.015609375F;
-//        float f8 = ((float)this.particleTextureIndexY + this.particleTextureJitterY / 4.0F) / 16.0F;
-//        float f9 = f8 + 0.015609375F;
+//        Minecraft.getMinecraft().getTextureManager().bindTexture(type.texture);
         float fscale = 0.1F * this.particleScale;
 
         float fPosX = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)partialTickTime - SAParticleManager.interpPosX);
         float fPosY = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)partialTickTime - SAParticleManager.interpPosY);
         float fPosZ = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)partialTickTime - SAParticleManager.interpPosZ);
-    
-        float r = fscale;
         
 		int col = currentFrame % type.columns;
 		int row = (currentFrame / type.columns);
@@ -88,12 +75,9 @@ public class SAParticleStreak extends SAParticle{
 		float ua, va, ub, vb, uc, vc, ud, vd;
 		ua=U2; va=V2; ub = U2; vb= V1; uc = U1; vc = V1; ud=U1; vd = V2;
 		
-		enableBlendMode();
-
-		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-
-        buffer.begin(7, VERTEX_FORMAT);
-        double a = (angle + (partialTickTime * angleRate)) * MathUtil.D2R;
+//		enableBlendMode();
+//		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+//        buffer.begin(7, VERTEX_FORMAT);
 		Vec3d p1, p2, p3, p4;
 		
 		//System.out.println("streak");
@@ -186,13 +170,9 @@ public class SAParticleStreak extends SAParticle{
 			buffer.pos(p2.x, p2.y, p2.z).tex((double)ub, (double)vb).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(0, 240).normal(0.0f, 1.0f, 0.0f).endVertex();
 			buffer.pos(p3.x, p3.y, p3.z).tex((double)uc, (double)vc).color(prev.particleRed, prev.particleGreen, prev.particleBlue, prev.particleAlpha).lightmap(0, 240).normal(0.0f, 1.0f, 0.0f).endVertex();
 			buffer.pos(p4.x, p4.y, p4.z).tex((double)ud, (double)vd).color(prev.particleRed, prev.particleGreen, prev.particleBlue, prev.particleAlpha).lightmap(0, 240).normal(0.0f, 1.0f, 0.0f).endVertex();
-	
-
-
         }
-
-        Tessellator.getInstance().draw();
-        disableBlendMode();
+//        Tessellator.getInstance().draw();
+//        disableBlendMode();
         
 
     }
