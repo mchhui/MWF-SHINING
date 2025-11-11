@@ -73,9 +73,8 @@ public class CommandFX extends CommandBase {
             float scale = args.length > 7 ? Float.parseFloat(args[7]) : 1.0f;
             
             Entity targetEntity = null;
-            
-            for (int i = 0; i < server.worlds.length; i++) {
-                World world = server.worlds[i];
+
+            for (World world : net.minecraftforge.common.DimensionManager.getWorlds()) {
                 for (Entity entity : world.loadedEntityList) {
                     if (entity.getUniqueID().equals(entityUUID)) {
                         targetEntity = entity;
