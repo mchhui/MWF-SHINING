@@ -92,13 +92,13 @@ public class CommandFX extends CommandBase {
             
             // 获取距离实体最近的玩家，使用其维度来发送特效包（对虚拟世界很重要）
             EntityPlayerMP nearestPlayer = null;
-            EntityPlayer nearest = targetEntity.world.getClosestPlayer(targetEntity.posX, targetEntity.posY, targetEntity.posZ, 256, false);
+            EntityPlayer nearest = targetEntity.world.getClosestPlayer(targetEntity.posX, targetEntity.posY, targetEntity.posZ, 512, false);
             if (nearest instanceof EntityPlayerMP) {
                 nearestPlayer = (EntityPlayerMP) nearest;
             }
             
             if (nearestPlayer == null) {
-                sender.sendMessage(new TextComponentString("§cNo player nearby to render effect (need player within 256 blocks)!"));
+                sender.sendMessage(new TextComponentString("§cNo player nearby to render effect (need player within 512 blocks)!"));
                 return;
             }
             
