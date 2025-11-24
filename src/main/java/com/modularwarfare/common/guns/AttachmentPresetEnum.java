@@ -8,6 +8,8 @@ public enum AttachmentPresetEnum {
     @SerializedName("sight") Sight("sight"),
     @SerializedName("slide") Slide("slide"),
     @SerializedName("grip") Grip("grip"),
+    @SerializedName("pistolgrip") Pistolgrip("pistolgrip"),
+    @SerializedName("handguard") Handguard("handguard"),
     @SerializedName("flashlight") Flashlight("flashlight"),
     @SerializedName("charm") Charm("charm"),
     @SerializedName("skin") Skin("skin"),

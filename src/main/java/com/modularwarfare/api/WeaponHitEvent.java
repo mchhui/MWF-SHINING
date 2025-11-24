@@ -33,6 +33,7 @@ public class WeaponHitEvent extends WeaponEvent {
         private float penetrateBlockDamageFactor;
         private Entity victim;
         private double distance;
+        private String hitboxName;
 
         public Pre(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, float penetrateDamageFactor, float penetrateBlockDamageFactor, Entity victim, double distance) {
             super(entityLivingBase, stackWeapon, itemWeapon);
@@ -42,6 +43,18 @@ public class WeaponHitEvent extends WeaponEvent {
             this.penetrateBlockDamageFactor = penetrateBlockDamageFactor;
             this.victim = victim;
             this.distance = distance;
+            this.hitboxName = "";
+        }
+
+        public Pre(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, boolean isHeadshot, float damage, float penetrateDamageFactor, float penetrateBlockDamageFactor, Entity victim, double distance, String hitboxName) {
+            super(entityLivingBase, stackWeapon, itemWeapon);
+            this.isHeadshot = isHeadshot;
+            this.damage = damage;
+            this.penetrateDamageFactor = penetrateDamageFactor;
+            this.penetrateBlockDamageFactor = penetrateBlockDamageFactor;
+            this.victim = victim;
+            this.distance = distance;
+            this.hitboxName = hitboxName != null ? hitboxName : "";
         }
 
         public float getDamage() {
@@ -76,12 +89,20 @@ public class WeaponHitEvent extends WeaponEvent {
             return victim;
         }
 
-        public void setVictim(Entity entity) {
+        public void setVictim(Entity victim) {
             this.victim = victim;
         }
 
         public double getDistance() {
-            return this.distance = distance;
+            return this.distance;
+        }
+
+        public String getHitboxName() {
+            return this.hitboxName;
+        }
+
+        public void setHitboxName(String hitboxName) {
+            this.hitboxName = hitboxName;
         }
     }
 

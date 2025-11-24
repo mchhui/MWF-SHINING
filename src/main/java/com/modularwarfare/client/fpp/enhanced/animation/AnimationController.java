@@ -497,6 +497,20 @@ public class AnimationController {
                             AttachmentPresetEnum.Sight).getItem();
                     adsSpeed*=sightAttachment.type.sight.aimSpeedFactor;
                 }
+                if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                    AttachmentPresetEnum.Pistolgrip) != null) {
+                    ItemAttachment pistolgripAttachment =
+                        (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                            AttachmentPresetEnum.Pistolgrip).getItem();
+                    adsSpeed*=pistolgripAttachment.type.pistolgrip.aimSpeedFactor;
+                }
+                if (GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                    AttachmentPresetEnum.Handguard) != null) {
+                    ItemAttachment handguardAttachment =
+                        (ItemAttachment)GunType.getAttachment(player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                            AttachmentPresetEnum.Handguard).getItem();
+                    adsSpeed*=handguardAttachment.type.handguard.aimSpeedFactor;
+                }
             }
             double val = 0;
             if (RenderParameters.collideFrontDistance == 0 && Minecraft.getMinecraft().inGameHasFocus

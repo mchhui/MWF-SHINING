@@ -27,6 +27,7 @@ import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.hitbox.hits.OBBHit;
 import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
+import com.modularwarfare.raycast.obb.OBBModelBox;
 import com.modularwarfare.common.network.*;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
@@ -200,6 +201,12 @@ public class ShotManager {
         float recoilPitchLaserFactor = 1.0f;
         float recoilYawLaserFactor = 1.0f;
 
+        float recoilPistolgripFactor = 1.0f;
+        float recoilYawPistolgripFactor = 1.0f;
+
+        float recoilPitchHandguardFactor = 1.0f;
+        float recoilYawHandguardFactor = 1.0f;
+
         if (GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Grip) != null) {
             ItemAttachment gripAttachment = (ItemAttachment) GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Grip).getItem();
             recoilPitchGripFactor = gripAttachment.type.grip.recoilPitchFactor;
@@ -224,6 +231,18 @@ public class ShotManager {
             recoilYawLaserFactor = laserAttachment.type.laser.recoilYawFactor;
         }
 
+        if (GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Pistolgrip) != null) {
+            ItemAttachment pistolgripAttachment = (ItemAttachment) GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Pistolgrip).getItem();
+            recoilPistolgripFactor = pistolgripAttachment.type.pistolgrip.recoilPitchFactor;
+            recoilYawPistolgripFactor = pistolgripAttachment.type.pistolgrip.recoilYawFactor;
+        }
+
+        if (GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Handguard) != null) {
+            ItemAttachment handguardAttachment = (ItemAttachment) GunType.getAttachment(entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Handguard).getItem();
+            recoilPitchHandguardFactor = handguardAttachment.type.handguard.recoilPitchFactor;
+            recoilYawHandguardFactor = handguardAttachment.type.handguard.recoilYawFactor;
+        }
+
         boolean isCrawling = false;
         if(ModularWarfare.isLoadedModularMovements){
             if(ClientListener.clientPlayerState.isCrawling){
@@ -235,23 +254,23 @@ public class ShotManager {
         if (!(ClientRenderHooks.isAiming || ClientRenderHooks.isAimingScope)) {
             offsetPitch = gunType.recoilPitch;
             offsetPitch += ((gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch);
-            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor * recoilPitchLaserFactor);
+            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor * recoilPitchLaserFactor * recoilPistolgripFactor * recoilPitchHandguardFactor);
 
 
             offsetYaw = gunType.recoilYaw;
             offsetYaw *= new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw;
-            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor * recoilYawLaserFactor;
+            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor * recoilYawLaserFactor * recoilYawPistolgripFactor * recoilYawHandguardFactor;
             offsetYaw *= RenderParameters.rate * (isCrawling ? 0.2f : 1.0f);
             offsetYaw *= RenderParameters.phase ? 1 : -1;
         } else {
             offsetPitch = gunType.recoilPitch;
             offsetPitch += ((gunType.randomRecoilPitch * 2) - gunType.randomRecoilPitch);
-            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor * recoilPitchLaserFactor);
+            offsetPitch *= (recoilPitchGripFactor * recoilPitchBarrelFactor * recoilPitchStockFactor * recoilPitchLaserFactor * recoilPistolgripFactor * recoilPitchHandguardFactor);
             offsetPitch *= gunType.recoilAimReducer;
 
             offsetYaw = gunType.recoilYaw;
             offsetYaw *= new Random().nextFloat() * (gunType.randomRecoilYaw * 2) - gunType.randomRecoilYaw;
-            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor * recoilYawLaserFactor;
+            offsetYaw *= recoilYawGripFactor * recoilYawBarrelFactor * recoilYawStockFactor * recoilYawLaserFactor * recoilYawPistolgripFactor * recoilYawHandguardFactor;
             offsetYaw *= RenderParameters.rate * (isCrawling ? 0.2f : 1.0f);
             offsetYaw *= gunType.recoilAimReducer;
             offsetYaw *= RenderParameters.phase ? 1 : -1;
@@ -411,20 +430,30 @@ public class ShotManager {
 
                 if (postFireEvent.getHits() != null && !postFireEvent.getHits().isEmpty()) {
                     List<BulletHit> hits = postFireEvent.getHits();
-                    for (BulletHit bulletHit : hits) {
-                        if (bulletHit == null) {
-                            continue;
-                        }
-                        Entity targetEntity = bulletHit.getEntity();
-                        if (targetEntity == null || targetEntity == entityPlayer) {
-                            continue;
-                        }
+                for (BulletHit bulletHit : hits) {
+                    if (bulletHit == null) {
+                        continue;
+                    }
+                    Entity targetEntity = bulletHit.getEntity();
+                    if (targetEntity == null || targetEntity == entityPlayer) {
+                        continue;
+                    }
 
-                        // Weapon pre hit event
-                        WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityPlayer)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
-                        MinecraftForge.EVENT_BUS.post(preHitEvent);
-                        if (preHitEvent.isCanceled())
-                            return;
+                    // 获取碰撞箱名称
+                    String hitboxName = "";
+                    if (bulletHit instanceof PlayerHit) {
+                        PlayerHit playerHit = (PlayerHit) bulletHit;
+                        hitboxName = playerHit.hitbox.type.name();
+                    } else if (bulletHit instanceof OBBHit) {
+                        OBBHit obbHit = (OBBHit) bulletHit;
+                        hitboxName = obbHit.box.name;
+                    }
+
+                    // Weapon pre hit event
+                    WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityPlayer)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance, hitboxName);
+                    MinecraftForge.EVENT_BUS.post(preHitEvent);
+                    if (preHitEvent.isCanceled())
+                        return;
 
                         if (headshot) {
                             preHitEvent.setDamage(preHitEvent.getDamage() + gunType.gunDamageHeadshotBonus);
@@ -1039,8 +1068,18 @@ public class ShotManager {
                         continue;
                     }
 
+                    // 获取碰撞箱名称
+                    String hitboxName = "";
+                    if (bulletHit instanceof PlayerHit) {
+                        PlayerHit playerHit = (PlayerHit) bulletHit;
+                        hitboxName = playerHit.hitbox.type.name();
+                    } else if (bulletHit instanceof OBBHit) {
+                        OBBHit obbHit = (OBBHit) bulletHit;
+                        hitboxName = obbHit.box.name;
+                    }
+
                     // Weapon pre hit event
-                    WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityLivingBase)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
+                    WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityLivingBase)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance, hitboxName);
                     MinecraftForge.EVENT_BUS.post(preHitEvent);
                     if (preHitEvent.isCanceled()) {
                         return false;

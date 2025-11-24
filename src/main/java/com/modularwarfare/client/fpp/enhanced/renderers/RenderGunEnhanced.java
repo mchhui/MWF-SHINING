@@ -397,10 +397,19 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             if(sightConfig!=null) {
                 //System.out.println("test");
                 float ads=(float) controller.ADS;
-                mat.translate(new Vector3f(sightConfig.sightAimPosOffset.x,sightConfig.sightAimPosOffset.y,sightConfig.sightAimPosOffset.z).mul(ads));
-                mat.rotate(ads * sightConfig.sightAimRotOffset.y * 3.14f / 180, new Vector3f(0, 1, 0));
-                mat.rotate(ads * sightConfig.sightAimRotOffset.x * 3.14f / 180, new Vector3f(1, 0, 0));
-                mat.rotate(ads * sightConfig.sightAimRotOffset.z * 3.14f / 180, new Vector3f(0, 0, 1));
+                Vector3f aimPosOffset = new Vector3f(sightConfig.sightAimPosOffset.x, sightConfig.sightAimPosOffset.y, sightConfig.sightAimPosOffset.z);
+                Vector3f aimRotOffset = new Vector3f(sightConfig.sightAimRotOffset.x, sightConfig.sightAimRotOffset.y, sightConfig.sightAimRotOffset.z);
+                
+                ItemStack handguardStack = GunType.getAttachment(item, AttachmentPresetEnum.Handguard);
+                if (handguardStack != null && handguardStack.getItem() instanceof ItemAttachment) {
+                    String handguardName = ((ItemAttachment) handguardStack.getItem()).type.internalName;
+                    applyHandguardInfluenceToAim(config, sightConfig, handguardName, aimPosOffset, aimRotOffset);
+                }
+                
+                mat.translate(new Vector3f(aimPosOffset.x, aimPosOffset.y, aimPosOffset.z).mul(ads));
+                mat.rotate(ads * aimRotOffset.y * 3.14f / 180, new Vector3f(0, 1, 0));
+                mat.rotate(ads * aimRotOffset.x * 3.14f / 180, new Vector3f(1, 0, 0));
+                mat.rotate(ads * aimRotOffset.z * 3.14f / 180, new Vector3f(0, 0, 1));
                 renderInsideGunOffset=sightConfig.renderInsideGunOffset;
             }
         }
@@ -498,6 +507,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         
         if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
 
+            // Stock
             ItemStack itemStock = GunType.getAttachment(player.getHeldItemMainhand(), AttachmentPresetEnum.Stock);
             if (itemStock != null && itemStock.getItem() != Items.AIR) {
                 ItemAttachment itemAttachment = (ItemAttachment) itemStock.getItem();
@@ -505,6 +515,28 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     modelBackwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilBackwardsFactor;
                     modelUpwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilUpwardsFactor;
                     modelShakeFactor *= ((ModelAttachment) itemAttachment.type.model).config.stock.modelRecoilShakeFactor;
+                }
+            }
+
+            // Pistolgrip
+            ItemStack itemPistolgrip = GunType.getAttachment(player.getHeldItemMainhand(), AttachmentPresetEnum.Pistolgrip);
+            if (itemPistolgrip != null && itemPistolgrip.getItem() != Items.AIR) {
+                ItemAttachment itemAttachment = (ItemAttachment) itemPistolgrip.getItem();
+                if(itemAttachment.type.model instanceof ModelAttachment && ((ModelAttachment)itemAttachment.type.model).config.pistolgrip != null) {
+                    modelBackwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.pistolgrip.modelRecoilBackwardsFactor;
+                    modelUpwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.pistolgrip.modelRecoilUpwardsFactor;
+                    modelShakeFactor *= ((ModelAttachment) itemAttachment.type.model).config.pistolgrip.modelRecoilShakeFactor;
+                }
+            }
+
+            // Handguard
+            ItemStack itemHandguard = GunType.getAttachment(player.getHeldItemMainhand(), AttachmentPresetEnum.Handguard);
+            if (itemHandguard != null && itemHandguard.getItem() != Items.AIR) {
+                ItemAttachment itemAttachment = (ItemAttachment) itemHandguard.getItem();
+                if(itemAttachment.type.model instanceof ModelAttachment && ((ModelAttachment)itemAttachment.type.model).config.handguard != null) {
+                    modelBackwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.handguard.modelRecoilBackwardsFactor;
+                    modelUpwardsFactor *= ((ModelAttachment) itemAttachment.type.model).config.handguard.modelRecoilUpwardsFactor;
+                    modelShakeFactor *= ((ModelAttachment) itemAttachment.type.model).config.handguard.modelRecoilShakeFactor;
                 }
             }
 
@@ -710,7 +742,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                         }
                         model.applyGlobalTransformToOther(binding, () -> {
                             renderAttachment(config, AttachmentPresetEnum.Sight.typeName,
-                                sightRendering.type.internalName, () -> {
+                                sightRendering.type.internalName, item, () -> {
                                     writeScopeGlassDepth(sightRendering.type,
                                         (ModelAttachment)sightRendering.type.model, controller.ADS > 0, worldScale,
                                         sightRendering.type.sight.modeType.isPIP);
@@ -849,20 +881,20 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             }
                             for (int bullet = 0; bullet < currentAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
                                 model.applyGlobalTransformToOther("bulletModel_" + bullet, () -> {
-                                    renderAttachment(config, "bullet", bulletType.internalName, () -> {
+                                    renderAttachment(config, "bullet", bulletType.internalName, item, () -> {
                                         bulletType.model.renderPart("bulletModel", worldScale);
                                     });
                                 });
                             }
                             for (int bullet = 0; bullet < costAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
                                 model.applyGlobalTransformToOther("shellModel_" + bullet, () -> {
-                                    renderAttachment(config, "shell", bulletType.internalName, () -> {
+                                    renderAttachment(config, "shell", bulletType.internalName, item, () -> {
                                         bulletType.shell.renderPart("shellModel", worldScale);
                                     });
                                 });
                             }
                             model.applyGlobalTransformToOther("bulletModel", () -> {
-                                renderAttachment(config, "bullet", bulletType.internalName, () -> {
+                                renderAttachment(config, "bullet", bulletType.internalName, item, () -> {
                                     bulletType.model.renderPart("bulletModel", worldScale);
                                 });
                             });
@@ -964,7 +996,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                             }
                                         }
                                     }
-                                    renderAttachment(config, "ammo", ammoType.internalName, () -> {
+                                    renderAttachment(config, "ammo", ammoType.internalName, item, () -> {
                                         ammoType.model.renderPart("ammoModel", worldScale);
                                         if (defaultBulletFlag.b) {
                                             if (renderAmmo.getTagCompound().hasKey("magcount")) {
@@ -1009,14 +1041,14 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                             }
                                             for (int bullet = 0; bullet < costAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
                                                 model.applyGlobalTransformToOther("shellModel_" + bullet, () -> {
-                                                    renderAttachment(config, "shell", bulletType.internalName, () -> {
+                                                    renderAttachment(config, "shell", bulletType.internalName, item, () -> {
                                                         bulletType.shell.renderPart("shellModel", worldScale);
                                                     });
                                                 });
                                             }
                                             
                                             model.applyGlobalTransformToOther("shellModel", () -> {
-                                                renderAttachment(config, "shell", bulletType.internalName, () -> {
+                                                renderAttachment(config, "shell", bulletType.internalName, item, () -> {
                                                     bulletType.shell.renderPart("shellModel", worldScale);
                                                 });
                                             });
@@ -1024,7 +1056,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                     }
                                 }
                                 model.applyGlobalTransformToOther("bulletModel", () -> {
-                                    renderAttachment(config, "bullet", ammoType.internalName, () -> {
+                                    renderAttachment(config, "bullet", ammoType.internalName, item, () -> {
                                         ammoType.model.renderPart("bulletModel", worldScale);
                                     });
                                 });
@@ -1100,7 +1132,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                             : attachmentType.modelSkins[0].getSkin();
                                     bindTexture("attachments", attachmentsPath);
                                 }
-                                renderAttachment(config, attachment.typeName, attachmentType.internalName, () -> {
+                                renderAttachment(config, attachment.typeName, attachmentType.internalName, item, () -> {
                                     attachmentModel.renderAttachment(worldScale);
                                     ObjModelRenderer.glowTxtureMode=false;
                                     if(attachment==AttachmentPresetEnum.Sight) {
@@ -2368,12 +2400,37 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     }
 
     public void renderAttachment(GunEnhancedRenderConfig config, String type, String name, Runnable run) {
+        renderAttachment(config, type, name, null, run);
+    }
+    
+    public void renderAttachment(GunEnhancedRenderConfig config, String type, String name, ItemStack gunStack, Runnable run) {
+
+        String handguardName = null;
+        if (gunStack != null && GunType.getAttachment(gunStack, AttachmentPresetEnum.Handguard) != null) {
+            ItemStack handguardStack = GunType.getAttachment(gunStack, AttachmentPresetEnum.Handguard);
+            if (handguardStack.getItem() instanceof ItemAttachment) {
+                handguardName = ((ItemAttachment) handguardStack.getItem()).type.internalName;
+            }
+        }
+        
+
         if (config.attachmentGroup.containsKey(type)) {
-            applyTransform(config.attachmentGroup.get(type));
+            GunEnhancedRenderConfig.AttachmentGroup group = config.attachmentGroup.get(type);
+            applyTransform(group);
+            if (handguardName != null && group.handguardInfluence.containsKey(handguardName)) {
+                applyTransform(group.handguardInfluence.get(handguardName));
+            }
         }
+        
+
         if (config.attachment.containsKey(name)) {
-            applyTransform(config.attachment.get(name));
+            GunEnhancedRenderConfig.Attachment attachment = config.attachment.get(name);
+            applyTransform(attachment);
+            if (handguardName != null && attachment.handguardInfluence.containsKey(handguardName)) {
+                applyTransform(attachment.handguardInfluence.get(handguardName));
+            }
         }
+        
         run.run();
     }
 
@@ -2510,6 +2567,26 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         this.b = b;
         this.a = a;
         GlStateManager.color(r, g, b, a);
+    }
+    
+    private void applyHandguardInfluenceToAim(GunEnhancedRenderConfig config, GunEnhancedRenderConfig.Attachment sightConfig,
+                                               String handguardName, Vector3f aimPosOffset, Vector3f aimRotOffset) {
+        // 配件组级别影响
+        if (config.attachmentGroup.containsKey(AttachmentPresetEnum.Sight.typeName)) {
+            GunEnhancedRenderConfig.AttachmentGroup sightGroup = config.attachmentGroup.get(AttachmentPresetEnum.Sight.typeName);
+            GunEnhancedRenderConfig.HandguardInfluence groupInfluence = sightGroup.handguardInfluence.get(handguardName);
+            if (groupInfluence != null) {
+                aimPosOffset.sub(groupInfluence.translate.x, groupInfluence.translate.y, groupInfluence.translate.z);
+                aimRotOffset.sub(groupInfluence.rotate.x, groupInfluence.rotate.y, groupInfluence.rotate.z);
+            }
+        }
+        
+        // 具体配件级别影响
+        GunEnhancedRenderConfig.HandguardInfluence attachInfluence = sightConfig.handguardInfluence.get(handguardName);
+        if (attachInfluence != null) {
+            aimPosOffset.sub(attachInfluence.translate.x, attachInfluence.translate.y, attachInfluence.translate.z);
+            aimRotOffset.sub(attachInfluence.rotate.x, attachInfluence.rotate.y, attachInfluence.rotate.z);
+        }
     }
 
     @Override

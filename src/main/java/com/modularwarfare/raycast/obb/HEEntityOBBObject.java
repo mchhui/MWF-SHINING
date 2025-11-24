@@ -149,15 +149,15 @@ public class HEEntityOBBObject extends OBBModelObject {
                 nodeData.nodeName,
                 isPlayer ? "玩家" : "非玩家",
                 scaleFactor,
-                1, 1, 1,
-                1 * scaleFactor, 1 * scaleFactor, 1 * scaleFactor
+                1.0f, 1.0f, 1.0f,
+                1.0f * scaleFactor, 1.0f * scaleFactor, 1.0f * scaleFactor
             ));
         }
         
         box.size = new com.modularwarfare.common.vector.Vector3f(
-            1 * scaleFactor,
-            1 * scaleFactor,
-            1 * scaleFactor
+            1.0f * scaleFactor,
+            1.0f * scaleFactor,
+            1.0f * scaleFactor
         );
         
         // 中心点相对于bone原点

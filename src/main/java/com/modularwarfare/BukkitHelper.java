@@ -2,6 +2,7 @@ package com.modularwarfare;
 
 import com.modularwarfare.api.EntityHeadShotEvent;
 import com.modularwarfare.api.WeaponAttachmentEvent;
+import com.modularwarfare.api.WeaponHitEvent;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -33,6 +34,7 @@ public class BukkitHelper {
             scriptEngine.eval("var Bukkit=Java.type(\"org.bukkit.Bukkit\");\r\n"
                 + "var BukkitEntityHeadShotEvent=Java.type(\"com.modularwarfare.BukkitHelper.BukkitEntityHeadShotEvent\");\r\n"
                 + "var BukkitWeaponAttachmentEvent=Java.type(\"com.modularwarfare.BukkitHelper.BukkitWeaponAttachmentEvent\");\r\n"
+                + "var BukkitWeaponHitEvent=Java.type(\"com.modularwarfare.BukkitHelper.BukkitWeaponHitEvent\");\r\n"
                 + "var CraftEntity=Java.type(\"org.bukkit.craftbukkit.v1_12_R1.entity.CraftEntity\");\r\n"
                 + "var CraftItemStack=Java.type(\"org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack\");\r\n"
                 + "function toBukkitEntity(entity){\r\n"
@@ -55,9 +57,49 @@ public class BukkitHelper {
         } catch (ScriptException e) {
             e.printStackTrace();
         }
-        // var bukkitEvent=new
-        // BukkitEntityHeadShotEvent(toBukkitEntity(event.getVictim()),toBukkitEntity(event.getShooter()));
-        // Bukkit.getPluginManager().callEvent(bukkitEvent);
+    }
+
+    @SubscribeEvent
+    public static void onAttachmentLoad(WeaponAttachmentEvent.Load event) {
+        scriptEngine.put("event", event);
+        try {
+            scriptEngine.eval(
+                "       var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),false,false,null,toBukkitItemstack(event.gun),toBukkitItemstack(event.attach));\r\n"
+                + "       Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n"
+                + "       if(bukkitEvent.isCanceled){\r\n" + "                event.setCanceled(true);\r\n"
+                + "       }\r\n" + "       event.attach=toForgeItemstack(bukkitEvent.loadAttach);");
+        } catch (ScriptException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onAttachmentUnload(WeaponAttachmentEvent.Unload event) {
+        scriptEngine.put("event", event);
+        try {
+            scriptEngine.eval(
+                "var bukkitEvent=new BukkitWeaponAttachmentEvent(toBukkitEntity(event.player),true,event.unloadAll,event.type!=null?event.type.typeName:null,toBukkitItemstack(event.gun),null);\r\n"
+                + "Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n" + "if(bukkitEvent.isCanceled){\r\n"
+                + "    event.setCanceled(true);\r\n" + "}");
+        } catch (ScriptException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onWeaponHit(WeaponHitEvent.Pre event) {
+        scriptEngine.put("event", event);
+        try {
+            scriptEngine.eval(
+                "var bukkitEvent=new BukkitWeaponHitEvent(toBukkitEntity(event.getWeaponUser()),toBukkitEntity(event.getVictim()),toBukkitItemstack(event.getWeapon()),event.getHitboxName(),event.getDamage(),event.isHeadhot());\r\n"
+                + "Bukkit.getPluginManager().callEvent(bukkitEvent);\r\n"
+                + "if(bukkitEvent.isCanceled){\r\n"
+                + "    event.setCanceled(true);\r\n"
+                + "}\r\n"
+                + "event.setDamage(bukkitEvent.damage);");
+        } catch (ScriptException e) {
+            e.printStackTrace();
+        }
     }
 
     // @SubscribeEvent
@@ -147,6 +189,38 @@ public class BukkitHelper {
         @Override
         public HandlerList getHandlers() {
             // TODO Auto-generated method stub
+            return handlerList;
+        }
+
+        public static HandlerList getHandlerList() {
+            return handlerList;
+        }
+    }
+
+    @Cancelable
+    public static class BukkitWeaponHitEvent extends Event {
+        public static final HandlerList handlerList = new HandlerList();
+
+        public org.bukkit.entity.Entity shooter;
+        public org.bukkit.entity.Entity victim;
+        public final ItemStack weapon;
+        public final String hitboxName;
+        public float damage;
+        public final boolean isHeadshot;
+        public boolean isCanceled = false;
+
+        public BukkitWeaponHitEvent(org.bukkit.entity.Entity shooter, org.bukkit.entity.Entity victim,
+            ItemStack weapon, String hitboxName, float damage, boolean isHeadshot) {
+            this.shooter = shooter;
+            this.victim = victim;
+            this.weapon = weapon;
+            this.hitboxName = hitboxName;
+            this.damage = damage;
+            this.isHeadshot = isHeadshot;
+        }
+
+        @Override
+        public HandlerList getHandlers() {
             return handlerList;
         }
 

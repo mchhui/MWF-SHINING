@@ -4,6 +4,7 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
@@ -73,9 +74,8 @@ public class CommandFX extends CommandBase {
             float scale = args.length > 7 ? Float.parseFloat(args[7]) : 1.0f;
             
             Entity targetEntity = null;
-            
-            for (int i = 0; i < server.worlds.length; i++) {
-                World world = server.worlds[i];
+
+            for (World world : net.minecraftforge.common.DimensionManager.getWorlds()) {
                 for (Entity entity : world.loadedEntityList) {
                     if (entity.getUniqueID().equals(entityUUID)) {
                         targetEntity = entity;
@@ -90,13 +90,26 @@ public class CommandFX extends CommandBase {
                 return;
             }
             
+            // 获取距离实体最近的玩家，使用其维度来发送特效包（对虚拟世界很重要）
+            EntityPlayerMP nearestPlayer = null;
+            EntityPlayer nearest = targetEntity.world.getClosestPlayer(targetEntity.posX, targetEntity.posY, targetEntity.posZ, 512, false);
+            if (nearest instanceof EntityPlayerMP) {
+                nearestPlayer = (EntityPlayerMP) nearest;
+            }
+            
+            if (nearestPlayer == null) {
+                sender.sendMessage(new TextComponentString("§cNo player nearby to render effect (need player within 512 blocks)!"));
+                return;
+            }
+            
             SAPackets.network.sendToAllAround(
                 new PacketSpawnParticleOnEntity(fxName, targetEntity, offsetX, offsetY, offsetZ, attachToHead, EntityCondition.NONE, scale),
-                SAPackets.targetPointAroundEnt(targetEntity, 128)
+                new TargetPoint(nearestPlayer.dimension, targetEntity.posX, targetEntity.posY, targetEntity.posZ, 512)
             );
             
             sender.sendMessage(new TextComponentString("§aAttached effect §e" + fxName + " §ato entity " + targetEntity.getName() + 
                 " §ain world §e" + targetEntity.world.getWorldInfo().getWorldName() +
+                " §a(dimension: " + nearestPlayer.dimension + ")" +
                 " §awith offset: §e(" + formatFloat(offsetX) + ", " + formatFloat(offsetY) + ", " + formatFloat(offsetZ) + ") " +
                 "§aattachToHead: §e" + attachToHead + " §ascale: §e" + scale));
             
