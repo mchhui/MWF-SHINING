@@ -27,6 +27,7 @@ import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.hitbox.hits.OBBHit;
 import com.modularwarfare.common.hitbox.hits.PlayerHit;
 import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
+import com.modularwarfare.raycast.obb.OBBModelBox;
 import com.modularwarfare.common.network.*;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
@@ -429,20 +430,30 @@ public class ShotManager {
 
                 if (postFireEvent.getHits() != null && !postFireEvent.getHits().isEmpty()) {
                     List<BulletHit> hits = postFireEvent.getHits();
-                    for (BulletHit bulletHit : hits) {
-                        if (bulletHit == null) {
-                            continue;
-                        }
-                        Entity targetEntity = bulletHit.getEntity();
-                        if (targetEntity == null || targetEntity == entityPlayer) {
-                            continue;
-                        }
+                for (BulletHit bulletHit : hits) {
+                    if (bulletHit == null) {
+                        continue;
+                    }
+                    Entity targetEntity = bulletHit.getEntity();
+                    if (targetEntity == null || targetEntity == entityPlayer) {
+                        continue;
+                    }
 
-                        // Weapon pre hit event
-                        WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityPlayer)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
-                        MinecraftForge.EVENT_BUS.post(preHitEvent);
-                        if (preHitEvent.isCanceled())
-                            return;
+                    // 获取碰撞箱名称
+                    String hitboxName = "";
+                    if (bulletHit instanceof PlayerHit) {
+                        PlayerHit playerHit = (PlayerHit) bulletHit;
+                        hitboxName = playerHit.hitbox.type.name();
+                    } else if (bulletHit instanceof OBBHit) {
+                        OBBHit obbHit = (OBBHit) bulletHit;
+                        hitboxName = obbHit.box.name;
+                    }
+
+                    // Weapon pre hit event
+                    WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityPlayer)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance, hitboxName);
+                    MinecraftForge.EVENT_BUS.post(preHitEvent);
+                    if (preHitEvent.isCanceled())
+                        return;
 
                         if (headshot) {
                             preHitEvent.setDamage(preHitEvent.getDamage() + gunType.gunDamageHeadshotBonus);
@@ -1057,8 +1068,18 @@ public class ShotManager {
                         continue;
                     }
 
+                    // 获取碰撞箱名称
+                    String hitboxName = "";
+                    if (bulletHit instanceof PlayerHit) {
+                        PlayerHit playerHit = (PlayerHit) bulletHit;
+                        hitboxName = playerHit.hitbox.type.name();
+                    } else if (bulletHit instanceof OBBHit) {
+                        OBBHit obbHit = (OBBHit) bulletHit;
+                        hitboxName = obbHit.box.name;
+                    }
+
                     // Weapon pre hit event
-                    WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityLivingBase)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance);
+                    WeaponHitEvent.Pre preHitEvent = new WeaponHitEvent.Pre((EntityLivingBase)preFireEvent.getWeaponUser(), gunStack, itemGun, headshot, postFireEvent.getDamage(), bulletHit.remainingPenetrate, bulletHit.remainingBlockPenetrate, targetEntity, bulletHit.distance, hitboxName);
                     MinecraftForge.EVENT_BUS.post(preHitEvent);
                     if (preHitEvent.isCanceled()) {
                         return false;

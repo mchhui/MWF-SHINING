@@ -178,6 +178,11 @@ public class PacketExpGunFire extends PacketBase {
                     if (target == null) {
                         return;
                     }
+                    
+                    // if (hitboxType != null && !hitboxType.isEmpty()) {
+                    //     System.out.println("[PacketExpGunFire] 玩家 " + entityPlayer.getName() + " 命中碰撞箱: " + hitboxType + " 目标实体: " + target.getName() + " UUID: " + target.getUniqueID());
+                    // }
+                    
                     WeaponFireMode fireMode = GunType.getFireMode(handItem);
                     if (fireMode == null)
                         return;
