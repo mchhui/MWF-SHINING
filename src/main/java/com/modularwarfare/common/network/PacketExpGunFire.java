@@ -3,6 +3,7 @@ package com.modularwarfare.common.network;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.EntityHeadShotEvent;
+import com.modularwarfare.api.GunHitEntityEvent;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
@@ -210,6 +211,10 @@ public class PacketExpGunFire extends PacketBase {
                                 }
                             }
                         }
+                    }
+                    GunHitEntityEvent gunHitEntityEvent = new GunHitEntityEvent(entityPlayer, target, internalname, hitboxType, posX, posY, posZ, facing, damage);
+                    if(MinecraftForge.EVENT_BUS.post(gunHitEntityEvent)) {
+                        return;
                     }
                     if (target instanceof EntityLivingBase) {
                         if (hitboxType != null && hitboxType.contains("head")) {

@@ -560,12 +560,11 @@ public class ModularWarfare {
 
         final String property = System.getProperty("mwf.banbukkit", "false");
         final boolean enableBukkit = !Boolean.parseBoolean(property);
-
         if (enableBukkit) {
             try {
-
                 Class.forName("org.bukkit.Bukkit");
-                MinecraftForge.EVENT_BUS.register(BukkitHelper.class);
+                MinecraftForge.EVENT_BUS.register(BukkitEvents.class);
+                LOGGER.info("MWFS is tranfering bukkit events.");
             } catch (ClassNotFoundException e) {
                 LOGGER.info("Bukkit extension not found, skipping initialization");
             }
