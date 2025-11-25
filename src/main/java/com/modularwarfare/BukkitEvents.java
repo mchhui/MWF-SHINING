@@ -22,6 +22,8 @@ import org.bukkit.inventory.ItemStack;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
+import static com.modularwarfare.NMSHelper.*;
+
 /**
  * 开发环境可用-Dmwf.banbukkit=true禁用
  * */
@@ -36,12 +38,11 @@ public class BukkitEvents {
         public final double hitX;
         public final double hitY;
         public final double hitZ;
-        public final int facing;
         public final boolean isHeadshot;
         public float damage;
-        public boolean isCanceled = true;
+        public boolean isCanceled = false;
 
-        public BukkitGunHitEntityEvent(org.bukkit.entity.Entity shooter, org.bukkit.entity.Entity victim, String gunId, String hitbox, double hitX, double hitY, double hitZ, int facing, float damage, boolean isHeadshot) {
+        public BukkitGunHitEntityEvent(org.bukkit.entity.Entity shooter, org.bukkit.entity.Entity victim, String gunId, String hitbox, double hitX, double hitY, double hitZ, float damage, boolean isHeadshot) {
             this.shooter = shooter;
             this.victim = victim;
             this.gunId = gunId;
@@ -49,7 +50,6 @@ public class BukkitEvents {
             this.hitX = hitX;
             this.hitY = hitY;
             this.hitZ = hitZ;
-            this.facing = facing;
             this.damage = damage;
             this.isHeadshot = isHeadshot;
         }
@@ -102,7 +102,7 @@ public class BukkitEvents {
         public final String unloadAttachmentType;
         public final ItemStack gun;
         public ItemStack loadAttach;
-        public boolean isCanceled = true;
+        public boolean isCanceled = false;
 
         public BukkitWeaponAttachmentEvent(org.bukkit.entity.Player player, boolean isUnload, boolean isUnloadAll, String unloadAttachmentType, ItemStack gun, ItemStack loadAttach) {
             this.player = player;
@@ -132,29 +132,12 @@ public class BukkitEvents {
         }
     }
 
-    public static Entity toBukkitEntity(net.minecraft.entity.Entity entity) {
-        return CraftEntity.getEntity((CraftServer)Bukkit.getServer(), (net.minecraft.server.v1_12_R1.Entity)(Object)entity);
-    }
-
-    public static Player toBukkitPlayer(EntityPlayer player) {
-        return (Player)CraftEntity.getEntity((CraftServer)Bukkit.getServer(), (net.minecraft.server.v1_12_R1.Entity)(Object)player);
-    }
-
-    public static ItemStack toBukkitStack(net.minecraft.item.ItemStack stack) {
-        return CraftItemStack.asBukkitCopy((net.minecraft.server.v1_12_R1.ItemStack)(Object)stack);
-    }
-
-    public static net.minecraft.item.ItemStack toForgeStack(ItemStack stack) {
-        return (net.minecraft.item.ItemStack)(Object)CraftItemStack.asNMSCopy(stack);
-    }
-
     @SubscribeEvent
     public static void onGunHitEntity(GunHitEntityEvent event) {
         Entity shooter = toBukkitEntity(event.shooter);
         Entity victim = toBukkitEntity(event.victim);
-        int facing = event.facing.ordinal();
         boolean isHeadshot = event.hitbox.contains("head");
-        BukkitGunHitEntityEvent bukkitEvent = new BukkitGunHitEntityEvent(shooter, victim, event.gunId, event.hitbox, event.hitX, event.hitY, event.hitZ, facing, event.damage, isHeadshot);
+        BukkitGunHitEntityEvent bukkitEvent = new BukkitGunHitEntityEvent(shooter, victim, event.gunId, event.hitbox, event.hitX, event.hitY, event.hitZ, event.damage, isHeadshot);
         Bukkit.getPluginManager().callEvent(bukkitEvent);
         event.damage = bukkitEvent.damage;
         if (bukkitEvent.isCanceled()) {

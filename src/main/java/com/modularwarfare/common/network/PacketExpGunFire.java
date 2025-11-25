@@ -212,7 +212,7 @@ public class PacketExpGunFire extends PacketBase {
                             }
                         }
                     }
-                    GunHitEntityEvent gunHitEntityEvent = new GunHitEntityEvent(entityPlayer, target, internalname, hitboxType, posX, posY, posZ, facing, damage);
+                    GunHitEntityEvent gunHitEntityEvent = new GunHitEntityEvent(entityPlayer, target, internalname, hitboxType, posX, posY, posZ, damage);
                     if(MinecraftForge.EVENT_BUS.post(gunHitEntityEvent)) {
                         return;
                     }

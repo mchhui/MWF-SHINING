@@ -14,10 +14,9 @@ public class GunHitEntityEvent extends Event {
     public final double hitX;
     public final double hitY;
     public final double hitZ;
-    public final EnumFacing facing;
     public float damage;
 
-    public GunHitEntityEvent(Entity shooter, Entity victim, String gunId, String hitbox, double hitX, double hitY, double hitZ, EnumFacing facing, float damage) {
+    public GunHitEntityEvent(Entity shooter, Entity victim, String gunId, String hitbox, double hitX, double hitY, double hitZ, float damage) {
         this.shooter = shooter;
         this.victim = victim;
         this.gunId = gunId;
@@ -25,7 +24,6 @@ public class GunHitEntityEvent extends Event {
         this.hitX = hitX;
         this.hitY = hitY;
         this.hitZ = hitZ;
-        this.facing = facing;
         this.damage = damage;
     }
 
