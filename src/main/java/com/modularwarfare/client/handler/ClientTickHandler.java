@@ -12,8 +12,8 @@ import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.animation.melee.AnimationMeleeController;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
-import com.modularwarfare.client.hud.FlashSystem;
-import com.modularwarfare.client.hud.GunUI;
+import com.modularwarfare.client.gui.hud.FlashSystem;
+import com.modularwarfare.client.gui.hud.GunUI;
 import com.modularwarfare.client.laser.LaserRenderManager;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.ModelGun;
@@ -377,8 +377,6 @@ public final class ClientTickHandler {
     private static void onClientTickStart(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)
             return;
-
-        ModularWarfare.PLAYER_HANDLER.clientTick();
 
         GUN_ROT_X_LAST = GUN_ROT_X;
         GUN_ROT_Y_LAST = GUN_ROT_Y;

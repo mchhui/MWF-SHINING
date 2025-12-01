@@ -17,6 +17,7 @@ import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGrenade;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.WeaponAnimationType;
@@ -24,7 +25,6 @@ import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;

@@ -19,9 +19,10 @@ import java.util.Random;
 import java.util.List;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.common.vector.Vector3f;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.textures.TextureEnumType;
+import com.modularwarfare.utility.vector.Vector3f;
+
 import safx.client.render.SARenderHelper.RenderType;
 
 public class InstantBulletTeslaRender extends InstantBulletRenderer {

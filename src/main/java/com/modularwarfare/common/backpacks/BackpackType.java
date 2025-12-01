@@ -4,7 +4,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.BackpackRenderConfig;
 import com.modularwarfare.client.model.ModelBackpack;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.objects.SoundEntry;
+import com.modularwarfare.utility.SoundEntry;
 
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.EnumFacing;

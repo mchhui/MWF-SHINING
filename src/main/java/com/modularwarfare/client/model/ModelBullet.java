@@ -2,9 +2,9 @@ package com.modularwarfare.client.model;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.BulletRenderConfig;
+import com.modularwarfare.client.objloader.MWModelBase;
+import com.modularwarfare.client.objloader.api.ObjModelLoader;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.MWModelBase;
-import com.modularwarfare.loader.api.ObjModelLoader;
 
 public class ModelBullet extends MWModelBase {
 

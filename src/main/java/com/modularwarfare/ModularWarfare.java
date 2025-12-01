@@ -9,6 +9,7 @@ import com.modularwarfare.api.hebridge.IAniPlayer;
 import com.modularwarfare.client.customplayer.CPEventHandler;
 import com.modularwarfare.client.customplayer.CustomPlayerConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
+import com.modularwarfare.client.gui.hud.GunTransformHUD;
 import com.modularwarfare.common.CommonProxy;
 import com.modularwarfare.common.MWTab;
 import com.modularwarfare.common.armor.ArmorType;
@@ -37,7 +38,6 @@ import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.CommonEventHandler;
 import com.modularwarfare.common.handler.GuiHandler;
-import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
@@ -46,12 +46,13 @@ import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
-import com.modularwarfare.raycast.DefaultRayCasting;
-import com.modularwarfare.raycast.RayCasting;
-import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.ZipContentPack;
+import com.modularwarfare.utility.bukkit.BukkitEvents;
+import com.modularwarfare.utility.raycast.DefaultRayCasting;
+import com.modularwarfare.utility.raycast.RayCasting;
+import com.modularwarfare.utility.script.ScriptHost;
 import com.mrcrayfish.vehicle.client.HeldVehicleEvents;
 
 import mchhui.modularmovements.ModularMovements;
@@ -93,7 +94,6 @@ import java.util.stream.Stream;
 import static com.modularwarfare.common.CommonProxy.zipJar;
 
 import com.modularwarfare.common.grenades.GrenadeType;
-import com.modularwarfare.client.hud.GunTransformHUD;
 import com.modularwarfare.common.commands.CommandEntityShoot;
 
 @Mod(modid = ModularWarfare.MOD_ID, name = ModularWarfare.MOD_NAME, version = ModularWarfare.MOD_VERSION, acceptedMinecraftVersions = "[1.12,1.13)")
@@ -117,8 +117,6 @@ public class ModularWarfare {
     public static Logger LOGGER;
 
     public static NetworkHandler NETWORK;
-
-    public static PlayerDataHandler PLAYER_HANDLER = new PlayerDataHandler();
 
     public static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 

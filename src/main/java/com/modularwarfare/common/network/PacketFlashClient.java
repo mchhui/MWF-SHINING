@@ -2,7 +2,7 @@ package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientProxy;
-import com.modularwarfare.client.hud.FlashSystem;
+import com.modularwarfare.client.gui.hud.FlashSystem;
 import com.modularwarfare.common.init.ModSounds;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

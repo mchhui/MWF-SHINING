@@ -13,9 +13,9 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
+import com.modularwarfare.client.gui.hud.FlashSystem;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.handler.KeyInputHandler;
-import com.modularwarfare.client.hud.FlashSystem;
 import com.modularwarfare.client.laser.LaserDotRenderer;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.InstantBulletTeslaRender;
@@ -23,7 +23,6 @@ import com.modularwarfare.common.backpacks.BackpackType;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
-import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.network.PacketBackpackElytraStart;
 import com.modularwarfare.common.network.PacketBackpackJet;
@@ -372,15 +371,7 @@ public class ClientEventHandler {
             serverAllowGunModifyGui = !isRegister;
         }
     }
-
-    @SideOnly(Side.CLIENT)
-    @SubscribeEvent
-    public void onClientDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
-        EntityPlayer player = Minecraft.getMinecraft().player;
-        if(player == null) return;
-        PlayerDataHandler.clientSideData.clear();
-    }
-
+    
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onPlaySound(PlaySoundEvent event) {

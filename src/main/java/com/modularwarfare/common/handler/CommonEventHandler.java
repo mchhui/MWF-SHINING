@@ -8,7 +8,6 @@ import com.modularwarfare.common.network.PacketClientKillFeedEntry;
 import com.modularwarfare.common.network.PacketExplosion;
 import com.modularwarfare.common.network.PacketVerification;
 import com.modularwarfare.common.type.BaseItem;
-import com.modularwarfare.common.world.ModularWarfareWorldListener;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -144,20 +143,6 @@ public class CommonEventHandler {
         if (entity instanceof EntityItemLoot) {
             return;
         }
-    }
-
-    private static final ModularWarfareWorldListener WORLD_LISTENER = new ModularWarfareWorldListener();
-
-    @SubscribeEvent
-    public void onInitWorld(WorldEvent.Load event) {
-        World world = event.getWorld();
-        world.addEventListener(WORLD_LISTENER);
-    }
-
-    @SubscribeEvent
-    public void onUnloadWorld(WorldEvent.Unload event) {
-        World world = event.getWorld();
-        world.removeEventListener(WORLD_LISTENER);
     }
 
     @SubscribeEvent

@@ -21,15 +21,14 @@ import com.modularwarfare.common.entity.environment.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
-import com.modularwarfare.common.hitbox.hits.BulletHit;
-import com.modularwarfare.common.hitbox.hits.OBBHit;
-import com.modularwarfare.common.hitbox.hits.PlayerHit;
-import com.modularwarfare.common.hitbox.maths.EnumHitboxType;
 import com.modularwarfare.common.network.*;
 import com.modularwarfare.common.network.PacketOtherShooterAnimation.AnimationType;
 import com.modularwarfare.common.playerstate.PlayerState;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.utility.RayUtil;
+import com.modularwarfare.utility.raycast.DefaultRayCasting;
+import com.modularwarfare.utility.raycast.hits.BulletHit;
+import com.modularwarfare.utility.raycast.hits.OBBHit;
 
 import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.resources.I18n;
@@ -52,7 +51,6 @@ import net.minecraftforge.fml.common.eventhandler.Event;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.relauncher.Side;
 
-import com.modularwarfare.raycast.DefaultRayCasting;
 import com.modularwarfare.client.model.InstantBulletTeslaRender;
 
 import javax.annotation.Nullable;
@@ -152,10 +150,7 @@ public class FireManager {
                 return;
             }
             String hitboxName = "";
-            if (bulletHit instanceof PlayerHit) {
-                PlayerHit playerHit = (PlayerHit)bulletHit;
-                hitboxName = playerHit.hitbox.type.name();
-            } else if (bulletHit instanceof OBBHit) {
+            if (bulletHit instanceof OBBHit) {
                 OBBHit obbHit = (OBBHit)bulletHit;
                 hitboxName = obbHit.box.name;
             }
@@ -201,7 +196,8 @@ public class FireManager {
             // victim player's plate and state
             ItemStack plate = null;
             IExtraItemHandler extraSlots = null;
-            if (bulletHit instanceof PlayerHit && hitboxName.equals(EnumHitboxType.BODY) && victim instanceof EntityPlayer) {
+            boolean bodyShot = hitboxName.contains("body");
+            if (victim instanceof EntityPlayer && bodyShot) {
                 EntityPlayer player = (EntityPlayer)victim;
                 PlayerState victimState = PlayerStateManager.getPlayerState(player);
                 if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
@@ -383,13 +379,10 @@ public class FireManager {
                 ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
             });
             hitEffecters.add((rayTrace) -> {
-                if (!(rayTrace instanceof PlayerHit)) {
+                if (!(rayTrace.getEntity() instanceof EntityPlayer)) {
                     return;
                 }
-                final EntityPlayer victim = ((PlayerHit)rayTrace).getEntity();
-                if (victim == null) {
-                    return;
-                }
+                EntityPlayer victim = (EntityPlayer)rayTrace.getEntity();
                 ModularWarfare.NETWORK.sendTo(new PacketPlaySound(victim.getPosition(), "flyby", 1f, 1f), (EntityPlayerMP)victim);
                 if (ModConfig.INSTANCE.hud.snap_fade_hit) {
                     ModularWarfare.NETWORK.sendTo(new PacketPlayerHit(), (EntityPlayerMP)victim);
@@ -663,10 +656,7 @@ public class FireManager {
                 ArrayList<PacketGunFire.Hit> hits = new ArrayList<PacketGunFire.Hit>();
                 for (BulletHit rayTrace : aimData.rayTraceList) {
                     String hitboxName = "";
-                    if (rayTrace instanceof PlayerHit) {
-                        PlayerHit playerHit = (PlayerHit)rayTrace;
-                        hitboxName = playerHit.hitbox.type.name();
-                    } else if (rayTrace instanceof OBBHit) {
+                    if (rayTrace instanceof OBBHit) {
                         OBBHit obbHit = (OBBHit)rayTrace;
                         hitboxName = obbHit.box.name;
                     }

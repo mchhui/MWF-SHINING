@@ -3,7 +3,8 @@ package com.modularwarfare.client.fpp.basic.configs;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.WeaponSoundType;
-import com.modularwarfare.objects.SoundEntry;
+import com.modularwarfare.utility.SoundEntry;
+
 import org.lwjgl.util.vector.Vector3f;
 
 import net.minecraft.util.ResourceLocation;

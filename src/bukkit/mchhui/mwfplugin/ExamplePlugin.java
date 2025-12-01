@@ -5,9 +5,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.modularwarfare.BukkitEvents.BukkitEntityHeadShotEvent;
-import com.modularwarfare.BukkitEvents.BukkitGunHitEntityEvent;
-import com.modularwarfare.BukkitEvents.BukkitWeaponAttachmentEvent;
+import com.modularwarfare.utility.bukkit.BukkitEvents.BukkitEntityHeadShotEvent;
+import com.modularwarfare.utility.bukkit.BukkitEvents.BukkitGunHitEntityEvent;
+import com.modularwarfare.utility.bukkit.BukkitEvents.BukkitWeaponAttachmentEvent;
 
 public class ExamplePlugin extends JavaPlugin implements Listener{
     @Override

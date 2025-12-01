@@ -9,8 +9,9 @@ import com.modularwarfare.common.network.PacketPlaySound;
 import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.objects.SoundEntry;
 import com.modularwarfare.utility.MWSound;
+import com.modularwarfare.utility.SoundEntry;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.entity.EntityLivingBase;

@@ -2,13 +2,13 @@ package com.modularwarfare.client.model;
 
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.objloader.ObjModel;
+import com.modularwarfare.client.objloader.ObjModelBuilder;
+import com.modularwarfare.client.objloader.api.ObjModelLoader;
 import com.modularwarfare.common.guns.BulletType;
 import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.vector.Vector3f;
-import com.modularwarfare.loader.ObjModel;
-import com.modularwarfare.loader.ObjModelBuilder;
-import com.modularwarfare.loader.api.ObjModelLoader;
 import com.modularwarfare.utility.RayUtil;
+import com.modularwarfare.utility.vector.Vector3f;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;

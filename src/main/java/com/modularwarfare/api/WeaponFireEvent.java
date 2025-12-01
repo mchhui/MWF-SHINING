@@ -3,7 +3,7 @@ package com.modularwarfare.api;
 import java.util.List;
 
 import com.modularwarfare.common.guns.manager.FireManager.FireData;
-import com.modularwarfare.common.hitbox.hits.BulletHit;
+import com.modularwarfare.utility.raycast.hits.BulletHit;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;

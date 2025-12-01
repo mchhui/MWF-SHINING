@@ -1,7 +1,8 @@
 package com.modularwarfare.common.type;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.script.ScriptHost;
+import com.modularwarfare.utility.script.ScriptHost;
+
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;

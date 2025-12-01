@@ -3,7 +3,8 @@ package com.modularwarfare.common.network;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.vector.Vector3f;
+import com.modularwarfare.utility.vector.Vector3f;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.entity.player.EntityPlayer;

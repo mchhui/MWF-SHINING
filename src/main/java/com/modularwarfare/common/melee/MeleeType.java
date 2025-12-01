@@ -8,7 +8,7 @@ import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
 import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.objects.SoundEntry;
+import com.modularwarfare.utility.SoundEntry;
 
 public class MeleeType extends BaseType {
 

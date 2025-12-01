@@ -9,15 +9,15 @@ import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.model.ModelCustomArmor.Bones;
 import com.modularwarfare.client.model.ModelCustomArmor.Bones.BonePart.EnumBoneType;
+import com.modularwarfare.client.objloader.MWModelBipedBase;
+import com.modularwarfare.client.objloader.api.ObjModelLoader;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 import com.modularwarfare.client.patch.obfuscate.ModelPlayerEventHelper;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.MWModelBipedBase;
-import com.modularwarfare.loader.api.ObjModelLoader;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
 import com.mrcrayfish.obfuscate.client.event.ModelPlayerEvent;
 
 import mchhui.hegltf.GltfRenderModel;

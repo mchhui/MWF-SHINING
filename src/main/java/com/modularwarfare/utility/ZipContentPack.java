@@ -1,12 +1,13 @@
 package com.modularwarfare.utility;
 
-import com.modularwarfare.loader.ObjModel;
 import moe.komi.mwprotect.IZip;
 import moe.komi.mwprotect.IZipEntry;
 import net.lingala.zip4j.core.ZipFile;
 
 import java.util.HashMap;
 import java.util.Set;
+
+import com.modularwarfare.client.objloader.ObjModel;
 
 public class ZipContentPack {
 

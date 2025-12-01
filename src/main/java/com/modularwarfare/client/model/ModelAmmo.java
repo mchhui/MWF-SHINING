@@ -3,9 +3,10 @@ package com.modularwarfare.client.model;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.AmmoRenderConfig;
 import com.modularwarfare.client.fpp.basic.models.objects.RenderVariables;
+import com.modularwarfare.client.objloader.MWModelBase;
+import com.modularwarfare.client.objloader.api.ObjModelLoader;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.MWModelBase;
-import com.modularwarfare.loader.api.ObjModelLoader;
+
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.HashMap;

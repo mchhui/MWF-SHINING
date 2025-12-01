@@ -5,7 +5,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.modularwarfare.api.PlayerSnapshotCreateEvent;
 import com.modularwarfare.common.type.BaseItem;
 
 import mchhui.modularmovements.ModularMovements;
@@ -161,7 +160,7 @@ public class ServerListener {
         }
     }
     
-    public static void setRotationAngles(com.modularwarfare.raycast.obb.ModelPlayer model, float limbSwing, float limbSwingAmount, float ageInTicks,
+    public static void setRotationAngles(com.modularwarfare.utility.raycast.obb.ModelPlayer model, float limbSwing, float limbSwingAmount, float ageInTicks,
             float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
         if (entityIn instanceof EntityPlayer && entityIn.isEntityAlive()) {
             PlayerState state = null;
