@@ -206,11 +206,11 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketClientKillFeedEntry.class);
 
         registerPacket(PacketFlashClient.class);
-        registerPacket(PacketExpGunFire.class);
+//        registerPacket(PacketExpGunFire.class);
         registerPacket(PacketGunTrailAskServer.class);
-        registerPacket(PacketExpShot.class);
+//        registerPacket(PacketExpShot.class);
 
-        registerPacket(PacketOtherPlayerAnimation.class);
+        registerPacket(PacketOtherShooterAnimation.class);
         registerPacket(PacketBackpackElytraStart.class);
         registerPacket(PacketBackpackJet.class);
 

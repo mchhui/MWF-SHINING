@@ -4,7 +4,8 @@ import com.google.common.collect.Multimap;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.handler.ClientTickHandler;
-import com.modularwarfare.common.guns.manager.ShotManager;
+import com.modularwarfare.common.guns.manager.FireManager;
+import com.modularwarfare.common.guns.manager.FireManager.FireData;
 import com.modularwarfare.common.handler.ServerTickHandler;
 import com.modularwarfare.common.network.PacketBulletHole;
 import com.modularwarfare.common.network.PacketHitEffect;
@@ -46,7 +47,7 @@ import java.util.UUID;
 public class ItemGun extends BaseItem {
 
     protected static final UUID MOVEMENT_SPEED_MODIFIER = UUID.fromString("99999999-4180-4865-B01B-BCCE9785ACA3");
-    public static boolean canDryFire = true;
+    public static boolean canDryFireClient = true;
     public static boolean fireButtonHeld = false;
     public static boolean lastFireButtonHeld = false;
     public static final String LASER_ENABLED_NBT = "laser_enabled";
@@ -66,7 +67,7 @@ public class ItemGun extends BaseItem {
      * @return shoot cooldown
      */
     public static boolean isOnShootCooldown(UUID uuid) {
-        return System.currentTimeMillis()<ClientTickHandler.playerNextTime.getOrDefault(uuid, 0L);
+        return System.currentTimeMillis() < ClientTickHandler.playerNextTime.getOrDefault(uuid, 0L);
     }
 
     /**
@@ -97,7 +98,7 @@ public class ItemGun extends BaseItem {
         if (hasAmmoLoaded(gunStack)) {
             ItemStack ammoStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
             if (ammoStack.getItem() instanceof ItemAmmo) {
-                ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
+                ItemAmmo itemAmmo = (ItemAmmo)ammoStack.getItem();
                 if (ammoStack.getTagCompound() != null) {
                     String key = itemAmmo.type.magazineCount > 1 ? "ammocount" + ammoStack.getTagCompound().getInteger("magcount") : "ammocount";
                     int ammoCount = ammoStack.getTagCompound().getInteger(key);
@@ -113,7 +114,7 @@ public class ItemGun extends BaseItem {
             ItemStack ammoStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
             if (ammoStack != null) {
                 if (ammoStack.getItem() instanceof ItemAmmo) {
-                    ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
+                    ItemAmmo itemAmmo = (ItemAmmo)ammoStack.getItem();
                     if (ammoStack.getTagCompound() != null) {
                         String key = itemAmmo.type.magazineCount > 1 ? "ammocount" + ammoStack.getTagCompound().getInteger("magcount") : "ammocount";
                         return ammoStack.getTagCompound().getInteger(key);
@@ -133,7 +134,7 @@ public class ItemGun extends BaseItem {
     public static void consumeShot(ItemStack gunStack) {
         if (hasAmmoLoaded(gunStack)) {
             ItemStack ammoStack = new ItemStack(gunStack.getTagCompound().getCompoundTag("ammo"));
-            ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
+            ItemAmmo itemAmmo = (ItemAmmo)ammoStack.getItem();
             if (ammoStack.getTagCompound() != null) {
                 NBTTagCompound nbtTagCompound = ammoStack.getTagCompound();
                 String key = itemAmmo.type.magazineCount > 1 ? "ammocount" + nbtTagCompound.getInteger("magcount") : "ammocount";
@@ -152,7 +153,7 @@ public class ItemGun extends BaseItem {
         else if (gunType.acceptedBullets != null) {
             if (gunStack.hasTagCompound() && gunStack.getTagCompound().hasKey("bullet")) {
                 ItemStack usedBullet = new ItemStack(gunStack.getTagCompound().getCompoundTag("bullet"));
-                ItemBullet usedBulletItem = (ItemBullet) usedBullet.getItem();
+                ItemBullet usedBulletItem = (ItemBullet)usedBullet.getItem();
                 return usedBulletItem;
             }
         }
@@ -173,24 +174,23 @@ public class ItemGun extends BaseItem {
 
     @Override
     public void setType(BaseType type) {
-        this.type = (GunType) type;
+        this.type = (GunType)type;
     }
 
     @Override
     public void onUpdate(ItemStack unused, World world, Entity holdingEntity, int intI, boolean flag) {
         if (holdingEntity instanceof EntityPlayer) {
-            EntityPlayer entityPlayer = (EntityPlayer) holdingEntity;
+            EntityPlayer entityPlayer = (EntityPlayer)holdingEntity;
 
             if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 ItemStack heldStack = entityPlayer.getHeldItemMainhand();
-                ItemGun itemGun = (ItemGun) heldStack.getItem();
+                ItemGun itemGun = (ItemGun)heldStack.getItem();
                 GunType gunType = itemGun.type;
 
                 if (world.isRemote) {
-//                    onUpdateClient(entityPlayer, world, heldStack, itemGun, gunType);   
-                }
-                else {
-                    onUpdateServer(entityPlayer, world, heldStack, itemGun, gunType);   
+                    // onUpdateClient(entityPlayer, world, heldStack, itemGun, gunType);
+                } else {
+                    onUpdateServer(entityPlayer, world, heldStack, itemGun, gunType);
                 }
 
                 if (heldStack.getTagCompound() == null) {
@@ -207,35 +207,31 @@ public class ItemGun extends BaseItem {
 
                     if (gunType.defaultAttachments != null) {
                         for (Map.Entry<AttachmentPresetEnum, String> e : gunType.defaultAttachments.entrySet()) {
-                            GunType.addAttachment(heldStack, e.getKey(),
-                                new ItemStack(ModularWarfare.attachmentTypes.get(e.getValue())));
+                            GunType.addAttachment(heldStack, e.getKey(), new ItemStack(ModularWarfare.attachmentTypes.get(e.getValue())));
                         }
                     }
 
-
-                    if(gunType.defaultBullet!=null)
-                    {
+                    if (gunType.defaultBullet != null) {
                         ItemBullet itemBullet = ModularWarfare.bulletTypes.get(gunType.defaultBullet);
-                        if(itemBullet!=null)
-                        {
+                        if (itemBullet != null) {
                             ItemStack bullet = new ItemStack(itemBullet);
 
-                            if(gunType.acceptedAmmo!=null&&gunType.acceptedAmmo.length>0&&gunType.defaultAmmo!=null)
-                            {
+                            if (gunType.acceptedAmmo != null && gunType.acceptedAmmo.length > 0 && gunType.defaultAmmo != null) {
 
                                 ItemAmmo itemAmmo = ModularWarfare.ammoTypes.get(gunType.defaultAmmo);
-                                if(itemAmmo!=null)
-                                {
-                                    ItemStack ammo = new ItemStack(itemAmmo);  if(ammo.getTagCompound()==null) ammo.setTagCompound(new NBTTagCompound());
+                                if (itemAmmo != null) {
+                                    ItemStack ammo = new ItemStack(itemAmmo);
+                                    if (ammo.getTagCompound() == null)
+                                        ammo.setTagCompound(new NBTTagCompound());
 
-                                    ammo.getTagCompound().setInteger("ammocount",itemAmmo.type.ammoCapacity);
-                                    ammo.getTagCompound().setTag("bullet",bullet.writeToNBT(new NBTTagCompound()));
-                                    nbtTagCompound.setTag("ammo",ammo.writeToNBT(new NBTTagCompound()));
+                                    ammo.getTagCompound().setInteger("ammocount", itemAmmo.type.ammoCapacity);
+                                    ammo.getTagCompound().setTag("bullet", bullet.writeToNBT(new NBTTagCompound()));
+                                    nbtTagCompound.setTag("ammo", ammo.writeToNBT(new NBTTagCompound()));
                                 }
 
-                            }else if(gunType.acceptedBullets!=null&&gunType.acceptedBullets.length>0){
-                                nbtTagCompound.setInteger("ammocount",gunType.internalAmmoStorage);
-                                nbtTagCompound.setTag("bullet",bullet.writeToNBT(new NBTTagCompound()));
+                            } else if (gunType.acceptedBullets != null && gunType.acceptedBullets.length > 0) {
+                                nbtTagCompound.setInteger("ammocount", gunType.internalAmmoStorage);
+                                nbtTagCompound.setTag("bullet", bullet.writeToNBT(new NBTTagCompound()));
                             }
                         }
                     }
@@ -246,26 +242,30 @@ public class ItemGun extends BaseItem {
 
     public void onUpdateClient(EntityPlayer entityPlayer, World world, ItemStack heldStack, ItemGun itemGun, GunType gunType) {
         if (entityPlayer.getHeldItemMainhand() != null && entityPlayer.getHeldItemMainhand().getItem() instanceof ItemGun && RenderParameters.GUN_CHANGE_Y == 0F && RenderParameters.collideFrontDistance <= 0.2f) {
-            if(gunType.getFireMode(heldStack) == WeaponFireMode.SAFE) {
+            if (gunType.getFireMode(heldStack) == WeaponFireMode.SAFE) {
                 return;
             }
+            Runnable fire=()->{
+                FireData fireData = FireData.buildClient(itemGun, heldStack, gunType, gunType.getFireMode(heldStack), world);
+                FireManager.fire(entityPlayer, fireData);
+            };
             if (fireButtonHeld && Minecraft.getMinecraft().inGameHasFocus && gunType.getFireMode(heldStack) == WeaponFireMode.FULL) {
-                ShotManager.fireClient(entityPlayer, world, heldStack, itemGun, gunType.getFireMode(heldStack));
+                fire.run();
             } else if (fireButtonHeld & !lastFireButtonHeld && Minecraft.getMinecraft().inGameHasFocus && gunType.getFireMode(heldStack) == WeaponFireMode.SEMI) {
-                ShotManager.fireClient(entityPlayer, world, heldStack, itemGun, gunType.getFireMode(heldStack));
+                fire.run();
             } else if (gunType.getFireMode(heldStack) == WeaponFireMode.BURST) {
                 NBTTagCompound tagCompound = heldStack.getTagCompound();
                 boolean canFire = true;
                 if (tagCompound.hasKey("shotsremaining") && tagCompound.getInteger("shotsremaining") > 0) {
-                    ShotManager.fireClient(entityPlayer, world, heldStack, itemGun, gunType.getFireMode(heldStack));
+                    fire.run();
                     canFire = false;
                 } else if (fireButtonHeld & !lastFireButtonHeld && Minecraft.getMinecraft().inGameHasFocus && canFire) {
-                    ShotManager.fireClient(entityPlayer, world, heldStack, itemGun, gunType.getFireMode(heldStack));
+                    fire.run();
                 }
             }
             lastFireButtonHeld = fireButtonHeld;
-            if(!fireButtonHeld) {
-                ShotManager.defemptyclickLock=true;
+            if (!fireButtonHeld) {
+                ItemGun.canDryFireClient = true;
             }
         }
     }
@@ -275,9 +275,9 @@ public class ItemGun extends BaseItem {
     }
 
     public static void playImpactSound(World world, double posX, double posY, double posZ, EnumFacing facing, BlockPos blockPos, GunType gunType) {
-        if(facing != null) {
+        if (facing != null) {
             // 根据射线击中的面调整方块坐标
-            switch(facing) {
+            switch (facing) {
                 case EAST:
                     blockPos = blockPos.west();
                     break;
@@ -295,10 +295,10 @@ public class ItemGun extends BaseItem {
                     break;
             }
         }
-        
+
         Material material = world.getBlockState(blockPos).getMaterial();
         WeaponSoundType soundType = WeaponSoundType.ImpactDirt;
-        
+
         if (material == Material.ROCK) {
             soundType = WeaponSoundType.ImpactStone;
         } else if (material == Material.GRASS || material == Material.GROUND || material == Material.SAND) {
@@ -312,14 +312,15 @@ public class ItemGun extends BaseItem {
         } else if (material == Material.IRON) {
             soundType = WeaponSoundType.ImpactMetal;
         }
-        
+
         BlockPos hitPos = new BlockPos(posX, posY, posZ);
         gunType.playSoundPos(hitPos, world, soundType, null, 1f, true);
     }
 
     public static void playImpactSound(World world, RayTraceResult rayTrace, GunType gunType) {
-        if(rayTrace == null || rayTrace.hitVec == null) return;
-        
+        if (rayTrace == null || rayTrace.hitVec == null)
+            return;
+
         playImpactSound(world, rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, rayTrace.sideHit, rayTrace.getBlockPos(), gunType);
     }
 
@@ -327,19 +328,20 @@ public class ItemGun extends BaseItem {
     public static void playImpactSound(World world, BlockPos pos, GunType gunType) {
         playImpactSound(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, null, pos, gunType);
     }
-    
+
     public static void playHitEffect(World world, double posX, double posY, double posZ, EnumFacing facing, BlockPos blockPos) {
         RayTraceResult rayTrace = new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, blockPos);
         playHitEffect(world, rayTrace);
     }
-    
+
     public static void playHitEffect(World world, RayTraceResult rayTrace) {
-        if(rayTrace == null || rayTrace.hitVec == null) return;
-        
+        if (rayTrace == null || rayTrace.hitVec == null)
+            return;
+
         BlockPos pos = rayTrace.getBlockPos();
-        if(rayTrace.sideHit != null) {
+        if (rayTrace.sideHit != null) {
             // 根据射线击中的面调整方块坐标
-            switch(rayTrace.sideHit) {
+            switch (rayTrace.sideHit) {
                 case EAST:
                     pos = pos.west();
                     break;
@@ -357,35 +359,35 @@ public class ItemGun extends BaseItem {
                     break;
             }
         }
-        
+
         Material material = world.getBlockState(pos).getMaterial();
-        
-        //String materialType = "未知";
+
+        // String materialType = "未知";
         if (material == Material.IRON) {
-            //materialType = "金属";
+            // materialType = "金属";
             SAPackets.network.sendToAll(new PacketSpawnParticle("GunHit", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.ROCK) {
-            //materialType = "石头";
+            // materialType = "石头";
             SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.GROUND) {
-            //materialType = "泥土";
+            // materialType = "泥土";
             SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.WOOD) {
-            //materialType = "木头";
+            // materialType = "木头";
             SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         } else if (material == Material.GRASS) {
-            //materialType = "草地";
+            // materialType = "草地";
             SAPackets.network.sendToAll(new PacketSpawnParticle("GunExp", rayTrace.hitVec.x, rayTrace.hitVec.y, rayTrace.hitVec.z, 0, 0, 0));
         }
 
-        // String message = String.format("§7命中坐标: §f[%.2f, %.2f, %.2f] §7材质: §f%s §7方向: §f%s", 
-        //     rayTrace.hitVec.x,
-        //     rayTrace.hitVec.y, 
-        //     rayTrace.hitVec.z,
-        //     materialType,
-        //     rayTrace.sideHit);
+        // String message = String.format("§7命中坐标: §f[%.2f, %.2f, %.2f] §7材质: §f%s §7方向: §f%s",
+        // rayTrace.hitVec.x,
+        // rayTrace.hitVec.y,
+        // rayTrace.hitVec.z,
+        // materialType,
+        // rayTrace.sideHit);
         // if(Minecraft.getMinecraft().player != null) {
-        //     Minecraft.getMinecraft().player.sendMessage(new TextComponentString(message));
+        // Minecraft.getMinecraft().player.sendMessage(new TextComponentString(message));
         // }
     }
 
@@ -393,18 +395,18 @@ public class ItemGun extends BaseItem {
     public Multimap<String, AttributeModifier> getAttributeModifiers(EntityEquipmentSlot slot, ItemStack stack) {
         Multimap<String, AttributeModifier> multimap = super.getAttributeModifiers(slot, stack);
         if (slot == EntityEquipmentSlot.MAINHAND) {
-            if(type.moveSpeedModifier - 1.0f!=0) {
-                multimap.put(SharedMonsterAttributes.MOVEMENT_SPEED.getName(), new AttributeModifier(MOVEMENT_SPEED_MODIFIER, "MovementSpeed", type.moveSpeedModifier - 1.0f, 2));  
+            if (type.moveSpeedModifier - 1.0f != 0) {
+                multimap.put(SharedMonsterAttributes.MOVEMENT_SPEED.getName(), new AttributeModifier(MOVEMENT_SPEED_MODIFIER, "MovementSpeed", type.moveSpeedModifier - 1.0f, 2));
             }
         }
         return multimap;
     }
 
-    public static void doHit(double posX, double posY, double posZ,EnumFacing facing, EntityPlayer shooter) {
-        doHit(new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, new BlockPos(posX, posY, posZ)), shooter);
+    public static void doHit(double posX, double posY, double posZ, EnumFacing facing) {
+        doHit(new RayTraceResult(RayTraceResult.Type.BLOCK, new Vec3d(posX, posY, posZ), facing, new BlockPos(posX, posY, posZ)));
     }
 
-    public static void doHit(RayTraceResult raytraceResultIn, EntityPlayer shooter) {
+    public static void doHit(RayTraceResult raytraceResultIn) {
         if (raytraceResultIn.getBlockPos() != null) {
             BlockPos pos = raytraceResultIn.getBlockPos();
             double hitX = raytraceResultIn.hitVec.x;
@@ -413,7 +415,7 @@ public class ItemGun extends BaseItem {
             double aX = 0;
             double aY = 0;
             double aZ = 0;
-            switch(raytraceResultIn.sideHit) {
+            switch (raytraceResultIn.sideHit) {
                 case EAST:
                     aX = -1;
                     break;
@@ -440,7 +442,6 @@ public class ItemGun extends BaseItem {
         }
     }
 
-
     public static boolean canEntityGetHeadshot(Entity e) {
         return e instanceof EntityZombie || e instanceof EntitySkeleton || e instanceof EntityCreeper || e instanceof EntityWitch || e instanceof EntityPigZombie || e instanceof EntityEnderman || e instanceof EntityWitherSkeleton || e instanceof EntityPlayer || e instanceof EntityVillager || e instanceof EntityEvoker || e instanceof EntityStray || e instanceof EntityVindicator || e instanceof EntityIronGolem || e instanceof EntitySnowman || e.getName().contains("common");
     }
@@ -459,29 +460,29 @@ public class ItemGun extends BaseItem {
      */
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-        GunType gunType = ((ItemGun) stack.getItem()).type;
+        GunType gunType = ((ItemGun)stack.getItem()).type;
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        
+
         /*
         if (hasAmmoLoaded(stack)) {
             ItemStack ammoStack = new ItemStack(stack.getTagCompound().getCompoundTag("ammo"));
             if (ammoStack.getItem() instanceof ItemAmmo) {
                 ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
-
+        
                 if (itemAmmo.type.magazineCount == 1) {
                     int currentAmmoCount = 0;
                     if (ammoStack.getTagCompound() != null) {
                         NBTTagCompound tag = ammoStack.getTagCompound();
                         currentAmmoCount = tag.hasKey("ammocount") ? tag.getInteger("ammocount") : 0;
                     }
-
+        
                     tooltip.add(generateLoreLineAlt("Ammo", Integer.toString(currentAmmoCount), Integer.toString(itemAmmo.type.ammoCapacity)));
                 } else {
                     if (stack.getTagCompound() != null) {
                         String baseDisplayLine = "Ammo %s: %g%s%dg/%g%s";
                         baseDisplayLine = baseDisplayLine.replaceAll("%b", TextFormatting.BLUE.toString());
                         baseDisplayLine = baseDisplayLine.replaceAll("%dg", TextFormatting.DARK_GRAY.toString());
-
+        
                         for (int i = 1; i < itemAmmo.type.magazineCount + 1; i++) {
                             NBTTagCompound tag = ammoStack.getTagCompound();
                             String displayLine = baseDisplayLine.replaceAll("%g", i == tag.getInteger("magcount") ? TextFormatting.YELLOW.toString() : TextFormatting.GRAY.toString());
@@ -491,28 +492,28 @@ public class ItemGun extends BaseItem {
                 }
             }
         }
-
+        
         if (stack.getTagCompound() != null) {
             if (gunType.acceptedBullets != null) {
                 int ammoCount = stack.getTagCompound().hasKey("ammocount") ? stack.getTagCompound().getInteger("ammocount") : 0;
                 tooltip.add(generateLoreLineAlt("Ammo", Integer.toString(ammoCount), Integer.toString(gunType.internalAmmoStorage)));
             }
         }
-
+        
         if (ItemAmmo.getUsedBullet(stack) != null) {
             ItemBullet itemBullet = ItemAmmo.getUsedBullet(stack);
             tooltip.add(generateLoreLine("Bullet", itemBullet.type.displayName));
         }
-
+        
         String baseDisplayLine = "%bFire Mode: %g%s";
         baseDisplayLine = baseDisplayLine.replaceAll("%b", TextFormatting.BLUE.toString());
         baseDisplayLine = baseDisplayLine.replaceAll("%g", TextFormatting.GRAY.toString());
         tooltip.add(String.format(baseDisplayLine, GunType.getFireMode(stack) != null ? GunType.getFireMode(stack) : gunType.fireModes[0]));
-
-
+        
+        
         if (GuiScreen.isShiftKeyDown()) {
             DecimalFormat decimalFormat = new DecimalFormat("#.#");
-
+        
             String damageLine = "%bDamage: %g%s";
             damageLine = damageLine.replaceAll("%b", TextFormatting.BLUE.toString());
             damageLine = damageLine.replaceAll("%g", TextFormatting.RED.toString());
@@ -521,14 +522,14 @@ public class ItemGun extends BaseItem {
             } else {
                 tooltip.add(String.format(damageLine, gunType.gunDamage));
             }
-
-
+        
+        
             String accuracyLine = "%bAccuracy: %g%s";
             accuracyLine = accuracyLine.replaceAll("%b", TextFormatting.BLUE.toString());
             accuracyLine = accuracyLine.replaceAll("%g", TextFormatting.RED.toString());
-
+        
             tooltip.add(String.format(accuracyLine, decimalFormat.format((1 / gunType.bulletSpread) * 100) + "%"));
-
+        
             if (gunType.acceptedAttachments != null) {
                 if (!gunType.acceptedAttachments.isEmpty()) {
                     tooltip.add("" + TextFormatting.BLUE.toString() + "Accepted attachments:");
@@ -545,7 +546,7 @@ public class ItemGun extends BaseItem {
                     }
                 }
             }
-
+        
             if (gunType.acceptedAmmo != null) {
                 tooltip.add("" + TextFormatting.BLUE.toString() + "Accepted mags:");
                 if (gunType.acceptedAmmo.length > 0) {
@@ -559,10 +560,10 @@ public class ItemGun extends BaseItem {
                     }
                 }
             }
-
+        
             if (gunType.acceptedBullets != null) {
                 tooltip.add("" + TextFormatting.BLUE.toString() + "Accepted bullets:");
-
+        
                 if (gunType.acceptedBullets.length > 0) {
                     for (String internalName : gunType.acceptedBullets) {
                         if (ModularWarfare.bulletTypes.containsKey(internalName)) {
@@ -574,7 +575,7 @@ public class ItemGun extends BaseItem {
                     }
                 }
             }
-
+        
             if(gunType.extraLore != null) {
                 tooltip.add("" + TextFormatting.BLUE.toString() + "Lore:");
                 tooltip.add(gunType.extraLore);
@@ -625,7 +626,6 @@ public class ItemGun extends BaseItem {
         return true;
     }
 
-
     public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.IBlockAccess world, BlockPos pos, EntityPlayer player) {
         return false;
     }
@@ -646,14 +646,14 @@ public class ItemGun extends BaseItem {
     }
 
     public void setLaserEnabled(ItemStack stack, boolean enabled) {
-        if(!stack.hasTagCompound()) {
+        if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }
         stack.getTagCompound().setBoolean(LASER_ENABLED_NBT, enabled);
     }
-    
+
     public boolean getLaserEnabled(ItemStack stack) {
-        if(!stack.hasTagCompound()) {
+        if (!stack.hasTagCompound()) {
             return false;
         }
         return stack.getTagCompound().getBoolean(LASER_ENABLED_NBT);

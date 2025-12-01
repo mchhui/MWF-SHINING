@@ -72,19 +72,14 @@ public class InstantBulletRenderer {
         private String model;
         private boolean glow=false;
 
-        public InstantShotTrail(GunType gunType,String model,String tex,boolean glowArg,Vector3f origin, Vector3f hitPos, float bulletSpeed, boolean isPunched) {
+        public InstantShotTrail(GunType gunType,String model,String tex,boolean glowArg,Vector3f origin, Vector3f hitPos, float bulletSpeed) {
             this.ticksExisted = 0;
             this.bulletSpeed = bulletSpeed;
             this.origin = origin;
             this.hitPos = hitPos;
             this.length = 15.0f * new Random().nextFloat();
-            if (!isPunched) {
-                this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/" + "defaultbullettrail.png");
-                this.width = 0.3f;
-            } else {
-                this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/" + "punchedbullettrail.png");
-                this.width = 0.1f;
-            }
+            this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/" + "defaultbullettrail.png");
+            this.width = 0.3f;
             if(gunType.customTrailTexture!=null) {
                 this.texture = new ResourceLocation(ModularWarfare.MOD_ID, "trail/textures/" + gunType.customTrailTexture);
                 glow=gunType.customTrailGlow;

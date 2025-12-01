@@ -1,129 +1,77 @@
 package com.modularwarfare.api;
 
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemGun;
+import java.util.List;
+
+import com.modularwarfare.common.guns.manager.FireManager.FireData;
 import com.modularwarfare.common.hitbox.hits.BulletHit;
-import net.minecraft.entity.Entity;
+
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.Event;
 
-import java.util.List;
+public class WeaponFireEvent extends Event {
+    public EntityLivingBase shooter;
+    public FireData fireData;
 
-@Event.HasResult
-@Deprecated
-public class WeaponFireEvent extends WeaponEvent {
-
-    public WeaponFireEvent(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon) {
-        super(entityLivingBase, stackWeapon, itemWeapon);
+    public WeaponFireEvent(EntityLivingBase shooter, FireData fireData) {
+        this.shooter = shooter;
+        this.fireData = fireData;
     }
 
-    /**
-     * WeaponFireEvent.PreClient is fired before the weapon actually fires. Canceling this event will stop the weapon firing.<br>
-     * <br>
-     * This event is {@link Cancelable}.<br>
-     * This event does not use {@link HasResult}.<br>
-     * This event is fired on the {@link MinecraftForge#EVENT_BUS}.<br>
-     */
     @Cancelable
-    public static class PreClient extends WeaponFireEvent {
-        private int weaponRange;
+    public static class Pre extends WeaponFireEvent {
 
-        public PreClient(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, int weaponRange) {
-            super(entityLivingBase, stackWeapon, itemWeapon);
-            this.weaponRange = weaponRange;
+        public Pre(EntityLivingBase shooter, FireData fireData) {
+            super(shooter, fireData);
+            // TODO Auto-generated constructor stub
         }
 
-        public int getWeaponRange() {
-            return weaponRange;
+        public void setBaseDamage(float baseDamage) {
+            this.fireData.baseDamage = baseDamage;
         }
 
-        public void setWeaponRange(int updatedRange) {
-            this.weaponRange = updatedRange;
+        public void setHeadshotBonus(float headshotBonus) {
+            this.fireData.headshotBonus = headshotBonus;
         }
+
+        public void setWeaponRange(double weaponRange) {
+            this.fireData.weaponRange = weaponRange;
+        }
+
+        public double getWeaponRange() {
+            return this.fireData.weaponRange;
+        }
+
+        public float getBaseDamage() {
+            return this.fireData.baseDamage;
+        }
+
+        public float getHeadshotBonus() {
+            return this.fireData.headshotBonus;
+        }
+
     }
 
-    /**
-     * WeaponFireEvent.PreServer is fired before the weapon actually fires. Canceling this event will stop the weapon firing.<br>
-     * <br>
-     * This event is {@link Cancelable}.<br>
-     * This event does not use {@link HasResult}.<br>
-     * This event is fired on the {@link MinecraftForge#EVENT_BUS}.<br>
-     */
-    @Cancelable
-    public static class PreServer extends WeaponFireEvent {
-        private int weaponRange;
+    public static class BulletHitPipeline extends WeaponFireEvent {
 
-        public PreServer(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, int weaponRange) {
-            super(entityLivingBase, stackWeapon, itemWeapon);
-            this.weaponRange = weaponRange;
-        }
+        private final List<BulletHit> hits;
 
-        public int getWeaponRange() {
-            return weaponRange;
-        }
-
-        public void setWeaponRange(int updatedRange) {
-            this.weaponRange = updatedRange;
-        }
-    }
-
-    /**
-     * WeaponFireEvent.Post is fired once the weapon has fired with a list of affected objects. These lists can be modified to change the outcome.<br>
-     * <br>
-     * This event is not {@link Cancelable}.<br>
-     * This event does not use {@link HasResult}.<br>
-     * This event is fired on the {@link MinecraftForge#EVENT_BUS}.<br>
-     */
-    public static class Post extends WeaponFireEvent {
-        private List<BulletHit> hits;
-        private int fireTickDelay;
-        private float damage;
-
-        public Post(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits) {
-            super(entityLivingBase, stackWeapon, itemWeapon);
+        public BulletHitPipeline(EntityLivingBase shooter, FireData fireData, List<BulletHit> hits) {
+            super(shooter, fireData);
             this.hits = hits;
-
-            GunType type = itemWeapon.type;
-
-            damage = type.gunDamage;
-
-            fireTickDelay = type.fireTickDelay;
-        }
-        
-        public Post(EntityLivingBase entityLivingBase, ItemStack stackWeapon, ItemGun itemWeapon, List<BulletHit> hits, float customDamage) {
-            super(entityLivingBase, stackWeapon, itemWeapon);
-            this.hits = hits;
-
-            GunType type = itemWeapon.type;
-
-            damage = customDamage > 0 ? customDamage : type.gunDamage;
-
-            fireTickDelay = type.fireTickDelay;
         }
 
         public List<BulletHit> getHits() {
-            return hits;
-        }
-
-        public void setHits(List<BulletHit> updatedList) {
-            this.hits = updatedList;
-        }
-
-        public float getDamage() {
-            return damage;
-        }
-
-        public void setDamage(float updatedDamage) {
-            this.damage = updatedDamage;
-        }
-
-        public float getTickDelay() {
-            return fireTickDelay;
+            return this.hits;
         }
     }
 
+    public static class Post extends WeaponFireEvent {
+
+        public Post(EntityLivingBase shooter, FireData fireData) {
+            super(shooter, fireData);
+            // TODO Auto-generated constructor stub
+        }
+
+    }
 }

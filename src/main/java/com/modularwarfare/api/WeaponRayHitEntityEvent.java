@@ -6,7 +6,7 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.Event;
 
 @Cancelable
-public class GunHitEntityEvent extends Event {
+public class WeaponRayHitEntityEvent extends Event {
     public final Entity shooter;
     public final Entity victim;
     public final String gunId;
@@ -16,7 +16,7 @@ public class GunHitEntityEvent extends Event {
     public final double hitZ;
     public float damage;
 
-    public GunHitEntityEvent(Entity shooter, Entity victim, String gunId, String hitbox, double hitX, double hitY, double hitZ, float damage) {
+    public WeaponRayHitEntityEvent(Entity shooter, Entity victim, String gunId, String hitbox, double hitX, double hitY, double hitZ, float damage) {
         this.shooter = shooter;
         this.victim = victim;
         this.gunId = gunId;

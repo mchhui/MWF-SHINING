@@ -13,28 +13,28 @@ import com.modularwarfare.common.guns.WeaponAnimationType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.PacketBuffer;
 
 import java.util.UUID;
 
-public class PacketOtherPlayerAnimation extends PacketBase {
+public class PacketOtherShooterAnimation extends PacketBase {
 
-    public UUID playerEntityUniqueID;
+    public UUID entityUniqueID;
     public AnimationType animationType;
 
     public String internalname;
     public int fireTickDelay;
     public boolean isFailed;
 
-    public PacketOtherPlayerAnimation() {
+    public PacketOtherShooterAnimation() {
 
     } // Don't delete
 
-    public PacketOtherPlayerAnimation(UUID playerEntityUniqueID, AnimationType animationType, String internalname,
-                                      int fireTickDelay, boolean isFailed) {
-        this.playerEntityUniqueID = playerEntityUniqueID;
+    public PacketOtherShooterAnimation(UUID playerEntityUniqueID, AnimationType animationType, String internalname, int fireTickDelay, boolean isFailed) {
+        this.entityUniqueID = playerEntityUniqueID;
         this.animationType = animationType;
         this.internalname = internalname;
         this.fireTickDelay = fireTickDelay;
@@ -48,7 +48,7 @@ public class PacketOtherPlayerAnimation extends PacketBase {
     @Override
     public void encodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buffer = new PacketBuffer(data);
-        buffer.writeUniqueId(playerEntityUniqueID);
+        buffer.writeUniqueId(entityUniqueID);
         buffer.writeEnumValue(animationType);
         buffer.writeString(internalname);
         buffer.writeInt(fireTickDelay);
@@ -58,7 +58,7 @@ public class PacketOtherPlayerAnimation extends PacketBase {
     @Override
     public void decodeInto(ChannelHandlerContext ctx, ByteBuf data) {
         PacketBuffer buffer = new PacketBuffer(data);
-        playerEntityUniqueID = buffer.readUniqueId();
+        entityUniqueID = buffer.readUniqueId();
         animationType = buffer.readEnumValue(AnimationType.class);
         internalname = buffer.readString(Short.MAX_VALUE);
         fireTickDelay = buffer.readInt();
@@ -73,24 +73,20 @@ public class PacketOtherPlayerAnimation extends PacketBase {
 
     @Override
     public void handleClientSide(EntityPlayer clientPlayer) {
-        EntityPlayer player = Minecraft.getMinecraft().world.getPlayerEntityByUUID(playerEntityUniqueID);
+        EntityLivingBase player = Minecraft.getMinecraft().world.getPlayerEntityByUUID(entityUniqueID);
         if (player == null) {
             return;
         }
-        if(player==Minecraft.getMinecraft().player) {
+        if (player == Minecraft.getMinecraft().player) {
             return;
         }
         if (animationType == AnimationType.FIRE) {
             GunType gunType = ModularWarfare.gunTypes.get(internalname).type;
             if (gunType != null) {
                 if (gunType.animationType == WeaponAnimationType.BASIC) {
-                    ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun) gunType.model, gunType,
-                            fireTickDelay);
+                    ClientRenderHooks.getAnimMachine(player).triggerShoot((ModelGun)gunType.model, gunType, fireTickDelay);
                 } else {
-                    ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(
-                        AnimationController.getController(player,
-                                    (GunEnhancedRenderConfig) gunType.enhancedModel.config),
-                            (ModelEnhancedGun) gunType.enhancedModel, gunType, fireTickDelay, isFailed);
+                    ClientRenderHooks.getEnhancedAnimMachine(player).triggerShoot(AnimationController.getController(player, (GunEnhancedRenderConfig)gunType.enhancedModel.config), (ModelEnhancedGun)gunType.enhancedModel, gunType, fireTickDelay, isFailed);
                 }
             }
         }

@@ -4,7 +4,8 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponFireMode;
-import com.modularwarfare.common.guns.manager.ShotManager;
+import com.modularwarfare.common.guns.manager.FireManager;
+import com.modularwarfare.common.guns.manager.FireManager.FireData;
 import com.modularwarfare.common.network.PacketGunFire;
 import com.modularwarfare.common.network.PacketDelayedShoot;
 import net.minecraft.entity.Entity;
@@ -520,21 +521,14 @@ public class EntityShootingAPI {
         }
         
         if (!entity.world.isRemote) {
-            boolean shotSuccess = ShotManager.fireServerForEntity(
-                entity, rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode,
-                gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw, 
-                gunType.recoilAimReducer, gunType.bulletSpread, useHeldWeapon, customDamage, customHeadshotBonus
-            );
-            
+            FireData fireData=FireData.buildServer(rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode, useHeldWeapon, customDamage, customHeadshotBonus);
+            boolean shotSuccess = FireManager.fire(entity, fireData);
             if (!shotSuccess) {
                 return false;
             }
         } else {
-            ModularWarfare.NETWORK.sendToServer(new PacketGunFire(
-                gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch, 
-                gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread,
-                rotationPitch, rotationYaw
-            ));
+            FireData fireData=FireData.buildClient(weapon, weaponStack, gunType, fireMode, entity.world);
+            FireManager.fire(entity, fireData);
         }
         
         return true;
@@ -576,20 +570,14 @@ public class EntityShootingAPI {
             rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
         }
         if (!entity.world.isRemote) {
-            boolean shotSuccess = ShotManager.fireServerForEntity(
-                entity, rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode,
-                gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw,
-                gunType.recoilAimReducer, gunType.bulletSpread, useHeldWeapon, 0.0f, 0.0f
-            );
+            FireData fireData=FireData.buildClient(weapon, weaponStack, gunType, fireMode, entity.world);
+            boolean shotSuccess =FireManager.fire(entity, fireData);
             if (!shotSuccess) {
                 return false;
             }
         } else {
-            ModularWarfare.NETWORK.sendToServer(new PacketGunFire(
-                gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch,
-                gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread,
-                rotationPitch, rotationYaw
-            ));
+            FireData fireData=FireData.buildClient(weapon, weaponStack, gunType, fireMode, entity.world);
+            FireManager.fire(entity, fireData);
         }
         return true;
     }
@@ -1011,23 +999,15 @@ public class EntityShootingAPI {
             double horizontalDistance = Math.sqrt(x * x + z * z);
             rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
         }
-        
         if (!task.entity.world.isRemote) {
-            boolean shotSuccess = ShotManager.fireServerForEntity(
-                task.entity, rotationPitch, rotationYaw, task.entity.world, task.weaponStack, task.weapon, fireMode,
-                gunType.fireTickDelay, gunType.recoilPitch, gunType.recoilYaw, 
-                gunType.recoilAimReducer, gunType.bulletSpread, task.useHeldWeapon, task.customDamage, task.customHeadshotBonus
-            );
-            
+            FireData fireData=FireData.buildClient(task.weapon, task.weaponStack, gunType, fireMode, task.entity.world);
+            boolean shotSuccess =FireManager.fire(task.entity, fireData);
             if (!shotSuccess) {
                 return;
             }
         } else {
-            ModularWarfare.NETWORK.sendToServer(new PacketGunFire(
-                gunType.internalName, gunType.fireTickDelay, gunType.recoilPitch, 
-                gunType.recoilYaw, gunType.recoilAimReducer, gunType.bulletSpread,
-                rotationPitch, rotationYaw
-            ));
+            FireData fireData=FireData.buildClient(task.weapon, task.weaponStack, gunType, fireMode, task.entity.world);
+            FireManager.fire(task.entity, fireData);
         }
         
         if (task.shotCount > 1) {

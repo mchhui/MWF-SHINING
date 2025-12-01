@@ -120,6 +120,8 @@ public class GunType extends BaseType {
      * 类似专注轻机枪
      * */
     public float devotionSpeed=0;
+    
+    //2025.12.1 发现并没有实际作用
     /**
      * For when RPM is converted to ticks - Do not use
      */
@@ -190,6 +192,7 @@ public class GunType extends BaseType {
      * Modifier for setting the maximum yaw divergence when randomizing recoil (Recoil 2 + rndRecoil 0.5 == 1.5-2.5 Recoil range)
      * the first line is outdated;
      */
+    //2025.12.1发现并没有实际作用
     public float recoilAimReducer = 0.8F;
     
     public float recoilCrawlYawFactor = 0.5F;
@@ -362,22 +365,6 @@ public class GunType extends BaseType {
         public TransformAmmoOption(boolean ammoRatio, boolean sameAmmo) {
             this.ammoRatio = ammoRatio;
             this.sameAmmo = sameAmmo;
-        }
-    }
-
-    public static boolean isPackAPunched(ItemStack heldStack) {
-        if (heldStack.getTagCompound() != null) {
-            NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
-            return nbtTagCompound.hasKey("punched") ? nbtTagCompound.getBoolean("punched") : false;
-        }
-        return false;
-    }
-
-    public static void setPackAPunched(ItemStack heldStack, boolean bool) {
-        if (heldStack.getTagCompound() != null) {
-            NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
-            nbtTagCompound.setBoolean("punched", bool);
-            heldStack.setTagCompound(nbtTagCompound);
         }
     }
 

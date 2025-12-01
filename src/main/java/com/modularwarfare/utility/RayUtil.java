@@ -359,7 +359,7 @@ public class RayUtil {
      * @return
      */
     @Nullable
-    public static List<BulletHit> standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item, boolean isPunched) {
+    public static List<BulletHit> standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item) {
         // 基础检查
         if (world == null || player == null || item == null || item.type == null) {
             return null;

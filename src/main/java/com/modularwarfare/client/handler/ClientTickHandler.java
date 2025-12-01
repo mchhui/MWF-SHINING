@@ -25,7 +25,8 @@ import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.guns.WeaponSoundType;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.RayUtil;
-import com.modularwarfare.common.guns.manager.ShotManager;
+import com.modularwarfare.common.guns.manager.FireManager;
+import com.modularwarfare.common.guns.manager.GunKickManager;
 import com.modularwarfare.common.type.BaseItem;
 
 import mchhui.modularmovements.ModularMovements;
@@ -193,7 +194,7 @@ public final class ClientTickHandler {
         ItemStack stack = player.getHeldItemMainhand();
         if (stack != null && stack.getItem() instanceof ItemGun) {
             ItemGun itemGun = (ItemGun) stack.getItem();
-            ShotManager.getAimingData(player).update(player, itemGun);
+            GunKickManager.getAimingData(player).update(player, itemGun);
         }
 
         reloadEnhancedPrognosisAmmoRendering=reloadEnhancedPrognosisAmmo;

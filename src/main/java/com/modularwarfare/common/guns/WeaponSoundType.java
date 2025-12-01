@@ -152,7 +152,9 @@ public enum WeaponSoundType {
 
     /**
      * The fire sound of pack-a-punched weapons
+     * 2025.12.1 疑似xy自用 在通用发行版中无任何使用
      */
+    @Deprecated
     @SerializedName("punched") Punched("punched", 64, "punched"),
 
 

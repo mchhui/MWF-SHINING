@@ -1,9 +1,8 @@
 package com.modularwarfare;
 
 import com.modularwarfare.api.EntityHeadShotEvent;
-import com.modularwarfare.api.GunHitEntityEvent;
+import com.modularwarfare.api.WeaponRayHitEntityEvent;
 import com.modularwarfare.api.WeaponAttachmentEvent;
-import com.modularwarfare.api.WeaponHitEvent;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
@@ -133,7 +132,7 @@ public class BukkitEvents {
     }
 
     @SubscribeEvent
-    public static void onGunHitEntity(GunHitEntityEvent event) {
+    public static void onGunHitEntity(WeaponRayHitEntityEvent event) {
         Entity shooter = toBukkitEntity(event.shooter);
         Entity victim = toBukkitEntity(event.victim);
         boolean isHeadshot = event.hitbox.contains("head");
