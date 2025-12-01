@@ -46,8 +46,8 @@ public class NMSHelperTransformer implements IClassTransformer {
 
     @Override
     public byte[] transform(String name, String transformedName, byte[] basicClass) {
-        if (name.equals("com.modularwarfare.NMSHelper")) {
-            FMLLog.getLogger().warn("[Transforming:com.modularwarfare.NMSHelper]");
+        if (name.equals("com.modularwarfare.utility.bukkit.NMSHelper")) {
+            FMLLog.getLogger().warn("[Transforming:com.modularwarfare.utility.bukkit.NMSHelper]");
             
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
             ClassReader classReader = new ClassReader(basicClass);
@@ -97,7 +97,7 @@ public class NMSHelperTransformer implements IClassTransformer {
             ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             classNode.accept(classWriter);
             
-            FMLLog.getLogger().warn("[Transformed:com.modularwarfare.NMSHelper] - 转换了 {} 处类名引用", transformCount);
+            FMLLog.getLogger().warn("[Transformed:com.modularwarfare.utility.bukkit.NMSHelper] - 转换了 {} 处类名引用", transformCount);
             return classWriter.toByteArray();
         }
         return basicClass;
