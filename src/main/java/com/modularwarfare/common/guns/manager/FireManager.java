@@ -149,11 +149,7 @@ public class FireManager {
             if (victim == shooter) {
                 return;
             }
-            String hitboxName = "";
-            if (bulletHit instanceof OBBHit) {
-                OBBHit obbHit = (OBBHit)bulletHit;
-                hitboxName = obbHit.box.name;
-            }
+            String hitboxName = getHitBoxName(bulletHit);
 
             // calc damage amount
             boolean headshot = ItemGun.canEntityGetHeadshot(victim) && bulletHit.rayTraceResult.hitVec.y >= victim.getPosition().getY() + victim.getEyeHeight() - 0.15f;
@@ -299,6 +295,7 @@ public class FireManager {
 
             // POST EVENT
             WeaponRayHitEntityEvent gunHitEntityEvent = new WeaponRayHitEntityEvent(shooter, victim, gunType.internalName, hitboxName, bulletHit.rayTraceResult.hitVec.x, bulletHit.rayTraceResult.hitVec.y, bulletHit.rayTraceResult.hitVec.z, baseDamage);
+//            System.out.println(gunHitEntityEvent.damage + "," + gunHitEntityEvent.gunId + "," + gunHitEntityEvent.hitbox + "," + gunHitEntityEvent.hitX + "," + gunHitEntityEvent.hitY + "," + gunHitEntityEvent.hitZ);
             if (MinecraftForge.EVENT_BUS.post(gunHitEntityEvent)) {
                 return;
             }
@@ -340,7 +337,7 @@ public class FireManager {
                     if (result == null) {
                         result = new RayTraceResult(new Vec3d(hit.hitX, hit.hitY, hit.hitZ), hit.facing, new BlockPos(hit.hitX, hit.hitY, hit.hitZ));
                     }
-                    rayTraceList.add(new BulletHit(result, hit.distance, hit.remainingPenetrate, hit.remainingBlockPenetrate));
+                    rayTraceList.add(new BulletHit(result, hit.hitboxType, hit.distance, hit.remainingPenetrate, hit.remainingBlockPenetrate));
                 });
             } else {
                 for (int i = 0; i < numBullets; i++) {
@@ -655,18 +652,13 @@ public class FireManager {
                 drawTrail((aimData.rayTraceList.isEmpty() ? null : aimData.rayTraceList.get(0)), entityPlayer, fireData);
                 ArrayList<PacketGunFire.Hit> hits = new ArrayList<PacketGunFire.Hit>();
                 for (BulletHit rayTrace : aimData.rayTraceList) {
-                    String hitboxName = "";
-                    if (rayTrace instanceof OBBHit) {
-                        OBBHit obbHit = (OBBHit)rayTrace;
-                        hitboxName = obbHit.box.name;
-                    }
                     PacketGunFire.Hit hit = new PacketGunFire.Hit();
                     if (rayTrace.rayTraceResult.entityHit != null) {
                         hit.victimEntityId = rayTrace.rayTraceResult.entityHit.getEntityId();
                     } else {
                         hit.victimEntityId = -1;
                     }
-                    hit.hitboxType = hitboxName;
+                    hit.hitboxType = getHitBoxName(rayTrace);
                     hit.remainingPenetrate = rayTrace.remainingPenetrate;
                     hit.remainingBlockPenetrate = rayTrace.remainingBlockPenetrate;
                     hit.distance = rayTrace.distance;
@@ -861,6 +853,15 @@ public class FireManager {
                 ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(gunType, model, tex, glow, origin.x, origin.y, origin.z, shooter.motionX, shooter.motionZ, direction.x, direction.y, direction.z, origin.distanceTo(endVec), 10));
             }
         }
+    }
+
+    private static String getHitBoxName(BulletHit rayTrace) {
+        String hitboxName = rayTrace.hitType;
+        if (rayTrace instanceof OBBHit) {
+            OBBHit obbHit = (OBBHit)rayTrace;
+            hitboxName = obbHit.box.name;
+        }
+        return hitboxName;
     }
 
     private static int computePellet(GunType gunType, ItemStack gunStack, @Nullable Entity user) {

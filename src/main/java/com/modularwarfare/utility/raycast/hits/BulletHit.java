@@ -5,6 +5,7 @@ import net.minecraft.util.math.RayTraceResult;
 
 public class BulletHit {
 
+    public String hitType = "";
     public RayTraceResult rayTraceResult;
     public double distance;
     public float remainingPenetrate;// 0.0-1.0; If it is a block hit, it is always 0
@@ -12,6 +13,14 @@ public class BulletHit {
 
     public BulletHit(RayTraceResult result, double distance, float remainingPenetrate, float remainingBlockPenetrate) {
         this.rayTraceResult = result;
+        this.distance = distance;
+        this.remainingPenetrate = remainingPenetrate;
+        this.remainingBlockPenetrate = remainingBlockPenetrate;
+    }
+
+    public BulletHit(RayTraceResult result, String hitType, double distance, float remainingPenetrate, float remainingBlockPenetrate) {
+        this.rayTraceResult = result;
+        this.hitType = hitType;
         this.distance = distance;
         this.remainingPenetrate = remainingPenetrate;
         this.remainingBlockPenetrate = remainingBlockPenetrate;
