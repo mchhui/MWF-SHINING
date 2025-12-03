@@ -661,18 +661,19 @@ public class FireManager {
                         hitboxName = obbHit.box.name;
                     }
                     PacketGunFire.Hit hit = new PacketGunFire.Hit();
-                    if (rayTrace.rayTraceResult.typeOfHit == Type.ENTITY) {
+                    if (rayTrace.rayTraceResult.entityHit != null) {
                         hit.victimEntityId = rayTrace.rayTraceResult.entityHit.getEntityId();
-                        hit.hitboxType = hitboxName;
-                        hit.remainingPenetrate = rayTrace.remainingPenetrate;
-                        hit.remainingBlockPenetrate = rayTrace.remainingBlockPenetrate;
-                        hit.distance = rayTrace.distance;
                     } else {
-                        hit.hitX = rayTrace.rayTraceResult.hitVec.x;
-                        hit.hitY = rayTrace.rayTraceResult.hitVec.y;
-                        hit.hitZ = rayTrace.rayTraceResult.hitVec.z;
-                        hit.facing = rayTrace.rayTraceResult.sideHit;
+                        hit.victimEntityId = -1;
                     }
+                    hit.hitboxType = hitboxName;
+                    hit.remainingPenetrate = rayTrace.remainingPenetrate;
+                    hit.remainingBlockPenetrate = rayTrace.remainingBlockPenetrate;
+                    hit.distance = rayTrace.distance;
+                    hit.hitX = rayTrace.rayTraceResult.hitVec.x;
+                    hit.hitY = rayTrace.rayTraceResult.hitVec.y;
+                    hit.hitZ = rayTrace.rayTraceResult.hitVec.z;
+                    hit.facing = rayTrace.rayTraceResult.sideHit;
                     hits.add(hit);
                 }
                 ModularWarfare.NETWORK.sendToServer(new PacketGunFire(itemGun.type.internalName, entityPlayer.rotationPitch, entityPlayer.rotationYaw, hits));
