@@ -821,16 +821,18 @@ public class FireManager {
         String model = null;
         String tex = null;
         boolean glow = false;
+        glow = gunType.customTrailGlow;
         ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
         BulletType bulletType = bulletItem.type;
         if (bulletType != null) {
             model = bulletType.trailModel;
             tex = bulletType.trailTex;
-            glow = bulletType.trailGlow;
+            if (model !=null && tex !=null && !model.isEmpty() && !tex.isEmpty()) {
+                glow = bulletType.trailGlow;
+            }
         }
         model = Optional.ofNullable(model).orElse(gunType.customTrailModel);
-        tex = Optional.ofNullable(model).orElse(gunType.customTrailTexture);
-        glow = Optional.ofNullable(glow).orElse(gunType.customTrailGlow);
+        tex = Optional.ofNullable(tex).orElse(gunType.customTrailTexture);
         if (model == null) {
             model = "";
         }
