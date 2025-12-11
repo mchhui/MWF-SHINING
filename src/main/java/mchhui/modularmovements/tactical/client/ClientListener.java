@@ -4,7 +4,6 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.ModularWarfare;
 
-import mchhui.he.api.ELMAPI;
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.network.AnimationHandler;
