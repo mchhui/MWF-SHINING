@@ -304,7 +304,7 @@ public class SAParticle extends Particle implements ISAParticle {
 		int col = currentFrame % type.columns;
 		int row = (currentFrame / type.columns);
 		float u = 1.f/type.columns;
-		float v = 1.f/type.columns; 
+		float v = 1.f/type.rows; 
 		float U1 = col*u;
 		float V1 = row*v;
 		float U2 = (col+1)*u;
@@ -314,13 +314,25 @@ public class SAParticle extends Particle implements ISAParticle {
 //		enableBlendMode();
 //        buffer.begin(7, VERTEX_FORMAT);
         double a = (angle + (partialTickTime * angleRate)) * MathUtil.D2R;
+		
+        // Fix for non-square aspect ratio frames
+        float aspect = (float)type.rows / (float)type.columns;
+        float fscaleX = fscale;
+        float fscaleY = fscale;
+        if (aspect > 1.0f) {
+            fscaleY = fscale / aspect;
+        } else {
+            fscaleX = fscale * aspect;
+        }
+        
 		Vec3d p1, p2, p3, p4;
 		if (this.type.groundAligned) {
-			float s = fscale;
-			p1 = new Vec3d(-s,0,-s);
-			p2 = new Vec3d(s,0,-s);
-			p3 = new Vec3d(s,0,s);
-			p4 = new Vec3d(-s,0,s);
+			float sx = fscaleX;
+			float sz = fscaleY; // Usually Y/V axis maps to Z on ground
+			p1 = new Vec3d(-sx,0,-sz);
+			p2 = new Vec3d(sx,0,-sz);
+			p3 = new Vec3d(sx,0,sz);
+			p4 = new Vec3d(-sx,0,sz);
 			if (a > 0.0001f) {
 				p1 = p1.rotateYaw((float) a);
 				p2 = p2.rotateYaw((float) a);
@@ -328,10 +340,10 @@ public class SAParticle extends Particle implements ISAParticle {
 				p4 = p4.rotateYaw((float) a);
 			}
 		}else {
-	        p1 = new Vec3d((double)(- rotX * fscale - rotXY * fscale), (double)(- rotZ * fscale), (double)(- rotYZ * fscale - rotXZ * fscale));
-	        p2 = new Vec3d((double)(- rotX * fscale + rotXY * fscale), (double)( + rotZ * fscale), (double)( - rotYZ * fscale + rotXZ * fscale));
-	        p3 = new Vec3d((double)( rotX * fscale + rotXY * fscale), (double)( + rotZ * fscale), (double)( + rotYZ * fscale + rotXZ * fscale));
-	        p4 = new Vec3d((double)( rotX * fscale - rotXY * fscale), (double)( - rotZ * fscale), (double)( + rotYZ * fscale - rotXZ * fscale));        
+	        p1 = new Vec3d((double)(- rotX * fscaleX - rotXY * fscaleY), (double)(- rotZ * fscaleY), (double)(- rotYZ * fscaleX - rotXZ * fscaleY));
+	        p2 = new Vec3d((double)(- rotX * fscaleX + rotXY * fscaleY), (double)( + rotZ * fscaleY), (double)( - rotYZ * fscaleX + rotXZ * fscaleY));
+	        p3 = new Vec3d((double)( rotX * fscaleX + rotXY * fscaleY), (double)( + rotZ * fscaleY), (double)( + rotYZ * fscaleX + rotXZ * fscaleY));
+	        p4 = new Vec3d((double)( rotX * fscaleX - rotXY * fscaleY), (double)( - rotZ * fscaleY), (double)( + rotYZ * fscaleX - rotXZ * fscaleY));        
 	        if (a > 0.0001f) {
 		        Vec3d axis = p1.normalize().crossProduct(p2.normalize());
 				double cosa = Math.cos(a);
