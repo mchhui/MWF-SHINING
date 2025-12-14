@@ -189,6 +189,9 @@ public class CommonProxy {
     public void reloadModels(boolean reloadSkins) {
     }
 
+    public void reloadFX() {
+    }
+
     public void generateJsonModels(ArrayList<BaseType> types) {
     }
 

@@ -14,6 +14,7 @@ import safx.SAPackets;
 import safx.packets.PacketSpawnParticle;
 import safx.packets.PacketSpawnParticleOnEntity;
 import safx.util.EntityCondition;
+import com.modularwarfare.ModularWarfare;
 
 import java.util.UUID;
 
@@ -34,6 +35,12 @@ public class CommandFX extends CommandBase {
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (args.length == 0) {
             sender.sendMessage(new TextComponentString("§cUsage: " + getUsage(sender)));
+            return;
+        }
+        
+        if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+            ModularWarfare.PROXY.reloadFX();
+            sender.sendMessage(new TextComponentString("§aReloading SAFX. You need use Sneak + F3 to reload textures..."));
             return;
         }
         
@@ -242,6 +249,9 @@ public class CommandFX extends CommandBase {
     
     private void showHelp(ICommandSender sender) {
         sender.sendMessage(new TextComponentString("§6=== ModularWarfare FX Command Help ==="));
+        sender.sendMessage(new TextComponentString("§eAdmin Commands:"));
+        sender.sendMessage(new TextComponentString("§a/mw-fx reload"));
+        sender.sendMessage(new TextComponentString("  §7- Reload particles and textures (Client Side)"));
         sender.sendMessage(new TextComponentString("§eLocation-based effects:"));
         sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> <x> <y> <z> [world]"));
         sender.sendMessage(new TextComponentString("  §7- Spawn effect at specified location"));

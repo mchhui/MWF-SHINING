@@ -135,6 +135,7 @@ import static com.modularwarfare.ModularWarfare.contentPacks;
 import com.modularwarfare.client.handler.SensitivityHandler;
 import com.modularwarfare.common.entity.EntityCustomFire;
 import com.modularwarfare.client.sound.DSSoundSystem;
+import safx.client.particle.SAFX;
 
 public class ClientProxy extends CommonProxy {
 
@@ -356,6 +357,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void init() {
         super.init();
+        SAFX.loadFXFromContentPacks();
         HudHoldUtil.disableHideGui(ModConfig.INSTANCE.general.disableHideGui);
         MinecraftForge.EVENT_BUS.register(HudHoldUtil.class);
 
@@ -553,6 +555,15 @@ public class ClientProxy extends CommonProxy {
             forceReload();  
         }
         System.gc();
+    }
+
+    @Override
+    public void reloadFX() {
+        Minecraft.getMinecraft().addScheduledTask(() -> {
+            SAFX.FXList.clear();
+            SAFX.loadFXList();
+            ModularWarfare.LOGGER.info("Reloaded SAFX. You need use Sneak + F3 to reload textures.");
+        });
     }
 
     @Override
