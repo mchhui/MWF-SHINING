@@ -33,7 +33,6 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.RenderTickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import java.lang.reflect.Field;
 
 @SideOnly(Side.CLIENT)
 @Mod.EventBusSubscriber(modid = ModularWarfare.MOD_ID, value = Side.CLIENT)
@@ -47,16 +46,6 @@ public class GrenadeEnhancedHandler {
     public static boolean isConsumed = false;
     public static int lastSlot = -1;
 
-    private static Field pressedField;
-
-    static {
-        try {
-            pressedField = KeyBinding.class.getDeclaredField("pressed");
-            pressedField.setAccessible(true);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     private static void resetKeyBinding(KeyBinding keyBinding) {
         KeyBinding.setKeyBindState(keyBinding.getKeyCode(), false);
