@@ -535,7 +535,7 @@ public class EntityShootingAPI {
     }
     
     // 任务内执行：忽略实体冷却，允许同tick内多发
-    private static boolean executeScheduledShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon) {
+    private static boolean executeScheduledShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon, float customDamage, float customHeadshotBonus) {
         if (entity == null) {
             return false;
         }
@@ -570,7 +570,7 @@ public class EntityShootingAPI {
             rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
         }
         if (!entity.world.isRemote) {
-            FireData fireData=FireData.buildClient(weapon, weaponStack, gunType, fireMode, entity.world);
+            FireData fireData=FireData.buildServer(rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode, useHeldWeapon, customDamage, customHeadshotBonus);
             boolean shotSuccess =FireManager.fire(entity, fireData);
             if (!shotSuccess) {
                 return false;
@@ -1000,7 +1000,7 @@ public class EntityShootingAPI {
             rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
         }
         if (!task.entity.world.isRemote) {
-            FireData fireData=FireData.buildClient(task.weapon, task.weaponStack, gunType, fireMode, task.entity.world);
+            FireData fireData=FireData.buildServer(rotationPitch, rotationYaw, task.entity.world, task.weaponStack, task.weapon, fireMode, task.useHeldWeapon, task.customDamage, task.customHeadshotBonus);
             boolean shotSuccess =FireManager.fire(task.entity, fireData);
             if (!shotSuccess) {
                 return;
@@ -1073,7 +1073,7 @@ public class EntityShootingAPI {
                                     task.entity.renderYawOffset = angles[1];
                                 }
                             }
-                            if (executeScheduledShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon)) {
+                            if (executeScheduledShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon, task.customDamage, task.customHeadshotBonus)) {
                                 task.shotCount--;
                                 task.nextShootTime += task.shootIntervalMs;
                                 safetyCounter++;
