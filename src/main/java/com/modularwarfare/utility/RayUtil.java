@@ -386,10 +386,12 @@ public class RayUtil {
                 maxPenetrateBlockResistance *= usedBullet.type.bulletBlockPenetrateFactor;
                 penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
             }
-            Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, player);
-
-            if(side.isServer()) {
-                // Server side code...
+            
+            Vec3d dir;
+            if (side.isServer()) {
+                dir = EntityShootingAPI.getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, world.rand);
+            } else {
+                dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, player);
             }
 
             int ping = 0;
@@ -405,8 +407,12 @@ public class RayUtil {
                 }
             }
 
-            return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
-                    maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
+            if (side.isServer()) {
+                return performSimpleAABBRayTrace(world, origin, dir, range, penetrate, maxPenetrateBlockResistance, penetrateBlocksResistance, hashset);
+            } else {
+                return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
+                        maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
+            }
         } catch (Exception e) {
             // 如果发生任何错误，返回null
             return null;
