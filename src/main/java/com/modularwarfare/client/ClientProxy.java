@@ -801,7 +801,7 @@ public class ClientProxy extends CommonProxy {
     private ItemModelExport createJson(BaseType type) {
         ItemModelExport exportedModel = new ItemModelExport();
 
-        if (!(type instanceof GunType) && !(type instanceof GrenadeType)) {
+        if (!(type instanceof GunType) && !(type instanceof GrenadeType) && !(type instanceof MeleeType)) {
             exportedModel.display.thirdperson_lefthand.scale[0] = 0.4f;
             exportedModel.display.thirdperson_lefthand.scale[1] = 0.4f;
             exportedModel.display.thirdperson_lefthand.scale[2] = 0.4f;
