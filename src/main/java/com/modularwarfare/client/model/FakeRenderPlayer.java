@@ -50,6 +50,9 @@ public class FakeRenderPlayer extends RenderPlayer {
         if(ModularWarfare.isLoadedObfuscate) {
             this.addLayer(new LayerHeldVehicle());   
         }
+        // 触发事件，允许附属mod添加layer
+        com.modularwarfare.api.AddRenderLayerEvent event = new com.modularwarfare.api.AddRenderLayerEvent(this);
+        MinecraftForge.EVENT_BUS.post(event);
     }
 
     public FakeRenderPlayer(RenderManager renderManager) {
