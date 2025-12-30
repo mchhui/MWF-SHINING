@@ -1,7 +1,6 @@
 package com.modularwarfare.common;
 
 import com.google.common.collect.Ordering;
-import com.modularwarfare.ModularWarfare;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -20,6 +19,8 @@ public class MWTab extends CreativeTabs {
     public Comparator<ItemStack> tabSorter;
 
     public String contentPack;
+    
+    private Item firstItem;
 
     public MWTab(String contentPack) {
         super("MW:" + contentPack);
@@ -43,15 +44,10 @@ public class MWTab extends CreativeTabs {
     @Override
     @SideOnly(Side.CLIENT)
     public ItemStack createIcon() {
-        final ItemStack[] itemStack = {new ItemStack(Items.IRON_AXE)};
-
-        ModularWarfare.gunTypes.forEach((s, gun) -> {
-            if (gun.type.contentPack.equals(contentPack)) {
-                itemStack[0] = new ItemStack(gun);
-            }
-        });
-
-        return itemStack[0];
+        if (firstItem != null) {
+            return new ItemStack(firstItem);
+        }
+        return new ItemStack(Items.IRON_AXE);
     }
 
     @Override
@@ -63,5 +59,8 @@ public class MWTab extends CreativeTabs {
 
     public void preInitialize(List<Item> order) {
         tabSorter = Ordering.explicit(order).onResultOf(ItemStack::getItem);
+        if (!order.isEmpty()) {
+            firstItem = order.get(0);
+        }
     }
 }
