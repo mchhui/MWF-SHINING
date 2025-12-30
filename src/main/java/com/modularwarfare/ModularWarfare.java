@@ -39,6 +39,7 @@ import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.CommonEventHandler;
 import com.modularwarfare.common.handler.GuiHandler;
 import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.common.textures.TextureType;
@@ -678,6 +679,14 @@ public class ModularWarfare {
                     } else if (item instanceof ItemGrenade) {
                         final ItemGrenade itemGrenade = (ItemGrenade)item;
                         final GrenadeType type = itemGrenade.type;
+                        if (type.modelSkins != null && type.modelSkins.length > 0) {
+                            for (SkinType skin : type.modelSkins) {
+                                CommonProxy.preloadSkinTypes.put(skin, type);
+                            }
+                        }
+                    } else if (item instanceof ItemMelee) {
+                        final ItemMelee itemMelee = (ItemMelee)item;
+                        final MeleeType type = itemMelee.type;
                         if (type.modelSkins != null && type.modelSkins.length > 0) {
                             for (SkinType skin : type.modelSkins) {
                                 CommonProxy.preloadSkinTypes.put(skin, type);
