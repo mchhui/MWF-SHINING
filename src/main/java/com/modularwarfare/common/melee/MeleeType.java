@@ -1,7 +1,6 @@
 package com.modularwarfare.common.melee;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
@@ -49,7 +48,13 @@ public class MeleeType extends BaseType {
 
     public AnimationInfo getAnimationInfo(AnimationMeleeType type, int index) {
         boolean isHeavy = type.serializedName.lastIndexOf("heavy") != -1;
-        return isHeavy ? attackHeavy[index] : attack[index];
+        AnimationInfo[] targetArray = isHeavy ? attackHeavy : attack;
+        
+        if (targetArray == null || index < 0 || index >= targetArray.length) {
+            return null;
+        }
+        
+        return targetArray[index];
     }
 
     public boolean resetAttackOnClick = false;

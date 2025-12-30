@@ -715,6 +715,9 @@ public class AnimationMeleeController {
             stateMachine.reset();
             stateMachine.canDealDamage = true;
             stateMachine.attackPhase = Phase.PRE;
+            if (type.attack != null && currentOrder >= type.attack.length) {
+                currentOrder = 0;
+            }
             // applyAnim(AnimationMeleeType.PREATTACK);
             applyArrayAnimOrder(AnimationMeleeType.PREATTACK);
             ATTACK = 0;
@@ -729,7 +732,9 @@ public class AnimationMeleeController {
             this.stateMachine.isHeavy = true;
             this.stateMachine.canDealDamage = true;
             this.stateMachine.attackPhase = Phase.PRE;
-            // this.currentOrder=0;
+            if (type.attackHeavy != null && currentOrder >= type.attackHeavy.length) {
+                currentOrder = 0;
+            }
             // applyAnim(AnimationMeleeType.PREHEAVYATTACK);
             applyArrayAnimOrder(AnimationMeleeType.PREHEAVYATTACK);
             ATTACK = 0;
@@ -772,19 +777,25 @@ public class AnimationMeleeController {
 
     public void applyArrayAnimOrder(AnimationMeleeType meleeType) {
         boolean isSequence = false;
+        
+        AnimationInfo[] currentArray = stateMachine.isHeavy ? type.attackHeavy : type.attack;
+        if (currentArray == null || currentOrder >= currentArray.length || currentOrder < 0) {
+            currentOrder = 0;
+        }
+        
         if (keepOrder) {
             keepOrder = false;
             return;
         }
         if (!stateMachine.isHeavy) {
-            if (type.attack.length > currentOrder) {
+            if (type.attack != null && type.attack.length > currentOrder) {
                 if (type.attack[currentOrder].nextPhase != -1) {
                     currentOrder = type.attack[currentOrder].nextPhase;
                     isSequence = true;
                 }
             }
         } else {
-            if (type.attackHeavy.length > currentOrder) {
+            if (type.attackHeavy != null && type.attackHeavy.length > currentOrder) {
                 if (type.attackHeavy[currentOrder].nextPhase != -1) {
                     currentOrder = type.attackHeavy[currentOrder].nextPhase;
                     isSequence = true;
