@@ -2,6 +2,7 @@ package mchhui.modularmovements.tactical.network;
 
 import io.netty.buffer.Unpooled;
 import mchhui.modularmovements.ModularMovements;
+import mchhui.modularmovements.ModularMovementsConfig;
 import mchhui.modularmovements.network.EnumFeatures;
 import mchhui.modularmovements.tactical.PlayerState;
 import mchhui.modularmovements.tactical.client.ClientListener;
@@ -64,6 +65,23 @@ public class TacticalHandler {
                 int pounceGroundCooldownMs = buffer.readInt();
                 int rollCooldownMs = buffer.readInt();
                 int rollSecondCooldownMs = buffer.readInt();
+
+                // 检查并创建缺失的配置对象
+                if (ModularMovements.REMOTE_CONFIG.lean == null) {
+                    ModularMovements.REMOTE_CONFIG.lean = new ModularMovementsConfig.Lean();
+                }
+                if (ModularMovements.REMOTE_CONFIG.sit == null) {
+                    ModularMovements.REMOTE_CONFIG.sit = new ModularMovementsConfig.Sit();
+                }
+                if (ModularMovements.REMOTE_CONFIG.slide == null) {
+                    ModularMovements.REMOTE_CONFIG.slide = new ModularMovementsConfig.Slide();
+                }
+                if (ModularMovements.REMOTE_CONFIG.crawl == null) {
+                    ModularMovements.REMOTE_CONFIG.crawl = new ModularMovementsConfig.Crawl();
+                }
+                if (ModularMovements.REMOTE_CONFIG.dodge == null) {
+                    ModularMovements.REMOTE_CONFIG.dodge = new ModularMovementsConfig.Dodge();
+                }
 
                 // 应用配置
                 ModularMovements.REMOTE_CONFIG.lean.enable = leanEnable;
@@ -165,22 +183,37 @@ public class TacticalHandler {
         buffer.writeEnumValue(EnumPacketType.MOD_CONFIG);
         
         // Lean 配置
+        if (ModularMovements.CONFIG.lean == null) {
+            ModularMovements.CONFIG.lean = new ModularMovementsConfig.Lean();
+        }
         buffer.writeBoolean(ModularMovements.CONFIG.lean.enable);
         buffer.writeBoolean(ModularMovements.CONFIG.lean.withGunsOnly);
         
         // Sit 配置
+        if (ModularMovements.CONFIG.sit == null) {
+            ModularMovements.CONFIG.sit = new ModularMovementsConfig.Sit();
+        }
         buffer.writeBoolean(ModularMovements.CONFIG.sit.enable);
         buffer.writeInt(ModularMovements.CONFIG.sit.cooldownMs);
         
         // Slide 配置
+        if (ModularMovements.CONFIG.slide == null) {
+            ModularMovements.CONFIG.slide = new ModularMovementsConfig.Slide();
+        }
         buffer.writeBoolean(ModularMovements.CONFIG.slide.enable);
         buffer.writeFloat(ModularMovements.CONFIG.slide.maxForce);
         
         // Crawl 配置
+        if (ModularMovements.CONFIG.crawl == null) {
+            ModularMovements.CONFIG.crawl = new ModularMovementsConfig.Crawl();
+        }
         buffer.writeBoolean(ModularMovements.CONFIG.crawl.enable);
         buffer.writeInt(ModularMovements.CONFIG.crawl.cooldownMs);
         
         // Dodge 配置（新增）
+        if (ModularMovements.CONFIG.dodge == null) {
+            ModularMovements.CONFIG.dodge = new ModularMovementsConfig.Dodge();
+        }
         buffer.writeBoolean(ModularMovements.CONFIG.dodge.enable);
         buffer.writeInt(ModularMovements.CONFIG.dodge.divingThresholdMs);
         buffer.writeInt(ModularMovements.CONFIG.dodge.pounceCooldownMs);
