@@ -86,7 +86,7 @@ public class MeleeStateMachine {
 									idList.add(entity.getEntityId());
 								}
 								ModularWarfare.NETWORK
-										.sendToServer(new PacketAreaAttack(ai.damage, idList, ai.animationName));
+										.sendToServer(new PacketAreaAttack(ai.damage, idList, ai.animationName, ai.hitAnimationName));
 							}
 							player.swingArm(EnumHand.MAIN_HAND);
 						}

@@ -35,6 +35,7 @@ public class MeleeType extends BaseType {
         public boolean keepOrder = false;
         public CheckBounced checkBounced = null;
         public String animationName = "melee_attack0";
+        public String hitAnimationName = "melee_hit0";
 
         public static class CheckBounced {
             public float range = 1;
