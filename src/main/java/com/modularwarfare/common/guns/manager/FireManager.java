@@ -150,11 +150,16 @@ public class FireManager {
                 return;
             }
             String hitboxName = getHitBoxName(bulletHit);
+            if (hitboxName == null) hitboxName = "";
 
             // calc damage amount
-            boolean headshot = ItemGun.canEntityGetHeadshot(victim) && bulletHit.rayTraceResult.hitVec.y >= victim.getPosition().getY() + victim.getEyeHeight() - 0.15f;
-            if (hitboxName.contains("head")) {
-                headshot = true;
+            boolean headshot = false;
+            if (!hitboxName.isEmpty()) {
+                if (hitboxName.contains("head")) {
+                    headshot = true;
+                }
+            } else {
+                headshot = ItemGun.canEntityGetHeadshot(victim) && bulletHit.rayTraceResult.hitVec.y >= victim.getPosition().getY() + victim.getEyeHeight() - 0.15f;
             }
             double penetrateDamageFactor = bulletHit.remainingPenetrate;
             double penetrateBlockDamageFactor = bulletHit.remainingBlockPenetrate;
