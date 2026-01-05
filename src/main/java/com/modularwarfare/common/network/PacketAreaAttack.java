@@ -20,7 +20,7 @@ public class PacketAreaAttack extends PacketBase {
 	public ArrayList<Integer> subjects;// entityID
 	public float damage = 0;
 	public String ani;
-	public String hitAnimationName = ""; // 被攻击生物播放的动画名称
+	public String hitAnimationName;
 
 	public PacketAreaAttack() {
 	}
@@ -35,7 +35,7 @@ public class PacketAreaAttack extends PacketBase {
 		this.subjects = list;
 		this.damage = damage;
 		this.ani = ani;
-		this.hitAnimationName = hitAnimationName != null ? hitAnimationName : "";
+		this.hitAnimationName = hitAnimationName;
 	}
 
 	@Override
@@ -75,7 +75,7 @@ public class PacketAreaAttack extends PacketBase {
 								playerEntity.getHeldItemMainhand(), null);
 					}
 					
-					if (subject instanceof EntityLivingBase && hitAnimationName != null && !hitAnimationName.isEmpty()) {
+					if (subject instanceof EntityLivingBase && hitAnimationName != null && !hitAnimationName.isEmpty() && !hitAnimationName.equals("none")) {
 						ModularWarfare.aniPlayer.playAni(subject.getUniqueID(), hitAnimationName, 1);
 					}
 				}
