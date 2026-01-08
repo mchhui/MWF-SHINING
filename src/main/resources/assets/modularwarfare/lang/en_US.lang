@@ -10,9 +10,11 @@ mwf.dictionary.grip=Grip
 mwf.dictionary.flashlight=FlashLight
 mwf.dictionary.charm=Charm
 mwf.dictionary.skin=Spray
-mwf.dictionary.barrel=Brarrel
+mwf.dictionary.barrel=Barrel
 mwf.dictionary.stock=Stock
 mwf:dictionary.laser=Laser
+mwf.dictionary.pistolgrip=Pistol Grip
+mwf.dictionary.handguard=Handguard
 
 mwf:gui.tooltip.basicinfo=§9§l[Basic Info]
 mwf:gui.tooltip.attachmentinfo=§9§l[Loaded Attachments]
@@ -47,6 +49,84 @@ mwf:gui.tooltip.bullet.property.banshield=Break Shield
 mwf:gui.tooltip.seemore=Press [L-SHIFT] to learn more
 mwf:gui.tooltip.help=Press [L-CTRL] to get help
 mwf:gui.tooltip.reload=Press [R] Reload
+mwf:gui.tooltip.attachment.type=Attachment Type
+mwf:gui.tooltip.attachment.aimspeed=Aim Time
+mwf:gui.tooltip.attachment.accuracy=Accuracy
+mwf:gui.tooltip.attachment.recoil.pitch=Vertical Recoil
+mwf:gui.tooltip.attachment.recoil.yaw=Horizontal Recoil
+mwf:gui.tooltip.attachment.suppressor=Suppressor
+mwf:gui.tooltip.attachment.hideflash=Flash Hider
+mwf:gui.tooltip.attachment.mousesensitivity=Aim Sensitivity
+mwf:gui.tooltip.attachment.zoom=Zoom Magnification
+mwf:gui.tooltip.attachment.zoom.variable=§8(Variable Zoom)
+mwf:gui.tooltip.attachment.laser.color=Laser Color
+mwf:gui.tooltip.attachment.laser.distance=Max Distance
+mwf:gui.tooltip.attachment.modelshake.backwards=Gun Recoil Back
+mwf:gui.tooltip.attachment.modelshake.upwards=Gun Recoil Up
+mwf:gui.tooltip.attachment.modelshake.shake=Gun Shake
+mwf:gui.tooltip.attachment.noproperties=No Special Properties
+
+# Grenade related
+mwf.dictionary.grenade.frag=Explosion
+mwf.dictionary.grenade.smoke=Smoke
+mwf.dictionary.grenade.stun=Flash
+mwf.dictionary.grenade.gas=Gas
+mwf:gui.tooltip.grenade.type=Grenade Type
+mwf:gui.tooltip.grenade.fusetime=Fuse Time
+mwf:gui.tooltip.grenade.throwstrength=Throw Strength
+mwf:gui.tooltip.grenade.impactdamage=Impact Damage
+mwf:gui.tooltip.grenade.sticky=Sticky Grenade
+mwf:gui.tooltip.grenade.instant=Instant Explosion
+mwf:gui.tooltip.grenade.explosion=§c§lExplosion Effects
+mwf:gui.tooltip.grenade.smoke=§7§lSmoke Effects
+mwf:gui.tooltip.grenade.stun=§e§lFlash Effects
+mwf:gui.tooltip.grenade.gas=§2§lGas Effects
+mwf:gui.tooltip.grenade.damage=Explosion Damage
+mwf:gui.tooltip.grenade.range=Effect Range
+mwf:gui.tooltip.grenade.knockback=Knockback
+mwf:gui.tooltip.grenade.damageworld=Break Blocks
+mwf:gui.tooltip.grenade.throughwalls=Through Walls
+mwf:gui.tooltip.grenade.banshield=Break Shield
+mwf:gui.tooltip.grenade.fire=Fire Damage
+mwf:gui.tooltip.grenade.duration=Duration
+
+# Armor related
+mwf:gui.tooltip.armor.type=Armor Type
+mwf:gui.tooltip.armor.slot=Equipment Slot
+mwf:gui.tooltip.armor.suit=Multi-Part Armor
+mwf:gui.tooltip.armor.maxdurability=Max Durability
+mwf:gui.tooltip.armor.bodyreduction=Body Damage Reduction
+mwf:gui.tooltip.armor.bodyonly=§8(Only effective for body shots)
+mwf.dictionary.armor.slot.head=Head
+mwf.dictionary.armor.slot.chest=Chest
+mwf.dictionary.armor.slot.legs=Legs
+mwf.dictionary.armor.slot.feet=Feet
+mwf.dictionary.armor.slot.vest=Vest
+
+# Potion effects
+effect.modularwarfare.stun=Stun
+
+# Backpack related
+mwf:gui.tooltip.backpack.type=Backpack Type
+mwf:gui.tooltip.backpack.storage=Storage Backpack
+mwf:gui.tooltip.backpack.elytra=Elytra Backpack
+mwf:gui.tooltip.backpack.jet=Jet Backpack
+mwf:gui.tooltip.backpack.jetelytra=Jet Elytra Backpack
+mwf:gui.tooltip.backpack.capacity=Capacity
+mwf:gui.tooltip.backpack.slots=Slots
+mwf:gui.tooltip.backpack.maxweapons=Max Weapon Storage
+mwf:gui.tooltip.backpack.allowsmaller=Store Smaller Backpacks
+mwf:gui.tooltip.backpack.elytrafeatures=§b§lElytra Features
+mwf:gui.tooltip.backpack.elytrastoppable=Flight Stoppable
+mwf:gui.tooltip.backpack.jetfeatures=§6§lJet Features
+mwf:gui.tooltip.backpack.jetworkforce=Work Force
+mwf:gui.tooltip.backpack.jetmaxforce=Max Force
+mwf:gui.tooltip.backpack.jetidleforce=Idle Force
+mwf:gui.tooltip.backpack.jetsneakhover=Sneak to Hover
+mwf:gui.tooltip.backpack.jetgrounddust=Ground Dust Effect
+mwf:gui.tooltip.backpack.jetelytraboost=Elytra Boost
+mwf:gui.tooltip.backpack.duration=Duration
+mwf:gui.tooltip.backpack.cooldown=Cooldown
 
 mwf:gui.modify.none=None
 
