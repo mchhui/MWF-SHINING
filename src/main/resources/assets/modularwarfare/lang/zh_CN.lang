@@ -133,3 +133,6 @@ mwf:gui.modify.none=无
 # 枪械变换相关
 mwf.transform.requirement_not_met=需要安装 %1$s 类型的 %2$s 配件才能变换到此形态
 mwf.transform.cannot_remove_required=无法移除当前形态所需的配件：%1$s - %2$s
+
+# 配件安装相关
+mwf.attachment.missing_required=无法安装配件 %1$s！缺少前置配件：%2$s

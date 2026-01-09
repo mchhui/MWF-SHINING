@@ -133,3 +133,6 @@ mwf:gui.modify.none=None
 # Gun Transformation
 mwf.transform.requirement_not_met=Requires a %2$s of type %1$s to transform to this state
 mwf.transform.cannot_remove_required=Cannot remove required attachment for current state: %1$s - %2$s
+
+# Attachment Installation
+mwf.attachment.missing_required=Cannot install attachment %1$s! Missing required attachments: %2$s

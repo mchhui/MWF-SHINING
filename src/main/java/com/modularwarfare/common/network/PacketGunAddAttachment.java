@@ -11,6 +11,8 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 
 public class PacketGunAddAttachment extends PacketBase {
@@ -60,6 +62,38 @@ public class PacketGunAddAttachment extends PacketBase {
                         }
                         ItemAttachment itemAttachment = (ItemAttachment) attachStack.getItem();
                         AttachmentType attachType = itemAttachment.type;
+                        
+                        java.util.List<String> missingAttachments = GunType.checkRequiredAttachments(gunStack, gunType, attachType);
+                        if (!missingAttachments.isEmpty()) {
+                            java.util.List<net.minecraft.util.text.ITextComponent> missingComponents = new java.util.ArrayList<>();
+                            for (String missingAttachName : missingAttachments) {
+                                ItemAttachment missingItem = ModularWarfare.attachmentTypes.get(missingAttachName);
+                                if (missingItem != null) {
+                                    String itemKey = "item." + missingItem.type.internalName + ".name";
+                                    missingComponents.add(new TextComponentTranslation(itemKey));
+                                } else {
+                                    missingComponents.add(new net.minecraft.util.text.TextComponentString(missingAttachName));
+                                }
+                            }
+                            
+                            net.minecraft.util.text.ITextComponent missingList = missingComponents.get(0);
+                            for (int i = 1; i < missingComponents.size(); i++) {
+                                missingList.appendText(", ");
+                                missingList.appendSibling(missingComponents.get(i));
+                            }
+                            
+                            String currentAttachKey = "item." + attachType.internalName + ".name";
+                            TextComponentTranslation currentAttachName = new TextComponentTranslation(currentAttachKey);
+                            
+                            TextComponentTranslation message = new TextComponentTranslation(
+                                "mwf.attachment.missing_required", 
+                                currentAttachName, 
+                                missingList
+                            );
+                            message.getStyle().setColor(TextFormatting.RED);
+                            entityPlayer.sendMessage(message);
+                            return;
+                        }
                         ItemStack existAttachment = GunType.getAttachment(gunStack, attachType.attachmentType);
                         if (existAttachment != null && existAttachment.getItem() != Items.AIR) {
                             ItemAttachment localItemAttachment = (ItemAttachment) existAttachment.getItem();
