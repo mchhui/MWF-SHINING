@@ -29,6 +29,7 @@ public class ModConfig {
         this.casings_drops = new Casings();
         this.killFeed = new KillFeed();
         this.sprintBlendNodes = new SprintBlendNodes();
+        this.gunStats = new GunStats();
     }
 
     //general
@@ -137,6 +138,14 @@ public class ModConfig {
 
     //sprint blend nodes
     public SprintBlendNodes sprintBlendNodes = new SprintBlendNodes();
+    
+    //gun stats display
+    public GunStats gunStats = new GunStats();
+    
+    public static class GunStats {
+        public float maxDamageReference = 20.0f;
+        public float maxHeadshotBonusReference = 10.0f;
+    }
 
     public static class SprintBlendNodes {
         public List<String> blendableNodes = Arrays.asList(

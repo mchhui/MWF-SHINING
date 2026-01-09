@@ -134,6 +134,9 @@ public class GuiGunModify extends GuiScreen {
 	public static final ResourceLocation statu = new ResourceLocation("modularwarfare", "textures/modifygui/statu.png");
 	public static final ResourceLocation decal_1 = new ResourceLocation("modularwarfare", "textures/modifygui/decal_1.png");
 	public static final ResourceLocation slot_topbg = new ResourceLocation("modularwarfare", "textures/modifygui/slot_topbg.png");
+	public static final ResourceLocation stats_bg = new ResourceLocation("modularwarfare", "textures/modifygui/stats_bg.png");
+	public static final ResourceLocation stats_bar_bg = new ResourceLocation("modularwarfare", "textures/modifygui/stats_bar_bg.png");
+	public static final ResourceLocation stats_bar_fill = new ResourceLocation("modularwarfare", "textures/modifygui/stats_bar_fill.png");
 	public static TextureButton QUITBUTTON,PAGEBUTTON;
 	private static double subPageX;
 	private static double subPageY;
@@ -141,6 +144,17 @@ public class GuiGunModify extends GuiScreen {
 	private static double subPageHeight;
 	public static boolean isEnglishLanguage=true;
 	public static boolean clickOnce=false;
+	// 属性动画相关
+	private float[] lastStatPercentages = null;
+	private float[] currentStatPercentages = null;
+	private float[] animatedStatPercentages = null;
+	private long lastUpdateTime = 0;
+	private static final float ANIMATION_SPEED = 0.05f; // 动画速度
+	
+	// 槽位位置平滑相关
+	private java.util.HashMap<AttachmentPresetEnum, double[]> slotTargetPositions = new java.util.HashMap<>();
+	private java.util.HashMap<AttachmentPresetEnum, double[]> slotCurrentPositions = new java.util.HashMap<>();
+	private static final double SLOT_SMOOTH_FACTOR = 0.2; // 槽位平滑系数，值越大越快
 	// public FloatBuffer modelMatrix = BufferUtils.createFloatBuffer(16);
 	// public FloatBuffer projMatrix = BufferUtils.createFloatBuffer(16);
 	public GuiGunModify() {
@@ -171,6 +185,10 @@ public class GuiGunModify extends GuiScreen {
 		if (((GunType) type).animationType == WeaponAnimationType.ENHANCED) {
 		    AnimationController.getClientController().reset(true);
 		}
+		
+		// 重置槽位位置平滑缓存
+		slotTargetPositions.clear();
+		slotCurrentPositions.clear();
 	    
 		mc=Minecraft.getMinecraft();
 		ScaledResolution scaledresolution = new ScaledResolution(mc);
@@ -425,6 +443,12 @@ public class GuiGunModify extends GuiScreen {
 		GlStateManager.popMatrix();
 		GlStateManager.matrixMode(GL11.GL_MODELVIEW);
 		GlStateManager.popMatrix();
+		
+		// 在所有3D渲染完成后，使用2D GUI坐标系统渲染属性面板
+		GlStateManager.pushMatrix();
+		GlStateManager.color(1, 1, 1, 1);
+		renderStatsPanel(mouseX, mouseY, partialTicks, sFactor, scaledresolution, itemstack, (GunType)type);
+		GlStateManager.popMatrix();
 
 	}
 	public void renderSlotStuff(int mouseX, int mouseY,EntityLivingBase entitylivingbaseIn,BaseType type,double scale,double sFactor,ItemStack itemstack,ScaledResolution scaledresolution,float partialTicks) {
@@ -600,6 +624,9 @@ public class GuiGunModify extends GuiScreen {
 				//GL11.glColor3f(0, 1, 0);
 				//GL11.glPointSize(10);
 				//drawPoint(scaledPartVec3d.x, scaledPartVec3d.y);
+				// 应用平滑到槽位位置（只调用一次）
+				double[] smoothedPos = smoothSlotPosition(attachment, nearestPoint[0], nearestPoint[1]);
+				
 				mc.renderEngine.bindTexture(point);
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
@@ -611,7 +638,7 @@ public class GuiGunModify extends GuiScreen {
 				GL11.glLineWidth(2);
 				GL11.glEnable(GL11.GL_LINE_SMOOTH);
 				GlStateManager.enableBlend();
-				drawLine(scaledPartVec3d.x, scaledPartVec3d.y, nearestPoint[0]+8/scaledresolution.getScaleFactor(), nearestPoint[1]+8/scaledresolution.getScaleFactor());
+				drawLine(scaledPartVec3d.x, scaledPartVec3d.y, smoothedPos[0]+8/scaledresolution.getScaleFactor(), smoothedPos[1]+8/scaledresolution.getScaleFactor());
                 GL11.glDisable(GL11.GL_LINE_SMOOTH);
                 GlStateManager.disableBlend();
 				GL11.glLineWidth(1);
@@ -620,10 +647,10 @@ public class GuiGunModify extends GuiScreen {
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 				double topBGsize=30/scaledresolution.getScaleFactor();
-				RenderHelperMW.drawTexturedRect(nearestPoint[0]-(45/scaledresolution.getScaleFactor()), nearestPoint[1]-(75/scaledresolution.getScaleFactor()), topBGsize*2, topBGsize);
+				RenderHelperMW.drawTexturedRect(smoothedPos[0]-(45/scaledresolution.getScaleFactor()), smoothedPos[1]-(75/scaledresolution.getScaleFactor()), topBGsize*2, topBGsize);
 				double iconSize=25/scaledresolution.getScaleFactor();
 				bindAttachmentTexture(attachment);
-				RenderHelperMW.drawTexturedRect(nearestPoint[0]-(40/scaledresolution.getScaleFactor()), nearestPoint[1]-(71.5/scaledresolution.getScaleFactor()), iconSize, iconSize);
+				RenderHelperMW.drawTexturedRect(smoothedPos[0]-(40/scaledresolution.getScaleFactor()), smoothedPos[1]-(71.5/scaledresolution.getScaleFactor()), iconSize, iconSize);
 				
 				GlStateManager.disableTexture2D();
 				GL11.glColor3f(1, 1, 1);
@@ -633,13 +660,13 @@ public class GuiGunModify extends GuiScreen {
 					if(button instanceof TextureButton) {
 						TextureButton tb=(TextureButton) button;
 						if(tb.getType().equals(TextureButton.TypeEnum.Slot)&&tb.getAttachmentType()==attachment) {
-							tb.x=nearestPoint[0]-(tb.width/2);//*sFactor/scaledresolution.getScaleFactor()
-							tb.y=nearestPoint[1]-(tb.height/2);
+							tb.x=smoothedPos[0]-(tb.width/2);//*sFactor/scaledresolution.getScaleFactor()
+							tb.y=smoothedPos[1]-(tb.height/2);
 							tb.visible=true;
 							TextureButton sideButton=getButton(tb.id+sideButtonIdOffset);
 							sideButton.hidden=true;
-							sideButton.x=nearestPoint[0]+(tb.width)/1.9d;
-							sideButton.y=nearestPoint[1]-(tb.height/2);
+							sideButton.x=smoothedPos[0]+(tb.width)/1.9d;
+							sideButton.y=smoothedPos[1]-(tb.height/2);
 						}
 					}
 				}
@@ -1570,6 +1597,205 @@ public class GuiGunModify extends GuiScreen {
 		GL11.glBegin(GL11.GL_POINTS);
 		GL11.glVertex3d(x, y, 0);
 		GL11.glEnd();
+	}
+	
+	/**
+	 * 更新属性动画
+	 */
+	private void updateStatAnimations() {
+		if (currentStatPercentages == null || animatedStatPercentages == null) {
+			return;
+		}
+		
+		for (int i = 0; i < animatedStatPercentages.length && i < currentStatPercentages.length; i++) {
+			float target = currentStatPercentages[i];
+			float current = animatedStatPercentages[i];
+			float diff = target - current;
+			
+			if (Math.abs(diff) > 0.001f) {
+				animatedStatPercentages[i] += diff * ANIMATION_SPEED;
+			} else {
+				animatedStatPercentages[i] = target;
+			}
+		}
+	}
+	
+
+	private double[] smoothSlotPosition(AttachmentPresetEnum attachment, double targetX, double targetY) {
+		if (!slotTargetPositions.containsKey(attachment)) {
+			slotTargetPositions.put(attachment, new double[]{targetX, targetY});
+			slotCurrentPositions.put(attachment, new double[]{targetX, targetY});
+			return new double[]{targetX, targetY};
+		}
+
+		slotTargetPositions.put(attachment, new double[]{targetX, targetY});
+		
+		double[] currentPos = slotCurrentPositions.get(attachment);
+		double[] targetPos = slotTargetPositions.get(attachment);
+
+		double smoothX = currentPos[0] + (targetPos[0] - currentPos[0]) * SLOT_SMOOTH_FACTOR;
+		double smoothY = currentPos[1] + (targetPos[1] - currentPos[1]) * SLOT_SMOOTH_FACTOR;
+		
+		if (Math.abs(smoothX - targetPos[0]) < 0.5 && Math.abs(smoothY - targetPos[1]) < 0.5) {
+			smoothX = targetPos[0];
+			smoothY = targetPos[1];
+		}
+		
+		currentPos[0] = smoothX;
+		currentPos[1] = smoothY;
+		
+		return new double[]{smoothX, smoothY};
+	}
+	
+	/**
+	 * 渲染枪械属性面板
+	 */
+	public void renderStatsPanel(int mouseX, int mouseY, float partialTicks, double sFactor, ScaledResolution scaledresolution, ItemStack gunStack, GunType gunType) {
+		GlStateManager.disableDepth();
+		GlStateManager.enableBlend();
+		GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+		GlStateManager.disableLighting();
+		
+		GunStatsCalculator.GunStats stats = GunStatsCalculator.calculateStats(gunStack, gunType);
+		
+		double referenceWidth = 1024.0;
+		double referenceHeight = 576.0;
+		double scaleFactorX = scaledresolution.getScaledWidth_double() / referenceWidth;
+		double scaleFactorY = scaledresolution.getScaledHeight_double() / referenceHeight;
+		double uiScale = Math.min(scaleFactorX, scaleFactorY); // 使用较小的缩放比例保持比例
+		
+		double basePanelWidth = 210;
+		double basePanelHeight = 310;
+		double panelWidth = basePanelWidth * uiScale;
+		double panelHeight = basePanelHeight * uiScale;
+		double panelX = 10 * uiScale;
+		double panelY = scaledresolution.getScaledHeight_double() - panelHeight - (10 * uiScale);
+		
+		GlStateManager.disableTexture2D();
+		int bgColor = ColorUtils.getARGB(20, 20, 20, 180);
+		drawRect((int)panelX, (int)panelY, (int)(panelX + panelWidth), (int)(panelY + panelHeight), bgColor);
+		
+		int borderColor = ColorUtils.getARGB(80, 80, 80, 200);
+		drawHorizontalLine((int)panelX, (int)(panelX + panelWidth), (int)panelY, borderColor);
+		drawHorizontalLine((int)panelX, (int)(panelX + panelWidth), (int)(panelY + panelHeight), borderColor);
+		drawVerticalLine((int)panelX, (int)panelY, (int)(panelY + panelHeight), borderColor);
+		drawVerticalLine((int)(panelX + panelWidth), (int)panelY, (int)(panelY + panelHeight), borderColor);
+		
+		GlStateManager.enableTexture2D();
+		
+		double titleY = panelY + (10 * uiScale);
+		String title = net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.title");
+		GlStateManager.pushMatrix();
+		double titleScale = 1.5d * uiScale;
+		GlStateManager.scale(titleScale, titleScale, titleScale);
+		RenderHelperMW.renderCenteredText(title, (int)((panelX + panelWidth/2) / titleScale), (int)(titleY / titleScale), 0xFFFFFF);
+		GlStateManager.popMatrix();
+		
+		double barStartY = titleY + (25 * uiScale);
+		double barHeight = 12 * uiScale;
+		double barSpacing = 22 * uiScale;
+		double barWidth = panelWidth - (40 * uiScale);
+		double barX = panelX + (20 * uiScale);
+		
+		String[] statNames = {
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.damage"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.headshot"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.hipfire_accuracy"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.firerate"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.recoil_vertical"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.recoil_horizontal"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.aimspeed"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.shake_backwards"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.shake_upwards"),
+			net.minecraft.client.resources.I18n.format("mwf:gui.modify.stats.shake_side")
+		};
+		
+		float[] statPercentages = {
+			GunStatsCalculator.getStatPercentage(stats.damage, GunStatsCalculator.getMaxDamageReference(), false),
+			GunStatsCalculator.getStatPercentage(stats.headshotBonus, GunStatsCalculator.getMaxHeadshotBonusReference(), false),
+			GunStatsCalculator.getStatPercentage(stats.accuracy, 1.0f, false),
+			GunStatsCalculator.getStatPercentage(stats.fireRate, 1200f, false),
+			GunStatsCalculator.getStatPercentage(stats.recoilPitch, 8f, true),
+			GunStatsCalculator.getStatPercentage(stats.recoilYaw, 8f, true),
+			GunStatsCalculator.getStatPercentage(stats.aimSpeed, 0.01f, false),
+			GunStatsCalculator.getStatPercentage(stats.shakeBackwards, 5.0f, true),
+			GunStatsCalculator.getStatPercentage(stats.shakeUpwards, 5.0f, true),
+			GunStatsCalculator.getStatPercentage(stats.shakeSide, 5.0f, true)
+		};
+		
+		// 初始化动画系统
+		if (animatedStatPercentages == null) {
+			animatedStatPercentages = new float[statPercentages.length];
+			System.arraycopy(statPercentages, 0, animatedStatPercentages, 0, statPercentages.length);
+		}
+		
+		// 更新目标值
+		currentStatPercentages = statPercentages;
+		
+		// 平滑动画更新
+		updateStatAnimations();
+		
+		// 格式化显示值
+		String[] statDisplayValues = {
+			String.format("%.1f", stats.damage),
+			String.format("%.1f", stats.headshotBonus),
+			String.format("%.1f%%", stats.accuracy * 100f),
+			String.format("%.0f RPM", stats.fireRate),
+			String.format("%.1f", stats.recoilPitch),
+			String.format("%.1f", stats.recoilYaw),
+			String.format("%.4f", stats.aimSpeed),
+			String.format("%.3f", stats.shakeBackwards),
+			String.format("%.3f", stats.shakeUpwards),
+			String.format("%.3f", stats.shakeSide)
+		};
+		
+		for (int i = 0; i < statNames.length; i++) {
+			double currentY = barStartY + i * barSpacing;
+			
+			RenderHelperMW.renderText(statNames[i], (int)barX, (int)currentY, 0xCCCCCC);
+			
+			double barY = currentY + 10;
+			GlStateManager.disableTexture2D();
+			int barBgColor = ColorUtils.getARGB(40, 40, 40, 150);
+			drawRect((int)barX, (int)barY, (int)(barX + barWidth), (int)(barY + barHeight), barBgColor);
+			
+			float percentage = animatedStatPercentages[i];
+			double fillWidth = barWidth * percentage;
+			
+			int fillColor;
+			if (percentage < 0.33f) {
+				fillColor = ColorUtils.getARGB(200, 100, 50, 180);
+			} else if (percentage < 0.66f) {
+				fillColor = ColorUtils.getARGB(200, 180, 50, 180);
+			} else {
+				fillColor = ColorUtils.getARGB(100, 200, 80, 180);
+			}
+			
+			if (fillWidth > 0) {
+				drawRect((int)barX, (int)barY, (int)(barX + fillWidth), (int)(barY + barHeight), fillColor);
+			}
+			
+			int barBorderColor = ColorUtils.getARGB(100, 100, 100, 200);
+			drawHorizontalLine((int)barX, (int)(barX + barWidth), (int)barY, barBorderColor);
+			drawHorizontalLine((int)barX, (int)(barX + barWidth), (int)(barY + barHeight), barBorderColor);
+			drawVerticalLine((int)barX, (int)barY, (int)(barY + barHeight), barBorderColor);
+			drawVerticalLine((int)(barX + barWidth), (int)barY, (int)(barY + barHeight), barBorderColor);
+			
+			GlStateManager.enableTexture2D();
+			
+			GlStateManager.pushMatrix();
+			double valueScale = 1.3d;
+			GlStateManager.scale(valueScale, valueScale, valueScale);
+			int valueColor = percentage > 0.5f ? 0xAAFFAA : (percentage > 0.3f ? 0xFFFFAA : 0xFFAAAA);
+			int valueX = (int)((barX + barWidth - (50 * uiScale)) / valueScale);
+			int valueY = (int)((barY + (2 * uiScale)) / valueScale);
+			RenderHelperMW.renderText(statDisplayValues[i], valueX, valueY, valueColor);
+			GlStateManager.popMatrix();
+		}
+		
+		GlStateManager.enableDepth();
+		GlStateManager.disableBlend();
+		GlStateManager.enableLighting();
 	}
 	@Override
 	protected void actionPerformed(GuiButton button) throws IOException

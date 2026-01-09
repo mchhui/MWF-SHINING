@@ -4,17 +4,17 @@ mwf:dictionary.firemode.semi=Одиночный
 mwf:dictionary.firemode.brust=Очередь
 mwf:dictionary.ammo=Патроны
 mwf:dictionary.bullet=Пуля
-mwf.dictionary.sight=Прицел
-mwf.dictionary.slide=Затвор
-mwf.dictionary.grip=Рукоятка
-mwf.dictionary.flashlight=Фонарик
-mwf.dictionary.charm=Брелок
-mwf.dictionary.skin=Краска
-mwf.dictionary.barrel=Ствол
-mwf.dictionary.stock=Приклад
+mwf:dictionary.sight=Прицел
+mwf:dictionary.slide=Затвор
+mwf:dictionary.grip=Рукоятка
+mwf:dictionary.flashlight=Фонарик
+mwf:dictionary.charm=Брелок
+mwf:dictionary.skin=Краска
+mwf:dictionary.barrel=Ствол
+mwf:dictionary.stock=Приклад
 mwf:dictionary.laser=Лазер
-mwf.dictionary.pistolgrip=Пистолетная рукоятка
-mwf.dictionary.handguard=Цевье
+mwf:dictionary.pistolgrip=Пистолетная рукоятка
+mwf:dictionary.handguard=Цевье
 
 mwf:gui.tooltip.basicinfo=§9§l[Основная информация]
 mwf:gui.tooltip.attachmentinfo=§9§l[Обвесы]
@@ -50,7 +50,7 @@ mwf:gui.tooltip.seemore=Нажмите [L-SHIFT] чтобы узнать бол�
 mwf:gui.tooltip.help=Нажмите [L-CTRL] чтобы получить помощь
 mwf:gui.tooltip.reload=Нажмите [R] для перезарядки
 mwf:gui.tooltip.attachment.type=Тип аксессуара
-mwf:gui.tooltip.attachment.aimspeed=Время прицеливания
+mwf:gui.tooltip.attachment.aimspeed=Скорость прицеливания
 mwf:gui.tooltip.attachment.accuracy=Точность
 mwf:gui.tooltip.attachment.recoil.pitch=Вертикальная отдача
 mwf:gui.tooltip.attachment.recoil.yaw=Горизонтальная отдача
@@ -67,10 +67,10 @@ mwf:gui.tooltip.attachment.modelshake.shake=Тряска оружия
 mwf:gui.tooltip.attachment.noproperties=Нет особых свойств
 
 # Гранаты
-mwf.dictionary.grenade.frag=Взрывная
-mwf.dictionary.grenade.smoke=Дымовая
-mwf.dictionary.grenade.stun=Светошумовая
-mwf.dictionary.grenade.gas=Газовая
+mwf:dictionary.grenade.frag=Взрывная
+mwf:dictionary.grenade.smoke=Дымовая
+mwf:dictionary.grenade.stun=Светошумовая
+mwf:dictionary.grenade.gas=Газовая
 mwf:gui.tooltip.grenade.type=Тип гранаты
 mwf:gui.tooltip.grenade.fusetime=Время детонации
 mwf:gui.tooltip.grenade.throwstrength=Сила броска
@@ -97,11 +97,11 @@ mwf:gui.tooltip.armor.suit=Многосекционная броня
 mwf:gui.tooltip.armor.maxdurability=Максимальная прочность
 mwf:gui.tooltip.armor.bodyreduction=Снижение урона по телу
 mwf:gui.tooltip.armor.bodyonly=§8(Эффективно только для попаданий в тело)
-mwf.dictionary.armor.slot.head=Голова
-mwf.dictionary.armor.slot.chest=Грудь
-mwf.dictionary.armor.slot.legs=Ноги
-mwf.dictionary.armor.slot.feet=Ступни
-mwf.dictionary.armor.slot.vest=Бронежилет
+mwf:dictionary.armor.slot.head=Голова
+mwf:dictionary.armor.slot.chest=Грудь
+mwf:dictionary.armor.slot.legs=Ноги
+mwf:dictionary.armor.slot.feet=Ступни
+mwf:dictionary.armor.slot.vest=Бронежилет
 
 # Эффекты зелий
 effect.modularwarfare.stun=Оглушение
@@ -129,6 +129,17 @@ mwf:gui.tooltip.backpack.duration=Длительность
 mwf:gui.tooltip.backpack.cooldown=Время восстановления
 
 mwf:gui.modify.none=Нет
+mwf:gui.modify.stats.title=Характеристики оружия
+mwf:gui.modify.stats.damage=Урон
+mwf:gui.modify.stats.headshot=Бонус к выстрелу в голову
+mwf:gui.modify.stats.hipfire_accuracy=Точность от бедра
+mwf:gui.modify.stats.firerate=Скорострельность
+mwf:gui.modify.stats.recoil_vertical=Вертикальная отдача
+mwf:gui.modify.stats.recoil_horizontal=Горизонтальная отдача
+mwf:gui.modify.stats.aimspeed=Скорость прицеливания
+mwf:gui.modify.stats.shake_backwards=Отдача назад
+mwf:gui.modify.stats.shake_upwards=Подъем ствола
+mwf:gui.modify.stats.shake_side=Раскачка оружия
 
 # Трансформация оружия
 mwf.transform.requirement_not_met=Требуется установить %2$s типа %1$s для трансформации в это состояние

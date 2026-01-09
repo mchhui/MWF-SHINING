@@ -317,7 +317,7 @@ public class GunTransformHUD {
                                     }
                                 }
                                 
-                                String attachmentTypeKey = "mwf.dictionary." + missingType.typeName;
+                                String attachmentTypeKey = "mwf:dictionary." + missingType.typeName;
                                 String attachmentTypeName = net.minecraft.client.resources.I18n.format(attachmentTypeKey, missingType.typeName);
                                 
                                 String messageKey = "mwf.transform.requirement_not_met";

@@ -4,17 +4,17 @@ mwf:dictionary.firemode.semi=Semi
 mwf:dictionary.firemode.brust=Brust
 mwf:dictionary.ammo=Ammo
 mwf:dictionary.bullet=Bullet
-mwf.dictionary.sight=Sight
-mwf.dictionary.slide=Slide
-mwf.dictionary.grip=Grip
-mwf.dictionary.flashlight=FlashLight
-mwf.dictionary.charm=Charm
-mwf.dictionary.skin=Spray
-mwf.dictionary.barrel=Barrel
-mwf.dictionary.stock=Stock
+mwf:dictionary.sight=Sight
+mwf:dictionary.slide=Slide
+mwf:dictionary.grip=Grip
+mwf:dictionary.flashlight=FlashLight
+mwf:dictionary.charm=Charm
+mwf:dictionary.skin=Spray
+mwf:dictionary.barrel=Barrel
+mwf:dictionary.stock=Stock
 mwf:dictionary.laser=Laser
-mwf.dictionary.pistolgrip=Pistol Grip
-mwf.dictionary.handguard=Handguard
+mwf:dictionary.pistolgrip=Pistol Grip
+mwf:dictionary.handguard=Handguard
 
 mwf:gui.tooltip.basicinfo=§9§l[Basic Info]
 mwf:gui.tooltip.attachmentinfo=§9§l[Loaded Attachments]
@@ -50,7 +50,7 @@ mwf:gui.tooltip.seemore=Press [L-SHIFT] to learn more
 mwf:gui.tooltip.help=Press [L-CTRL] to get help
 mwf:gui.tooltip.reload=Press [R] Reload
 mwf:gui.tooltip.attachment.type=Attachment Type
-mwf:gui.tooltip.attachment.aimspeed=Aim Time
+mwf:gui.tooltip.attachment.aimspeed=Aim Speed
 mwf:gui.tooltip.attachment.accuracy=Accuracy
 mwf:gui.tooltip.attachment.recoil.pitch=Vertical Recoil
 mwf:gui.tooltip.attachment.recoil.yaw=Horizontal Recoil
@@ -67,10 +67,10 @@ mwf:gui.tooltip.attachment.modelshake.shake=Gun Shake
 mwf:gui.tooltip.attachment.noproperties=No Special Properties
 
 # Grenade related
-mwf.dictionary.grenade.frag=Explosion
-mwf.dictionary.grenade.smoke=Smoke
-mwf.dictionary.grenade.stun=Flash
-mwf.dictionary.grenade.gas=Gas
+mwf:dictionary.grenade.frag=Explosion
+mwf:dictionary.grenade.smoke=Smoke
+mwf:dictionary.grenade.stun=Flash
+mwf:dictionary.grenade.gas=Gas
 mwf:gui.tooltip.grenade.type=Grenade Type
 mwf:gui.tooltip.grenade.fusetime=Fuse Time
 mwf:gui.tooltip.grenade.throwstrength=Throw Strength
@@ -97,11 +97,11 @@ mwf:gui.tooltip.armor.suit=Multi-Part Armor
 mwf:gui.tooltip.armor.maxdurability=Max Durability
 mwf:gui.tooltip.armor.bodyreduction=Body Damage Reduction
 mwf:gui.tooltip.armor.bodyonly=§8(Only effective for body shots)
-mwf.dictionary.armor.slot.head=Head
-mwf.dictionary.armor.slot.chest=Chest
-mwf.dictionary.armor.slot.legs=Legs
-mwf.dictionary.armor.slot.feet=Feet
-mwf.dictionary.armor.slot.vest=Vest
+mwf:dictionary.armor.slot.head=Head
+mwf:dictionary.armor.slot.chest=Chest
+mwf:dictionary.armor.slot.legs=Legs
+mwf:dictionary.armor.slot.feet=Feet
+mwf:dictionary.armor.slot.vest=Vest
 
 # Potion effects
 effect.modularwarfare.stun=Stun
@@ -129,6 +129,17 @@ mwf:gui.tooltip.backpack.duration=Duration
 mwf:gui.tooltip.backpack.cooldown=Cooldown
 
 mwf:gui.modify.none=None
+mwf:gui.modify.stats.title=Weapon Stats
+mwf:gui.modify.stats.damage=Damage
+mwf:gui.modify.stats.headshot=Headshot Bonus
+mwf:gui.modify.stats.hipfire_accuracy=Hipfire Accuracy
+mwf:gui.modify.stats.firerate=Fire Rate
+mwf:gui.modify.stats.recoil_vertical=Vertical Recoil
+mwf:gui.modify.stats.recoil_horizontal=Horizontal Recoil
+mwf:gui.modify.stats.aimspeed=Aim Speed
+mwf:gui.modify.stats.shake_backwards=Gun Kickback
+mwf:gui.modify.stats.shake_upwards=Gun Rise
+mwf:gui.modify.stats.shake_side=Gun Sway
 
 # Gun Transformation
 mwf.transform.requirement_not_met=Requires a %2$s of type %1$s to transform to this state

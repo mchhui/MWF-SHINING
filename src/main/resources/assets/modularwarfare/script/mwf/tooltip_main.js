@@ -252,7 +252,7 @@ function updateGunTooltip(stack, tiplist) {
             for (var i = 0; i < types.length; i++) {
                 var typeName = types[i];
                 if (typeName != null) {
-                    tiplist.add("§3" + ScriptAPI.Lang.format("mwf.dictionary." + typeName) + ":");
+                    tiplist.add("§3" + ScriptAPI.Lang.format("mwf:dictionary." + typeName) + ":");
                     var atts = attmap.get(typeName);
                     if (atts != null) {
                         for (var x = 0; x < atts.size(); x++) {
@@ -431,7 +431,7 @@ function updateAttachmentTooltip(stack, tiplist) {
     var attachmentTypeName = ScriptAPI.Attachment.getAttachmentTypeName(stack);
     
     tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.basicinfo"));
-    tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.type") + ": §7" + ScriptAPI.Lang.format("mwf.dictionary." + attachmentTypeName));
+    tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.type") + ": §7" + ScriptAPI.Lang.format("mwf:dictionary." + attachmentTypeName));
 
     var hasProperties = false;
 
@@ -453,7 +453,7 @@ function updateAttachmentTooltip(stack, tiplist) {
         }
         
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.aimspeed", 
-            ScriptAPI.Attachment.getSightAimSpeedFactor(stack), true);
+            ScriptAPI.Attachment.getSightAimSpeedFactor(stack), false);
         
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.mousesensitivity", 
             ScriptAPI.Attachment.getSightMouseSensitivityFactor(stack), true);
@@ -486,7 +486,7 @@ function updateAttachmentTooltip(stack, tiplist) {
 
     if (attachmentTypeName === "stock") {
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.aimspeed", 
-            ScriptAPI.Attachment.getStockAimSpeedFactor(stack), true);
+            ScriptAPI.Attachment.getStockAimSpeedFactor(stack), false);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.pitch", 
             ScriptAPI.Attachment.getStockRecoilPitchFactor(stack), true);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.yaw", 
@@ -521,7 +521,7 @@ function updateAttachmentTooltip(stack, tiplist) {
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.accuracy", 
             ScriptAPI.Attachment.getLaserAccuracyFactor(stack), false);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.aimspeed", 
-            ScriptAPI.Attachment.getLaserAimSpeedFactor(stack), true);
+            ScriptAPI.Attachment.getLaserAimSpeedFactor(stack), false);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.pitch", 
             ScriptAPI.Attachment.getLaserRecoilPitchFactor(stack), true);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.yaw", 
@@ -530,7 +530,7 @@ function updateAttachmentTooltip(stack, tiplist) {
 
     if (attachmentTypeName === "pistolgrip") {
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.aimspeed", 
-            ScriptAPI.Attachment.getPistolgripAimSpeedFactor(stack), true);
+            ScriptAPI.Attachment.getPistolgripAimSpeedFactor(stack), false);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.pitch", 
             ScriptAPI.Attachment.getPistolgripRecoilPitchFactor(stack), true);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.yaw", 
@@ -546,7 +546,7 @@ function updateAttachmentTooltip(stack, tiplist) {
 
     if (attachmentTypeName === "handguard") {
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.aimspeed", 
-            ScriptAPI.Attachment.getHandguardAimSpeedFactor(stack), true);
+            ScriptAPI.Attachment.getHandguardAimSpeedFactor(stack), false);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.pitch", 
             ScriptAPI.Attachment.getHandguardRecoilPitchFactor(stack), true);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.yaw", 
@@ -573,7 +573,7 @@ function updateGrenadeTooltip(stack, tiplist) {
     var grenadeTypeName = ScriptAPI.Grenade.getGrenadeTypeName(stack);
     
     tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.basicinfo"));
-    tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.grenade.type") + ": §7" + ScriptAPI.Lang.format("mwf.dictionary.grenade." + grenadeTypeName));
+    tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.grenade.type") + ": §7" + ScriptAPI.Lang.format("mwf:dictionary.grenade." + grenadeTypeName));
 
     var fuseTime = ScriptAPI.Grenade.getFuseTime(stack);
     var throwStrength = ScriptAPI.Grenade.getThrowStrength(stack);
@@ -706,7 +706,7 @@ function updateArmorTooltip(stack, tiplist) {
     }
     
     if (armorSlot && armorSlot !== "") {
-        tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.armor.slot") + ": §7" + ScriptAPI.Lang.format("mwf.dictionary.armor.slot." + armorSlot));
+        tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.armor.slot") + ": §7" + ScriptAPI.Lang.format("mwf:dictionary.armor.slot." + armorSlot));
     }
     
     var durability = ScriptAPI.Armor.getDurability(stack);
