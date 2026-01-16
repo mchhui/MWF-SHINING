@@ -3,7 +3,6 @@ package com.modularwarfare.utility.bukkit;
 import com.modularwarfare.api.EntityHeadShotEvent;
 import com.modularwarfare.api.WeaponRayHitEntityEvent;
 import com.modularwarfare.api.WeaponAttachmentEvent;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
