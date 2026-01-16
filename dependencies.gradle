@@ -43,16 +43,17 @@ dependencies {
     compileOnly files('libs/optifine-mwf.jar')
     implementation files('libs/HueihueaEngine-1.0-mcp.jar')
 
-    shadowImplementation files('libs/Nashorn.jar')
-    implementation("net.lingala.zip4j:zip4j:2.11.5")
-    implementation("org.joml:joml:1.10.8")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.19.2")
+    embed files('libs/Nashorn.jar')
+    embed("net.lingala.zip4j:zip4j:2.11.5")
+    embed("org.joml:joml:1.10.8")
+    embed("com.fasterxml.jackson.core:jackson-core:2.19.2")
+    embed("com.fasterxml.jackson.core:jackson-databind:2.19.2")
+    embed("com.fasterxml.jackson.core:jackson-annotations:2.19.2")
     compileOnly files('libs/dsurround-1.12.2-3.6.3-distance-deobf.jar')
     compileOnly files('libs/OreLib-1.12.2-3.6.0.1-deobf.jar')
     compileOnly files('libs/obfuscate-0.4.2-1.12.2-deobf.jar')
     compileOnly files('libs/vehicle-mod-0.44.1-1.12.2-deobf.jar')
     compileOnly files('libs/dsurround-1.12.2-3.6.3-distance-deobf.jar')
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.19.2")
     compileOnly group: 'org.spigotmc', name: 'spigot', version: '1.12.2'
 
 

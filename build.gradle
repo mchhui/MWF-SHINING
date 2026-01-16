@@ -725,6 +725,8 @@ tasks.named('processResources').configure {
 }
 
 jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
     manifest {
         attributes(getManifestAttributes())
     }
