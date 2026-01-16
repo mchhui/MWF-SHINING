@@ -1,0 +1,193 @@
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        maven { url = 'https://repo.spongepowered.org/maven' }
+
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+    }
+}
+        
+apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'idea'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+version = mod_version
+group = 'com.modularwarfare' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'modularwarfare-shining'
+
+// Need this here so eclipse task generates correctly.
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+compileJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+configurations {
+    embed
+    compile.extendsFrom(embed)
+}
+
+minecraft {
+    // The mappings can be changed at any time, and must be in the following format.
+    // snapshot_YYYYMMDD   Snapshot are built nightly.
+    // stable_#            Stables are built at the discretion of the MCP team.
+    // Use non-default mappings at your own risk. they may not always work.
+    // Simply re-run your setup task after changing the mappings to update your workspace.
+    //mappings channel: 'snapshot', version: '20171003-1.12'
+    mappings channel: 'stable', version: '39-1.12'
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+            property 'fml.coreMods.load', 'com.modularwarfare.mixin.MixinCore'
+            property 'mixin.debug', 'true'
+        }
+
+        server {
+            jvmArg('-Xmx1G')
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name "Sponge Maven"
+        url "https://repo.spongepowered.org/maven"
+    }
+    maven {
+        name "Songoda"
+        url "https://repo.songoda.com/repository/public/"
+    }
+    maven {
+        name 'Curse Maven'
+        url "https://cursemaven.com"
+    }
+}
+
+dependencies {
+    // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
+    // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
+    // The userdev artifact is a special name and will get all sorts of transformations applied to it.
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2860'
+
+    embed('org.spongepowered:mixin:0.8-SNAPSHOT') {
+        exclude module: 'guava'
+        exclude module: 'commons-io'
+        exclude module: 'gson'
+    }
+
+    // https://mvnrepository.com/artifact/net.lingala.zip4j/zip4j
+    embed group: 'net.lingala.zip4j', name: 'zip4j', version: '1.2.4'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.0-rc2'
+    compile group: 'org.joml', name: 'joml', version: '1.10.5'
+    compileOnly group: 'org.spigotmc', name: 'spigot', version: '1.12.2'
+    // https://www.curseforge.com/minecraft/mc-mods/shoulder-surfing-reloaded/files/4876004
+    implementation fg.deobf("curse.maven:shoulder-surfing-reloaded-243190:4876004")
+    compileOnly files('libs/OptiFine_1.12.2_HD_U_G5.jar')
+    compile files('libs/Nashorn.jar')
+}
+
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
+
+mixin {
+    add sourceSets.main, "mixins.modularwarfare.refmap.json"
+    defaultObfuscationEnv "searge"
+}
+sourceSets {
+    main {
+        output.resourcesDir = output.classesDir
+        ext.refMap = "mixins.modularwarfare.refmap.json"
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file:///${project.projectDir}/mcmodsrepo"
+        }
+    }
+}
+
+
+// Using dependency list to generate a manifest with appropriate classpath
+jar {
+    doFirst {
+        from {
+            configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+    }
+    manifest {
+        attributes([
+            "Built-By": "Protoxy",
+            "Specification-Title": "modularwarfare",
+            "Specification-Vendor": "modularwarfare",
+            "Specification-Version": "1", // We are version 1 of ourselves
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor" :"protoxy",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+            "FMLCorePluginContainsFMLMod": true,
+            "FMLCorePlugin": "com.modularwarfare.mixin.MixinCore",
+            "ForceLoadAsMod": true,
+            "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+            "TweakOrder": 0,
+            "MixinConfigs": "mixins.modularwarfare.json",
+        ])
+    }
+}
+
+/* Dev build */
+//task deobfJar(type: Jar) {
+//    from sourceSets.main.output
+//    classifier = 'dev'
+//}
+//
+//task sourcesJar(type: Jar) {
+//    from sourceSets.main.allJava
+//    classifier = 'sources'
+//}
+//
+//artifacts {
+//    archives deobfJar
+//    archives sourcesJar
+//}
+
+jar.finalizedBy('reobfJar')

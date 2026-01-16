@@ -9,9 +9,6 @@ import com.modularwarfare.client.objloader.part.Vertex;
 import com.modularwarfare.common.type.BaseType;
 
 import moe.komi.mwprotect.IZipEntry;
-import net.lingala.zip4j.exception.ZipException;
-import net.lingala.zip4j.io.ZipInputStream;
-import net.lingala.zip4j.model.FileHeader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.util.ResourceLocation;

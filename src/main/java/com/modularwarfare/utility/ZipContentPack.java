@@ -2,7 +2,6 @@ package com.modularwarfare.utility;
 
 import moe.komi.mwprotect.IZip;
 import moe.komi.mwprotect.IZipEntry;
-import net.lingala.zip4j.core.ZipFile;
 
 import java.util.HashMap;
 import java.util.Set;

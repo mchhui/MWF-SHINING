@@ -1,0 +1,8 @@
+// Add any additional repositories for your dependencies here
+
+repositories {
+    maven {
+        name "Songoda"
+        url "https://repo.songoda.com/repository/public/"
+    }
+}
