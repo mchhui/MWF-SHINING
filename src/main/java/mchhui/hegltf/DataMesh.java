@@ -1,7 +1,8 @@
 package mchhui.hegltf;
 
 import com.modularwarfare.client.gui.GuiGunModify;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;

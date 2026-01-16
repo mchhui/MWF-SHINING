@@ -192,7 +192,7 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketGunTrail.class);
         registerPacket(PacketAimingRequest.class);
         registerPacket(PacketAimingResponse.class);
-        registerPacket(PacketDecal.class);
+        registerPacket(PacketHitEffect.class);
         registerPacket(PacketOpenNormalInventory.class);
         registerPacket(PacketOpenExtraArmorInventory.class);
         registerPacket(PacketBulletSnap.class);
@@ -206,11 +206,11 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketClientKillFeedEntry.class);
 
         registerPacket(PacketFlashClient.class);
-        registerPacket(PacketExpGunFire.class);
+//        registerPacket(PacketExpGunFire.class);
         registerPacket(PacketGunTrailAskServer.class);
-        registerPacket(PacketExpShot.class);
+//        registerPacket(PacketExpShot.class);
 
-        registerPacket(PacketOtherPlayerAnimation.class);
+        registerPacket(PacketOtherShooterAnimation.class);
         registerPacket(PacketBackpackElytraStart.class);
         registerPacket(PacketBackpackJet.class);
 
@@ -231,6 +231,8 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketSwing.class);
         registerPacket(PacketBounced.class);
         registerPacket(PacketDelayedShoot.class);
+        
+        registerPacket(PacketBulletHole.class);
         
     }
 

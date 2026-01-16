@@ -28,6 +28,8 @@ public class ModConfig {
         this.walks_sounds = new Walk();
         this.casings_drops = new Casings();
         this.killFeed = new KillFeed();
+        this.sprintBlendNodes = new SprintBlendNodes();
+        this.gunStats = new GunStats();
     }
 
     //general
@@ -132,6 +134,42 @@ public class ModConfig {
         public boolean sendDefaultKillMessage = false;
         public int messageDuration = 10;
         public List<String> messageList = Arrays.asList("&a{killer} &dkilled &c{victim}", "&a{killer} &fdestroyed &c{victim}", "&a{killer} &fshot &c{victim}");
+    }
+
+    //sprint blend nodes
+    public SprintBlendNodes sprintBlendNodes = new SprintBlendNodes();
+    
+    //gun stats display
+    public GunStats gunStats = new GunStats();
+    
+    public static class GunStats {
+        public float maxDamageReference = 20.0f;
+        public float maxHeadshotBonusReference = 10.0f;
+    }
+
+    public static class SprintBlendNodes {
+        public List<String> blendableNodes = Arrays.asList(
+            "leftarm_mwf_blender", "forearm.L", "hand.L",
+            "rightarm_mwf_blender", "forearm.R", "hand.R",
+            "leftarm_mwf_blender_f", "forearm.L_f", "hand.L_f",
+            "rightarm_mwf_blender_f", "forearm.R_f", "hand.R_f"
+        );
+        
+        public boolean isBlendableNode(String nodeName) {
+            if (blendableNodes.contains(nodeName)) {
+                return true;
+            }
+            if (nodeName.endsWith("_sprint")) {
+                return true;
+            }
+            if (nodeName.equals("root") || nodeName.equals("sprint_lefthand") || 
+                nodeName.equals("sprint_righthand") || nodeName.equals("root_bone") || 
+                nodeName.equals("sprint_lefthand_bone") || nodeName.equals("sprint_righthand_bone") ||
+                nodeName.equals("meleeModel") || nodeName.equals("meleeModel_bone")) {
+                return true;
+            }
+            return false;
+        }
     }
 
     public boolean model_optimization = true;

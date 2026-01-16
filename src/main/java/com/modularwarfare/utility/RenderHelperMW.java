@@ -1,8 +1,8 @@
 package com.modularwarfare.utility;
 
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
-import com.modularwarfare.loader.ObjModel;
-import com.modularwarfare.loader.api.ObjModelLoader;
+import com.modularwarfare.client.objloader.ObjModel;
+import com.modularwarfare.client.objloader.api.ObjModelLoader;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;

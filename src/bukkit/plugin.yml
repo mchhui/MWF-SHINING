@@ -1,0 +1,3 @@
+name: MWF-EXAMPLE-PLUGIN
+main: mchhui.mwfplugin.ExamplePlugin
+version: 1.0

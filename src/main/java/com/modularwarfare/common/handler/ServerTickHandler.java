@@ -106,7 +106,7 @@ public final class ServerTickHandler {
             }
             break;
         case END:
-            ModularWarfare.PLAYER_HANDLER.serverTick();
+            //todo sth
             break;
         }
     }

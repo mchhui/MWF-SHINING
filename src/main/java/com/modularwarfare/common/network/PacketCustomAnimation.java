@@ -4,8 +4,6 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
-import com.modularwarfare.common.entity.decals.EntityBulletHole;
-import com.modularwarfare.common.entity.decals.EntityDecal;
 import com.modularwarfare.common.particle.EntityBloodFX;
 import com.modularwarfare.common.particle.EntityShotFX;
 import com.modularwarfare.common.particle.ParticleExplosion;

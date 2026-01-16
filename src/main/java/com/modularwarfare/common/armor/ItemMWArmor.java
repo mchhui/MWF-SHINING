@@ -5,7 +5,9 @@ import com.modularwarfare.api.MWArmorType;
 import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.type.BaseType;
+import com.modularwarfare.utility.script.ScriptHost;
 import net.minecraft.client.model.ModelBiped;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -21,6 +23,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class ItemMWArmor extends ItemArmor implements ISpecialArmor {
     public ArmorType type;
@@ -118,6 +121,20 @@ public class ItemMWArmor extends ItemArmor implements ISpecialArmor {
     public void damageArmor(final EntityLivingBase entity, final ItemStack stack, final DamageSource source, final int damage, final int slot) {
         if (this.type.durability != null) {
             stack.damageItem(damage, entity);
+        }
+    }
+    
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+        super.addInformation(stack, worldIn, tooltip, flagIn);
+        if (this.type != null && this.type.toolipScript != null) {
+            ScriptHost.INSTANCE.callScript(
+                new ResourceLocation(ModularWarfare.MOD_ID, "script/" + this.type.toolipScript + ".js"), 
+                stack, 
+                tooltip, 
+                "updateTooltip"
+            );
         }
     }
 }

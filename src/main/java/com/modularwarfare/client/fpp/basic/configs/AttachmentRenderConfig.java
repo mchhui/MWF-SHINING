@@ -3,7 +3,8 @@ package com.modularwarfare.client.fpp.basic.configs;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.WeaponSoundType;
-import com.modularwarfare.objects.SoundEntry;
+import com.modularwarfare.utility.SoundEntry;
+
 import org.lwjgl.util.vector.Vector3f;
 
 import net.minecraft.util.ResourceLocation;
@@ -21,6 +22,8 @@ public class AttachmentRenderConfig {
     public AttachmentRenderConfig.Grip grip = new AttachmentRenderConfig.Grip();
     public AttachmentRenderConfig.Stock stock = new AttachmentRenderConfig.Stock();
     public AttachmentRenderConfig.Laser laser = new AttachmentRenderConfig.Laser();
+    public AttachmentRenderConfig.Pistolgrip pistolgrip = new AttachmentRenderConfig.Pistolgrip();
+    public AttachmentRenderConfig.Handguard handguard = new AttachmentRenderConfig.Handguard();
 
     public static class Extra {
 
@@ -58,7 +61,7 @@ public class AttachmentRenderConfig {
         public float uniformScaleStrengthY=1f;
         public float uniformVerticality=0f;
 
-        // 后坐力影响瞄准镜位置的系数
+        // 后坐力影响瞄准贴图位置的系数
         public float recoilOverlayFactor = 1.0f;
 
         public float[] GetStageFovZoomRange()
@@ -78,6 +81,18 @@ public class AttachmentRenderConfig {
 
     public static class Grip {
         public Vector3f leftArmOffset = new Vector3f(0F, 0F, 0F);
+    }
+
+    public static class Pistolgrip {
+        public float modelRecoilBackwardsFactor = 1.0f;
+        public float modelRecoilUpwardsFactor = 1.0f;
+        public float modelRecoilShakeFactor = 1.0f;
+    }
+
+    public static class Handguard {
+        public float modelRecoilBackwardsFactor = 1.0f;
+        public float modelRecoilUpwardsFactor = 1.0f;
+        public float modelRecoilShakeFactor = 1.0f;
     }
     
     public static class Stock {

@@ -4,6 +4,7 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
@@ -13,6 +14,7 @@ import safx.SAPackets;
 import safx.packets.PacketSpawnParticle;
 import safx.packets.PacketSpawnParticleOnEntity;
 import safx.util.EntityCondition;
+import com.modularwarfare.ModularWarfare;
 
 import java.util.UUID;
 
@@ -33,6 +35,12 @@ public class CommandFX extends CommandBase {
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (args.length == 0) {
             sender.sendMessage(new TextComponentString("§cUsage: " + getUsage(sender)));
+            return;
+        }
+        
+        if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+            ModularWarfare.PROXY.reloadFX();
+            sender.sendMessage(new TextComponentString("§aReloading SAFX. You need use Sneak + F3 to reload textures..."));
             return;
         }
         
@@ -73,9 +81,8 @@ public class CommandFX extends CommandBase {
             float scale = args.length > 7 ? Float.parseFloat(args[7]) : 1.0f;
             
             Entity targetEntity = null;
-            
-            for (int i = 0; i < server.worlds.length; i++) {
-                World world = server.worlds[i];
+
+            for (World world : net.minecraftforge.common.DimensionManager.getWorlds()) {
                 for (Entity entity : world.loadedEntityList) {
                     if (entity.getUniqueID().equals(entityUUID)) {
                         targetEntity = entity;
@@ -90,13 +97,26 @@ public class CommandFX extends CommandBase {
                 return;
             }
             
+            // 获取距离实体最近的玩家，使用其维度来发送特效包（对虚拟世界很重要）
+            EntityPlayerMP nearestPlayer = null;
+            EntityPlayer nearest = targetEntity.world.getClosestPlayer(targetEntity.posX, targetEntity.posY, targetEntity.posZ, 512, false);
+            if (nearest instanceof EntityPlayerMP) {
+                nearestPlayer = (EntityPlayerMP) nearest;
+            }
+            
+            if (nearestPlayer == null) {
+                sender.sendMessage(new TextComponentString("§cNo player nearby to render effect (need player within 512 blocks)!"));
+                return;
+            }
+            
             SAPackets.network.sendToAllAround(
                 new PacketSpawnParticleOnEntity(fxName, targetEntity, offsetX, offsetY, offsetZ, attachToHead, EntityCondition.NONE, scale),
-                SAPackets.targetPointAroundEnt(targetEntity, 128)
+                new TargetPoint(nearestPlayer.dimension, targetEntity.posX, targetEntity.posY, targetEntity.posZ, 512)
             );
             
             sender.sendMessage(new TextComponentString("§aAttached effect §e" + fxName + " §ato entity " + targetEntity.getName() + 
                 " §ain world §e" + targetEntity.world.getWorldInfo().getWorldName() +
+                " §a(dimension: " + nearestPlayer.dimension + ")" +
                 " §awith offset: §e(" + formatFloat(offsetX) + ", " + formatFloat(offsetY) + ", " + formatFloat(offsetZ) + ") " +
                 "§aattachToHead: §e" + attachToHead + " §ascale: §e" + scale));
             
@@ -229,6 +249,9 @@ public class CommandFX extends CommandBase {
     
     private void showHelp(ICommandSender sender) {
         sender.sendMessage(new TextComponentString("§6=== ModularWarfare FX Command Help ==="));
+        sender.sendMessage(new TextComponentString("§eAdmin Commands:"));
+        sender.sendMessage(new TextComponentString("§a/mw-fx reload"));
+        sender.sendMessage(new TextComponentString("  §7- Reload particles and textures (Client Side)"));
         sender.sendMessage(new TextComponentString("§eLocation-based effects:"));
         sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> <x> <y> <z> [world]"));
         sender.sendMessage(new TextComponentString("  §7- Spawn effect at specified location"));

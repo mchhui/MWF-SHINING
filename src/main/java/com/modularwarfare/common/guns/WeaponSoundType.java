@@ -152,7 +152,9 @@ public enum WeaponSoundType {
 
     /**
      * The fire sound of pack-a-punched weapons
+     * 2025.12.1 疑似xy自用 在通用发行版中无任何使用
      */
+    @Deprecated
     @SerializedName("punched") Punched("punched", 64, "punched"),
 
 
@@ -232,6 +234,9 @@ public enum WeaponSoundType {
     @SerializedName("weaponTransform2") Transform2("weaponTransform2", 12, null),
     @SerializedName("weaponTransform3") Transform3("weaponTransform3", 12, null),
     @SerializedName("weaponTransform4") Transform4("weaponTransform4", 12, null),
+    
+    @SerializedName("customItemAttack") CustomItemAttack("customItemAttack", 5, null),
+    @SerializedName("customItemUse") CustomItemUse("customItemUse", 5, null),
 
     ;
 

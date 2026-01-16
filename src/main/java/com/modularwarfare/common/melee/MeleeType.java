@@ -1,14 +1,13 @@
 package com.modularwarfare.common.melee;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
 import com.modularwarfare.client.fpp.enhanced.configs.MeleeRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.objects.SoundEntry;
+import com.modularwarfare.utility.SoundEntry;
 
 public class MeleeType extends BaseType {
 
@@ -35,7 +34,8 @@ public class MeleeType extends BaseType {
         public int nextPhase = -1;
         public boolean keepOrder = false;
         public CheckBounced checkBounced = null;
-        public String animationName = "melee_attack0";
+        public String animationName = "none";
+        public String hitAnimationName = "none";
 
         public static class CheckBounced {
             public float range = 1;
@@ -43,13 +43,19 @@ public class MeleeType extends BaseType {
             public float pitchAngle = 1;
             public float yawStart = 1;
             public float pitchStart = 1;
-            public String animationName = "melee_heavybounced0";
+            public String animationName = "none";
         }
     }
 
     public AnimationInfo getAnimationInfo(AnimationMeleeType type, int index) {
         boolean isHeavy = type.serializedName.lastIndexOf("heavy") != -1;
-        return isHeavy ? attackHeavy[index] : attack[index];
+        AnimationInfo[] targetArray = isHeavy ? attackHeavy : attack;
+        
+        if (targetArray == null || index < 0 || index >= targetArray.length) {
+            return null;
+        }
+        
+        return targetArray[index];
     }
 
     public boolean resetAttackOnClick = false;

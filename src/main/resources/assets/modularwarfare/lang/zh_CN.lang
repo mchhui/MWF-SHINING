@@ -4,15 +4,17 @@ mwf:dictionary.firemode.semi=单发
 mwf:dictionary.firemode.brust=连发
 mwf:dictionary.ammo=弹药
 mwf:dictionary.bullet=子弹
-mwf.dictionary.sight=瞄具
-mwf.dictionary.slide=枪机
-mwf.dictionary.grip=握把
-mwf.dictionary.flashlight=手电
-mwf.dictionary.charm=饰品
-mwf.dictionary.skin=喷漆
-mwf.dictionary.barrel=枪管
-mwf.dictionary.stock=枪托
-mwf.dictionary.laser=镭射
+mwf:dictionary.sight=瞄具
+mwf:dictionary.slide=枪机
+mwf:dictionary.grip=握把
+mwf:dictionary.flashlight=手电
+mwf:dictionary.charm=饰品
+mwf:dictionary.skin=喷漆
+mwf:dictionary.barrel=枪管
+mwf:dictionary.stock=枪托
+mwf:dictionary.laser=镭射
+mwf:dictionary.pistolgrip=手枪握把
+mwf:dictionary.handguard=护木
 
 mwf:gui.tooltip.basicinfo=§9§l[基本属性]
 mwf:gui.tooltip.attachmentinfo=§9§l[装载配件]
@@ -47,9 +49,101 @@ mwf:gui.tooltip.bullet.property.banshield=打断盾牌
 mwf:gui.tooltip.seemore=按下[L-SHIFT]查看更多
 mwf:gui.tooltip.help=按下[L-CTRL]查看帮助
 mwf:gui.tooltip.reload=按下[R]重新装填
+mwf:gui.tooltip.attachment.type=配件类型
+mwf:gui.tooltip.attachment.aimspeed=瞄准速度
+mwf:gui.tooltip.attachment.accuracy=精准度
+mwf:gui.tooltip.attachment.recoil.pitch=垂直后坐力
+mwf:gui.tooltip.attachment.recoil.yaw=水平后坐力
+mwf:gui.tooltip.attachment.suppressor=消音器
+mwf:gui.tooltip.attachment.hideflash=消焰器
+mwf:gui.tooltip.attachment.mousesensitivity=瞄准时灵敏度
+mwf:gui.tooltip.attachment.zoom=瞄准倍率
+mwf:gui.tooltip.attachment.zoom.variable=§8(可变倍率)
+mwf:gui.tooltip.attachment.laser.color=镭射颜色
+mwf:gui.tooltip.attachment.laser.distance=最大距离
+mwf:gui.tooltip.attachment.modelshake.backwards=枪身后坐
+mwf:gui.tooltip.attachment.modelshake.upwards=枪身上抬
+mwf:gui.tooltip.attachment.modelshake.shake=枪身抖动
+mwf:gui.tooltip.attachment.noproperties=无特殊属性加成
+
+# 手雷相关
+mwf:dictionary.grenade.frag=爆炸
+mwf:dictionary.grenade.smoke=烟雾
+mwf:dictionary.grenade.stun=闪光
+mwf:dictionary.grenade.gas=毒气
+mwf:gui.tooltip.grenade.type=手雷类型
+mwf:gui.tooltip.grenade.fusetime=引信时间
+mwf:gui.tooltip.grenade.throwstrength=投掷力度
+mwf:gui.tooltip.grenade.impactdamage=撞击伤害
+mwf:gui.tooltip.grenade.sticky=黏性雷
+mwf:gui.tooltip.grenade.instant=碰炸雷
+mwf:gui.tooltip.grenade.explosion=§c§l爆炸效果
+mwf:gui.tooltip.grenade.smoke=§7§l烟雾效果
+mwf:gui.tooltip.grenade.stun=§e§l闪光效果
+mwf:gui.tooltip.grenade.gas=§2§l毒气效果
+mwf:gui.tooltip.grenade.damage=爆炸伤害
+mwf:gui.tooltip.grenade.range=作用范围
+mwf:gui.tooltip.grenade.knockback=击退强度
+mwf:gui.tooltip.grenade.damageworld=破坏方块
+mwf:gui.tooltip.grenade.throughwalls=穿墙爆炸
+mwf:gui.tooltip.grenade.banshield=打断盾牌
+mwf:gui.tooltip.grenade.fire=燃烧伤害
+mwf:gui.tooltip.grenade.duration=持续时间
+
+# 护甲相关
+mwf:gui.tooltip.armor.type=护甲类型
+mwf:gui.tooltip.armor.slot=穿戴位置
+mwf:gui.tooltip.armor.suit=多部位护甲
+mwf:gui.tooltip.armor.maxdurability=最大耐久值
+mwf:gui.tooltip.armor.bodyreduction=身体伤害减免
+mwf:gui.tooltip.armor.bodyonly=§8(仅对身体部位命中有效)
+mwf:dictionary.armor.slot.head=头部
+mwf:dictionary.armor.slot.chest=胸部
+mwf:dictionary.armor.slot.legs=腿部
+mwf:dictionary.armor.slot.feet=脚部
+mwf:dictionary.armor.slot.vest=防弹背心
+
+# 药水效果
+effect.modularwarfare.stun=眩晕
+
+# 背包相关
+mwf:gui.tooltip.backpack.type=背包类型
+mwf:gui.tooltip.backpack.storage=储存背包
+mwf:gui.tooltip.backpack.elytra=鞘翅背包
+mwf:gui.tooltip.backpack.jet=喷气背包
+mwf:gui.tooltip.backpack.jetelytra=喷气鞘翅背包
+mwf:gui.tooltip.backpack.capacity=容量
+mwf:gui.tooltip.backpack.slots=格
+mwf:gui.tooltip.backpack.maxweapons=最大武器存储
+mwf:gui.tooltip.backpack.allowsmaller=可存储小型背包
+mwf:gui.tooltip.backpack.elytrafeatures=§b§l鞘翅功能
+mwf:gui.tooltip.backpack.elytrastoppable=可停止飞行
+mwf:gui.tooltip.backpack.jetfeatures=§6§l喷气功能
+mwf:gui.tooltip.backpack.jetworkforce=工作推力
+mwf:gui.tooltip.backpack.jetmaxforce=最大推力
+mwf:gui.tooltip.backpack.jetidleforce=空闲推力
+mwf:gui.tooltip.backpack.jetsneakhover=潜行悬停
+mwf:gui.tooltip.backpack.jetgrounddust=地面尘埃效果
+mwf:gui.tooltip.backpack.jetelytraboost=鞘翅加速倍率
+mwf:gui.tooltip.backpack.duration=持续时间
+mwf:gui.tooltip.backpack.cooldown=冷却时间
 
 mwf:gui.modify.none=无
+mwf:gui.modify.stats.title=武器属性
+mwf:gui.modify.stats.damage=伤害
+mwf:gui.modify.stats.headshot=爆头加成
+mwf:gui.modify.stats.hipfire_accuracy=腰射精准度
+mwf:gui.modify.stats.firerate=射速
+mwf:gui.modify.stats.recoil_vertical=垂直后坐力
+mwf:gui.modify.stats.recoil_horizontal=水平后坐力
+mwf:gui.modify.stats.aimspeed=瞄准速度
+mwf:gui.modify.stats.shake_backwards=枪身后坐
+mwf:gui.modify.stats.shake_upwards=枪身上抬
+mwf:gui.modify.stats.shake_side=枪身抖动
 
 # 枪械变换相关
 mwf.transform.requirement_not_met=需要安装 %1$s 类型的 %2$s 配件才能变换到此形态
 mwf.transform.cannot_remove_required=无法移除当前形态所需的配件：%1$s - %2$s
+
+# 配件安装相关
+mwf.attachment.missing_required=无法安装配件 %1$s！缺少前置配件：%2$s

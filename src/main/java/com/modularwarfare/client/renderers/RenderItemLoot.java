@@ -4,6 +4,7 @@ import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.model.ModelGun;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
@@ -17,7 +18,6 @@ import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.melee.MeleeType;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;

@@ -9,6 +9,7 @@ import com.modularwarfare.api.hebridge.IAniPlayer;
 import com.modularwarfare.client.customplayer.CPEventHandler;
 import com.modularwarfare.client.customplayer.CustomPlayerConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
+import com.modularwarfare.client.gui.hud.GunTransformHUD;
 import com.modularwarfare.common.CommonProxy;
 import com.modularwarfare.common.MWTab;
 import com.modularwarfare.common.armor.ArmorType;
@@ -26,8 +27,7 @@ import com.modularwarfare.common.effect.ModPotions;
 import com.modularwarfare.common.entity.EntityCustomFire;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
 import com.modularwarfare.common.entity.EntityThrowerProjectile;
-import com.modularwarfare.common.entity.decals.EntityBulletHole;
-import com.modularwarfare.common.entity.decals.EntityShell;
+import com.modularwarfare.common.entity.environment.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
@@ -38,8 +38,8 @@ import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.CommonEventHandler;
 import com.modularwarfare.common.handler.GuiHandler;
-import com.modularwarfare.common.hitbox.playerdata.PlayerDataHandler;
 import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.network.NetworkHandler;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
 import com.modularwarfare.common.textures.TextureType;
@@ -47,12 +47,13 @@ import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.common.type.ContentTypes;
 import com.modularwarfare.common.type.TypeEntry;
-import com.modularwarfare.raycast.DefaultRayCasting;
-import com.modularwarfare.raycast.RayCasting;
-import com.modularwarfare.script.ScriptHost;
 import com.modularwarfare.utility.GSONUtils;
 import com.modularwarfare.utility.ModUtil;
 import com.modularwarfare.utility.ZipContentPack;
+import com.modularwarfare.utility.bukkit.BukkitEvents;
+import com.modularwarfare.utility.raycast.DefaultRayCasting;
+import com.modularwarfare.utility.raycast.RayCasting;
+import com.modularwarfare.utility.script.ScriptHost;
 import com.mrcrayfish.vehicle.client.HeldVehicleEvents;
 
 import mchhui.modularmovements.ModularMovements;
@@ -94,7 +95,6 @@ import java.util.stream.Stream;
 import static com.modularwarfare.common.CommonProxy.zipJar;
 
 import com.modularwarfare.common.grenades.GrenadeType;
-import com.modularwarfare.client.hud.GunTransformHUD;
 import com.modularwarfare.common.commands.CommandEntityShoot;
 
 @Mod(modid = ModularWarfare.MOD_ID, name = ModularWarfare.MOD_NAME, version = ModularWarfare.MOD_VERSION, acceptedMinecraftVersions = "[1.12,1.13)")
@@ -118,8 +118,6 @@ public class ModularWarfare {
     public static Logger LOGGER;
 
     public static NetworkHandler NETWORK;
-
-    public static PlayerDataHandler PLAYER_HANDLER = new PlayerDataHandler();
 
     public static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -561,12 +559,11 @@ public class ModularWarfare {
 
         final String property = System.getProperty("mwf.banbukkit", "false");
         final boolean enableBukkit = !Boolean.parseBoolean(property);
-
         if (enableBukkit) {
             try {
-
                 Class.forName("org.bukkit.Bukkit");
-                MinecraftForge.EVENT_BUS.register(BukkitHelper.class);
+                MinecraftForge.EVENT_BUS.register(BukkitEvents.class);
+                LOGGER.info("MWFS is tranfering bukkit events.");
             } catch (ClassNotFoundException e) {
                 LOGGER.info("Bukkit extension not found, skipping initialization");
             }
@@ -687,6 +684,14 @@ public class ModularWarfare {
                                 CommonProxy.preloadSkinTypes.put(skin, type);
                             }
                         }
+                    } else if (item instanceof ItemMelee) {
+                        final ItemMelee itemMelee = (ItemMelee)item;
+                        final MeleeType type = itemMelee.type;
+                        if (type.modelSkins != null && type.modelSkins.length > 0) {
+                            for (SkinType skin : type.modelSkins) {
+                                CommonProxy.preloadSkinTypes.put(skin, type);
+                            }
+                        }
                     }
                 });
             }
@@ -699,7 +704,7 @@ public class ModularWarfare {
 
     @SubscribeEvent
     void registerEntities(RegistryEvent.Register<EntityEntry> event) {
-        EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "bullethole"), EntityBulletHole.class, "bullethole", 3, this, 80, 10, false);
+//        EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "bullethole"), EntityBulletHole.class, "bullethole", 3, this, 80, 10, false);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "shell"), EntityShell.class, "shell", 4, this, 64, 1, false);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "itemloot"), EntityItemLoot.class, "itemloot", 6, this, 64, 1, true);
         EntityRegistry.registerModEntity(new ResourceLocation(ModularWarfare.MOD_ID, "grenade"), EntityGrenade.class, "grenade", 7, this, 64, 1, true);

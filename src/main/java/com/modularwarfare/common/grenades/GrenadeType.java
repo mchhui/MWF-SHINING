@@ -11,8 +11,8 @@ import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.type.BaseType;
+import com.modularwarfare.utility.SoundEntry;
 import com.modularwarfare.common.guns.WeaponSoundType;
-import com.modularwarfare.objects.SoundEntry;
 import com.modularwarfare.common.guns.PotionEntry;
 
 import net.minecraftforge.fml.common.FMLCommonHandler;

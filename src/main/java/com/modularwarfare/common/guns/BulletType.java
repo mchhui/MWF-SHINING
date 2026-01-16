@@ -4,8 +4,8 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.BulletRenderConfig;
 import com.modularwarfare.client.model.ModelBullet;
 import com.modularwarfare.client.model.ModelShell;
+import com.modularwarfare.client.objloader.MWModelBase;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.MWModelBase;
 
 import java.util.HashMap;
 

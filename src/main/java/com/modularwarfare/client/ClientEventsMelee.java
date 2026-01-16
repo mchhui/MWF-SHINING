@@ -17,6 +17,7 @@ import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.input.KeyType;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
@@ -26,7 +27,6 @@ import com.modularwarfare.common.melee.MeleeType.AnimationInfo;
 import com.modularwarfare.common.network.PacketSwing;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;

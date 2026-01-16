@@ -67,12 +67,16 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public float modelRecoilBackwardsFactor = 1f;
         public float modelRecoilUpwardsFactor = 1f;
         public float modelRecoilShakeFactor = 1f;
+        public HashMap<String, HandguardInfluence> handguardInfluence = new HashMap<String, HandguardInfluence>();
     }
     
     public static class AttachmentGroup extends EnhancedRenderConfig.Transform {
         public HashSet<String> hidePart=new HashSet<String>();
         public HashSet<String> showPart=new HashSet<String>();
+        public HashMap<String, HandguardInfluence> handguardInfluence = new HashMap<String, HandguardInfluence>();
     }
+    
+    public static class HandguardInfluence extends EnhancedRenderConfig.Transform {}
 
     public static class SpecialEffect{
         //是否启用对传统的FlashModel对象的渲染

@@ -8,8 +8,8 @@ import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.handler.ServerTickHandler;
-import com.modularwarfare.common.hitbox.hits.BulletHit;
 import com.modularwarfare.common.playerstate.PlayerStateManager;
+import com.modularwarfare.utility.raycast.hits.BulletHit;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import mchhui.modularmovements.tactical.client.ClientListener;
@@ -359,7 +359,7 @@ public class RayUtil {
      * @return
      */
     @Nullable
-    public static List<BulletHit> standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item, boolean isPunched) {
+    public static List<BulletHit> standardEntityRayTrace(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase player, double range, ItemGun item) {
         // 基础检查
         if (world == null || player == null || item == null || item.type == null) {
             return null;
@@ -386,10 +386,12 @@ public class RayUtil {
                 maxPenetrateBlockResistance *= usedBullet.type.bulletBlockPenetrateFactor;
                 penetrateBlocksResistance *= usedBullet.type.bulletBlockPenetrateFactor;
             }
-            Vec3d dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, player);
-
-            if(side.isServer()) {
-                // Server side code...
+            
+            Vec3d dir;
+            if (side.isServer()) {
+                dir = EntityShootingAPI.getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, world.rand);
+            } else {
+                dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, player);
             }
 
             int ping = 0;
@@ -405,8 +407,12 @@ public class RayUtil {
                 }
             }
 
-            return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
-                    maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
+            if (side.isServer()) {
+                return performSimpleAABBRayTrace(world, origin, dir, range, penetrate, maxPenetrateBlockResistance, penetrateBlocksResistance, hashset);
+            } else {
+                return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
+                        maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
+            }
         } catch (Exception e) {
             // 如果发生任何错误，返回null
             return null;

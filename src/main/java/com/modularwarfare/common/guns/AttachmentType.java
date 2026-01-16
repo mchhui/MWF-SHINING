@@ -25,6 +25,10 @@ public class AttachmentType extends BaseType {
 
     public Laser laser = new Laser();
 
+    public Pistolgrip pistolgrip = new Pistolgrip();
+    
+    public Handguard handguard = new Handguard();
+
     public boolean sameTextureAsGun = false;
     
 
@@ -88,19 +92,28 @@ public class AttachmentType extends BaseType {
         public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f;
     }
-    
+
+    public static class Pistolgrip {
+        public float aimSpeedFactor = 1.0f;
+        public float recoilPitchFactor = 1.0f;
+        public float recoilYawFactor = 1.0f;
+    }
+
+    public static class Handguard {
+        public float aimSpeedFactor = 1.0f;
+        public float recoilPitchFactor = 1.0f;
+        public float recoilYawFactor = 1.0f;
+    }
     public static class Stock{
+        public float aimSpeedFactor = 1.0f;
     	public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f; 
-        public float aimSpeedFactor = 1.0f;
+        
     }
 
     public static class Laser {
-        // 准确度影响因子
         public float accuracyFactor = 1.0f;
-        // 瞄准速度影响因子
         public float aimSpeedFactor = 1.0f;
-        // 后坐力影响因子
         public float recoilPitchFactor = 1.0f;
         public float recoilYawFactor = 1.0f;
     }

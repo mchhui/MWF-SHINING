@@ -2,10 +2,11 @@ package com.modularwarfare.client.model;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.BackpackRenderConfig;
+import com.modularwarfare.client.objloader.MWModelBase;
+import com.modularwarfare.client.objloader.api.ObjModelLoader;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.MWModelBase;
-import com.modularwarfare.loader.api.ObjModelLoader;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
+
 import net.minecraft.client.renderer.GlStateManager;
 
 public class ModelBackpack extends MWModelBase {

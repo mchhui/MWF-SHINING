@@ -46,7 +46,9 @@ public class PacketBounced extends PacketBase {
          * For HE Bridge
          * */
         if (ModularWarfare.aniPlayer != null) {
-            ModularWarfare.aniPlayer.playAni(playerEntity.getUniqueID(), ani, 5);
+            if (ani != null && !ani.isEmpty() && !ani.equals("none")) {
+                ModularWarfare.aniPlayer.playAni(playerEntity.getUniqueID(), ani, 5);
+            }
         }
     }
 

@@ -141,7 +141,8 @@ public class TextureButton extends GuiButton {
                 GlStateManager.popMatrix();
 
             } else {
-//                toolTipY = 0;
+                // 鼠标离开时重置 tooltip 动画
+                toolTipY = 0;
 //                fade = 1;
 //                soundPlayed = false;
 //                animationStarted = false;
@@ -226,32 +227,55 @@ public class TextureButton extends GuiButton {
                 GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
             	RenderHelperMW.drawTexturedRect(x-(width/1.7) , y , height/2, height);
             }
-            if (this.type==TypeEnum.Slot&&!this.itemStack.isEmpty() && isOver == 2) {
+            if ((this.type==TypeEnum.Slot||this.type==TypeEnum.SubSlot)&&!this.itemStack.isEmpty() && isOver == 2) {
+            	boolean depthEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_TEST);
+            	GlStateManager.disableDepth();
             	GlStateManager.pushMatrix();
             	GlStateManager.translate(0, 0, 500);
-            	double scale=1.5d;
+            	double scale=1.0d;
             	GlStateManager.scale(scale, scale, scale);
-            	this.toolTip=this.itemStack.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL).toString();
-                int toolTipWidth = mc.fontRenderer.getStringWidth(this.toolTip);
-                GuiUtils.renderRectWithOutline((int)(mouseX/scale), (int)((mouseY - 10)/scale), toolTipY, 10, colorTheme, colorTheme, 1);
-                if (toolTipY < (toolTipWidth + 2)) {
-
-                    int toolTipGap = (toolTipWidth + 2) - toolTipY;
-
-                    if (toolTipGap >= 10) {
-                        toolTipY = toolTipY + 10;
-                    } else {
-                        toolTipY = toolTipY + 1;
-                    }
-
-                } else if (toolTipY > (toolTipWidth + 2)) {
-                    toolTipY--;
-                }
-
-                if (toolTipY >= (toolTipWidth + 2)) {
-                    GuiUtils.renderText(this.toolTip, (int)((mouseX + 1)/scale), (int)((mouseY - 9)/scale), 0xFFFFFF);
-                }
+            	
+            	java.util.List<String> tooltipLines = this.itemStack.getTooltip(mc.player, mc.gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+            	
+            	int maxWidth = 0;
+            	for (String line : tooltipLines) {
+            	    int lineWidth = mc.fontRenderer.getStringWidth(line);
+            	    if (lineWidth > maxWidth) {
+            	        maxWidth = lineWidth;
+            	    }
+            	}
+            	
+            	int lineHeight = 10;
+            	int totalHeight = tooltipLines.size() * lineHeight;
+            	
+            	int targetHeight = totalHeight + 4;
+            	if (toolTipY < targetHeight) {
+            	    int heightGap = targetHeight - toolTipY;
+            	    if (heightGap >= 15) {
+            	        toolTipY = toolTipY + 3;
+            	    } else if (heightGap >= 5) {
+            	        toolTipY = toolTipY + 2;
+            	    } else {
+            	        toolTipY = toolTipY + 1;
+            	    }
+            	} else if (toolTipY > targetHeight) {
+            	    toolTipY--;
+            	}
+            	
+            	int tooltipX = (int)(mouseX/scale) + 12;
+            	int tooltipY = (int)(mouseY/scale);
+            	GuiUtils.renderRectWithOutline(tooltipX, tooltipY, maxWidth + 4, toolTipY, colorTheme, colorTheme, 1);
+            	
+            	if (toolTipY >= targetHeight - 2) {
+            	    for (int i = 0; i < tooltipLines.size(); i++) {
+            	        GuiUtils.renderText(tooltipLines.get(i), tooltipX + 2, tooltipY + 2 + (i * lineHeight), 0xFFFFFF);
+            	    }
+            	}
+            	
                 GlStateManager.popMatrix();
+                if (depthEnabled) {
+                    GlStateManager.enableDepth();
+                }
             }
 
             GuiUtils.renderCenteredTextWithShadow(displayText, ((int)x + width / 2) + xMovement, (int)y + (height - 8) / 2, isOver == 2 ? 0xFFFFFFFF : colorText, 0x000000);

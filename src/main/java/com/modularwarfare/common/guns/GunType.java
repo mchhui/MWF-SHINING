@@ -9,8 +9,9 @@ import com.modularwarfare.common.network.PacketPlaySound;
 import com.modularwarfare.common.textures.TextureEnumType;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.objects.SoundEntry;
 import com.modularwarfare.utility.MWSound;
+import com.modularwarfare.utility.SoundEntry;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.entity.EntityLivingBase;
@@ -28,6 +29,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 public class GunType extends BaseType {
@@ -120,6 +122,8 @@ public class GunType extends BaseType {
      * 类似专注轻机枪
      * */
     public float devotionSpeed=0;
+    
+    //2025.12.1 发现并没有实际作用
     /**
      * For when RPM is converted to ticks - Do not use
      */
@@ -190,6 +194,7 @@ public class GunType extends BaseType {
      * Modifier for setting the maximum yaw divergence when randomizing recoil (Recoil 2 + rndRecoil 0.5 == 1.5-2.5 Recoil range)
      * the first line is outdated;
      */
+    //2025.12.1发现并没有实际作用
     public float recoilAimReducer = 0.8F;
     
     public float recoilCrawlYawFactor = 0.5F;
@@ -209,6 +214,13 @@ public class GunType extends BaseType {
     public HashMap<AttachmentPresetEnum, ArrayList<String>> acceptedAttachments;
     
     public HashMap<AttachmentPresetEnum, String> defaultAttachments;
+
+    /**
+     * 配件前置要求
+     * key: 配件的internalName
+     * value: 该配件在此枪械上需要的前置配件internalName列表
+     */
+    public HashMap<String, String[]> attachmentRequirements;
 
     /**
      * 物品创建时自带的默认弹药或弹匣
@@ -365,22 +377,6 @@ public class GunType extends BaseType {
         }
     }
 
-    public static boolean isPackAPunched(ItemStack heldStack) {
-        if (heldStack.getTagCompound() != null) {
-            NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
-            return nbtTagCompound.hasKey("punched") ? nbtTagCompound.getBoolean("punched") : false;
-        }
-        return false;
-    }
-
-    public static void setPackAPunched(ItemStack heldStack, boolean bool) {
-        if (heldStack.getTagCompound() != null) {
-            NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
-            nbtTagCompound.setBoolean("punched", bool);
-            heldStack.setTagCompound(nbtTagCompound);
-        }
-    }
-
     public static WeaponFireMode getFireMode(ItemStack heldStack) {
         if (heldStack.getTagCompound() != null) {
             NBTTagCompound nbtTagCompound = heldStack.getTagCompound();
@@ -430,6 +426,40 @@ public class GunType extends BaseType {
         AttachmentType attachType = attachment.type;
         ArrayList<String> acceptItems = acceptedAttachments.get(attachType.attachmentType);
         return acceptItems != null && acceptItems.contains(attachType.internalName);
+    }
+
+    public static List<String> checkRequiredAttachments(ItemStack gunStack, GunType gunType, AttachmentType attachType) {
+        List<String> missingAttachments = new ArrayList<>();
+        
+        if (gunType.attachmentRequirements == null) {
+            return missingAttachments;
+        }
+        
+        String[] requiredAttachments = gunType.attachmentRequirements.get(attachType.internalName);
+        if (requiredAttachments == null || requiredAttachments.length == 0) {
+            return missingAttachments;
+        }
+        
+        for (String requiredAttachName : requiredAttachments) {
+            boolean found = false;
+            
+            for (AttachmentPresetEnum preset : AttachmentPresetEnum.values()) {
+                ItemStack installedAttach = getAttachment(gunStack, preset);
+                if (installedAttach != null && installedAttach.getItem() instanceof ItemAttachment) {
+                    ItemAttachment installedItem = (ItemAttachment) installedAttach.getItem();
+                    if (installedItem.type.internalName.equals(requiredAttachName)) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!found) {
+                missingAttachments.add(requiredAttachName);
+            }
+        }
+        
+        return missingAttachments;
     }
 
     @Override

@@ -72,7 +72,7 @@ public class PacketGunUnloadAttachment extends PacketBase {
 
                                             String attachmentDisplayName = itemAttachment.type.displayName != null ? 
                                                     itemAttachment.type.displayName : requiredAttachment;
-                                            String attachmentTypeKey = "mwf.dictionary." + attachment.typeName;
+                                            String attachmentTypeKey = "mwf:dictionary." + attachment.typeName;
                                             
                                             TextComponentTranslation message = new TextComponentTranslation("mwf.transform.cannot_remove_required", 
                                                     new TextComponentTranslation(attachmentTypeKey), attachmentDisplayName);
@@ -94,7 +94,7 @@ public class PacketGunUnloadAttachment extends PacketBase {
 
                                         String attachmentDisplayName = itemAttachment.type.displayName != null ? 
                                                 itemAttachment.type.displayName : requiredAttachment;
-                                        String attachmentTypeKey = "mwf.dictionary." + targetAttachmentType.typeName;
+                                        String attachmentTypeKey = "mwf:dictionary." + targetAttachmentType.typeName;
                                         
                                         TextComponentTranslation message = new TextComponentTranslation("mwf.transform.cannot_remove_required", 
                                                 new TextComponentTranslation(attachmentTypeKey), attachmentDisplayName);

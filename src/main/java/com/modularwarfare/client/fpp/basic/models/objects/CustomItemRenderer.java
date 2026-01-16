@@ -8,8 +8,8 @@ import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ShowHandArmorType;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.model.ModelCustomArmor;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 import com.modularwarfare.common.armor.ItemMWArmor;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;

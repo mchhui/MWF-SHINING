@@ -1,5 +1,6 @@
 package com.modularwarfare.client.fpp.enhanced.renderers;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
@@ -16,6 +17,7 @@ import com.modularwarfare.client.fpp.enhanced.configs.RenderType;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ThirdPerson.RenderElement;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGrenade;
+import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.WeaponAnimationType;
@@ -23,7 +25,6 @@ import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.loader.api.model.ObjModelRenderer;
 
 import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
@@ -427,13 +428,7 @@ public class RenderMelee extends CustomItemRenderer {
                             if (end_transform == null) {
                                 break sprint;
                             }
-                            if (!node.name.equals("root") && !node.name.equals("sprint_lefthand")
-                                    && !node.name.equals("sprint_righthand") && !node.name.equals("root_bone")
-                                    && !node.name.equals("sprint_lefthand_bone")
-                                    && !node.name.equals("sprint_righthand_bone")
-                                    && !node.name.equals("meleeModel")
-                                    && !node.name.equals("meleeModel_bone")
-                                    && !node.name.endsWith("_sprint")) {
+                            if (!ModConfig.INSTANCE.sprintBlendNodes.isBlendableNode(node.name)) {
                                 break sprint;
                             }
                             Quaternionf quat = new Quaternionf();

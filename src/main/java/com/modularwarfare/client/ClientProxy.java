@@ -22,14 +22,15 @@ import com.modularwarfare.client.fpp.enhanced.models.ModelEnhancedGun;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGrenadeEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
+import com.modularwarfare.client.gui.hud.AttachmentUI;
+import com.modularwarfare.client.gui.hud.FlashSystem;
+import com.modularwarfare.client.gui.hud.GunTransformHUD;
+import com.modularwarfare.client.gui.hud.GunUI;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.handler.DecalDrawer;
 import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.handler.RenderGuiHandler;
 import com.modularwarfare.client.handler.SmoothSwingTicker;
-import com.modularwarfare.client.hud.AttachmentUI;
-import com.modularwarfare.client.hud.FlashSystem;
-import com.modularwarfare.client.hud.GunTransformHUD;
-import com.modularwarfare.client.hud.GunUI;
 import com.modularwarfare.client.input.HudHoldUtil;
 import com.modularwarfare.client.killchat.KillFeedManager;
 import com.modularwarfare.client.killchat.KillFeedRender;
@@ -39,6 +40,7 @@ import com.modularwarfare.client.patch.customnpc.CustomNPCListener;
 import com.modularwarfare.client.patch.galacticraft.GCCompatInterop;
 import com.modularwarfare.client.patch.galacticraft.GCDummyInterop;
 import com.modularwarfare.client.patch.obfuscate.ObfuscateCompatInterop;
+import com.modularwarfare.client.renderers.RenderCustomFire;
 import com.modularwarfare.client.renderers.RenderItemLoot;
 import com.modularwarfare.client.renderers.RenderProjectile;
 import com.modularwarfare.client.renderers.RenderShell;
@@ -54,8 +56,7 @@ import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.entity.EntityBulletClient;
 import com.modularwarfare.common.entity.EntityExplosiveProjectile;
 import com.modularwarfare.common.entity.EntityThrowerProjectile;
-import com.modularwarfare.common.entity.decals.EntityBulletHole;
-import com.modularwarfare.common.entity.decals.EntityShell;
+import com.modularwarfare.common.entity.environment.EntityShell;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
@@ -72,11 +73,12 @@ import com.modularwarfare.common.particle.EntityBloodFX;
 import com.modularwarfare.common.particle.ParticleExplosion;
 import com.modularwarfare.common.particle.ParticleRocket;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.objects.SoundEntry;
-import com.modularwarfare.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.utility.MWResourcePack;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.ModUtil;
+import com.modularwarfare.utility.SoundEntry;
+import com.modularwarfare.utility.raycast.obb.OBBPlayerManager;
+
 import moe.komi.mwprotect.IZip;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
@@ -132,8 +134,8 @@ import java.util.function.Predicate;
 import static com.modularwarfare.ModularWarfare.contentPacks;
 import com.modularwarfare.client.handler.SensitivityHandler;
 import com.modularwarfare.common.entity.EntityCustomFire;
-import com.modularwarfare.client.renderer.RenderCustomFire;
 import com.modularwarfare.client.sound.DSSoundSystem;
+import safx.client.particle.SAFX;
 
 public class ClientProxy extends CommonProxy {
 
@@ -242,6 +244,7 @@ public class ClientProxy extends CommonProxy {
         SmoothSwingTicker.startSmoothSwingTimer();
 
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(new DecalDrawer());
         MinecraftForge.EVENT_BUS.register(new CPEventHandler());
         startPatches();
         Minecraft.getMinecraft().gameSettings.useVbo = false;
@@ -354,6 +357,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void init() {
         super.init();
+        SAFX.loadFXFromContentPacks();
         HudHoldUtil.disableHideGui(ModConfig.INSTANCE.general.disableHideGui);
         MinecraftForge.EVENT_BUS.register(HudHoldUtil.class);
 
@@ -551,6 +555,15 @@ public class ClientProxy extends CommonProxy {
             forceReload();  
         }
         System.gc();
+    }
+
+    @Override
+    public void reloadFX() {
+        Minecraft.getMinecraft().addScheduledTask(() -> {
+            SAFX.FXList.clear();
+            SAFX.loadFXList();
+            ModularWarfare.LOGGER.info("Reloaded SAFX. You need use Sneak + F3 to reload textures.");
+        });
     }
 
     @Override
@@ -788,7 +801,7 @@ public class ClientProxy extends CommonProxy {
     private ItemModelExport createJson(BaseType type) {
         ItemModelExport exportedModel = new ItemModelExport();
 
-        if (!(type instanceof GunType) && !(type instanceof GrenadeType)) {
+        if (!(type instanceof GunType) && !(type instanceof GrenadeType) && !(type instanceof MeleeType)) {
             exportedModel.display.thirdperson_lefthand.scale[0] = 0.4f;
             exportedModel.display.thirdperson_lefthand.scale[1] = 0.4f;
             exportedModel.display.thirdperson_lefthand.scale[2] = 0.4f;
@@ -880,9 +893,6 @@ public class ClientProxy extends CommonProxy {
     public void registerEntities(RegistryEvent.Register<EntityEntry> event) {
 
         if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT) {
-
-            //BULLET HOLE
-            RenderingRegistry.registerEntityRenderingHandler(EntityBulletHole.class, RenderDecal.FACTORY);
 
             //RENDER SHELL EJECTION
             RenderingRegistry.registerEntityRenderingHandler(EntityShell.class, RenderShell.FACTORY);

@@ -1,8 +1,8 @@
 package com.modularwarfare.client.model;
 
+import com.modularwarfare.client.objloader.MWModelBase;
+import com.modularwarfare.client.objloader.api.ObjModelLoader;
 import com.modularwarfare.common.guns.BulletType;
-import com.modularwarfare.loader.MWModelBase;
-import com.modularwarfare.loader.api.ObjModelLoader;
 
 public class ModelShell extends MWModelBase {
 

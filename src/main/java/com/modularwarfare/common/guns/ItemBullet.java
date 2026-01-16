@@ -2,7 +2,7 @@ package com.modularwarfare.common.guns;
 
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.script.ScriptHost;
+import com.modularwarfare.utility.script.ScriptHost;
 import com.modularwarfare.ModularWarfare;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.ItemStack;
