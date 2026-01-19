@@ -124,11 +124,11 @@ public class ScriptAPI {
                 if (itemStack != null && itemStack.getItem() != Items.AIR) {
                     try {
                         AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-                        if (attachmentType != null && attachmentType.displayName != null) {
-                            list.add(attachmentType.displayName);
+                        if (attachmentType != null && attachmentType.internalName != null) {
+                            list.add(attachmentType.internalName);
                         } else {
                             if (ModularWarfare.DEV_ENV) {
-                                ModularWarfare.LOGGER.warn("[ScriptAPI] Installed attachment type or displayName is null for attachment: " + attachment.name());
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Installed attachment type or internalName is null for attachment: " + attachment.name());
                             }
                         }
                     } catch (Exception e) {
@@ -198,11 +198,11 @@ public class ScriptAPI {
                 v.forEach((name)->{
                     if (ModularWarfare.attachmentTypes.containsKey(name) && ModularWarfare.attachmentTypes.get(name) != null) {
                         AttachmentType attachmentType = ModularWarfare.attachmentTypes.get(name).type;
-                        if (attachmentType != null && attachmentType.displayName != null) {
-                            map.get(k.typeName).add(attachmentType.displayName);
+                        if (attachmentType != null && attachmentType.internalName != null) {
+                            map.get(k.typeName).add(attachmentType.internalName);
                         } else {
                             if (ModularWarfare.DEV_ENV) {
-                                ModularWarfare.LOGGER.warn("[ScriptAPI] Attachment type or displayName is null for: " + name);
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Attachment type or internalName is null for: " + name);
                             }
                         }
                     } else {

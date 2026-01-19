@@ -258,7 +258,7 @@ function updateGunTooltip(stack, tiplist) {
                         for (var x = 0; x < atts.size(); x++) {
                             var attachmentName = atts.get(x);
                             if (attachmentName != null) {
-                                tiplist.add(ScriptAPI.Lang.format("§7 -" + attachmentName));
+                                tiplist.add("§7 -" + ScriptAPI.Lang.format("item." + attachmentName + ".name"));
                             } else {
                                 ScriptAPI.Logger.warn("Attachment at index " + x + " is null for type " + typeName + " in gun: " + ScriptAPI.Stack.getDisplayName(stack));
                             }
@@ -361,7 +361,7 @@ function updateGunTooltip(stack, tiplist) {
             for (var i = 0; i < attachmentList.size(); i++) {
                 var attachmentName = attachmentList.get(i);
                 if (attachmentName != null) {
-                    tiplist.add("§7- " + attachmentName);
+                    tiplist.add("§7- " + ScriptAPI.Lang.format("item." + attachmentName + ".name"));
                 } else {
                     ScriptAPI.Logger.warn("Installed attachment at index " + i + " is null for gun: " + ScriptAPI.Stack.getDisplayName(stack));
                 }
