@@ -147,3 +147,14 @@ mwf.transform.cannot_remove_required=Невозможно снять необх�
 
 # Установка аксессуаров
 mwf.attachment.missing_required=Невозможно установить аксессуар %1$s! Отсутствуют необходимые аксессуары: %2$s
+
+# Холодное оружие
+mwf:gui.tooltip.melee.lightattack=§9§l[Легкая атака]
+mwf:gui.tooltip.melee.heavyattack=§9§l[Тяжелая атака]
+mwf:gui.tooltip.melee.phase=Фаза
+mwf:gui.tooltip.melee.damage=Урон
+mwf:gui.tooltip.melee.range=Дальность
+mwf:gui.tooltip.melee.area=Массовая атака
+mwf:gui.tooltip.melee.single=Одиночная цель
+mwf:gui.tooltip.melee.blocked=Блокируется блоками
+mwf:gui.tooltip.melee.ignoreblock=Игнорирует блоки

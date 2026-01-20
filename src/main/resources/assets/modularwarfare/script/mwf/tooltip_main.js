@@ -55,6 +55,9 @@ function updateTooltip(stack, tiplist) {
     if (ScriptAPI.Backpack.isBackpack(stack)) {
         updateBackpackTooltip(stack, tiplist);
     }
+    if (ScriptAPI.Melee.isMelee(stack)) {
+        updateMeleeTooltip(stack, tiplist);
+    }
 }
 
 function updateAmmoTooltip(stack, tiplist) {
@@ -69,7 +72,7 @@ function updateAmmoTooltip(stack, tiplist) {
             for (var i = 0; i < ammoBullets.size(); i++) {
                 var bulletName = ammoBullets.get(i);
                 if (bulletName != null) {
-                    tiplist.add(ScriptAPI.Lang.format("§7 -" + bulletName));
+                    tiplist.add("§7 -" + ScriptAPI.Lang.format("item." + bulletName + ".name"));
                 } else {
                     ScriptAPI.Logger.warn("Accepted bullet at index " + i + " is null for ammo: " + ScriptAPI.Stack.getDisplayName(stack));
                 }
@@ -238,7 +241,7 @@ function updateGunTooltip(stack, tiplist) {
             for (var i = 0; i < ammoBullets.size(); i++) {
                 var ammoOrBulletName = ammoBullets.get(i);
                 if (ammoOrBulletName != null) {
-                    tiplist.add(ScriptAPI.Lang.format("§7 -" + ammoOrBulletName));
+                    tiplist.add("§7 -" + ScriptAPI.Lang.format("item." + ammoOrBulletName + ".name"));
                 } else {
                     ScriptAPI.Logger.warn("Accepted ammo/bullet at index " + i + " is null for gun: " + ScriptAPI.Stack.getDisplayName(stack));
                 }
@@ -346,7 +349,7 @@ function updateGunTooltip(stack, tiplist) {
 
     var finalAccuracy = 1 / ScriptAPI.Gun.getGunBulletSpread(stack) * 100;
     if (!ScriptAPI.Stack.isEmpty(bulletStack)) {
-        finalAccuracy *= ScriptAPI.Bullet.getAccuracyFactor(bulletStack);
+        finalAccuracy /= ScriptAPI.Bullet.getAccuracyFactor(bulletStack);
     }
 
     tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.accuracy") + ": §7" + finalAccuracy.toFixed(1) + "%");
@@ -377,10 +380,23 @@ function updateGunTooltip(stack, tiplist) {
 function addPropertyLine(tiplist, labelKey, factor, isInverse) {
     if (factor == 1.0) return false;
     
-    var changePercent = ((factor - 1.0) * 100).toFixed(1);
-    var isPositive = isInverse ? (factor < 1.0) : (factor > 1.0);
+    var changePercent;
+    var isPositive;
+    
+    if (isInverse) {
+        isPositive = factor < 1.0;
+        if (labelKey.indexOf("accuracy") >= 0) {
+            changePercent = ((1.0 - factor) * 100).toFixed(1);
+        } else {
+            changePercent = ((factor - 1.0) * 100).toFixed(1);
+        }
+    } else {
+        changePercent = ((factor - 1.0) * 100).toFixed(1);
+        isPositive = factor > 1.0;
+    }
+    
     var colorCode = isPositive ? "§a" : "§c";
-    var sign = factor > 1.0 ? "+" : "";
+    var sign = (changePercent > 0) ? "+" : "";
     
     tiplist.add("§7- " + ScriptAPI.Lang.format(labelKey) + ": " + colorCode + sign + changePercent + "%");
     return true;
@@ -474,7 +490,7 @@ function updateAttachmentTooltip(stack, tiplist) {
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.yaw", 
             ScriptAPI.Attachment.getBarrelRecoilYawFactor(stack), true);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.accuracy", 
-            ScriptAPI.Attachment.getBarrelAccuracyFactor(stack), false);
+            ScriptAPI.Attachment.getBarrelAccuracyFactor(stack), true);
     }
 
     if (attachmentTypeName === "grip") {
@@ -519,7 +535,7 @@ function updateAttachmentTooltip(stack, tiplist) {
         }
         
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.accuracy", 
-            ScriptAPI.Attachment.getLaserAccuracyFactor(stack), false);
+            ScriptAPI.Attachment.getLaserAccuracyFactor(stack), true);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.aimspeed", 
             ScriptAPI.Attachment.getLaserAimSpeedFactor(stack), false);
         hasProperties |= addPropertyLine(tiplist, "mwf:gui.tooltip.attachment.recoil.pitch", 
@@ -799,6 +815,75 @@ function updateBackpackTooltip(stack, tiplist) {
                 var boostCooldown = ScriptAPI.Backpack.getJetElytraBoostCoolTime(stack);
                 tiplist.add("§7  - " + ScriptAPI.Lang.format("mwf:gui.tooltip.backpack.duration") + ": " + (boostDuration / 20).toFixed(1) + "s");
                 tiplist.add("§7  - " + ScriptAPI.Lang.format("mwf:gui.tooltip.backpack.cooldown") + ": " + (boostCooldown / 20).toFixed(1) + "s");
+            }
+        }
+    }
+}
+
+function updateMeleeTooltip(stack, tiplist) {
+    if (!ScriptAPI.Melee.isMelee(stack)) {
+        return;
+    }
+    
+    var lightCount = ScriptAPI.Melee.getLightAttackCount(stack);
+    var heavyCount = ScriptAPI.Melee.getHeavyAttackCount(stack);
+    
+    // Light attack info
+    if (lightCount > 0) {
+        tiplist.add("§9§l" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.lightattack"));
+        for (var i = 0; i < lightCount; i++) {
+            var damage = ScriptAPI.Melee.getLightAttackDamage(stack, i);
+            var range = ScriptAPI.Melee.getLightAttackRange(stack, i);
+            var penetration = ScriptAPI.Melee.getLightAttackPenetration(stack, i);
+            var canBounced = ScriptAPI.Melee.getLightAttackCanBounced(stack, i);
+            
+            if (lightCount > 1) {
+                var phaseNum = (i + 1) | 0; // Convert to integer
+                tiplist.add("§7" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.phase") + " " + phaseNum);
+            }
+            tiplist.add("§3  " + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.damage") + ": §7" + Math.round(damage));
+            tiplist.add("§3  " + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.range") + ": §7" + Math.round(range) + "m");
+            
+            if (penetration) {
+                tiplist.add("§7  ▪ §a" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.area"));
+            } else {
+                tiplist.add("§7  ▪ §c" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.single"));
+            }
+            
+            if (canBounced) {
+                tiplist.add("§7  ▪ §c" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.blocked"));
+            } else {
+                tiplist.add("§7  ▪ §a" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.ignoreblock"));
+            }
+        }
+    }
+    
+    // Heavy attack info
+    if (heavyCount > 0) {
+        tiplist.add("§9§l" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.heavyattack"));
+        for (var i = 0; i < heavyCount; i++) {
+            var damage = ScriptAPI.Melee.getHeavyAttackDamage(stack, i);
+            var range = ScriptAPI.Melee.getHeavyAttackRange(stack, i);
+            var penetration = ScriptAPI.Melee.getHeavyAttackPenetration(stack, i);
+            var canBounced = ScriptAPI.Melee.getHeavyAttackCanBounced(stack, i);
+            
+            if (heavyCount > 1) {
+                var phaseNum = (i + 1) | 0; // Convert to integer
+                tiplist.add("§7" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.phase") + " " + phaseNum);
+            }
+            tiplist.add("§3  " + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.damage") + ": §7" + Math.round(damage));
+            tiplist.add("§3  " + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.range") + ": §7" + Math.round(range) + "m");
+            
+            if (penetration) {
+                tiplist.add("§7  ▪ §a" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.area"));
+            } else {
+                tiplist.add("§7  ▪ §c" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.single"));
+            }
+            
+            if (canBounced) {
+                tiplist.add("§7  ▪ §c" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.blocked"));
+            } else {
+                tiplist.add("§7  ▪ §a" + ScriptAPI.Lang.format("mwf:gui.tooltip.melee.ignoreblock"));
             }
         }
     }

@@ -147,3 +147,14 @@ mwf.transform.cannot_remove_required=无法移除当前形态所需的配件：%
 
 # 配件安装相关
 mwf.attachment.missing_required=无法安装配件 %1$s！缺少前置配件：%2$s
+
+# 近战武器相关
+mwf:gui.tooltip.melee.lightattack=§9§l[轻击]
+mwf:gui.tooltip.melee.heavyattack=§9§l[重击]
+mwf:gui.tooltip.melee.phase=阶段
+mwf:gui.tooltip.melee.damage=伤害
+mwf:gui.tooltip.melee.range=距离
+mwf:gui.tooltip.melee.area=范围攻击
+mwf:gui.tooltip.melee.single=单体攻击
+mwf:gui.tooltip.melee.blocked=方块阻挡
+mwf:gui.tooltip.melee.ignoreblock=无视阻挡

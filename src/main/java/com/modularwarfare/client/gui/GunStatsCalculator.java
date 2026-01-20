@@ -158,7 +158,7 @@ public class GunStatsCalculator {
         
         stats.recoilPitch *= recoilPitchFactor;
         stats.recoilYaw *= recoilYawFactor;
-        stats.accuracy *= accuracyFactor;
+        stats.accuracy /= accuracyFactor;
         stats.aimSpeed *= aimSpeedFactor;
         stats.shakeBackwards = baseShakeBackwards * shakeBackwardsFactor;
         stats.shakeUpwards = baseShakeUpwards * shakeUpwardsFactor;

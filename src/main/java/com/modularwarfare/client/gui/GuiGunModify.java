@@ -1715,8 +1715,8 @@ public class GuiGunModify extends GuiScreen {
 			GunStatsCalculator.getStatPercentage(stats.headshotBonus, GunStatsCalculator.getMaxHeadshotBonusReference(), false),
 			GunStatsCalculator.getStatPercentage(stats.accuracy, 1.0f, false),
 			GunStatsCalculator.getStatPercentage(stats.fireRate, 1200f, false),
-			GunStatsCalculator.getStatPercentage(stats.recoilPitch, 8f, true),
-			GunStatsCalculator.getStatPercentage(stats.recoilYaw, 8f, true),
+			GunStatsCalculator.getStatPercentage(stats.recoilPitch, 8f, false),
+			GunStatsCalculator.getStatPercentage(stats.recoilYaw, 8f, false),
 			GunStatsCalculator.getStatPercentage(stats.aimSpeed, 0.01f, false),
 			GunStatsCalculator.getStatPercentage(stats.shakeBackwards, 5.0f, true),
 			GunStatsCalculator.getStatPercentage(stats.shakeUpwards, 5.0f, true),
@@ -1762,13 +1762,25 @@ public class GuiGunModify extends GuiScreen {
 			float percentage = animatedStatPercentages[i];
 			double fillWidth = barWidth * percentage;
 			
+			boolean isRecoilStat = (i == 4 || i == 5);
+			
 			int fillColor;
-			if (percentage < 0.33f) {
-				fillColor = ColorUtils.getARGB(200, 100, 50, 180);
-			} else if (percentage < 0.66f) {
-				fillColor = ColorUtils.getARGB(200, 180, 50, 180);
+			if (isRecoilStat) {
+				if (percentage < 0.33f) {
+					fillColor = ColorUtils.getARGB(100, 200, 80, 180);  // Green
+				} else if (percentage < 0.66f) {
+					fillColor = ColorUtils.getARGB(200, 180, 50, 180);  // Yellow
+				} else {
+					fillColor = ColorUtils.getARGB(200, 100, 50, 180);  // Red
+				}
 			} else {
-				fillColor = ColorUtils.getARGB(100, 200, 80, 180);
+				if (percentage < 0.33f) {
+					fillColor = ColorUtils.getARGB(200, 100, 50, 180);  // Red
+				} else if (percentage < 0.66f) {
+					fillColor = ColorUtils.getARGB(200, 180, 50, 180);  // Yellow
+				} else {
+					fillColor = ColorUtils.getARGB(100, 200, 80, 180);  // Green
+				}
 			}
 			
 			if (fillWidth > 0) {
@@ -1786,7 +1798,12 @@ public class GuiGunModify extends GuiScreen {
 			GlStateManager.pushMatrix();
 			double valueScale = 1.3d;
 			GlStateManager.scale(valueScale, valueScale, valueScale);
-			int valueColor = percentage > 0.5f ? 0xAAFFAA : (percentage > 0.3f ? 0xFFFFAA : 0xFFAAAA);
+			int valueColor;
+			if (isRecoilStat) {
+				valueColor = percentage < 0.3f ? 0xAAFFAA : (percentage < 0.5f ? 0xFFFFAA : 0xFFAAAA);
+			} else {
+				valueColor = percentage > 0.5f ? 0xAAFFAA : (percentage > 0.3f ? 0xFFFFAA : 0xFFAAAA);
+			}
 			int valueX = (int)((barX + barWidth - (50 * uiScale)) / valueScale);
 			int valueY = (int)((barY + (2 * uiScale)) / valueScale);
 			RenderHelperMW.renderText(statDisplayValues[i], valueX, valueY, valueColor);

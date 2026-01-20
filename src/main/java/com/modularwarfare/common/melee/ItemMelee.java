@@ -1,19 +1,12 @@
 package com.modularwarfare.common.melee;
 
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Range;
-import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
-import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemGun;
-import com.modularwarfare.common.melee.MeleeType.AnimationInfo;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -22,14 +15,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemSword;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
-import javax.annotation.Nullable;
-import java.util.List;
 import java.util.function.Function;
 
 public class ItemMelee extends BaseItem {
@@ -60,30 +48,8 @@ public class ItemMelee extends BaseItem {
         this.type = (MeleeType) type;
     }
 
-    @SideOnly(Side.CLIENT)
-    public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
-
-        float damage = 0;
-        float damageRange = 0;
-        float heavydamage = 0;
-        float heavydamagerange = 0;
-
-        damage = type.getAnimationInfo(AnimationMeleeType.ATTACK, 0).damage;
-        damageRange = type.getAnimationInfo(AnimationMeleeType.ATTACK, 0).range;
-        heavydamage = type.getAnimationInfo(AnimationMeleeType.HEAVYATTACK, 0).damage;
-        heavydamagerange = type.getAnimationInfo(AnimationMeleeType.HEAVYATTACK, 0).range;
-
-        tooltip.add(generateLoreLine("轻击伤害", String.valueOf(damage)));
-        tooltip.add(generateLoreLine("轻击距离", String.valueOf(damageRange)));
-        tooltip.add(generateLoreLine("重击伤害", String.valueOf(heavydamage)));
-        tooltip.add(generateLoreLine("重击距离", String.valueOf(heavydamagerange)));
-
-        // tooltip.add(generateLoreLine("Damage", String.valueOf(damage)));
-        // tooltip.add(generateLoreLine("Range", String.valueOf(damageRange)));
-        // tooltip.add(generateLoreLine("HeavyDamage", String.valueOf(heavydamage)));
-        // tooltip.add(generateLoreLine("HeavyRange",
-        // String.valueOf(heavydamagerange)));
-    }
+    // Tooltip is now handled by script system (tooltip_main.js)
+    // See updateMeleeTooltip() function
 
     public float getDestroySpeed(ItemStack stack, IBlockState state) {
         Block block = state.getBlock();

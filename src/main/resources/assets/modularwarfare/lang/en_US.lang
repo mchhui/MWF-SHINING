@@ -147,3 +147,14 @@ mwf.transform.cannot_remove_required=Cannot remove required attachment for curre
 
 # Attachment Installation
 mwf.attachment.missing_required=Cannot install attachment %1$s! Missing required attachments: %2$s
+
+# Melee Weapons
+mwf:gui.tooltip.melee.lightattack=§9§l[Light Attack]
+mwf:gui.tooltip.melee.heavyattack=§9§l[Heavy Attack]
+mwf:gui.tooltip.melee.phase=Phase
+mwf:gui.tooltip.melee.damage=Damage
+mwf:gui.tooltip.melee.range=Range
+mwf:gui.tooltip.melee.area=Area Attack
+mwf:gui.tooltip.melee.single=Single Target
+mwf:gui.tooltip.melee.blocked=Blocked by Blocks
+mwf:gui.tooltip.melee.ignoreblock=Ignore Blocks

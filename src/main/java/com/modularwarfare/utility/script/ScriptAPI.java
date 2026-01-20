@@ -28,6 +28,9 @@ import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.PotionEntry;
 import com.modularwarfare.common.guns.WeaponFireMode;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.common.melee.MeleeType;
+import com.modularwarfare.client.fpp.enhanced.AnimationMeleeType;
 
 import net.minecraft.client.resources.I18n;
 import net.minecraft.init.Items;
@@ -46,6 +49,7 @@ public class ScriptAPI {
     public Grenade Grenade = new Grenade();
     public Armor Armor = new Armor();
     public Backpack Backpack = new Backpack();
+    public Melee Melee = new Melee();
     public Logger Logger = new Logger();
 
     public static class Lang {
@@ -224,11 +228,11 @@ public class ScriptAPI {
                 for(String name:((ItemGun)stack.getItem()).type.acceptedAmmo) {
                     if (ModularWarfare.ammoTypes.containsKey(name) && ModularWarfare.ammoTypes.get(name) != null) {
                         AmmoType ammoType = ModularWarfare.ammoTypes.get(name).type;
-                        if (ammoType != null && ammoType.displayName != null) {
-                            list.add(ammoType.displayName);
+                        if (ammoType != null && ammoType.internalName != null) {
+                            list.add(ammoType.internalName);
                         } else {
                             if (ModularWarfare.DEV_ENV) {
-                                ModularWarfare.LOGGER.warn("[ScriptAPI] Ammo type or displayName is null for: " + name);
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Ammo type or internalName is null for: " + name);
                             }
                         }
                     } else {
@@ -242,11 +246,11 @@ public class ScriptAPI {
                 for(String name:((ItemGun)stack.getItem()).type.acceptedBullets) {
                     if (ModularWarfare.bulletTypes.containsKey(name) && ModularWarfare.bulletTypes.get(name) != null) {
                         BulletType bulletType = ModularWarfare.bulletTypes.get(name).type;
-                        if (bulletType != null && bulletType.displayName != null) {
-                            list.add(bulletType.displayName);
+                        if (bulletType != null && bulletType.internalName != null) {
+                            list.add(bulletType.internalName);
                         } else {
                             if (ModularWarfare.DEV_ENV) {
-                                ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet type or displayName is null for: " + name);
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet type or internalName is null for: " + name);
                             }
                         }
                     } else {
@@ -288,11 +292,11 @@ public class ScriptAPI {
                 for(String name:((ItemAmmo)stack.getItem()).type.subAmmo) {
                     if (ModularWarfare.bulletTypes.containsKey(name) && ModularWarfare.bulletTypes.get(name) != null) {
                         BulletType bulletType = ModularWarfare.bulletTypes.get(name).type;
-                        if (bulletType != null && bulletType.displayName != null) {
-                            list.add(bulletType.displayName);
+                        if (bulletType != null && bulletType.internalName != null) {
+                            list.add(bulletType.internalName);
                         } else {
                             if (ModularWarfare.DEV_ENV) {
-                                ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet type or displayName is null for: " + name);
+                                ModularWarfare.LOGGER.warn("[ScriptAPI] Bullet type or internalName is null for: " + name);
                             }
                         }
                     } else {
@@ -836,6 +840,109 @@ public class ScriptAPI {
         public int getJetElytraBoostCoolTime(ItemStack stack) {
             BackpackType type = getBackpackType(stack);
             return type != null ? type.jetElytraBoostCoolTime : 0;
+        }
+    }
+    
+    public static class Melee {
+        public boolean isMelee(ItemStack stack) {
+            return stack.getItem() instanceof ItemMelee;
+        }
+        
+        public MeleeType getMeleeType(ItemStack stack) {
+            if (stack.getItem() instanceof ItemMelee) {
+                return ((ItemMelee) stack.getItem()).type;
+            }
+            return null;
+        }
+        
+        // Light attack methods
+        public int getLightAttackCount(ItemStack stack) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null || type.attack == null) {
+                return 0;
+            }
+            return type.attack.length;
+        }
+        
+        public float getLightAttackDamage(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return 0;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.ATTACK, index);
+            return info != null ? info.damage : 0;
+        }
+        
+        public float getLightAttackRange(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return 0;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.ATTACK, index);
+            return info != null ? info.range : 0;
+        }
+        
+        public boolean getLightAttackPenetration(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return false;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.ATTACK, index);
+            return info != null && info.attackPenetration;
+        }
+        
+        public boolean getLightAttackCanBounced(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return false;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.ATTACK, index);
+            return info != null && info.canBounced;
+        }
+        
+        // Heavy attack methods
+        public int getHeavyAttackCount(ItemStack stack) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null || type.attackHeavy == null) {
+                return 0;
+            }
+            return type.attackHeavy.length;
+        }
+        
+        public float getHeavyAttackDamage(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return 0;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.HEAVYATTACK, index);
+            return info != null ? info.damage : 0;
+        }
+        
+        public float getHeavyAttackRange(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return 0;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.HEAVYATTACK, index);
+            return info != null ? info.range : 0;
+        }
+        
+        public boolean getHeavyAttackPenetration(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return false;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.HEAVYATTACK, index);
+            return info != null && info.attackPenetration;
+        }
+        
+        public boolean getHeavyAttackCanBounced(ItemStack stack, int index) {
+            MeleeType type = getMeleeType(stack);
+            if (type == null) {
+                return false;
+            }
+            MeleeType.AnimationInfo info = type.getAnimationInfo(AnimationMeleeType.HEAVYATTACK, index);
+            return info != null && info.canBounced;
         }
     }
     
