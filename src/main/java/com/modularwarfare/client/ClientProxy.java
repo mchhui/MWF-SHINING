@@ -122,6 +122,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -718,7 +719,7 @@ public class ClientProxy extends CommonProxy {
                                 }
                             }
                             jsonEntries.add("}");
-                            Files.write(soundsFile, jsonEntries, Charset.forName("UTF-8"));
+                            Files.write(soundsFile, jsonEntries, StandardCharsets.UTF_8);
                         }
                     }
                 }
@@ -784,7 +785,7 @@ public class ClientProxy extends CommonProxy {
                                     jsonEntries.add(String.format(format, type.internalName, type.displayName));
                                 }
                             }
-                            Files.write(langPath, jsonEntries, Charset.forName("UTF-8"));
+                            Files.write(langPath, jsonEntries, StandardCharsets.UTF_8);
                         }
                     }
                 }

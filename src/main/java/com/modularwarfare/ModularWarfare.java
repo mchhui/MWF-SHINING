@@ -87,6 +87,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -262,7 +263,7 @@ public class ModularWarfare {
                 if (contentPackDir.exists() && contentPackDir.isDirectory()) {
                     File renderConfig = new File(contentPackDir, "/" + baseType.getAssetDir() + "/render");
                     File typeRender = new File(renderConfig, baseType.internalName + ".render.json");
-                    JsonReader jsonReader = new JsonReader(new FileReader(typeRender));
+                    JsonReader jsonReader = new JsonReader(new InputStreamReader(new FileInputStream(typeRender), StandardCharsets.UTF_8));
                     return GSONUtils.fromJson(gson, jsonReader, typeClass, baseType.internalName + ".render.json");
                 }
             } catch (JsonParseException | FileNotFoundException e) {
@@ -314,7 +315,7 @@ public class ModularWarfare {
                         for (File typeFile : subFolder.listFiles()) {
                             try {
                                 if (typeFile.isFile()) {
-                                    JsonReader jsonReader = new JsonReader(new FileReader(typeFile));
+                                    JsonReader jsonReader = new JsonReader(new InputStreamReader(new FileInputStream(typeFile), StandardCharsets.UTF_8));
                                     BaseType parsedType = GSONUtils.fromJson(gson, jsonReader, type.typeClass, typeFile.getName());
 
                                     parsedType.id = type.id;
@@ -341,7 +342,7 @@ public class ModularWarfare {
                         if (typeFile.getName().endsWith(".js")) {
                             String text = "";
                             try {
-                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")));
+                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
                                 String temp;
                                 while ((temp = bufferedReader.readLine()) != null) {
                                     text += temp;
@@ -369,7 +370,7 @@ public class ModularWarfare {
                         if (typeFile.getName().endsWith(".json")) {
                             String text = "";
                             try {
-                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8")));
+                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
                                 String temp;
                                 while ((temp = bufferedReader.readLine()) != null) {
                                     text += temp;
@@ -428,7 +429,7 @@ public class ModularWarfare {
                             String text = "";
                             try {
                                 InputStream inputStream = fileHeader.getInputStream();
-                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName("UTF-8")));
+                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                                 String temp;
                                 while ((temp = bufferedReader.readLine()) != null) {
                                     text += temp;
@@ -452,7 +453,7 @@ public class ModularWarfare {
                             String text = "";
                             try {
                                 InputStream inputStream = fileHeader.getInputStream();
-                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, Charset.forName("UTF-8")));
+                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
                                 String temp;
                                 while ((temp = bufferedReader.readLine()) != null) {
                                     text += temp;

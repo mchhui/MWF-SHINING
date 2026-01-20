@@ -60,7 +60,7 @@ public class CommandKit extends CommandBase {
                 }
                 if (sender != null) {
                     try {
-                        JsonReader jsonReader = new JsonReader(new FileReader(KIT_FILE));
+                        JsonReader jsonReader = new JsonReader(new InputStreamReader(new FileInputStream(KIT_FILE), StandardCharsets.UTF_8));
                         Kits kits = gson.fromJson(jsonReader, Kits.class);
 
                         Kits.Kit kit = null;
@@ -119,7 +119,7 @@ public class CommandKit extends CommandBase {
                     compound.setTag("items", kitData);
 
                     try {
-                        JsonReader jsonReader = new JsonReader(new FileReader(KIT_FILE));
+                        JsonReader jsonReader = new JsonReader(new InputStreamReader(new FileInputStream(KIT_FILE), StandardCharsets.UTF_8));
                         Kits kits = gson.fromJson(jsonReader, Kits.class);
 
                         Kits.Kit kit = new Kits.Kit();
@@ -159,7 +159,7 @@ public class CommandKit extends CommandBase {
                 }
             } else if (args[0].equalsIgnoreCase("delete") && args.length == 2) {
                 try {
-                    JsonReader jsonReader = new JsonReader(new FileReader(KIT_FILE));
+                    JsonReader jsonReader = new JsonReader(new InputStreamReader(new FileInputStream(KIT_FILE), StandardCharsets.UTF_8));
                     Kits kits = gson.fromJson(jsonReader, Kits.class);
 
                     boolean found = false;

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -112,7 +113,7 @@ public class ScriptHost {
         if (scriptEngine != null) {
             try {
                 InputStream inputStream = ScriptHost.class.getClassLoader().getResourceAsStream("assets/modularwarfare/script/"+scriptLoc+".js");
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream,Charset.forName("UTF-8")));
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream,StandardCharsets.UTF_8));
                 String temp;
                 while ((temp = bufferedReader.readLine()) != null) {
                     text += temp+"\n";
@@ -137,6 +138,6 @@ public class ScriptHost {
     }
 
     public static String genHash(String text) {
-        return Hashing.sha1().hashString(text, Charset.forName("UTF-8")).toString();
+        return Hashing.sha1().hashString(text, StandardCharsets.UTF_8).toString();
     }
 }

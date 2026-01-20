@@ -19,6 +19,7 @@ import net.minecraftforge.fml.common.Loader;
 import org.lwjgl.opengl.GL11;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -350,7 +351,7 @@ public class ObjModelBuilder {
             return null;
         }
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(modelFile))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(modelFile), StandardCharsets.UTF_8))) {
             String currentLine;
 
             while ((currentLine = reader.readLine()) != null) {

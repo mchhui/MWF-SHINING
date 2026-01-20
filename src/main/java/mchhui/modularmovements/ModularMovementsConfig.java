@@ -6,6 +6,7 @@ import com.google.gson.stream.JsonReader;
 import com.modularwarfare.ModConfig;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -57,7 +58,7 @@ public class ModularMovementsConfig {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try {
             if (configFile.exists()) {
-                JsonReader jsonReader = new JsonReader(new FileReader(configFile));
+                JsonReader jsonReader = new JsonReader(new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8));
                 ModularMovementsConfig config = gson.fromJson(jsonReader, ModularMovementsConfig.class);
                 System.out.println("Comparing version " + config.version + " to " + ModularMovements.MOD_VERSION);
                 if (config.version == null || !config.version.matches(ModularMovements.MOD_VERSION)) {
