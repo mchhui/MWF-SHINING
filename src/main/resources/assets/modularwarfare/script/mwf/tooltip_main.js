@@ -455,16 +455,30 @@ function updateAttachmentTooltip(stack, tiplist) {
         var fovZoom = ScriptAPI.Attachment.getSightFovZoom(stack);
         var fovZoomMin = ScriptAPI.Attachment.getSightFovZoomMin(stack);
         var fovZoomMax = ScriptAPI.Attachment.getSightFovZoomMax(stack);
+        var fovZoomStage = ScriptAPI.Attachment.getSightFovZoomStage(stack);
         
-        if (fovZoomMin > 0 && fovZoomMax > 0) {
+        if (fovZoomStage != null && fovZoomStage.length > 0) {
             hasProperties = true;
-            var minMag = (1.0 / fovZoomMax).toFixed(1);
-            var maxMag = (1.0 / fovZoomMin).toFixed(1);
+            if (fovZoomStage.length == 1) {
+                tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.zoom") + ": §e" + fovZoomStage[0].toFixed(1) + "x");
+            } else {
+                var zoomText = "";
+                for (var i = 0; i < fovZoomStage.length; i++) {
+                    if (i > 0) zoomText += " / ";
+                    zoomText += fovZoomStage[i].toFixed(1) + "x";
+                }
+                tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.zoom") + ": §e" + zoomText);
+                tiplist.add("§7  " + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.zoom.stage"));
+            }
+        } else if (fovZoomMin > 0 && fovZoomMax > 0) {
+            hasProperties = true;
+            var minMag = fovZoomMax.toFixed(1);
+            var maxMag = fovZoomMin.toFixed(1);
             tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.zoom") + ": §e" + minMag + "x - " + maxMag + "x");
             tiplist.add("§7  " + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.zoom.variable"));
         } else if (fovZoom != 1.0) {
             hasProperties = true;
-            var magnification = (1.0 / fovZoom).toFixed(1);
+            var magnification = fovZoom.toFixed(1);
             tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.attachment.zoom") + ": §e" + magnification + "x");
         }
         

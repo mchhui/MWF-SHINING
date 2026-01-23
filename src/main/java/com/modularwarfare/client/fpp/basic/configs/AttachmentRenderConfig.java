@@ -40,7 +40,7 @@ public class AttachmentRenderConfig {
         public int fovZoomStageIndex = 0;
 
 
-        //无极倍率(滚轮切换) 默认关闭
+        //无级倍率(滚轮切换) 默认关闭
         public float fovZoomMin = -1F;
         public float fovZoomMax = -1F;
 

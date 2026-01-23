@@ -438,6 +438,14 @@ public class ScriptAPI {
             return getFloatProperty(stack, AttachmentPresetEnum.Sight, (t, c) -> c != null && c.sight != null ? c.sight.fovZoomMax : null, -1.0f);
         }
         
+        public float[] getSightFovZoomStage(ItemStack stack) {
+            AttachmentRenderConfig config = getRenderConfig(stack);
+            if (config == null || config.sight == null || config.sight.fovZoomStage == null) {
+                return null;
+            }
+            return config.sight.fovZoomStage;
+        }
+        
         // === Barrel properties ===
         public boolean isSuppressor(ItemStack stack) {
             return getBooleanProperty(stack, AttachmentPresetEnum.Barrel, (t, c) -> t.barrel.isSuppressor);
