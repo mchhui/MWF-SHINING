@@ -95,6 +95,7 @@ public class MWResourcePack extends AbstractResourcePack implements FMLContainer
     public Set<String> getResourceDomains() {
         Set<String> set = Sets.<String>newHashSet();
         set.add("modularwarfare");
+        set.add("safx");
         return set;
     }
 
