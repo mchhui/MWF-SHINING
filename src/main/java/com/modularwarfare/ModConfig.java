@@ -110,6 +110,7 @@ public class ModConfig {
         public int shadersColorTexID = 0;
         public boolean alwaysRenderPIPWorld = false;
         public boolean autoSwitchToFirstView = true;
+        public boolean forceRestoreBlendState = true;
     }
 
     //walk sounds

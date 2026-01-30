@@ -1,5 +1,6 @@
 package com.modularwarfare.client;
 
+import org.lwjgl.input.Keyboard;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
@@ -317,6 +318,23 @@ public class ClientRenderHooks {
         event.setCanceled(renderHeldItem(event.getItemStack(), event.getHand(), event.getPartialTicks(),getFOVModifier(event.getPartialTicks())));
     }
     
+    // 强制接管hud渲染状态
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public void onPreRenderHUD(net.minecraftforge.client.event.RenderGameOverlayEvent.Pre event) {
+        if (!ModConfig.INSTANCE.hud.forceRestoreBlendState) {
+            return;
+        }
+        if (event.getType() == net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType.ALL) {
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA, 
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, 
+                GlStateManager.SourceFactor.ONE, 
+                GlStateManager.DestFactor.ZERO
+            );
+        }
+    }
+    
     public boolean renderHeldItem(ItemStack stack,EnumHand hand,float partialTicksTime,float fov) {
         boolean result = false;
         if(mc.currentScreen instanceof GuiGunModify) {
@@ -352,7 +370,7 @@ public class ClientRenderHooks {
                 GlStateManager.loadIdentity();
                 GlStateManager.scale(1 / zFar, 1 / zFar, 1 / zFar);
                 
-                // Fixed the bug gun renders bug
+                // 修复枪械渲染bug
                 if(Double.isNaN(RenderParameters.collideFrontDistance)) {
                     RenderParameters.collideFrontDistance=0;
                 }
@@ -471,6 +489,20 @@ public class ClientRenderHooks {
                 GlStateManager.popMatrix();
                 
                 GL11.glDepthRange(0, 1);
+
+                
+                if (ModConfig.INSTANCE.hud.forceRestoreBlendState) {
+                    GlStateManager.enableLighting();
+                    GlStateManager.enableDepth();
+                    GlStateManager.depthMask(true);
+                    GlStateManager.colorMask(true, true, true, true);
+                    GlStateManager.enableBlend();
+                    GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, 
+                        GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, 
+                        GlStateManager.SourceFactor.ONE, 
+                        GlStateManager.DestFactor.ZERO);
+                    GlStateManager.shadeModel(GL11.GL_FLAT);
+                }
 
                 // Game will render it. Why render overlays twice?
 //                if (mc.gameSettings.thirdPersonView == 0 && !flag) {
