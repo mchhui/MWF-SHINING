@@ -9,6 +9,7 @@ import com.modularwarfare.api.WeaponRayHitEntityEvent;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
+import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.common.armor.ArmorType;
@@ -471,7 +472,9 @@ public class FireManager {
             WeaponFireMode fireMode = fireData.fireMode;
             World world = fireData.world;
             if (ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reloading) {
-                if (gunType.allowReloadFiring) {
+                if (gunType.allowReloadFiring && 
+                    (ItemGun.hasNextShot(gunStack) || 
+                     ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reloadPhase == EnhancedStateMachine.Phase.POST)) {
                     ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).stopReload();
                     ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).reset();
                     ClientRenderHooks.getEnhancedAnimMachine(entityPlayer).updateCurrentItem(entityPlayer);
