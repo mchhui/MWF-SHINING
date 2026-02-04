@@ -306,7 +306,7 @@ public class FireManager {
                 return;
             }
             if (victim instanceof EntityLivingBase) {
-                if (hitboxName.contains("head")) {
+                if (headshot) {
                     EntityHeadShotEvent headShot = new EntityHeadShotEvent(victim, shooter);
                     MinecraftForge.EVENT_BUS.post(headShot);
                 }

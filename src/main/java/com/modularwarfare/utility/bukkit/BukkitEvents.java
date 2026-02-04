@@ -3,6 +3,7 @@ package com.modularwarfare.utility.bukkit;
 import com.modularwarfare.api.EntityHeadShotEvent;
 import com.modularwarfare.api.WeaponRayHitEntityEvent;
 import com.modularwarfare.api.WeaponAttachmentEvent;
+import com.modularwarfare.common.guns.ItemGun;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.fml.common.eventhandler.Cancelable;
@@ -135,7 +136,14 @@ public class BukkitEvents {
     public static void onGunHitEntity(WeaponRayHitEntityEvent event) {
         Entity shooter = toBukkitEntity(event.shooter);
         Entity victim = toBukkitEntity(event.victim);
-        boolean isHeadshot = event.hitbox.contains("head");
+        boolean isHeadshot = false;
+        if (!event.hitbox.isEmpty()) {
+            if (event.hitbox.contains("head")) {
+                isHeadshot = true;
+            }
+        } else {
+            isHeadshot = ItemGun.canEntityGetHeadshot(event.victim) && event.hitY >= event.victim.getPosition().getY() + event.victim.getEyeHeight() - 0.15f;
+        }
         BukkitGunHitEntityEvent bukkitEvent = new BukkitGunHitEntityEvent(shooter, victim, event.gunId, event.hitbox, event.hitX, event.hitY, event.hitZ, event.damage, isHeadshot);
         Bukkit.getPluginManager().callEvent(bukkitEvent);
         event.damage = bukkitEvent.damage;
