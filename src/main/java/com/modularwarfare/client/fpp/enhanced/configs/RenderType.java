@@ -2,8 +2,6 @@ package com.modularwarfare.client.fpp.enhanced.configs;
 
 import java.io.IOException;
 
-import javax.management.RuntimeErrorException;
-
 import com.google.gson.TypeAdapter;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.stream.JsonReader;
@@ -12,7 +10,7 @@ import com.google.gson.stream.JsonWriter;
 
 @JsonAdapter(RenderType.RenderTypeJsonAdapter.class)
 public enum RenderType {
-    PLAYER("player"),PLAYER_OFFHAND("player_offhand"),ITEMLOOT("itemloot"),ITEMFRAME("itemframe"),GRENADE("grenade");
+    PLAYER("player"),PLAYER_OFFHAND("player_offhand"),ITEMLOOT("itemloot"),ITEMFRAME("itemframe"),GRENADE("grenade"),BLOCK("block");
     
     public String serializedName;
     private RenderType(String serializedName) {

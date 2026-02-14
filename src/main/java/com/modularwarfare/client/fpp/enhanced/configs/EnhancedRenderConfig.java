@@ -6,7 +6,6 @@ import org.lwjgl.util.vector.Vector3f;
 
 import com.google.gson.annotations.SerializedName;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
-import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ShowHandArmorType;
 
 public class EnhancedRenderConfig {
 
@@ -89,6 +88,7 @@ public class EnhancedRenderConfig {
             put(RenderType.ITEMLOOT.serializedName, new RenderElement());
             put(RenderType.ITEMFRAME.serializedName, new RenderElement());
             put(RenderType.GRENADE.serializedName, new RenderElement());
+            put(RenderType.BLOCK.serializedName, new RenderElement());
         }};
     
         
