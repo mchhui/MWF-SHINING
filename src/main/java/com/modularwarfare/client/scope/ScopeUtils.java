@@ -41,6 +41,7 @@ import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.optifine.shaders.MWFOptifineShadesHelper;
 import net.optifine.shaders.Shaders;
 
@@ -85,10 +86,21 @@ public class ScopeUtils {
     private static int lastGbuffersFormat0;
     
     public static boolean isIndsideGunRendering=false;
+    
+    // PIP降频渲染计数器
+    private int pipFrameCounter = 0;
+    
+    // 单RenderGlobal双Pass渲染时暂存区块可见性信息
+    private static Field displayListEntitiesDirtyField = null;
+    private static Field renderInfosField = null;
+    private static java.util.List<?> savedRenderInfos = null;
 
     public ScopeUtils() {
-        scopeRenderGlobal = new ScopeRenderGlobal(mc);
-        ((IReloadableResourceManager)mc.getResourceManager()).registerReloadListener(this.scopeRenderGlobal);
+        // 仅在旧模式下初始化scopeRenderGlobal
+        if (!ModConfig.INSTANCE.hud.useSingleRenderGlobalPIP) {
+            scopeRenderGlobal = new ScopeRenderGlobal(mc);
+            ((IReloadableResourceManager)mc.getResourceManager()).registerReloadListener(this.scopeRenderGlobal);
+        }
         try {
             this.renderEndNanoTime = EntityRenderer.class.getDeclaredField("renderEndNanoTime");
         } catch (Exception ignored) {
@@ -285,6 +297,8 @@ public class ScopeUtils {
                                 // 更新视角内的区块
                                 mc.renderGlobal.setDisplayListEntitiesDirty();
                             }
+                        } else {
+                            //none
                         }
                     }
                 }
@@ -609,7 +623,164 @@ public class ScopeUtils {
         return (50.0f / ((ModelAttachment) itemAttachment.type.model).config.sight.fovZoom);
     }
 
+    /**
+     * PIP准镜世界渲染入口
+     * 根据ModConfig.INSTANCE.hud.useSingleRenderGlobalPIP配置选择渲染方式：
+     * - true: 单RenderGlobal双Pass渲染（节省内存，推荐）
+     * - false: 双RenderGlobal渲染（旧方案，保持兼容性）
+     */
     public void renderWorld(Minecraft mc, ItemAttachment itemAttachment, float partialTick) {
+        // 降频更新优化：不是每帧都渲染PIP
+        pipFrameCounter++;
+        int interval = Math.max(1, ModConfig.INSTANCE.hud.pipUpdateInterval);
+        if (pipFrameCounter % interval != 0) {
+            return; // 跳过本帧的PIP渲染，复用上一帧的MIRROR_TEX
+        }
+        
+        // 根据配置选择渲染方式
+        if (ModConfig.INSTANCE.hud.useSingleRenderGlobalPIP) {
+            renderWorldSinglePass(mc, itemAttachment, partialTick);
+        } else {
+            renderWorldLegacy(mc, itemAttachment, partialTick);
+        }
+    }
+    
+    /**
+     * 新方案：单RenderGlobal双Pass渲染（节省内存）
+     * 
+     * 原理：
+     * 1. 复用主世界的RenderGlobal，避免重复加载区块数据
+     * 2. 通过修改FOV，用同一个RenderGlobal渲染两次
+     * 3. 第一次：正常视角渲染到主framebuffer（由主渲染循环完成）
+     * 4. 第二次：放大视角渲染到MIRROR_TEX（PIP纹理）
+     * 
+     * 注意：
+     * - 会增加一次世界渲染Pass，GPU负载略有增加
+     * - 不修改renderDistance以避免区块系统混乱
+     * - 阻止FOV变化触发的区块可见性更新，避免频闪
+     */
+    private void renderWorldSinglePass(Minecraft mc, ItemAttachment itemAttachment, float partialTick) {
+        float zoom = getFov(itemAttachment);
+        
+        GL11.glPushMatrix();
+        GlStateManager.color(1, 1, 1, 1);
+        
+        // 保存当前设置
+        boolean hide = mc.gameSettings.hideGUI;
+        int view = mc.gameSettings.thirdPersonView;
+        float fov = mc.gameSettings.fovSetting;
+        boolean bobbingBackup = mc.gameSettings.viewBobbing;
+        
+        // 设置PIP渲染参数
+        mc.gameSettings.hideGUI = true;
+        mc.gameSettings.thirdPersonView = 0;
+        mc.gameSettings.fovSetting = zoom;
+        mc.gameSettings.viewBobbing = false;
+        
+        if (mc.gameSettings.fovSetting < 1) {
+            mc.gameSettings.fovSetting = 1;
+        }
+        
+        // 关键优化：保存当前区块可见性列表，防止FOV变化导致视锥体裁剪重新计算
+        try {
+            if (displayListEntitiesDirtyField == null) {
+                displayListEntitiesDirtyField = ReflectionHelper.findField(
+                    RenderGlobal.class, 
+                    "displayListEntitiesDirty",  // 开发环境名称
+                    "field_147595_R"              // SRG混淆名称
+                );
+            }
+            if (renderInfosField == null) {
+                renderInfosField = ReflectionHelper.findField(
+                    RenderGlobal.class,
+                    "renderInfos",      // 开发环境：区块可见性列表
+                    "field_72755_R"     // SRG混淆名称
+                );
+            }
+            
+            // 设置displayListEntitiesDirty为false，防止重建区块列表
+            displayListEntitiesDirtyField.setBoolean(mc.renderGlobal, false);
+            
+            // 保存当前的区块可见性列表
+            savedRenderInfos = new java.util.ArrayList<>((java.util.List<?>)renderInfosField.get(mc.renderGlobal));
+            
+            // Optifine特殊处理：重置ChunkVisibility状态
+            if (OptifineHelper.isLoaded()) {
+                try {
+                    Class<?> chunkVisibilityClass = Class.forName("net.optifine.render.ChunkVisibility");
+                    if (chunkVisibilityClass != null) {
+                        // 调用reset方法，防止Optifine的区块可见性缓存影响
+                        java.lang.reflect.Method resetMethod = chunkVisibilityClass.getDeclaredMethod("reset");
+                        resetMethod.setAccessible(true);
+                        resetMethod.invoke(null);
+                    }
+                } catch (Exception optifineEx) {
+                    // Optifine处理失败，继续使用基础方案
+                }
+            }
+            
+        } catch (Exception e) {
+        }
+        
+        // 绑定PIP纹理作为渲染目标
+        OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, mc.getFramebuffer().framebufferObject);
+        int tex = mc.getFramebuffer().framebufferTexture;
+        mc.getFramebuffer().framebufferTexture = MIRROR_TEX;
+        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, MIRROR_TEX, 0);
+        
+        // 清除PIP纹理内容
+        GlStateManager.clearColor(0, 0, 0, 0);
+        GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+        
+        // 使用主RenderGlobal进行第二次渲染Pass
+        // 注意：这里复用mc.renderGlobal，不需要切换RenderGlobal
+        long endTime = 0;
+        if (renderEndNanoTime != null) {
+            try {
+                endTime = renderEndNanoTime.getLong(mc.entityRenderer);
+            } catch (Exception ignored) {
+            }
+        }
+        
+        // 渲染世界到PIP纹理
+        mc.entityRenderer.renderWorld(partialTick, endTime);
+        
+        GL20.glUseProgram(0);
+        
+        // 恢复原始framebuffer
+        mc.getFramebuffer().framebufferTexture = tex;
+        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, tex, 0);
+        
+        // 恢复区块可见性列表，确保主渲染使用正确的区块列表
+        try {
+            if (savedRenderInfos != null && renderInfosField != null) {
+                // 恢复保存的区块列表
+                renderInfosField.set(mc.renderGlobal, savedRenderInfos);
+                savedRenderInfos = null;
+            }
+            if (displayListEntitiesDirtyField != null) {
+                displayListEntitiesDirtyField.setBoolean(mc.renderGlobal, false);
+            }
+        } catch (Exception e) {
+        }
+        
+        // 恢复设置
+        mc.gameSettings.hideGUI = hide;
+        mc.gameSettings.thirdPersonView = view;
+        mc.gameSettings.fovSetting = fov;
+        mc.gameSettings.viewBobbing = bobbingBackup;
+        
+        GL11.glPopMatrix();
+    }
+    
+    /**
+     * 旧方案：双RenderGlobal渲染（保持向后兼容）
+     * 
+     * 原理：
+     * 1. 创建独立的scopeRenderGlobal，维护单独的区块数据
+     * 2. 切换RenderGlobal进行渲染
+     */
+    private void renderWorldLegacy(Minecraft mc, ItemAttachment itemAttachment, float partialTick) {
 
         float zoom = getFov(itemAttachment);
 
@@ -686,7 +857,7 @@ public class ScopeUtils {
 
     @SubscribeEvent
     public void onWorldLoad(WorldEvent.Load event) {
-        if (event.getWorld().isRemote) {
+        if (event.getWorld().isRemote && scopeRenderGlobal != null) {
             scopeRenderGlobal.setWorldAndLoadRenderers((WorldClient) event.getWorld());
         }
     }

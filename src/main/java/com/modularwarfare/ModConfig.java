@@ -111,6 +111,10 @@ public class ModConfig {
         public boolean alwaysRenderPIPWorld = false;
         public boolean autoSwitchToFirstView = true;
         public boolean forceRestoreBlendState = true;
+        
+        // PIP准镜优化选项
+        public boolean useSingleRenderGlobalPIP = true;
+        public int pipUpdateInterval = 1;
     }
 
     //walk sounds
