@@ -195,10 +195,22 @@ public class ModelCustomArmor extends MWModelBipedBase {
                         SourceFactor.ONE, DestFactor.ZERO);
                     GlStateManager.enableCull();
                     GlStateManager.depthMask(false);
-                    //不兼容水和史莱姆
-                    this.staticModel.renderPart(f5, "translucent");
-                    this.staticModel.renderPart(f5, "translucent1");
-                    this.staticModel.renderPart(f5, "translucent2");
+                    if (config.extra.isSuit) {
+                        // suit模式：根据modelPart生成对应的透明部分名称
+                        String translucentBase = generateTranslucentPartName(modelPart);
+                        if (translucentBase != null) {
+                            // 渲染对应部位的透明部分（支持多个层级）
+                            this.staticModel.renderPart(f5, translucentBase);
+                            this.staticModel.renderPart(f5, translucentBase + "1");
+                            this.staticModel.renderPart(f5, translucentBase + "2");
+                        }
+                    } else {
+                        // 非suit模式：保留原有的通用透明部分命名
+                        //不兼容水和史莱姆
+                        this.staticModel.renderPart(f5, "translucent");
+                        this.staticModel.renderPart(f5, "translucent1");
+                        this.staticModel.renderPart(f5, "translucent2");
+                    }
                     GlStateManager.disableCull();
                     GlStateManager.depthMask(true);
                     ObjModelRenderer.glowTxtureMode = glow;
@@ -206,6 +218,26 @@ public class ModelCustomArmor extends MWModelBipedBase {
             }
             GlStateManager.popMatrix();
         }
+    }
+
+    /**
+     * 根据模型部位名称生成对应的透明部分名称
+     * @param modelPart 原始模型部位名称（如 "headModel", "bodySlimModel" 等）
+     * @return 透明部分的基础名称（如 "headTranslucent", "bodySlimTranslucent" 等），如果不需要透明部分则返回null
+     */
+    private String generateTranslucentPartName(String modelPart) {
+        if (modelPart == null || modelPart.isEmpty()) {
+            return null;
+        }
+        
+        // 移除 "Model" 或 "SlimModel" 后缀，添加 "Translucent" 或 "SlimTranslucent"
+        if (modelPart.endsWith("SlimModel")) {
+            return modelPart.substring(0, modelPart.length() - 9) + "SlimTranslucent";
+        } else if (modelPart.endsWith("Model")) {
+            return modelPart.substring(0, modelPart.length() - 5) + "Translucent";
+        }
+        
+        return null;
     }
 
     public void showHead(boolean result) {
