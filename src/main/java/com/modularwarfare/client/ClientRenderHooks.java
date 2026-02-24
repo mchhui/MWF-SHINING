@@ -41,6 +41,7 @@ import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelBiped.ArmPose;
+import net.minecraft.client.model.ModelPlayer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderPlayer;
@@ -561,43 +562,74 @@ public class ClientRenderHooks {
     }
     
     public void hidePlayerModel(AbstractClientPlayer clientPlayer,RenderPlayer renderplayer) {
-        //mwf愚蠢的隐藏双层
+        ModelPlayer model = renderplayer.getMainModel();
+        
+        // 先重置所有部位为可见状态
+        model.bipedHead.isHidden = false;
+        model.bipedBody.isHidden = false;
+        model.bipedLeftArm.isHidden = false;
+        model.bipedRightArm.isHidden = false;
+        model.bipedLeftLeg.isHidden = false;
+        model.bipedRightLeg.isHidden = false;
+        model.bipedHead.showModel = true;
+        model.bipedBody.showModel = true;
+        model.bipedLeftArm.showModel = true;
+        model.bipedRightArm.showModel = true;
+        model.bipedLeftLeg.showModel = true;
+        model.bipedRightLeg.showModel = true;
+        
+        // 重置wear模型（第二层皮肤）
+        model.bipedHeadwear.isHidden = false;
+        model.bipedHeadwear.showModel = true;
+        model.bipedLeftArmwear.isHidden = false;
+        model.bipedLeftArmwear.showModel = true;
+        model.bipedRightArmwear.isHidden = false;
+        model.bipedRightArmwear.showModel = true;
+        model.bipedBodyWear.isHidden = false;
+        model.bipedBodyWear.showModel = true;
+        model.bipedLeftLegwear.isHidden = false;
+        model.bipedLeftLegwear.showModel = true;
+        model.bipedRightLegwear.isHidden = false;
+        model.bipedRightLegwear.showModel = true;
+        
+        // 根据配置隐藏第二层皮肤
         if(ModConfig.INSTANCE.client.hideSecondSkinWhenDressed) {
             if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()){
-                renderplayer.getMainModel().bipedHeadwear.isHidden = false;
+                model.bipedHeadwear.isHidden = false;
+                model.bipedHeadwear.showModel = true;
             } else {
-                renderplayer.getMainModel().bipedHeadwear.isHidden = true;
+                model.bipedHeadwear.isHidden = true;
+                model.bipedHeadwear.showModel = false;
             }
             if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty()){
-                renderplayer.getMainModel().bipedLeftArmwear.isHidden = false;
-                renderplayer.getMainModel().bipedRightArmwear.isHidden = false;
-                renderplayer.getMainModel().bipedBodyWear.isHidden = false;
+                model.bipedLeftArmwear.isHidden = false;
+                model.bipedLeftArmwear.showModel = true;
+                model.bipedRightArmwear.isHidden = false;
+                model.bipedRightArmwear.showModel = true;
+                model.bipedBodyWear.isHidden = false;
+                model.bipedBodyWear.showModel = true;
             } else {
-                renderplayer.getMainModel().bipedLeftArmwear.isHidden = true;
-                renderplayer.getMainModel().bipedRightArmwear.isHidden = true;
-                renderplayer.getMainModel().bipedBodyWear.isHidden = true;
+                model.bipedLeftArmwear.isHidden = true;
+                model.bipedLeftArmwear.showModel = false;
+                model.bipedRightArmwear.isHidden = true;
+                model.bipedRightArmwear.showModel = false;
+                model.bipedBodyWear.isHidden = true;
+                model.bipedBodyWear.showModel = false;
             }
             if(clientPlayer.getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty()){
-                renderplayer.getMainModel().bipedLeftLegwear.isHidden = false;
-                renderplayer.getMainModel().bipedRightLegwear.isHidden = false;
+                model.bipedLeftLegwear.isHidden = false;
+                model.bipedLeftLegwear.showModel = true;
+                model.bipedRightLegwear.isHidden = false;
+                model.bipedRightLegwear.showModel = true;
             } else {
-                renderplayer.getMainModel().bipedLeftLegwear.isHidden = true;
-                renderplayer.getMainModel().bipedRightLegwear.isHidden = true;
+                model.bipedLeftLegwear.isHidden = true;
+                model.bipedLeftLegwear.showModel = false;
+                model.bipedRightLegwear.isHidden = true;
+                model.bipedRightLegwear.showModel = false;
             }  
         }
         
-        renderplayer.getMainModel().bipedHead.isHidden = false;
-        renderplayer.getMainModel().bipedBody.isHidden = false;
-        renderplayer.getMainModel().bipedLeftArm.isHidden = false;
-        renderplayer.getMainModel().bipedRightArm.isHidden = false;
-        renderplayer.getMainModel().bipedLeftLeg.isHidden = false;
-        renderplayer.getMainModel().bipedRightLeg.isHidden = false;
-        renderplayer.getMainModel().bipedHead.showModel = true;
-        renderplayer.getMainModel().bipedBody.showModel = true;
-        renderplayer.getMainModel().bipedLeftArm.showModel = true;
-        renderplayer.getMainModel().bipedRightArm.showModel = true;
-        renderplayer.getMainModel().bipedLeftLeg.showModel = true;
-        renderplayer.getMainModel().bipedRightLeg.showModel = true;
+        // 根据护甲配置隐藏相应部位
         clientPlayer.getArmorInventoryList().forEach((stack) -> {
             ArmorType type = null;
             if (stack.getItem() instanceof ItemMWArmor) {
@@ -609,31 +641,46 @@ public class ClientRenderHooks {
             if (type != null) {
                 ArmorRenderConfig config = ((ModelCustomArmor)type.bipedModel).config;
                 if (config.extra.hidePlayerModel) {
-                    boolean hide = true;
                     if (config.extra.isSuit) {
-                        renderplayer.getMainModel().bipedHead.isHidden = true;
-                        renderplayer.getMainModel().bipedBody.isHidden = true;
-                        renderplayer.getMainModel().bipedLeftArm.isHidden = true;
-                        renderplayer.getMainModel().bipedRightArm.isHidden = true;
-                        renderplayer.getMainModel().bipedLeftLeg.isHidden = true;
-                        renderplayer.getMainModel().bipedRightLeg.isHidden = true;
+                        // suit模式：隐藏整个玩家模型
+                        model.bipedHead.isHidden = true;
+                        model.bipedHead.showModel = false;
+                        model.bipedBody.isHidden = true;
+                        model.bipedBody.showModel = false;
+                        model.bipedLeftArm.isHidden = true;
+                        model.bipedLeftArm.showModel = false;
+                        model.bipedRightArm.isHidden = true;
+                        model.bipedRightArm.showModel = false;
+                        model.bipedLeftLeg.isHidden = true;
+                        model.bipedLeftLeg.showModel = false;
+                        model.bipedRightLeg.isHidden = true;
+                        model.bipedRightLeg.showModel = false;
                     } else {
+                        // 非suit模式：根据护甲类型隐藏对应部位
                         switch (((ItemArmor) stack.getItem()).armorType) {
                         case HEAD:
-                            renderplayer.getMainModel().bipedHead.isHidden = hide;
+                            model.bipedHead.isHidden = true;
+                            model.bipedHead.showModel = false;
                             break;
                         case CHEST:
-                            renderplayer.getMainModel().bipedBody.isHidden = hide;
-                            renderplayer.getMainModel().bipedLeftArm.isHidden = hide;
-                            renderplayer.getMainModel().bipedRightArm.isHidden = hide;
+                            model.bipedBody.isHidden = true;
+                            model.bipedBody.showModel = false;
+                            model.bipedLeftArm.isHidden = true;
+                            model.bipedLeftArm.showModel = false;
+                            model.bipedRightArm.isHidden = true;
+                            model.bipedRightArm.showModel = false;
                             break;
                         case LEGS:
-                            renderplayer.getMainModel().bipedLeftLeg.isHidden = hide;
-                            renderplayer.getMainModel().bipedRightLeg.isHidden = hide;
+                            model.bipedLeftLeg.isHidden = true;
+                            model.bipedLeftLeg.showModel = false;
+                            model.bipedRightLeg.isHidden = true;
+                            model.bipedRightLeg.showModel = false;
                             break;
                         case FEET:
-                            renderplayer.getMainModel().bipedLeftLeg.isHidden = hide;
-                            renderplayer.getMainModel().bipedRightLeg.isHidden = hide;
+                            model.bipedLeftLeg.isHidden = true;
+                            model.bipedLeftLeg.showModel = false;
+                            model.bipedRightLeg.isHidden = true;
+                            model.bipedRightLeg.showModel = false;
                             break;
                         default:
                             break;
@@ -641,12 +688,18 @@ public class ClientRenderHooks {
                     }
                 }
                 if (config.extra.hideAllPlayerWearModel) {
-                    renderplayer.getMainModel().bipedHeadwear.isHidden = true;
-                    renderplayer.getMainModel().bipedLeftArmwear.isHidden = true;
-                    renderplayer.getMainModel().bipedRightArmwear.isHidden = true;
-                    renderplayer.getMainModel().bipedBodyWear.isHidden = true;
-                    renderplayer.getMainModel().bipedLeftLegwear.isHidden = true;
-                    renderplayer.getMainModel().bipedRightLegwear.isHidden = true;
+                    model.bipedHeadwear.isHidden = true;
+                    model.bipedHeadwear.showModel = false;
+                    model.bipedLeftArmwear.isHidden = true;
+                    model.bipedLeftArmwear.showModel = false;
+                    model.bipedRightArmwear.isHidden = true;
+                    model.bipedRightArmwear.showModel = false;
+                    model.bipedBodyWear.isHidden = true;
+                    model.bipedBodyWear.showModel = false;
+                    model.bipedLeftLegwear.isHidden = true;
+                    model.bipedLeftLegwear.showModel = false;
+                    model.bipedRightLegwear.isHidden = true;
+                    model.bipedRightLegwear.showModel = false;
                 }
             }
         });
