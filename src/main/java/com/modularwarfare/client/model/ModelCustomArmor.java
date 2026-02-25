@@ -41,7 +41,9 @@ import net.minecraftforge.common.MinecraftForge;
 import org.lwjgl.opengl.GL11;
 
 public class ModelCustomArmor extends MWModelBipedBase {
-
+    public static boolean translucentBatch = false;
+    public static boolean needTranslucentBatchBuf = false;
+    
     public static Bones bones = new Bones(0, false);
     public static Bones bonesSmall = new Bones(0, true);
     private BaseType type;
@@ -188,31 +190,36 @@ public class ModelCustomArmor extends MWModelBipedBase {
                     ObjModelRenderer.glowPath = type.modelSkins[0].getSkin();
                     boolean glow = ObjModelRenderer.glowTxtureMode;
                     ObjModelRenderer.glowTxtureMode = true;
-                    part.render(f5);
-                    //只开不关 shit habit
-                    GlStateManager.enableBlend();
-                    GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
-                        SourceFactor.ONE, DestFactor.ZERO);
-                    GlStateManager.enableCull();
-                    GlStateManager.depthMask(false);
-                    if (config.extra.isSuit) {
-                        // suit模式：根据modelPart生成对应的透明部分名称
-                        String translucentBase = generateTranslucentPartName(modelPart);
-                        if (translucentBase != null) {
-                            // 渲染对应部位的透明部分（支持多个层级）
-                            this.staticModel.renderPart(f5, translucentBase);
-                            this.staticModel.renderPart(f5, translucentBase + "1");
-                            this.staticModel.renderPart(f5, translucentBase + "2");
+                    if(!translucentBatch) {
+                        part.render(f5);
+                        //穿mwf护甲才开启半透明渲染batch
+                        needTranslucentBatchBuf=true;
+                    }else {
+                        //只开不关 shit habit
+                        GlStateManager.enableBlend();
+                        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
+                            SourceFactor.ONE, DestFactor.ZERO);
+                        GlStateManager.enableCull();
+                        GlStateManager.depthMask(false);
+                        if (config.extra.isSuit) {
+                            // suit模式：根据modelPart生成对应的透明部分名称
+                            String translucentBase = generateTranslucentPartName(modelPart);
+                            if (translucentBase != null) {
+                                // 渲染对应部位的透明部分（支持多个层级）
+                                this.staticModel.renderPart(f5, translucentBase);
+                                this.staticModel.renderPart(f5, translucentBase + "1");
+                                this.staticModel.renderPart(f5, translucentBase + "2");
+                            }
+                        } else {
+                            // 非suit模式：保留原有的通用透明部分命名
+                            //不兼容水和史莱姆
+                            this.staticModel.renderPart(f5, "translucent");
+                            this.staticModel.renderPart(f5, "translucent1");
+                            this.staticModel.renderPart(f5, "translucent2");
                         }
-                    } else {
-                        // 非suit模式：保留原有的通用透明部分命名
-                        //不兼容水和史莱姆
-                        this.staticModel.renderPart(f5, "translucent");
-                        this.staticModel.renderPart(f5, "translucent1");
-                        this.staticModel.renderPart(f5, "translucent2");
+                        GlStateManager.disableCull();
+                        GlStateManager.depthMask(true);
                     }
-                    GlStateManager.disableCull();
-                    GlStateManager.depthMask(true);
                     ObjModelRenderer.glowTxtureMode = glow;
                 }
             }
