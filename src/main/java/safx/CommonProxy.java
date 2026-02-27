@@ -90,6 +90,20 @@ public abstract class CommonProxy implements ISAInitializer {
 	}
 	public void createFXOnEntityWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, EntityCondition condition, float scale) {};
 	public void createFXOnPlayerWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, float scale) {};
+	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale) {};
+	
+	public void createFXOnBoxWithPacket(String name, Entity ent, String boxName, long duration) {
+		createFXOnBoxWithPacket(name, ent, boxName, duration, 1.0f);
+	}
+	
+	public void createFXOnBoxWithPacket(String name, Entity ent, String boxName, long duration, float scale) {
+		if (!ent.world.isRemote) {
+			SAPackets.network.sendToAllAround(
+				new safx.packets.PacketSpawnParticleOnBox(name, ent, boxName, duration, scale),
+				SAPackets.targetPointAroundEnt(ent, 512.0)
+			);
+		}
+	}
 	
     public void setHasStepassist(boolean value){};
     

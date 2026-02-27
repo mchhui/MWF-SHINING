@@ -17,6 +17,7 @@ import safx.init.ISAInitializer;
 import safx.packets.PacketEntityDeathType;
 import safx.packets.PacketSpawnParticle;
 import safx.packets.PacketSpawnParticleOnEntity;
+import safx.packets.PacketSpawnParticleOnBox;
 
 /**
  * Class for dealing with packets
@@ -55,6 +56,7 @@ public class SAPackets implements ISAInitializer {
 		
 		network.registerMessage(PacketSpawnParticle.Handler.class, PacketSpawnParticle.class, packetid++, Side.CLIENT);
 		network.registerMessage(PacketSpawnParticleOnEntity.Handler.class, PacketSpawnParticleOnEntity.class, packetid++, Side.CLIENT);
+		network.registerMessage(PacketSpawnParticleOnBox.Handler.class, PacketSpawnParticleOnBox.class, packetid++, Side.CLIENT);
 		//network.registerMessage(PacketEntityDeathType.Handler.class, PacketEntityDeathType.class,  packetid++, Side.CLIENT);
 		//network.registerMessage(PacketGunImpactFX.Handler.class, PacketGunImpactFX.class, packetid++, Side.CLIENT);
 	}

@@ -242,6 +242,19 @@ public class ClientProxy extends CommonProxy {
 	}
 	
 	@Override
+	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale) {
+		List<SAParticleSystem> systems = SAFX.createFXOnEntity(ent, name);
+		if (systems!=null) {
+			for (SAParticleSystem s : systems) {
+				s.scale = scale;
+				s.bindToOBBBox(boxName, duration);
+				s.condition = EntityCondition.ENTITY_ALIVE;
+				particleManager.addEffect(s);
+			}
+		}
+	}
+	
+	@Override
 	public void setHasStepassist(boolean value) {
 		this.hasStepassist=value;
 	}

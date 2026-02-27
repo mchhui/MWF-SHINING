@@ -29,7 +29,7 @@ public class CommandFX extends CommandBase {
     }
 
     public String getUsage(ICommandSender sender) {
-        return "/mw-fx <effect_name> <x> <y> <z> [motionX] [motionY] [motionZ] [scale] [world] or /mw-fx <effect_name> entity <uuid> [offsetX] [offsetY] [offsetZ] [attachToHead] [scale] or /mw-fx help";
+        return "/mw-fx <effect_name> <x> <y> <z> [motionX] [motionY] [motionZ] [scale] [world] or /mw-fx <effect_name> entity <uuid> [offsetX] [offsetY] [offsetZ] [attachToHead] [scale] or /mw-fx <effect_name> box <uuid> <boxName> <duration> [scale] or /mw-fx help";
     }
 
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
@@ -51,6 +51,11 @@ public class CommandFX extends CommandBase {
         
         if (args.length >= 3 && args[1].equalsIgnoreCase("entity")) {
             handleEntityEffect(server, sender, args);
+            return;
+        }
+        
+        if (args.length >= 4 && args[1].equalsIgnoreCase("box")) {
+            handleBoxEffect(server, sender, args);
             return;
         }
         
@@ -126,6 +131,67 @@ public class CommandFX extends CommandBase {
             sender.sendMessage(new TextComponentString("§cInvalid UUID format: " + uuidString));
         } catch (Exception e) {
             sender.sendMessage(new TextComponentString("§cError spawning effect on entity: " + e.getMessage()));
+        }
+    }
+    
+    private void handleBoxEffect(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
+        if (args.length < 5) {
+            sender.sendMessage(new TextComponentString("§cUsage: /mw-fx <effect_name> box <uuid> <boxName> <duration> [scale]"));
+            return;
+        }
+        
+        String fxName = args[0];
+        String uuidString = args[2];
+        String boxName = args[3];
+        
+        try {
+            UUID entityUUID = UUID.fromString(uuidString);
+            long duration = Long.parseLong(args[4]);
+            float scale = args.length > 5 ? Float.parseFloat(args[5]) : 1.0f;
+            
+            Entity targetEntity = null;
+
+            for (World world : net.minecraftforge.common.DimensionManager.getWorlds()) {
+                for (Entity entity : world.loadedEntityList) {
+                    if (entity.getUniqueID().equals(entityUUID)) {
+                        targetEntity = entity;
+                        break;
+                    }
+                }
+                if (targetEntity != null) break;
+            }
+            
+            if (targetEntity == null) {
+                sender.sendMessage(new TextComponentString("§cEntity with UUID " + uuidString + " not found!"));
+                return;
+            }
+            
+            EntityPlayerMP nearestPlayer = null;
+            EntityPlayer nearest = targetEntity.world.getClosestPlayer(targetEntity.posX, targetEntity.posY, targetEntity.posZ, 512, false);
+            if (nearest instanceof EntityPlayerMP) {
+                nearestPlayer = (EntityPlayerMP) nearest;
+            }
+            
+            if (nearestPlayer == null) {
+                sender.sendMessage(new TextComponentString("§cNo player nearby to render effect (need player within 512 blocks)!"));
+                return;
+            }
+            
+            safx.SagerFX.proxy.createFXOnBoxWithPacket(fxName, targetEntity, boxName, duration, scale);
+            
+            String durationText = duration == 0 ? "permanent" : duration + "ms";
+            sender.sendMessage(new TextComponentString("§aAttached effect §e" + fxName + " §ato OBB box §e" + boxName + 
+                " §aon entity " + targetEntity.getName() + 
+                " §ain world §e" + targetEntity.world.getWorldInfo().getWorldName() +
+                " §a(dimension: " + nearestPlayer.dimension + ")" +
+                " §awith duration: §e" + durationText + " §ascale: §e" + scale));
+            
+        } catch (NumberFormatException e) {
+            sender.sendMessage(new TextComponentString("§cInvalid number format in parameters!"));
+        } catch (IllegalArgumentException e) {
+            sender.sendMessage(new TextComponentString("§cInvalid UUID format: " + uuidString));
+        } catch (Exception e) {
+            sender.sendMessage(new TextComponentString("§cError spawning effect on box: " + e.getMessage()));
         }
     }
     
@@ -268,6 +334,11 @@ public class CommandFX extends CommandBase {
         sender.sendMessage(new TextComponentString("  §7- Attach effect with position offset"));
         sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> entity <uuid> <offsetX> <offsetY> <offsetZ> <attachToHead> <scale>"));
         sender.sendMessage(new TextComponentString("  §7- Full entity effect with head attachment and scale"));
+        sender.sendMessage(new TextComponentString("§eOBB Box-attached effects:"));
+        sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> box <uuid> <boxName> <duration>"));
+        sender.sendMessage(new TextComponentString("  §7- Attach effect to OBB collision box"));
+        sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> box <uuid> <boxName> <duration> <scale>"));
+        sender.sendMessage(new TextComponentString("  §7- Attach effect to OBB box with scale (duration in ms, 0=permanent)"));
         sender.sendMessage(new TextComponentString("§eWorld Names:"));
         sender.sendMessage(new TextComponentString("  §7- §eworld §7(Overworld), §eworld_nether §7(Nether), §eworld_the_end §7(End)"));
         sender.sendMessage(new TextComponentString("  §7- Custom world names based on level name"));
@@ -281,6 +352,8 @@ public class CommandFX extends CommandBase {
         sender.sendMessage(new TextComponentString("  §7Impacts: §eGunHit, LaserHit, PrismHit, PowerImpact"));
         sender.sendMessage(new TextComponentString("§eTip: Use ~ for current position coordinates"));
         sender.sendMessage(new TextComponentString("§eTip: Get entity UUID with F3+I while looking at entity"));
+        sender.sendMessage(new TextComponentString("§eTip: Common OBB box names: head, body, leftArm, rightArm, leftLeg, rightLeg"));
+        sender.sendMessage(new TextComponentString("§eTip: Duration 0 means permanent (until entity dies)"));
         sender.sendMessage(new TextComponentString("§eTip: If no world specified for location effects, uses current world or overworld"));
         sender.sendMessage(new TextComponentString("§eTip: Entity effects automatically use the entity's world"));
     }
