@@ -91,15 +91,25 @@ public abstract class CommonProxy implements ISAInitializer {
 	public void createFXOnEntityWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, EntityCondition condition, float scale) {};
 	public void createFXOnPlayerWithOffset(String name, Entity ent, float offsetX, float offsetY, float offsetZ, boolean attachToHead, float scale) {};
 	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale) {};
+	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing) {};
+	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing, int smoothingSubdivisions) {};
 	
 	public void createFXOnBoxWithPacket(String name, Entity ent, String boxName, long duration) {
-		createFXOnBoxWithPacket(name, ent, boxName, duration, 1.0f);
+		createFXOnBoxWithPacket(name, ent, boxName, duration, 1.0f, false, 3);
 	}
 	
 	public void createFXOnBoxWithPacket(String name, Entity ent, String boxName, long duration, float scale) {
+		createFXOnBoxWithPacket(name, ent, boxName, duration, scale, false, 3);
+	}
+	
+	public void createFXOnBoxWithPacket(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing) {
+		createFXOnBoxWithPacket(name, ent, boxName, duration, scale, enableSmoothing, 3);
+	}
+	
+	public void createFXOnBoxWithPacket(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing, int smoothingSubdivisions) {
 		if (!ent.world.isRemote) {
 			SAPackets.network.sendToAllAround(
-				new safx.packets.PacketSpawnParticleOnBox(name, ent, boxName, duration, scale),
+				new safx.packets.PacketSpawnParticleOnBox(name, ent, boxName, duration, scale, enableSmoothing, smoothingSubdivisions),
 				SAPackets.targetPointAroundEnt(ent, 512.0)
 			);
 		}

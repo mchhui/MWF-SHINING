@@ -29,7 +29,7 @@ public class CommandFX extends CommandBase {
     }
 
     public String getUsage(ICommandSender sender) {
-        return "/mw-fx <effect_name> <x> <y> <z> [motionX] [motionY] [motionZ] [scale] [world] or /mw-fx <effect_name> entity <uuid> [offsetX] [offsetY] [offsetZ] [attachToHead] [scale] or /mw-fx <effect_name> box <uuid> <boxName> <duration> [scale] or /mw-fx help";
+        return "/mw-fx <effect_name> <x> <y> <z> [motionX] [motionY] [motionZ] [scale] [world] or /mw-fx <effect_name> entity <uuid> [offsetX] [offsetY] [offsetZ] [attachToHead] [scale] or /mw-fx <effect_name> box <uuid> <boxName> <duration> [scale] [enableSmoothing] [smoothingSubdivisions] or /mw-fx help";
     }
 
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
@@ -136,7 +136,7 @@ public class CommandFX extends CommandBase {
     
     private void handleBoxEffect(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         if (args.length < 5) {
-            sender.sendMessage(new TextComponentString("§cUsage: /mw-fx <effect_name> box <uuid> <boxName> <duration> [scale]"));
+            sender.sendMessage(new TextComponentString("§cUsage: /mw-fx <effect_name> box <uuid> <boxName> <duration> [scale] [enableSmoothing] [smoothingSubdivisions]"));
             return;
         }
         
@@ -148,6 +148,8 @@ public class CommandFX extends CommandBase {
             UUID entityUUID = UUID.fromString(uuidString);
             long duration = Long.parseLong(args[4]);
             float scale = args.length > 5 ? Float.parseFloat(args[5]) : 1.0f;
+            boolean enableSmoothing = args.length > 6 ? Boolean.parseBoolean(args[6]) : false;
+            int smoothingSubdivisions = args.length > 7 ? Integer.parseInt(args[7]) : 3;
             
             Entity targetEntity = null;
 
@@ -177,14 +179,15 @@ public class CommandFX extends CommandBase {
                 return;
             }
             
-            safx.SagerFX.proxy.createFXOnBoxWithPacket(fxName, targetEntity, boxName, duration, scale);
+            safx.SagerFX.proxy.createFXOnBoxWithPacket(fxName, targetEntity, boxName, duration, scale, enableSmoothing, smoothingSubdivisions);
             
             String durationText = duration == 0 ? "permanent" : duration + "ms";
+            String smoothingText = enableSmoothing ? ("§aenabled (subdivisions: §e" + smoothingSubdivisions + "§a)") : "§cdisabled";
             sender.sendMessage(new TextComponentString("§aAttached effect §e" + fxName + " §ato OBB box §e" + boxName + 
                 " §aon entity " + targetEntity.getName() + 
                 " §ain world §e" + targetEntity.world.getWorldInfo().getWorldName() +
                 " §a(dimension: " + nearestPlayer.dimension + ")" +
-                " §awith duration: §e" + durationText + " §ascale: §e" + scale));
+                " §awith duration: §e" + durationText + " §ascale: §e" + scale + " §asmoothing: " + smoothingText));
             
         } catch (NumberFormatException e) {
             sender.sendMessage(new TextComponentString("§cInvalid number format in parameters!"));
@@ -339,6 +342,10 @@ public class CommandFX extends CommandBase {
         sender.sendMessage(new TextComponentString("  §7- Attach effect to OBB collision box"));
         sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> box <uuid> <boxName> <duration> <scale>"));
         sender.sendMessage(new TextComponentString("  §7- Attach effect to OBB box with scale (duration in ms, 0=permanent)"));
+        sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> box <uuid> <boxName> <duration> <scale> <enableSmoothing>"));
+        sender.sendMessage(new TextComponentString("  §7- With trail smoothing (true/false) for curved effect"));
+        sender.sendMessage(new TextComponentString("§a/mw-fx <effect_name> box <uuid> <boxName> <duration> <scale> <enableSmoothing> <subdivisions>"));
+        sender.sendMessage(new TextComponentString("  §7- With custom subdivisions (1-10, default 3, higher=smoother+slower)"));
         sender.sendMessage(new TextComponentString("§eWorld Names:"));
         sender.sendMessage(new TextComponentString("  §7- §eworld §7(Overworld), §eworld_nether §7(Nether), §eworld_the_end §7(End)"));
         sender.sendMessage(new TextComponentString("  §7- Custom world names based on level name"));

@@ -243,10 +243,22 @@ public class ClientProxy extends CommonProxy {
 	
 	@Override
 	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale) {
+		createFXOnBox(name, ent, boxName, duration, scale, false, 3);
+	}
+	
+	@Override
+	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing) {
+		createFXOnBox(name, ent, boxName, duration, scale, enableSmoothing, 3);
+	}
+	
+	@Override
+	public void createFXOnBox(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing, int smoothingSubdivisions) {
 		List<SAParticleSystem> systems = SAFX.createFXOnEntity(ent, name);
 		if (systems!=null) {
 			for (SAParticleSystem s : systems) {
 				s.scale = scale;
+				s.enableSmoothing = enableSmoothing;
+				s.smoothingSubdivisions = smoothingSubdivisions;
 				s.bindToOBBBox(boxName, duration);
 				s.condition = EntityCondition.ENTITY_ALIVE;
 				particleManager.addEffect(s);

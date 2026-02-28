@@ -67,6 +67,9 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 	
 	protected boolean itemAttached=false;
 	
+	public boolean enableSmoothing = false;
+	public int smoothingSubdivisions = 3;
+	
 	public SAParticleSystem(World worldIn, SAParticleSystemType type, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn, double ySpeedIn, double zSpeedIn) {
 		//super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
 		super(worldIn, xCoordIn + type.offset.x, yCoordIn+type.offset.y, zCoordIn+type.offset.z);
@@ -264,6 +267,8 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 				SAParticle particle=null;
 				if (this.type.streak) {
 					SAParticleStreak particleStreak = new SAParticleStreak(this.world, this.posX+position.x, this.posY+position.y, this.posZ+position.z, motion.x*mf, motion.y*mf, motion.z*mf, this);
+					particleStreak.enableSmoothing = this.enableSmoothing;
+					particleStreak.smoothingSubdivisions = this.smoothingSubdivisions;
 					if (prevParticle != null) {
 						particleStreak.setPrev(prevParticle);
 						prevParticle.setNext(particleStreak);

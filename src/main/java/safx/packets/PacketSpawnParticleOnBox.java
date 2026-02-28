@@ -19,20 +19,32 @@ public class PacketSpawnParticleOnBox implements IMessage {
 	String boxName;
 	long duration;
 	float scale = 1.0f;
+	boolean enableSmoothing = false;
+	int smoothingSubdivisions = 3;
 	
 	public PacketSpawnParticleOnBox() {};
 	
 	public PacketSpawnParticleOnBox(String name, Entity ent, String boxName, long duration) {
-		this(name, ent, boxName, duration, 1.0f);
+		this(name, ent, boxName, duration, 1.0f, false, 3);
 	}
 	
 	public PacketSpawnParticleOnBox(String name, Entity ent, String boxName, long duration, float scale) {
+		this(name, ent, boxName, duration, scale, false, 3);
+	}
+	
+	public PacketSpawnParticleOnBox(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing) {
+		this(name, ent, boxName, duration, scale, enableSmoothing, 3);
+	}
+	
+	public PacketSpawnParticleOnBox(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing, int smoothingSubdivisions) {
 		super();
 		this.name = name;
 		this.entityID = ent.getEntityId();
 		this.boxName = boxName;
 		this.duration = duration;
 		this.scale = scale;
+		this.enableSmoothing = enableSmoothing;
+		this.smoothingSubdivisions = smoothingSubdivisions;
 	}
 
 	@Override
@@ -47,6 +59,8 @@ public class PacketSpawnParticleOnBox implements IMessage {
 		
 		this.duration = buf.readLong();
 		this.scale = buf.readFloat();
+		this.enableSmoothing = buf.readBoolean();
+		this.smoothingSubdivisions = buf.readInt();
 	}
 
 	@Override
@@ -63,6 +77,8 @@ public class PacketSpawnParticleOnBox implements IMessage {
 		
 		buf.writeLong(this.duration);
 		buf.writeFloat(this.scale);
+		buf.writeBoolean(this.enableSmoothing);
+		buf.writeInt(this.smoothingSubdivisions);
 	}
 	
 	public static class Handler implements IMessageHandler<PacketSpawnParticleOnBox, IMessage> {
@@ -75,7 +91,7 @@ public class PacketSpawnParticleOnBox implements IMessage {
 		private void handle(PacketSpawnParticleOnBox m, MessageContext ctx) {
 			Entity ent = Minecraft.getMinecraft().player.world.getEntityByID(m.entityID);
 			if (ent != null) {
-				ClientProxy.get().createFXOnBox(m.name, ent, m.boxName, m.duration, m.scale);
+				ClientProxy.get().createFXOnBox(m.name, ent, m.boxName, m.duration, m.scale, m.enableSmoothing, m.smoothingSubdivisions);
 			} else {
 				SALogger.logger_client.warning("Got Packet for FX " + m.name + " on Box, but ent was null");
 			}
