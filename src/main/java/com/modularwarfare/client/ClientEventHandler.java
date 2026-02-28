@@ -180,8 +180,10 @@ public class ClientEventHandler {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void cemeraSetup(CameraSetup event) {
         if (Minecraft.getMinecraft().player != null) {
-            if (Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun) {
-                ItemGun gun = (ItemGun)Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
+            ItemStack heldItem = Minecraft.getMinecraft().player.getHeldItemMainhand();
+            
+            if (heldItem.getItem() instanceof ItemGun) {
+                ItemGun gun = (ItemGun)heldItem.getItem();
                 if (gun.type.enhancedModel != null) {
                     GlStateManager.rotate(90, 0, 1, 0);
                     GlStateManager.rotate((float)Math.toDegrees(RenderGunEnhanced.mwf_camera_rot.angle),
@@ -192,6 +194,9 @@ public class ClientEventHandler {
                         Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
                     }
                 }
+            } else {
+                RenderGunEnhanced.mwf_camera_rot.set(0, 0, 0, 0);
+                RenderGunEnhanced.mwf_camera_pos.set(0, 0, 0);
             }
         }
 

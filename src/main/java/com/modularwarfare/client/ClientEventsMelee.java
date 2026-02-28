@@ -204,8 +204,10 @@ public class ClientEventsMelee {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void cemeraSetup(CameraSetup event) {
         if (Minecraft.getMinecraft().player != null) {
-            if (Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemMelee) {
-                ItemMelee melee = (ItemMelee)Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
+            ItemStack heldItem = Minecraft.getMinecraft().player.getHeldItemMainhand();
+            
+            if (heldItem.getItem() instanceof ItemMelee) {
+                ItemMelee melee = (ItemMelee)heldItem.getItem();
                 if (melee.type.enhancedModel != null) {
                     GlStateManager.rotate(90, 0, 1, 0);
                     GlStateManager.rotate((float)Math.toDegrees(RenderMelee.mwf_camera_rot.angle),
@@ -219,6 +221,9 @@ public class ClientEventsMelee {
                         Minecraft.getMinecraft().renderGlobal.setDisplayListEntitiesDirty();
                     }
                 }
+            } else {
+                RenderMelee.mwf_camera_rot.set(0, 0, 0, 0);
+                RenderMelee.mwf_camera_pos.set(0, 0, 0);
             }
         }
         GlStateManager.rotate((float) cemeraBobbing * 5, 0, 0, 1);
