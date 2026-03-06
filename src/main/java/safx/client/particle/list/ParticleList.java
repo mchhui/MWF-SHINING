@@ -71,29 +71,60 @@ public class ParticleList<E> implements Iterable<E>{
 		}
 	}
 	
-	
-	public void remove(ParticleListElement<E> listElem) {
-		if(listElem==first) {
+	//尝试使用更安全的移除
+	protected void remove(ParticleListElement<E> listElem) {
+		if(listElem == null) return;
+		
+		if(listElem == first) {
 			first = listElem.next;
-			if (first!=null) {
-				first.prev=null;
+			if (first != null) {
+				first.prev = null;
 			}
-		} else if(listElem==last) {
-			last=listElem.prev;
-			if(last!=null) {
-				last.next=null;
+		} else if(listElem == last) {
+			last = listElem.prev;
+			if(last != null) {
+				last.next = null;
 			}
-		} else {//粒子过多时无法正常移除会造成客户端崩溃
-			listElem.prev.next=listElem.next;
-			
-			if(listElem.next!=null) { //This should not happen, but there where crash reports
-				listElem.next.prev=listElem.prev;
+		} else {
+			if(listElem.prev != null) {
+				listElem.prev.next = listElem.next;
 			}
-			//listElem.next=null;
-			listElem.prev=null;
+			if(listElem.next != null) {
+				listElem.next.prev = listElem.prev;
+			}
 		}
+		
+		// 清除引用防止内存泄漏
+		listElem.prev = null;
+		listElem.next = null;
+		listElem.e = null;
+		
 		size--;
 	}
+
+	// public void remove(ParticleListElement<E> listElem) {
+	// 	if(listElem==first) {
+	// 		first = listElem.next;
+	// 		if (first!=null) {
+	// 			first.prev=null;
+	// 		}
+	// 	} else if(listElem==last) {
+	// 		last=listElem.prev;
+	// 		if(last!=null) {
+	// 			last.next=null;
+	// 		}
+	// 	} else {//粒子过多时无法正常移除会造成客户端崩溃
+	// 		listElem.prev.next=listElem.next;
+			
+	// 		if(listElem.next!=null) { //This should not happen, but there where crash reports
+	// 			listElem.next.prev=listElem.prev;
+	// 		}
+	// 		//listElem.next=null;
+	// 		listElem.prev=null;
+	// 	}
+	// 	size--;
+	// }
+	
 	
 	/*public void addSorted(E e, Comparator<E> comp) {
 		if(first==null) {

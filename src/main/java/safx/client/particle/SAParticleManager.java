@@ -29,19 +29,20 @@ public class SAParticleManager {
 	protected ParticleList<ISAParticle> list_nosort = new ParticleList<>();
 	protected ComparatorParticleDepth compare = new ComparatorParticleDepth();
 	
-	public void addEffect(ISAParticle effect)
-    {
-        if (effect == null) return;
-        if(effect instanceof SAParticleSystem) {
-        	list_systems.add((SAParticleSystem) effect);
-        } else {
-        	if (effect.doNotSort()) {
-        		list_nosort.add(effect);
-        	} else {
-        		list.add(effect);
-        	}
-        }
-    }
+	public void addEffect(ISAParticle effect) {
+		if (effect == null) return;
+		synchronized(this) {  // 添加同步
+			if(effect instanceof SAParticleSystem) {
+				list_systems.add((SAParticleSystem) effect);
+			} else {
+				if (effect.doNotSort()) {
+					list_nosort.add(effect);
+				} else {
+					list.add(effect);
+				}
+			}
+		}
+	}
 	
 	public void tickParticles() {
 		if(Minecraft.getMinecraft().isGamePaused()) return;
