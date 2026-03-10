@@ -289,7 +289,19 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             mwf_camera_pos.set(0,0,0);
             mwf_camera_rot.set(0, 0, 0, 0);
         }
-        
+
+        /**
+         * aim_point pivot
+         * 若模型含 mwf_aim_point 骨骼，则所有程序动画（移动/后坐力等）的旋转中心
+         * 从相机原点改为该骨骼的模型空间坐标，位置受动画（含 AIM）驱动
+         */
+        Vector3f aim_point_pivot = new Vector3f();
+        boolean hasAimPoint = model.model.geoModel.nodes.get("mwf_aim_point") != null && model == firstPersonModel;
+        if (hasAimPoint) {
+            model.getGlobalTransform("mwf_aim_point").getTranslation(aim_point_pivot);
+            mat.translate(aim_point_pivot);
+        }
+
         /**
          * ACTION GUN MOTION
          */
@@ -592,6 +604,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake * modelShakeFactor)), new Vector3f(0.0f, 1.0f, 0.0f));
         mat.rotate(toRadians(((-alpha) * randomShake * config.extra.modelRecoilShake * modelShakeFactor)), new Vector3f(1.0f, 0.0f, 0.0f));
 
+        if (hasAimPoint) {
+            mat.translate(-aim_point_pivot.x, -aim_point_pivot.y, -aim_point_pivot.z);
+        }
+
         if(ScopeUtils.isIndsideGunRendering) {
             mat.translate(new Vector3f(-renderInsideGunOffset, 0, 0));
         }
@@ -733,7 +749,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
          * 绘制镜面擦除
          * */
         blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
-            controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, () -> {
+            controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, controller.getAimTime(), (float)controller.ADS, () -> {
                 if (isRenderHand0) {
                     if (sightRendering != null) {
                         String binding = "gunModel";
@@ -754,7 +770,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         /**
          * LEFT HAND GROUP
          * */
-        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, () -> {
+        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, controller.getAimTime(), (float)controller.ADS, () -> {
             if (isRenderHand0) {
                 /**
                  * player left hand
@@ -773,7 +789,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         /**
          * RIGHT HAND GROUP
          * */
-        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, false, () -> {
+        blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, false, controller.getAimTime(), (float)controller.ADS, () -> {
             if(isRenderHand0) {
                 /**
                  * player right hand
@@ -2444,7 +2460,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
     public void blendTransform(ModelEnhancedGun model, ItemStack gunStack, boolean basicSprint, float time,
             float sprintTime,
-            float alpha, String hand, boolean applySprint, boolean skin, Runnable runnable) {
+            float alpha, String hand, boolean applySprint, boolean skin, float aimTime, float adsAlpha, Runnable runnable) {
         float ammoPer = 0;
         if (gunStack.getTagCompound() != null) {
             if (ItemGun.hasAmmoLoaded(gunStack)) {
@@ -2500,6 +2516,31 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             mat.scale(size);
                             mat.rotate(quat);
                         }
+                    }
+                }
+                if ((node.name.equals("mwf_camera") || node.name.equals("mwf_aim_point")) && adsAlpha > 0) {
+                    aim: {
+                        mchhui.hegltf.DataAnimation.Transform aim_transform = model.findLocalTransform(node.name, aimTime);
+                        if (aim_transform == null) {
+                            break aim;
+                        }
+                        Quaternionf quat = new Quaternionf();
+                        quat.setFromUnnormalized(mat);
+                        quat.normalize().slerp(aim_transform.rot.normalize(), adsAlpha);
+                        org.joml.Vector3f pos = new org.joml.Vector3f();
+                        mat.getTranslation(pos);
+                        pos.set(pos.x + (aim_transform.pos.x - pos.x) * adsAlpha,
+                                pos.y + (aim_transform.pos.y - pos.y) * adsAlpha,
+                                pos.z + (aim_transform.pos.z - pos.z) * adsAlpha);
+                        org.joml.Vector3f size = new org.joml.Vector3f();
+                        mat.getScale(size);
+                        size.set(size.x + (aim_transform.size.x - size.x) * adsAlpha,
+                                size.y + (aim_transform.size.y - size.y) * adsAlpha,
+                                size.z + (aim_transform.size.z - size.z) * adsAlpha);
+                        mat.identity();
+                        mat.translate(pos);
+                        mat.scale(size);
+                        mat.rotate(quat);
                     }
                 }
                 EnhancedRenderConfig.ObjectControl cfg = ((GunEnhancedRenderConfig) model.config).objectControl.get(node.name);

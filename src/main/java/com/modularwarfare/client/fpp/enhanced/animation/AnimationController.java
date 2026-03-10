@@ -1034,6 +1034,13 @@ public class AnimationController {
         return(float) result;
     }
 
+    public float getAimTime(){
+        if(config.animations.get(AnimationType.AIM)==null) {
+            return 0;
+        }
+        return (float) config.animations.get(AnimationType.AIM).getStartTime(config.FPS);
+    }
+
     public void setConfig(EnhancedRenderConfig config){
         this.config = config;
     }

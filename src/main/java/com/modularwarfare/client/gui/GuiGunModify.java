@@ -1128,7 +1128,7 @@ public class GuiGunModify extends GuiScreen {
 			float worldScale = 1F;
 			boolean applySprint = false;
 			rge.blendTransform(model,itemstack, false, AnimationController.getClientController().getTime(),
-			    AnimationController.getClientController().getSprintTime(), (float) AnimationController.getClientController().SPRINT, "sprint_righthand", applySprint,true,
+			    AnimationController.getClientController().getSprintTime(), (float) AnimationController.getClientController().SPRINT, "sprint_righthand", applySprint,true, AnimationController.getClientController().getAimTime(), (float) AnimationController.getClientController().ADS,
 					() -> {
 						if (true) {// isRenderHand0
 							if (sightRendering != null) {
