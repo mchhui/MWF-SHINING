@@ -94,36 +94,13 @@ public class ParticleList<E> implements Iterable<E>{
 			}
 		}
 		
-		// 清除引用防止内存泄漏
+		// 清除prev和e引用防止内存泄漏，但保留next供迭代器遍历继续使用
 		listElem.prev = null;
-		listElem.next = null;
 		listElem.e = null;
 		
 		size--;
 	}
 
-	// public void remove(ParticleListElement<E> listElem) {
-	// 	if(listElem==first) {
-	// 		first = listElem.next;
-	// 		if (first!=null) {
-	// 			first.prev=null;
-	// 		}
-	// 	} else if(listElem==last) {
-	// 		last=listElem.prev;
-	// 		if(last!=null) {
-	// 			last.next=null;
-	// 		}
-	// 	} else {//粒子过多时无法正常移除会造成客户端崩溃
-	// 		listElem.prev.next=listElem.next;
-			
-	// 		if(listElem.next!=null) { //This should not happen, but there where crash reports
-	// 			listElem.next.prev=listElem.prev;
-	// 		}
-	// 		//listElem.next=null;
-	// 		listElem.prev=null;
-	// 	}
-	// 	size--;
-	// }
 	
 	
 	/*public void addSorted(E e, Comparator<E> comp) {
@@ -271,13 +248,7 @@ public class ParticleList<E> implements Iterable<E>{
 		@Override
 		public void remove() {
 			if(current!=null) {
-			/*	ParticleListElement<E> next=null;
-				if(hasNext()) {
-					next = current.next;
-				}*/
-				
 				list.remove(current);
-				//current=next;
 			} else {
 				throw new IllegalStateException("Current element is null!");
 			}
