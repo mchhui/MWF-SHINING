@@ -727,6 +727,9 @@ public class PacketGunReload extends PacketBase {
 
             /** Compounded Magazines */
             if (hasAmmoLoaded) {
+                if (!(currentAmmoStack.getItem() instanceof ItemAmmo)) {
+                    return;
+                }
                 ItemAmmo currentAmmoItem = (ItemAmmo) currentAmmoStack.getItem();
                 NBTTagCompound currentAmmoTag = currentAmmoStack.getTagCompound();
 

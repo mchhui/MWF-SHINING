@@ -62,6 +62,10 @@ public class PacketGunReloadEnhancedStop extends PacketBase {
                 }
                 DataGunReloadEnhancedTask task = ServerTickHandler.reloadEnhancedTask.get(entityPlayer.getUniqueID());
                 ItemStack gunStack = entityPlayer.inventory.mainInventory.get(task.gunSlot);
+                if (!(gunStack.getItem() instanceof ItemGun)) {
+                    ServerTickHandler.reloadEnhancedTask.remove(entityPlayer.getUniqueID());
+                    return;
+                }
                 ItemGun itemGun = (ItemGun) gunStack.getItem();
                 GunType gunType = itemGun.type;
                 InventoryPlayer inventory = entityPlayer.inventory;
