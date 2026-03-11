@@ -464,11 +464,19 @@ public class GuiGunModify extends GuiScreen {
 		
 		GunEnhancedRenderConfig config=null;
 		GunRenderConfig configBasic=null;
+		ModelEnhancedGun modelEnhanced = null;
+		org.joml.Vector3f guiPointOffset = new org.joml.Vector3f(0, 0, 0);
+		
 		if(isBasic) {
 			ModelGun model = (ModelGun) gunType.model;
 			configBasic = model.config;
 		}else {
 			config = (GunEnhancedRenderConfig) gunType.enhancedModel.config;
+			modelEnhanced = (ModelEnhancedGun) gunType.enhancedModel;
+			
+			if (modelEnhanced.existPart("mwf_gui_point")) {
+				modelEnhanced.getGlobalTransform("mwf_gui_point").getTranslation(guiPointOffset);
+			}
 		}
 
 		ArrayList<float[]> placeList = new ArrayList();
@@ -546,6 +554,12 @@ public class GuiGunModify extends GuiScreen {
 								partTranslate.y += influence.translate.y;
 								partTranslate.z += influence.translate.z;
 							}
+							
+							// 加上 mwf_gui_point 的偏移，使配件点位与已偏移的模型对齐
+							// 因为模型渲染时使用了 translate(-guiPoint)，所以这里需要加回来
+							partTranslate.x += guiPointOffset.x;
+							partTranslate.y += guiPointOffset.y;
+							partTranslate.z += guiPointOffset.z;
 						}
 					}
 					
@@ -565,6 +579,10 @@ public class GuiGunModify extends GuiScreen {
 											partTranslate.y += influence.translate.y;
 											partTranslate.z += influence.translate.z;
 										}
+										
+										partTranslate.x += guiPointOffset.x;
+										partTranslate.y += guiPointOffset.y;
+										partTranslate.z += guiPointOffset.z;
 	        						}
 	        					}
 	                        }else {
@@ -573,6 +591,10 @@ public class GuiGunModify extends GuiScreen {
 	                        	partTranslate.x = attConfig.attachmentGuiOffset.x;
 	                        	partTranslate.y = attConfig.attachmentGuiOffset.y;
 	                        	partTranslate.z = attConfig.attachmentGuiOffset.z;
+	                        	
+	                        	partTranslate.x += guiPointOffset.x;
+	                        	partTranslate.y += guiPointOffset.y;
+	                        	partTranslate.z += guiPointOffset.z;
 	                        }
 	                        
 	                        if (handguardName != null && attConfig.handguardInfluence.containsKey(handguardName)) {
@@ -1123,6 +1145,18 @@ public class GuiGunModify extends GuiScreen {
 			// GlStateManager.rotate((float) autoRotate, 0, 0, 1);
 			GlStateManager.rotate((float) rotateZ, 1, 0, 0);
 			GlStateManager.translate(centerOffsetY,centerOffsetX,0);
+
+			/**
+			 * mwf_gui_point pivot
+			 * 若模型含 mwf_gui_point 骨骼，则以该骨骼模型空间坐标为原点进行偏移，
+			 * 使其渲染中心对准改装界面的显示中心位置。
+			 */
+			if (model.existPart("mwf_gui_point")) {
+				org.joml.Vector3f guiPoint = new org.joml.Vector3f();
+				model.getGlobalTransform("mwf_gui_point").getTranslation(guiPoint);
+				GlStateManager.translate(-guiPoint.x, -guiPoint.y, -guiPoint.z);
+			}
+
 //			GlStateManager.disableCull();
 			final ItemAttachment sightRendering = sight;
 			float worldScale = 1F;

@@ -1794,6 +1794,17 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.rotate(renderConfigElement.rot.z, 0, 0, -1);
 
         /**
+         * mwf_third_point pivot
+         * 若模型含 mwf_third_point 骨骼，则以该骨骼模型空间坐标为原点进行偏移，
+         * 使其渲染中心对准玩家 layer 层的挂载位置。
+         */
+        if (model.existPart("mwf_third_point")) {
+            Vector3f thirdPoint = new Vector3f();
+            model.getGlobalTransform("mwf_third_point").getTranslation(thirdPoint);
+            GlStateManager.translate(-thirdPoint.x, -thirdPoint.y, -thirdPoint.z);
+        }
+
+        /**
          * gun
          */
         int skinId = 0;
