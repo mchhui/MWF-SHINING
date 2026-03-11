@@ -292,13 +292,13 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
         /**
          * aim_point pivot
-         * 若模型含 mwf_aim_point 骨骼，则所有程序动画（移动/后坐力等）的旋转中心
+         * 若模型含 mwf_recoil_point 骨骼，则所有程序动画（移动/后坐力等）的旋转中心
          * 从相机原点改为该骨骼的模型空间坐标，位置受动画（含 AIM）驱动
          */
         Vector3f aim_point_pivot = new Vector3f();
-        boolean hasAimPoint = model.model.geoModel.nodes.get("mwf_aim_point") != null && model == firstPersonModel;
+        boolean hasAimPoint = model.model.geoModel.nodes.get("mwf_recoil_point") != null && model == firstPersonModel;
         if (hasAimPoint) {
-            model.getGlobalTransform("mwf_aim_point").getTranslation(aim_point_pivot);
+            model.getGlobalTransform("mwf_recoil_point").getTranslation(aim_point_pivot);
             mat.translate(aim_point_pivot);
         }
 
@@ -2529,7 +2529,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                         }
                     }
                 }
-                if ((node.name.equals("mwf_camera") || node.name.equals("mwf_aim_point")) && adsAlpha > 0) {
+                if ((node.name.equals("mwf_camera") || node.name.equals("mwf_recoil_point")) && adsAlpha > 0) {
                     aim: {
                         mchhui.hegltf.DataAnimation.Transform aim_transform = model.findLocalTransform(node.name, aimTime);
                         if (aim_transform == null) {
