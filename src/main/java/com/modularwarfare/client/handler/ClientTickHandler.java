@@ -475,6 +475,10 @@ public final class ClientTickHandler {
     private static void doRecoil(EntityPlayerSP player) {
         ItemStack stack = player.getHeldItemMainhand();
         
+        // 保存上一帧的后坐力值用于插值
+        RenderParameters.playerRecoilPitch_LAST = RenderParameters.playerRecoilPitch;
+        RenderParameters.playerRecoilYaw_LAST = RenderParameters.playerRecoilYaw;
+        
         if (playerRecoilPitch != 0.f)
             playerRecoilPitch *= 0.8F;
 

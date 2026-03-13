@@ -631,6 +631,10 @@ public class FireManager {
                 ClientTickHandler.startAntiRecoilTime = System.currentTimeMillis();
             }
 
+            // 保存上一帧的后坐力值用于插值
+            RenderParameters.playerRecoilPitch_LAST = RenderParameters.playerRecoilPitch;
+            RenderParameters.playerRecoilYaw_LAST = RenderParameters.playerRecoilYaw;
+
             RenderParameters.playerRecoilPitch += offsetPitch;
             if (Math.random() > 0.5f) {
                 RenderParameters.playerRecoilYaw += offsetYaw;

@@ -43,6 +43,8 @@ public class RenderParameters {
      */
     public static float playerRecoilPitch;
     public static float playerRecoilYaw;
+    public static float playerRecoilPitch_LAST;
+    public static float playerRecoilYaw_LAST;
     public static float prevPitch = 0;
     public static float playerAntiRecoilFactor = 0;
     public static float playerAntiRecoilStartTime = 0;

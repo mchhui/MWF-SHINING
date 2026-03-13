@@ -13,10 +13,12 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.shader.Programs;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.mixin.client.accessor.IShaderGroup;
 import com.modularwarfare.utility.OptifineHelper;
 import com.modularwarfare.client.handler.SensitivityHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.*;
@@ -54,6 +56,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.List;
 
 public class ScopeUtils {
 
@@ -441,20 +444,92 @@ public class ScopeUtils {
             GL20.glUseProgram(Programs.normalProgram);
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             GlStateManager.pushMatrix();
-            float width=config.maskSize*resolution.getScaledHeight();
-            float height=config.maskSize*resolution.getScaledHeight();
+            
+
+            float displayCenterX = mc.displayWidth / 2f;
+            float displayCenterY = mc.displayHeight / 2f;
+            float physicalWidth = config.maskSize * mc.displayHeight;
+            float physicalHeight = config.maskSize * mc.displayHeight;
+            
+            // 转换到ScaledResolution坐标系
+            int scaleFactor = resolution.getScaleFactor();
+            float width = physicalWidth / scaleFactor;
+            float height = physicalHeight / scaleFactor;
+            
             GlStateManager.translate(resolution.getScaledWidth()/2f, resolution.getScaledHeight()/2f, 0);
+            
+            // 使用插值计算当前帧的后坐力值
+            float partialTicks = ClientProxy.renderHooks.partialTicks;
+            float interpolatedRecoilPitch = RenderParameters.playerRecoilPitch_LAST + 
+                (RenderParameters.playerRecoilPitch - RenderParameters.playerRecoilPitch_LAST) * partialTicks;
+            float interpolatedRecoilYaw = RenderParameters.playerRecoilYaw_LAST + 
+                (RenderParameters.playerRecoilYaw - RenderParameters.playerRecoilYaw_LAST) * partialTicks;
+            
             // 计算倾斜角度的弧度值
             float rotateRad = (float)Math.toRadians(CROSS_ROTATE);
-            // 根据倾斜角度旋转后坐力偏移向量
+            
             float recoilFactor = config.recoilOverlayFactor != 1.0f ? config.recoilOverlayFactor : config.fovZoom;
-            float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
-            float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
+            float recoilBaseX = (float)(interpolatedRecoilYaw * Math.cos(rotateRad) - interpolatedRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
+            float recoilBaseY = (float)(interpolatedRecoilYaw * Math.sin(rotateRad) + interpolatedRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
+            
+            // 标准化到 scaleFactor=4（自动模式基准）
+            float recoilScale = 4.0f / scaleFactor;
+            
+            float recoilOffsetX = recoilBaseX * recoilScale;
+            float recoilOffsetY = recoilBaseY * recoilScale;
+            
             GlStateManager.translate(recoilOffsetX, -recoilOffsetY, 0);
             GlStateManager.rotate(CROSS_ROTATE,0,0,1);
             GlStateManager.translate(-width/2f, -height/2f, 0);
             ClientProxy.gunStaticRenderer.bindTexture("mask", config.maskTexture);
             ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1,(int)width,(int)height, 1, 1);
+            
+            if(isOverlayRendering && attachment != null) {
+                List<TextureType> clippedOverlays = new java.util.ArrayList<>();
+                if (attachment.type.sight.overlayTypes != null && !attachment.type.sight.overlayTypes.isEmpty()) {
+                    clippedOverlays.addAll(attachment.type.sight.overlayTypes);
+                } else if (attachment.type.sight.overlayType != null) {
+                    clippedOverlays.add(attachment.type.sight.overlayType);
+                }
+                
+                GlStateManager.popMatrix(); 
+                GlStateManager.pushMatrix();
+
+                
+                float baseHeight = 480.0f;
+                float baseScaleFactor = 4.0f;
+                
+                float heightScale = mc.displayHeight / baseHeight;
+                
+                float baseSize = 32 * 2 / baseScaleFactor / 2.0f;  // = 8
+                
+                int overlaySize = (int) (baseSize * heightScale * (baseScaleFactor / scaleFactor));
+                
+                float scale = Math.abs(interpolatedRecoilYaw) + Math.abs(interpolatedRecoilPitch);
+                scale *= config.factorCrossScale;
+                overlaySize = (int) (((overlaySize * (1 + (scale > 0.8 ? scale : 0) * 0.2))) * config.rectileScale);
+                
+                GlStateManager.translate(resolution.getScaledWidth()/2f, resolution.getScaledHeight()/2f, 0);
+                
+                if (!attachment.type.sight.plumbCrossHair) {
+                    GlStateManager.rotate(CROSS_ROTATE, 0, 0, 1);
+                }
+                
+                GlStateManager.translate(-overlaySize, -overlaySize, 0);
+                
+                GlStateManager.translate(recoilOffsetX, -recoilOffsetY, 0);
+                
+                for (TextureType overlayType : clippedOverlays) {
+                    if (overlayType.resourceLocations != null && !overlayType.resourceLocations.isEmpty()) {
+                        mc.getTextureManager().bindTexture(overlayType.resourceLocations.get(0));
+                        Gui.drawScaledCustomSizeModalRect(0, 0, 0, 0, 1, 1, overlaySize * 2, overlaySize * 2, 1, 1);
+                    }
+                }
+                
+                GlStateManager.popMatrix();
+                GlStateManager.pushMatrix();
+            }
+            
             GlStateManager.popMatrix();
             
             GlStateManager.colorMask(true, true, true, true);

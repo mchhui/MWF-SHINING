@@ -22,6 +22,7 @@ import com.modularwarfare.common.guns.ItemAttachment;
 import com.modularwarfare.common.guns.AttachmentPresetEnum;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.ClientProxy;
 
 public class LaserDotRenderer {
     
@@ -101,7 +102,13 @@ public class LaserDotRenderer {
         float x = resolution.getScaledWidth() / 2f;
         float y = resolution.getScaledHeight() / 2f;
 
-        // 计算后坐力偏移
+        // 计算后坐力偏移（使用插值后的后坐力值以获得更平滑的效果）
+        float partialTicks = ClientProxy.renderHooks.partialTicks;
+        float interpolatedRecoilPitch = RenderParameters.playerRecoilPitch_LAST + 
+            (RenderParameters.playerRecoilPitch - RenderParameters.playerRecoilPitch_LAST) * partialTicks;
+        float interpolatedRecoilYaw = RenderParameters.playerRecoilYaw_LAST + 
+            (RenderParameters.playerRecoilYaw - RenderParameters.playerRecoilYaw_LAST) * partialTicks;
+        
         float rotateRad = (float)Math.toRadians(RenderParameters.CROSS_ROTATE);
         
         // 从当前瞄具获取 recoilFactor
@@ -117,8 +124,14 @@ public class LaserDotRenderer {
             }
         }
 
-        float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
-        float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
+        float recoilBaseX = (float)(interpolatedRecoilYaw * Math.cos(rotateRad) - interpolatedRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
+        float recoilBaseY = (float)(interpolatedRecoilYaw * Math.sin(rotateRad) + interpolatedRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
+        
+        int scaleFactor = resolution.getScaleFactor();
+        float recoilScale = 4.0f / scaleFactor;
+        
+        float recoilOffsetX = recoilBaseX * recoilScale;
+        float recoilOffsetY = recoilBaseY * recoilScale;
         
         // 应用后坐力偏移
         x += recoilOffsetX;

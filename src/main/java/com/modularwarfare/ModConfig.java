@@ -112,6 +112,9 @@ public class ModConfig {
         public boolean autoSwitchToFirstView = true;
         public boolean forceRestoreBlendState = true;
         
+        // 准心后坐力扩散配置
+        public boolean crosshair_recoil_spread = true;
+        
         // PIP准镜优化选项
         public boolean useSingleRenderGlobalPIP = true;
         public int pipUpdateInterval = 1;

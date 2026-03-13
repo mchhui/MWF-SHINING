@@ -1,5 +1,8 @@
 package com.modularwarfare.common.guns;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
 import com.modularwarfare.client.model.ModelAttachment;
@@ -41,13 +44,43 @@ public class AttachmentType extends BaseType {
         loadBaseValues();
 
         if (FMLCommonHandler.instance().getEffectiveSide() == Side.CLIENT) {
-            if (sight.customOverlayTexture != null) {
-                if (ModularWarfare.textureTypes.containsKey(sight.customOverlayTexture)) {
-                    sight.overlayType = ModularWarfare.textureTypes.get(sight.customOverlayTexture);
+            if (sight.customOverlayTextures != null && sight.customOverlayTextures.length > 0) {
+                sight.overlayTypes.clear();
+                for (String textureName : sight.customOverlayTextures) {
+                    if (ModularWarfare.textureTypes.containsKey(textureName)) {
+                        sight.overlayTypes.add(ModularWarfare.textureTypes.get(textureName));
+                    } else {
+                        TextureType defaultType = new TextureType();
+                        defaultType.initDefaultTextures(TextureEnumType.Overlay);
+                        sight.overlayTypes.add(defaultType);
+                    }
                 }
             } else {
-                sight.overlayType = new TextureType();
-                sight.overlayType.initDefaultTextures(TextureEnumType.Overlay);
+                if (sight.customOverlayTexture != null) {
+                    if (ModularWarfare.textureTypes.containsKey(sight.customOverlayTexture)) {
+                        sight.overlayType = ModularWarfare.textureTypes.get(sight.customOverlayTexture);
+                    }
+                } else {
+                    sight.overlayType = new TextureType();
+                    sight.overlayType.initDefaultTextures(TextureEnumType.Overlay);
+                }
+                
+                if (sight.overlayType != null) {
+                    sight.overlayTypes.add(sight.overlayType);
+                }
+            }
+            
+            if (sight.customOverlayUnclippedTextures != null && sight.customOverlayUnclippedTextures.length > 0) {
+                sight.overlayUnclippedTypes.clear();
+                for (String textureName : sight.customOverlayUnclippedTextures) {
+                    if (ModularWarfare.textureTypes.containsKey(textureName)) {
+                        sight.overlayUnclippedTypes.add(ModularWarfare.textureTypes.get(textureName));
+                    } else {
+                        TextureType defaultType = new TextureType();
+                        defaultType.initDefaultTextures(TextureEnumType.Overlay);
+                        sight.overlayUnclippedTypes.add(defaultType);
+                    }
+                }
             }
         }
         loadWeaponSoundMap();
@@ -71,6 +104,13 @@ public class AttachmentType extends BaseType {
 
         public String customOverlayTexture;
         public transient TextureType overlayType;
+        
+        public String[] customOverlayTextures;
+        public transient List<TextureType> overlayTypes = new ArrayList<>();
+        
+        public String[] customOverlayUnclippedTextures;
+        public transient List<TextureType> overlayUnclippedTypes = new ArrayList<>();
+        
         public boolean plumbCrossHair = false;
         
         public boolean usedDefaultOverlayModelTexture=true;

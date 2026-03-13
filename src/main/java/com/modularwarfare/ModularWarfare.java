@@ -662,8 +662,16 @@ public class ModularWarfare {
                         if (type.attachmentType == AttachmentPresetEnum.Sight) {
                             com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig renderConfig = ModularWarfare.getRenderConfig(type, com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig.class);
                             if (renderConfig != null && renderConfig.sight != null) {
-                                if (type.sight != null && type.sight.overlayType != null) {
-                                    CommonProxy.preloadTextureTypes.add(type.sight.overlayType);
+                                if (type.sight != null) {
+                                    if (type.sight.overlayType != null) {
+                                        CommonProxy.preloadTextureTypes.add(type.sight.overlayType);
+                                    }
+                                    if (type.sight.overlayTypes != null && !type.sight.overlayTypes.isEmpty()) {
+                                        CommonProxy.preloadTextureTypes.addAll(type.sight.overlayTypes);
+                                    }
+                                    if (type.sight.overlayUnclippedTypes != null && !type.sight.overlayUnclippedTypes.isEmpty()) {
+                                        CommonProxy.preloadTextureTypes.addAll(type.sight.overlayUnclippedTypes);
+                                    }
                                 }
                                 if (renderConfig.sight.maskTexture != null) {
                                     ResourceLocation maskResource = new ResourceLocation(ModularWarfare.MOD_ID, "skins/mask/" + renderConfig.sight.maskTexture + ".png");

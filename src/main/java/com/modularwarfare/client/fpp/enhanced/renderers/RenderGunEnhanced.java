@@ -443,11 +443,16 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             
             if(anim.shooting) {
                 isRecovering = false;
-                // 使用playerRecoilYaw影响左右旋转和位移
-                targetRecoilX = RenderParameters.playerRecoilYaw * 1.5f;
-                // 使用playerRecoilPitch影响上下位移和旋转
-                targetRecoilY = RenderParameters.playerRecoilPitch * 0.8f;
-                targetRecoilZ = RenderParameters.playerRecoilPitch * 0.6f;
+                float interpolatedRecoilPitch = RenderParameters.playerRecoilPitch_LAST + 
+                    (RenderParameters.playerRecoilPitch - RenderParameters.playerRecoilPitch_LAST) * partialTicks;
+                float interpolatedRecoilYaw = RenderParameters.playerRecoilYaw_LAST + 
+                    (RenderParameters.playerRecoilYaw - RenderParameters.playerRecoilYaw_LAST) * partialTicks;
+                
+                // 使用插值后的playerRecoilYaw影响左右旋转和位移
+                targetRecoilX = interpolatedRecoilYaw * 1.5f;
+                // 使用插值后的playerRecoilPitch影响上下位移和旋转
+                targetRecoilY = interpolatedRecoilPitch * 0.8f;
+                targetRecoilZ = interpolatedRecoilPitch * 0.6f;
                 
 
                 bounceRecoilX = targetRecoilX * RECOIL_BOUNCE_FACTOR * 1.5f;
@@ -1229,14 +1234,62 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             }
                         }
                     }
+                    
+                    boolean shouldRotateFlashTemp = config.specialEffect.rotateFlashModel;
+                    ItemStack barrelStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
+                    if (barrelStack != null && barrelStack.getItem() != Items.AIR) {
+                        AttachmentType barrelType = ((ItemAttachment)barrelStack.getItem()).type;
+                        if (config.attachment.containsKey(barrelType.internalName)) {
+                            if (config.attachment.get(barrelType.internalName).rotateFlashModel != null) {
+                                shouldRotateFlashTemp = config.attachment.get(barrelType.internalName).rotateFlashModel;
+                            }
+                        }
+                    }
+                    final boolean shouldRotateFlash = shouldRotateFlashTemp;
+                    
+                    final float randomRotation = (float)(Math.random() * 360.0);
+                    
                     TextureType flashType = gunType.flashType;
                     bindTexture(flashType.resourceLocations.get(anim.flashCount % flashType.resourceLocations.size()));
-                    if(config.specialEffect.oldFlashModel) { 
-                        model.renderPart("flashModel");
+                    
+                    if(config.specialEffect.oldFlashModel) {
+                        if (shouldRotateFlash) {
+                            GlStateManager.pushMatrix();
+                            Matrix4f flashTransform = model.getGlobalTransform("flashModel");
+                            if (flashTransform != null) {
+                                Vector3f flashPos = new Vector3f();
+                                flashTransform.getTranslation(flashPos);
+                                GlStateManager.translate(flashPos.x, flashPos.y, flashPos.z);
+                                GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                                GlStateManager.translate(-flashPos.x, -flashPos.y, -flashPos.z);
+                            } else {
+                                GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                            }
+                            model.renderPart("flashModel");
+                            GlStateManager.popMatrix();
+                        } else {
+                            model.renderPart("flashModel");
+                        }
                     }
                     if(config.specialEffect.flashModelGroups!=null) {
                         config.specialEffect.flashModelGroups.forEach((group)->{
-                            model.renderPart(group.name);
+                            if (shouldRotateFlash) {
+                                GlStateManager.pushMatrix();
+                                Matrix4f groupTransform = model.getGlobalTransform(group.name);
+                                if (groupTransform != null) {
+                                    Vector3f groupPos = new Vector3f();
+                                    groupTransform.getTranslation(groupPos);
+                                    GlStateManager.translate(groupPos.x, groupPos.y, groupPos.z);
+                                    GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                                    GlStateManager.translate(-groupPos.x, -groupPos.y, -groupPos.z);
+                                } else {
+                                    GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                                }
+                                model.renderPart(group.name);
+                                GlStateManager.popMatrix();
+                            } else {
+                                model.renderPart(group.name);
+                            }
                         });
                     }
                     GlStateManager.popMatrix();
@@ -2078,10 +2131,42 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     }
                 }
             }
+            
+            boolean shouldRotateFlashTemp = config.specialEffect.rotateFlashModel;
+            ItemStack barrelStack = GunType.getAttachment(demoStack, AttachmentPresetEnum.Barrel);
+            if (barrelStack != null && barrelStack.getItem() != Items.AIR) {
+                AttachmentType barrelType = ((ItemAttachment)barrelStack.getItem()).type;
+                if (config.attachment.containsKey(barrelType.internalName)) {
+                    if (config.attachment.get(barrelType.internalName).rotateFlashModel != null) {
+                        shouldRotateFlashTemp = config.attachment.get(barrelType.internalName).rotateFlashModel;
+                    }
+                }
+            }
+            final boolean shouldRotateFlash = shouldRotateFlashTemp;
+            
+            final float randomRotation = (float)(Math.random() * 360.0);
+            
             TextureType flashType = gunType.flashType;
             bindTexture(flashType.resourceLocations.get(anim.flashCount % flashType.resourceLocations.size()));
+            
             if (config.specialEffect.oldFlashModel) {
-                model.renderPart("flashModel");
+                if (shouldRotateFlash) {
+                    GlStateManager.pushMatrix();
+                    Matrix4f flashTransform = model.getGlobalTransform("flashModel");
+                    if (flashTransform != null) {
+                        Vector3f flashPos = new Vector3f();
+                        flashTransform.getTranslation(flashPos);
+                        GlStateManager.translate(flashPos.x, flashPos.y, flashPos.z);
+                        GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                        GlStateManager.translate(-flashPos.x, -flashPos.y, -flashPos.z);
+                    } else {
+                        GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                    }
+                    model.renderPart("flashModel");
+                    GlStateManager.popMatrix();
+                } else {
+                    model.renderPart("flashModel");
+                }
             }
             if (config.specialEffect.flashModelGroups != null) {
                 config.specialEffect.flashModelGroups.forEach((group) -> {
@@ -2094,7 +2179,23 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             return;
                         }
                     }
-                    model.renderPart(group.name);
+                    if (shouldRotateFlash) {
+                        GlStateManager.pushMatrix();
+                        Matrix4f groupTransform = model.getGlobalTransform(group.name);
+                        if (groupTransform != null) {
+                            Vector3f groupPos = new Vector3f();
+                            groupTransform.getTranslation(groupPos);
+                            GlStateManager.translate(groupPos.x, groupPos.y, groupPos.z);
+                            GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                            GlStateManager.translate(-groupPos.x, -groupPos.y, -groupPos.z);
+                        } else {
+                            GlStateManager.rotate(randomRotation, 1.0F, 0.0F, 0.0F);
+                        }
+                        model.renderPart(group.name);
+                        GlStateManager.popMatrix();
+                    } else {
+                        model.renderPart(group.name);
+                    }
                 });
             }
             GlStateManager.popMatrix();

@@ -11,6 +11,7 @@ import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.utility.ReloadHelper;
 import com.modularwarfare.utility.RenderHelperMW;
@@ -32,6 +33,8 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
+
+import java.util.List;
 
 public class GunUI {
 
@@ -121,17 +124,37 @@ public class GunUI {
                                                     GlStateManager.color(1.0f, 1.0f, 1.0f, 1 - alpha);
                                                     Gui.drawModalRectWithCustomSizedTexture(width / 2, height / 2, 2.0f, 2.0f, 1, 1, 16.0f, 16.0f);
                                                 } else {
-                                                    ResourceLocation overlayToRender = itemAttachment.type.sight.overlayType.resourceLocations.get(0);
+                                                    List<ResourceLocation> overlaysToRender = new java.util.ArrayList<>();
+                                                    
+                                                    // 只添加非剪裁组
+                                                    if (itemAttachment.type.sight.overlayUnclippedTypes != null && !itemAttachment.type.sight.overlayUnclippedTypes.isEmpty()) {
+                                                        for (TextureType overlayType : itemAttachment.type.sight.overlayUnclippedTypes) {
+                                                            if (overlayType.resourceLocations != null && !overlayType.resourceLocations.isEmpty()) {
+                                                                overlaysToRender.add(overlayType.resourceLocations.get(0));
+                                                            }
+                                                        }
+                                                    }
 
-                                                    float factor = Minecraft.getMinecraft().displayWidth/2560F * 0.75F;
-//                                                    float factor = 1;
-//                                                    if (width < 700) {
-//                                                        factor = 2;
-//                                                    }
-                                                    int size = (int) (32 * 2 / event.getResolution().getScaleFactor() * factor) + ((int) (crouchSwitch) * 5);
+                                                    int scaleFactor = event.getResolution().getScaleFactor();
+                                                    
+                                                    float baseHeight = 480.0f;
+                                                    float baseScaleFactor = 4.0f;
+                                                    
+                                                    float heightScale = Minecraft.getMinecraft().displayHeight / baseHeight;
+                                                    
+                                                    float baseSize = 32 * 2 / baseScaleFactor / 2.0f;  // = 8
+                                                    
+                                                    // 应用分辨率缩放和 scaleFactor 标准化
+                                                    // size = baseSize * heightScale * (baseScaleFactor / scaleFactor)
+                                                    int size = (int) (baseSize * heightScale * (baseScaleFactor / scaleFactor)) + ((int) (crouchSwitch) * 5);
 
+                                                    float partialTicks = ClientProxy.renderHooks.partialTicks;
+                                                    float interpolatedRecoilPitch = RenderParameters.playerRecoilPitch_LAST + 
+                                                        (RenderParameters.playerRecoilPitch - RenderParameters.playerRecoilPitch_LAST) * partialTicks;
+                                                    float interpolatedRecoilYaw = RenderParameters.playerRecoilYaw_LAST + 
+                                                        (RenderParameters.playerRecoilYaw - RenderParameters.playerRecoilYaw_LAST) * partialTicks;
 
-                                                    float scale=Math.abs(playerRecoilYaw)+Math.abs(playerRecoilPitch);
+                                                    float scale=Math.abs(interpolatedRecoilYaw)+Math.abs(interpolatedRecoilPitch);
                                                     scale*=((ModelAttachment) itemAttachment.type.model).config.sight.factorCrossScale;
                                                     size = (int) (((size * (1 + (scale > 0.8 ? scale : 0) * 0.2))) * ((ModelAttachment) itemAttachment.type.model).config.sight.rectileScale);
                                                     GL11.glTranslatef((width / 2), (height / 2), 0);
@@ -142,10 +165,22 @@ public class GunUI {
                                                     ModelAttachment modelAttachment = (ModelAttachment)itemAttachment.type.model;
                                                     float rotateRad = (float)Math.toRadians(CROSS_ROTATE);
                                                     float recoilFactor = modelAttachment.config.sight.recoilOverlayFactor != 1.0f ? modelAttachment.config.sight.recoilOverlayFactor : modelAttachment.config.sight.fovZoom;
-                                                    float recoilOffsetX = (float)(RenderParameters.playerRecoilYaw * Math.cos(rotateRad) - RenderParameters.playerRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
-                                                    float recoilOffsetY = (float)(RenderParameters.playerRecoilYaw * Math.sin(rotateRad) + RenderParameters.playerRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
+                                                    
+                                                    float recoilBaseX = (float)(interpolatedRecoilYaw * Math.cos(rotateRad) - interpolatedRecoilPitch * Math.sin(rotateRad)) * recoilFactor;
+                                                    float recoilBaseY = (float)(interpolatedRecoilYaw * Math.sin(rotateRad) + interpolatedRecoilPitch * Math.cos(rotateRad)) * recoilFactor;
+                                                    
+                                                    // 标准化到 scaleFactor=4（自动模式基准），保持在所有GUI缩放下一致
+                                                    float recoilScale = 4.0f / scaleFactor;
+                                                    
+                                                    float recoilOffsetX = recoilBaseX * recoilScale;
+                                                    float recoilOffsetY = recoilBaseY * recoilScale;
+                                                    
                                                     GL11.glTranslatef(recoilOffsetX, -recoilOffsetY, 0);
-                                                    RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
+                                                    
+                                                    // 渲染所有overlay
+                                                    for (ResourceLocation overlayToRender : overlaysToRender) {
+                                                        RenderHelperMW.renderImageAlpha(0, 0, overlayToRender, size * 2, size * 2, 1f - alpha);
+                                                    }
                                                 }
 
                                                 GL11.glPopMatrix();
@@ -185,7 +220,34 @@ public class GunUI {
                                 }
 
                                 final float accuracy = RayUtil.calculateAccuracy((ItemGun) mc.player.getHeldItemMainhand().getItem(), mc.player);
-                                int move = Math.max(0, (int) (accuracy * 3.0f));
+                                
+                                int scaleFactor = event.getResolution().getScaleFactor();
+                                float baseHeight = 480.0f;
+                                float baseScaleFactor = 4.0f;
+                                float heightScale = Minecraft.getMinecraft().displayHeight / baseHeight;
+                                
+                                float comprehensiveScale = heightScale * (baseScaleFactor / scaleFactor);
+                                
+                                // 计算累计后坐力对准心的影响
+                                int move;
+                                
+                                if (ModConfig.INSTANCE.hud.crosshair_recoil_spread) {
+                                    float partialTicks = ClientProxy.renderHooks.partialTicks;
+                                    float interpolatedRecoilPitch = RenderParameters.playerRecoilPitch_LAST + 
+                                        (RenderParameters.playerRecoilPitch - RenderParameters.playerRecoilPitch_LAST) * partialTicks;
+                                    float interpolatedRecoilYaw = RenderParameters.playerRecoilYaw_LAST + 
+                                        (RenderParameters.playerRecoilYaw - RenderParameters.playerRecoilYaw_LAST) * partialTicks;
+                                    
+                                    float recoilMagnitude = (float)Math.sqrt(
+                                        interpolatedRecoilPitch * interpolatedRecoilPitch + 
+                                        interpolatedRecoilYaw * interpolatedRecoilYaw
+                                    );
+                                    
+                                    move = Math.max(0, (int) ((accuracy + recoilMagnitude * 1.0f) * 1.0f * comprehensiveScale));
+                                } else {
+                                    move = Math.max(0, (int) (accuracy * 1.5f * comprehensiveScale));
+                                }
+                                
                                 mc.renderEngine.bindTexture(crosshair);
                                 int xPos = width / 2;
                                 int yPos = height / 2;

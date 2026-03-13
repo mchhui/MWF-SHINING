@@ -64,6 +64,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public float renderInsideGunOffset=5f;
         public Vector3f attachmentGuiOffset = new Vector3f(0F, 0F, 0F);
         public Vector3f flashModelOffset = new Vector3f(0F, 0F, 0F);
+        public Boolean rotateFlashModel=null;
         public float modelRecoilBackwardsFactor = 1f;
         public float modelRecoilUpwardsFactor = 1f;
         public float modelRecoilShakeFactor = 1f;
@@ -81,6 +82,9 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public static class SpecialEffect{
         //是否启用对传统的FlashModel对象的渲染
         public boolean oldFlashModel=true;
+        
+        //是否启用火焰模型X轴随机旋转
+        public boolean rotateFlashModel=false;
         
         //枪口过热烟的系数 这个数越大 烟越容易出现
         public float postSmokeFactor=1;
