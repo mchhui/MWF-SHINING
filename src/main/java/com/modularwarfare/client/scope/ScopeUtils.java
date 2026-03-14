@@ -181,11 +181,11 @@ public class ScopeUtils {
                                         GL11.glPopMatrix();
                                     }
                                     
-                                    if (itemAttachment.type.sight.modeType.isPIP) {
-                                        if (ModConfig.INSTANCE.hud.alwaysRenderPIPWorld
-                                            || RenderParameters.adsSwitch != 0) {
-                                            renderWorld(mc, itemAttachment, event.renderTickTime);
-                                        }
+                                    // 统一渲染入口：FOV和PIP模式都使用完整的世界渲染
+                                    // 这样可以确保水体、雾气等后处理效果正常显示
+                                    if (ModConfig.INSTANCE.hud.alwaysRenderPIPWorld
+                                        || RenderParameters.adsSwitch != 0) {
+                                        renderWorld(mc, itemAttachment, event.renderTickTime);
                                     }
                                 }
                             }
@@ -282,6 +282,8 @@ public class ScopeUtils {
     
     @SubscribeEvent
     public void onFovMod(FOVModifier event) {
+        // FOV镜子：修改全局FOV + 使用PIP渲染逻辑
+        // 镜内外FOV同步，所以直接修改FOV即可
         if (mc.player.getHeldItemMainhand() != null && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun
             && RenderParameters.adsSwitch != 0 && mc.gameSettings.thirdPersonView == 0) {
             if (GunType.getAttachment(mc.player.getHeldItemMainhand(), AttachmentPresetEnum.Sight) != null) {
@@ -290,6 +292,7 @@ public class ScopeUtils {
                 if (itemAttachment != null) {
                     if (itemAttachment.type != null) {
                         if (!itemAttachment.type.sight.modeType.isPIP) {
+                            // FOV模式：修改全局FOV
                             float dst = getFov(itemAttachment);
                             if (ModConfig.INSTANCE.hud.isDynamicFov) {
                                 dst += event.getFOV() - mc.gameSettings.fovSetting;
@@ -301,12 +304,14 @@ public class ScopeUtils {
                                 mc.renderGlobal.setDisplayListEntitiesDirty();
                             }
                         } else {
-                            //none
+                            // PIP模式：不修改FOV
                         }
                     }
                 }
             }
         }
+        
+        // 第三人称开镜缩放
         if(mc.player.getHeldItemMainhand() != null && mc.player.getHeldItemMainhand().getItem() instanceof ItemGun
             && RenderParameters.adsSwitch != 0 && mc.gameSettings.thirdPersonView == 1) {
             float dst = 50;
@@ -361,6 +366,7 @@ public class ScopeUtils {
                 return;
             }
 
+            /*
             if(!attachment.type.sight.modeType.isPIP||RenderGunEnhanced.debug1) {
                 if(OptifineHelper.isRenderingDfb()) {
                     //TODO: Optifine and OpenGL 2.1 Compatibility ?
@@ -376,6 +382,7 @@ public class ScopeUtils {
                     }
                 }
             }
+            */
 
             
             boolean needBlur = false;
@@ -699,29 +706,77 @@ public class ScopeUtils {
     }
 
     /**
-     * PIP准镜世界渲染入口
-     * 根据ModConfig.INSTANCE.hud.useSingleRenderGlobalPIP配置选择渲染方式：
-     * - true: 单RenderGlobal双Pass渲染（节省内存，推荐）
-     * - false: 双RenderGlobal渲染（旧方案，保持兼容性）
+     * 镜子世界渲染入口
+     * - FOV模式：镜内外FOV同步，使用完整世界渲染解决水体/雾气问题
+     * - PIP模式：镜内外FOV不同，需要双Pass渲染
      */
     public void renderWorld(Minecraft mc, ItemAttachment itemAttachment, float partialTick) {
-        // 降频更新优化：不是每帧都渲染PIP
-        pipFrameCounter++;
-        int interval = Math.max(1, ModConfig.INSTANCE.hud.pipUpdateInterval);
-        if (pipFrameCounter % interval != 0) {
-            return; // 跳过本帧的PIP渲染，复用上一帧的MIRROR_TEX
+        // PIP模式：降频更新优化
+        if (itemAttachment.type.sight.modeType.isPIP) {
+            pipFrameCounter++;
+            int interval = Math.max(1, ModConfig.INSTANCE.hud.pipUpdateInterval);
+            if (pipFrameCounter % interval != 0) {
+                return; // 跳过本帧的PIP渲染，复用上一帧的MIRROR_TEX
+            }
         }
         
         // 根据配置选择渲染方式
-        if (ModConfig.INSTANCE.hud.useSingleRenderGlobalPIP) {
-            renderWorldSinglePass(mc, itemAttachment, partialTick);
+        if (itemAttachment.type.sight.modeType.isPIP) {
+            // PIP模式：需要双Pass渲染（主画面正常FOV + 镜内放大FOV）
+            if (ModConfig.INSTANCE.hud.useSingleRenderGlobalPIP) {
+                renderWorldSinglePass(mc, itemAttachment, partialTick);
+            } else {
+                renderWorldLegacy(mc, itemAttachment, partialTick);
+            }
         } else {
-            renderWorldLegacy(mc, itemAttachment, partialTick);
+            // FOV模式：镜内外FOV同步，只需渲染一次（主渲染已经是放大FOV）
+            renderWorldForFOV(mc, itemAttachment, partialTick);
         }
     }
     
     /**
+     * FOV模式专用渲染方法
+     * 特点：镜内外FOV同步，主渲染已经是放大FOV
+     * 只需将当前帧完整渲染一次到MIRROR_TEX即可
+     */
+    private void renderWorldForFOV(Minecraft mc, ItemAttachment itemAttachment, float partialTick) {
+        GL11.glPushMatrix();
+        GlStateManager.color(1, 1, 1, 1);
+        
+        boolean hideBackup = mc.gameSettings.hideGUI;
+        mc.gameSettings.hideGUI = true;
+        
+        OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, mc.getFramebuffer().framebufferObject);
+        int tex = mc.getFramebuffer().framebufferTexture;
+        mc.getFramebuffer().framebufferTexture = MIRROR_TEX;
+        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, MIRROR_TEX, 0);
+        
+        GlStateManager.clearColor(0, 0, 0, 0);
+        GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+        
+        long endTime = 0;
+        if (renderEndNanoTime != null) {
+            try {
+                endTime = renderEndNanoTime.getLong(mc.entityRenderer);
+            } catch (Exception ignored) {
+            }
+        }
+        
+        mc.entityRenderer.renderWorld(partialTick, endTime);
+        
+        GL20.glUseProgram(0);
+        
+        mc.getFramebuffer().framebufferTexture = tex;
+        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, tex, 0);
+        
+        mc.gameSettings.hideGUI = hideBackup;
+        
+        GL11.glPopMatrix();
+    }
+    
+    /**
      * 新方案：单RenderGlobal双Pass渲染（节省内存）
+     * 仅用于PIP模式
      * 
      * 原理：
      * 1. 复用主世界的RenderGlobal，避免重复加载区块数据
