@@ -431,7 +431,17 @@ public class ClientRenderHooks {
                     }
                     
                     if(!ScopeUtils.isIndsideGunRendering) {
-                        ClientProxy.scopeUtils.initBlur();  
+                        boolean needMirrorResources = false;
+                        if (GunType.getAttachment(stack, AttachmentPresetEnum.Sight) != null) {
+                            final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(stack, AttachmentPresetEnum.Sight).getItem();
+                            if (itemAttachment != null && itemAttachment.type != null && itemAttachment.type.sight.modeType.isMirror) {
+                                needMirrorResources = true;
+                            }
+                        }
+                        
+                        if (needMirrorResources) {
+                            ClientProxy.scopeUtils.initBlur();  
+                        }
                         OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());  
                     }
                     GlStateManager.pushMatrix();
@@ -524,6 +534,11 @@ public class ClientRenderHooks {
         if(!ScopeUtils.isRenderHand0&&OptifineHelper.isShadersEnabled()) {
             return;
         }
+        
+        if (ClientProxy.scopeUtils.blurFramebuffer == null) {
+            return;
+        }
+        
         ScopeUtils.isIndsideGunRendering=true;
         
         int tex=ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
@@ -547,6 +562,11 @@ public class ClientRenderHooks {
     }
     
     public static void copyDepthBuffer() {
+        // 确保blurFramebuffer已初始化
+        if (ClientProxy.scopeUtils.blurFramebuffer == null) {
+            return;
+        }
+        
         Minecraft mc=Minecraft.getMinecraft();
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
         GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, ClientProxy.scopeUtils.blurFramebuffer.framebufferObject);

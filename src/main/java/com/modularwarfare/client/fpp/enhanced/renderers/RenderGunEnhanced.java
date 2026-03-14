@@ -1192,6 +1192,13 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                         ClientRenderHooks.isAimingScope = false;
                                     }
                                 }
+                            } else {
+                                // SIMPLE 模式：设置 isAiming 标志以显示准星
+                                if (controller.ADS == 1) {
+                                    if (!ClientRenderHooks.isAiming) {
+                                        ClientRenderHooks.isAiming = true;
+                                    }
+                                }
                             }
                         }
                     }
@@ -2233,6 +2240,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (!OptifineHelper.isShadersEnabled()) {
             return;
         }
+        if (ClientProxy.scopeUtils.blurFramebuffer == null) {
+            return;
+        }
         Minecraft mc = Minecraft.getMinecraft();
         GL43.glCopyImageSubData(ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
                 ScopeUtils.SCOPE_MASK_TEX, GL_TEXTURE_2D, 0, 0, 0, 0, mc.displayWidth, mc.displayHeight, 1);
@@ -2248,6 +2258,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             return;
         }
         if (!OptifineHelper.isShadersEnabled()) {
+            return;
+        }
+        // 确保blurFramebuffer已初始化
+        if (ClientProxy.scopeUtils.blurFramebuffer == null) {
             return;
         }
         if (Minecraft.getMinecraft().world != null) {
@@ -2355,6 +2369,15 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (ScopeUtils.isIndsideGunRendering) {
             return;
         }
+        
+        if (!attachmentType.sight.modeType.isMirror) {
+            return;
+        }
+        
+        if (ClientProxy.scopeUtils.blurFramebuffer == null) {
+            return;
+        }
+        
         if (Minecraft.getMinecraft().world != null) {
             if (isAiming) {
                 if (OptifineHelper.isShadersEnabled()) {

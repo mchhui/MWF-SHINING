@@ -1295,10 +1295,18 @@ public class RenderGunStatic extends CustomItemRenderer {
         if(ScopeUtils.isIndsideGunRendering) {
             return;
         }
+        
+        if (!attachmentType.sight.modeType.isMirror) {
+            return;
+        }
+        
+        if (ClientProxy.scopeUtils.blurFramebuffer == null) {
+            return;
+        }
 
         if (Minecraft.getMinecraft().world != null) {
             float gunRotX = RenderParameters.GUN_ROT_X_LAST + (RenderParameters.GUN_ROT_X - RenderParameters.GUN_ROT_X_LAST) * this.timer.renderPartialTicks;
-            if (isAiming&&(ClientProxy.scopeUtils.blurFramebuffer!=null||!ModConfig.INSTANCE.hud.ads_blur)) {
+            if (isAiming) {
                 if(OptifineHelper.isShadersEnabled()) {
                     Shaders.pushProgram();  
                 }

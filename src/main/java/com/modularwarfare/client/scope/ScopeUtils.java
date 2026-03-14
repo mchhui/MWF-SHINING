@@ -365,6 +365,10 @@ public class ScopeUtils {
             if (!attachment.type.sight.modeType.isMirror) {
                 return;
             }
+            
+            if (blurFramebuffer == null) {
+                return;
+            }
 
             /*
             if(!attachment.type.sight.modeType.isPIP||RenderGunEnhanced.debug1) {
