@@ -1,4 +1,4 @@
-﻿FlamethrowerTrailFlames {
+FlamethrowerTrailFlames {
 Texture = modularwarfare:textures/particles/flamethrower_a.png
 RenderType = ALPHA
 Rows = 4
@@ -1741,4 +1741,171 @@ ExplosionFireFlames2
 FXLIST ExplosionFirePillar {
 ExplosionFirePillar_a
 ExplosionFirePillar2
+}
+
+// ==============================
+// 碰撞触发二次贴面 FX 示例（测试用）
+// 调用 MWF_BlockHitChainDemo 即可：
+// 1) 主粒子飞行并进行方块碰撞检测
+// 2) 命中方块后触发自定义二次 FX（不是原 FX）
+// 3) 二次 FX 按 surfaceAlignMode=AUTO 自动贴墙/贴地
+// ==============================
+
+MWF_BlockHitProbe {
+Texture = modularwarfare:textures/particles/point1.png
+RenderType = ALPHA
+Rows = 1
+Columns = 1
+Frames = 1
+Lifetime = 40 50
+SystemLifetime = 1 1
+Size = 0.60 0.90
+SizeRate = 0 0
+SizeRateDamping = 1 1
+Alpha = 0.0 0
+Alpha = 1.0 0.08
+Alpha = 1.0 0.8
+Alpha = 0.0 1.0
+Color = 255 220 180 0
+ParticleCount = 1 1
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = ORTHO
+Velocity1 = 0 0
+Velocity2 = 0 0
+Velocity3 = 10 14
+VelocityDamping = 0.98 0.99
+Gravity = 0.02
+VolumeType = POINT
+
+// 碰撞触发控制
+blockHitAffect = true
+blockHitSpawnFx = MWF_BlockHitStickyAuto
+blockHitSpawnOnce = false
+blockHitKillSelf = false
+blockHitMaxSpawnCount = 3
+blockHitSpawnCooldownTicks = 6
+blockHitChainBudget = 1
+surfaceNormalVelocityFactor = 0.12
+}
+
+MWF_BlockHitStickyAuto {
+Texture = modularwarfare:textures/particles/hitsmoke2x2.png
+RenderType = ALPHA_SHADED
+Rows = 2
+Columns = 2
+Frames = 4
+HasVariations = true
+Lifetime = 18 24
+SystemLifetime = 1 1
+Size = 1.2 1.8
+SizeRate = 0.06 0.14
+SizeRateDamping = 0.95 0.98
+Alpha = 0.0 0
+Alpha = 0.9 0.20
+Alpha = 0.0 1.0
+Color = 220 220 220 0
+Color = 160 160 160 1
+ParticleCount = 3 5
+InitialDelay = 0 0
+SpawnDelay = 0 1
+VelocityType = OUTWARD
+Velocity1 = 0.05 0.20
+Velocity2 = -0.05 0.10
+VelocityDamping = 0.88 0.93
+Gravity = 0.03
+VolumeType = CYLINDER
+Volume1 = 0.08
+Volume2 = 0.02
+IsHollow = false
+RemoveOnGround = false
+
+// 贴面渲染：AUTO=顶/底面走贴地，侧面走贴墙
+surfaceAligned = true
+surfaceAlignMode = AUTO
+}
+
+FXLIST MWF_BlockHitChainDemo {
+MWF_BlockHitProbe
+}
+
+// ==============================
+// 血滴溅射示例：
+// 1) 血滴粒子撞墙不消失，继续下落
+// 2) 每次命中方块生成无重力贴面血迹
+// 3) 落地同样会生成地面血渍（AUTO 自动贴墙/贴地）
+// ==============================
+
+MWF_BloodDripCarrier {
+Texture = modularwarfare:textures/particles/point1.png
+RenderType = ALPHA
+Rows = 1
+Columns = 1
+Frames = 1
+Lifetime = 90 120
+SystemLifetime = 1 1
+Size = 0.10 0.18
+SizeRate = 0 0
+SizeRateDamping = 1 1
+Alpha = 0.0 0
+Alpha = 0.9 0.08
+Alpha = 0.8 0.75
+Alpha = 0.0 1.0
+Color = 160 18 18 0
+Color = 90 6 6 1
+ParticleCount = 5 10
+InitialDelay = 0 0
+SpawnDelay = 99 99
+VelocityType = HEMISPHERICAL
+Velocity1 = 0.2 0.7
+VelocityDamping = 0.96 0.985
+Gravity = 0.05
+VolumeType = POINT
+RemoveOnGround = false
+
+// 命中触发：不销毁本体，继续下落；限制触发频率避免贴墙刷屏
+blockHitAffect = true
+blockHitSpawnFx = MWF_BloodImpactDecal
+blockHitSpawnOnce = false
+blockHitKillSelf = false
+blockHitMaxSpawnCount = 8
+blockHitSpawnCooldownTicks = 4
+blockHitChainBudget = 1
+surfaceNormalVelocityFactor = 0.0
+}
+
+MWF_BloodImpactDecal {
+Texture = modularwarfare:textures/particles/blood4x4.png
+RenderType = ALPHA
+Rows = 2
+Columns = 2
+Frames = 4
+HasVariations = true
+Lifetime = 220 320
+SystemLifetime = 1 1
+Size = 0.55 0.65
+SizeRate = 0.001 0.008
+SizeRateDamping = 0.98 0.995
+Alpha = 0.0 0
+Alpha = 0.92 0.06
+Alpha = 0.88 0.70
+Alpha = 0.0 1.0
+Color = 160 18 18 0
+Color = 90 6 6 1
+ParticleCount = 1 2
+InitialDelay = 0 0
+SpawnDelay = 1 1
+VelocityType = NONE
+VelocityDamping = 1.0 1.0
+Gravity = 0.0
+VolumeType = POINT
+RemoveOnGround = false
+
+// 贴面血迹：墙面为“溅血贴墙”，地面为“血渍贴地”
+surfaceAligned = true
+surfaceAlignMode = AUTO
+}
+
+FXLIST MWF_BloodDripAndSplat {
+MWF_BloodDripCarrier
 }

@@ -88,6 +88,17 @@ public class SAParticleSystemType extends SAFXType{
 	boolean particlesMoveWithSystem = false;
 	
 	boolean groundAligned = false;
+	boolean surfaceAligned = false;
+	String surfaceAlignMode = "AUTO"; //GROUND/WALL/AUTO
+	float surfaceNormalVelocityFactor = 0.0f;
+	
+	boolean blockHitAffect = false;
+	String blockHitSpawnFx = "";
+	boolean blockHitSpawnOnce = false;
+	boolean blockHitKillSelf = false;
+	int blockHitMaxSpawnCount = 1;
+	int blockHitSpawnCooldownTicks = 0;
+	int blockHitChainBudget = 0;
 	
 	String attachedSystem = null;
 	boolean particlesStickToSystem = false;
@@ -430,6 +441,16 @@ public class SAParticleSystemType extends SAFXType{
 		this.particlesMoveWithSystem = other.particlesMoveWithSystem;
 		this.streak = other.streak;
 		this.groundAligned = other.groundAligned;
+		this.surfaceAligned = other.surfaceAligned;
+		this.surfaceAlignMode = other.surfaceAlignMode;
+		this.surfaceNormalVelocityFactor = other.surfaceNormalVelocityFactor;
+		this.blockHitAffect = other.blockHitAffect;
+		this.blockHitSpawnFx = other.blockHitSpawnFx;
+		this.blockHitSpawnOnce = other.blockHitSpawnOnce;
+		this.blockHitKillSelf = other.blockHitKillSelf;
+		this.blockHitMaxSpawnCount = other.blockHitMaxSpawnCount;
+		this.blockHitSpawnCooldownTicks = other.blockHitSpawnCooldownTicks;
+		this.blockHitChainBudget = other.blockHitChainBudget;
 		this.attachedSystem = other.attachedSystem;
 		this.systemVelocityFactorMin = other.systemVelocityFactorMin;
 		this.systemVelocityFactorMax = other.systemVelocityFactorMax;

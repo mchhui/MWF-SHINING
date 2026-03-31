@@ -60,6 +60,8 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 	public boolean attachToHead = false;
 	public Vec3d entityOffset = null;
 	SAParticle parent; //parent particle (if attached to a particle)
+	Vec3d surfaceNormal = null;
+	int inheritedBlockHitChainBudget = -1;
 	
 	String obbBoxName = null;
 	long obbDuration = 0;
@@ -107,6 +109,22 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 		this.obbBoxName = boxName;
 		this.obbDuration = duration;
 		this.obbStartTime = System.currentTimeMillis();
+	}
+	
+	public void setSurfaceNormal(Vec3d normal) {
+		this.surfaceNormal = normal;
+	}
+	
+	public Vec3d getSurfaceNormal() {
+		return this.surfaceNormal;
+	}
+	
+	public void setInheritedBlockHitChainBudget(int budget) {
+		this.inheritedBlockHitChainBudget = budget;
+	}
+	
+	public int getInheritedBlockHitChainBudget() {
+		return this.inheritedBlockHitChainBudget;
 	}
 	public void onUpdate() {	
 //		if (this.ticksExisted == 0) {

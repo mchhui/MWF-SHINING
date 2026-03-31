@@ -9,7 +9,7 @@ import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
-
+//需要mwf 不用请注释
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.utility.ZipContentPack;
 
@@ -94,9 +94,10 @@ public class SAFX {
 				loadFXListFile(FXLIST_DIR+filename);
 			}
 		}
+		//需要mwf 不用请注释
 		loadFXFromContentPacks();
 	}
-
+    //需要mwf 不用请注释
 	public static void loadFXFromContentPacks() {
 		java.util.Set<String> beforeKeys = new java.util.HashSet<>(FXList.keySet());
 		
@@ -406,6 +407,36 @@ public class SAFX {
 								break;
 							case "groundaligned":
 								type.groundAligned = sc.nextBoolean();
+								break;
+							case "surfacealigned":
+								type.surfaceAligned = sc.nextBoolean();
+								break;
+							case "surfacealignmode":
+								type.surfaceAlignMode = sc.next().toUpperCase(Locale.ENGLISH);
+								break;
+							case "surfacenormalvelocityfactor":
+								type.surfaceNormalVelocityFactor = sc.nextFloat();
+								break;
+							case "blockhitaffect":
+								type.blockHitAffect = sc.nextBoolean();
+								break;
+							case "blockhitspawnfx":
+								type.blockHitSpawnFx = sc.next();
+								break;
+							case "blockhitspawnonce":
+								type.blockHitSpawnOnce = sc.nextBoolean();
+								break;
+							case "blockhitkillself":
+								type.blockHitKillSelf = sc.nextBoolean();
+								break;
+							case "blockhitmaxspawncount":
+								type.blockHitMaxSpawnCount = Math.max(0, sc.nextInt());
+								break;
+							case "blockhitspawncooldownticks":
+								type.blockHitSpawnCooldownTicks = Math.max(0, sc.nextInt());
+								break;
+							case "blockhitchainbudget":
+								type.blockHitChainBudget = Math.max(0, sc.nextInt());
 								break;
 							case "streak":
 								type.streak = sc.nextBoolean();

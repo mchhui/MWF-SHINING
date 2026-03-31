@@ -1,6 +1,7 @@
 package safx.client.particle;
 
 import java.awt.Color;
+import java.util.List;
 import org.lwjgl.opengl.GL11;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
@@ -14,8 +15,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumHandSide;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
@@ -29,6 +32,7 @@ import safx.client.render.SARenderHelper.RenderType;
 import safx.debug.Keybinds;
 import safx.util.MathUtil;
 import net.minecraftforge.fml.common.Loader;
+import safx.client.ClientProxy;
 
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
@@ -74,6 +78,11 @@ public class SAParticle extends Particle implements ISAParticle {
 	protected double depth;
 	
 	protected boolean itemAttached=false;
+	protected Vec3d surfaceNormal = null;
+	protected int blockHitSpawnCount = 0;
+	protected int blockHitCooldownTicks = 0;
+	protected int remainingBlockHitChainBudget = 0;
+	protected static final double SURFACE_RENDER_OFFSET = 0.01D;
 	
 	//int angle;
 
@@ -120,6 +129,18 @@ public class SAParticle extends Particle implements ISAParticle {
 			this.velZ = this.motionZ;
 			
 			this.variationFrame = rand.nextInt(type.frames);
+			if (this.particleSystem != null && this.particleSystem.getSurfaceNormal() != null) {
+				Vec3d n = this.particleSystem.getSurfaceNormal();
+				if (n.lengthSquared() > 1.0E-6) {
+					this.surfaceNormal = n.normalize();
+				}
+			}
+			int inheritedBudget = this.particleSystem != null ? this.particleSystem.getInheritedBlockHitChainBudget() : -1;
+			if (inheritedBudget >= 0) {
+				this.remainingBlockHitChainBudget = inheritedBudget;
+			} else {
+				this.remainingBlockHitChainBudget = Math.max(0, type.blockHitChainBudget);
+			}
 			
 //			if (type.randomRotation) {
 //				angle = rand.nextInt(4);
@@ -240,17 +261,29 @@ public class SAParticle extends Particle implements ISAParticle {
 		this.motionY = velY;
 		this.motionZ = velZ;
 		this.motionY -= type.gravity; //(0.05d * (double) type.gravity * (double) this.ticksExisted);		
-		//this.moveEntity(this.motionX, this.motionY, this.motionZ);
-		//System.out.printf("Velocity=(%.2f / %.2f / %.2f)\n",this.velX, this.velY, this.velZ);
-		//System.out.printf("Motion=(%.2f / %.2f / %.2f)\n",this.motionX, this.motionY, this.motionZ);
-		this.setPosition(this.posX+this.motionX, this.posY+this.motionY, this.posZ+this.motionZ);
+		if (this.blockHitCooldownTicks > 0) {
+			this.blockHitCooldownTicks--;
+		}
+		Vec3d start = new Vec3d(this.posX, this.posY, this.posZ);
+		Vec3d next = start.add(this.motionX, this.motionY, this.motionZ);
+		boolean handledBlockHit = false;
+		if (type.blockHitAffect) {
+			handledBlockHit = handleBlockCollision(start, next);
+			if (this.isExpired) {
+				return;
+			}
+			if (handledBlockHit) {
+				next = this.getPos();
+			}
+		}
+		this.setPosition(next.x, next.y, next.z);
 		
 		
 		this.velX *= velocityDamping;
 		this.velY *= velocityDamping;
 		this.velZ *= velocityDamping;
 
-		if (this.onGround) {
+		if (this.onGround || (handledBlockHit && this.surfaceNormal != null && this.surfaceNormal.y > 0.5)) {
 			this.velX *= velocityDampingOnGround;
 			this.velY *= velocityDampingOnGround; // ?
 			this.velZ *= velocityDampingOnGround;
@@ -300,6 +333,11 @@ public class SAParticle extends Particle implements ISAParticle {
         float fPosX = (float)(this.prevPosX + (this.posX - this.prevPosX) * (double)partialTickTime - (!this.itemAttached ? SAParticleManager.interpPosX :0));
         float fPosY = (float)(this.prevPosY + (this.posY - this.prevPosY) * (double)partialTickTime - (!this.itemAttached ? SAParticleManager.interpPosY :0));
         float fPosZ = (float)(this.prevPosZ + (this.posZ - this.prevPosZ) * (double)partialTickTime - (!this.itemAttached ? SAParticleManager.interpPosZ :0));
+        if (this.type.surfaceAligned && this.surfaceNormal != null) {
+        	fPosX += (float)(this.surfaceNormal.x * SURFACE_RENDER_OFFSET);
+        	fPosY += (float)(this.surfaceNormal.y * SURFACE_RENDER_OFFSET);
+        	fPosZ += (float)(this.surfaceNormal.z * SURFACE_RENDER_OFFSET);
+        }
         float r = fscale;
 		int col = currentFrame % type.columns;
 		int row = (currentFrame / type.columns);
@@ -326,7 +364,13 @@ public class SAParticle extends Particle implements ISAParticle {
         }
         
 		Vec3d p1, p2, p3, p4;
-		if (this.type.groundAligned) {
+		if (this.type.surfaceAligned && this.surfaceNormal != null && shouldUseSurfaceWallAlign(this.surfaceNormal, this.type.surfaceAlignMode)) {
+			Vec3d[] wallQuad = buildWallAlignedQuad(this.surfaceNormal, fscaleX, fscaleY, a);
+			p1 = wallQuad[0];
+			p2 = wallQuad[1];
+			p3 = wallQuad[2];
+			p4 = wallQuad[3];
+		}else if (this.type.groundAligned || (this.type.surfaceAligned && this.surfaceNormal != null)) {
 			float sx = fscaleX;
 			float sz = fscaleY; // Usually Y/V axis maps to Z on ground
 			p1 = new Vec3d(-sx,0,-sz);
@@ -610,6 +654,102 @@ public class SAParticle extends Particle implements ISAParticle {
 	public void setExpired() {
 		super.setExpired();
 		this.particleSystem=null;
+	}
+	
+	protected boolean handleBlockCollision(Vec3d start, Vec3d next) {
+		RayTraceResult trace = this.world.rayTraceBlocks(start, next, false, true, false);
+		if (trace == null || trace.typeOfHit != RayTraceResult.Type.BLOCK || trace.sideHit == null) {
+			return false;
+		}
+		EnumFacing side = trace.sideHit;
+		Vec3d normal = new Vec3d(side.getXOffset(), side.getYOffset(), side.getZOffset());
+		if (normal.lengthSquared() > 1.0E-6) {
+			this.surfaceNormal = normal.normalize();
+		}
+		this.onGround = side == EnumFacing.UP;
+		this.setPosition(
+				trace.hitVec.x + normal.x * SURFACE_RENDER_OFFSET,
+				trace.hitVec.y + normal.y * SURFACE_RENDER_OFFSET,
+				trace.hitVec.z + normal.z * SURFACE_RENDER_OFFSET);
+		Vec3d v = new Vec3d(this.velX, this.velY, this.velZ);
+		double vn = v.dotProduct(normal);
+		this.velX = v.x - normal.x * vn;
+		this.velY = v.y - normal.y * vn;
+		this.velZ = v.z - normal.z * vn;
+		this.motionX = this.velX;
+		this.motionY = this.velY;
+		this.motionZ = this.velZ;
+		
+		int maxSpawn = type.blockHitSpawnOnce ? 1 : Math.max(0, type.blockHitMaxSpawnCount);
+		boolean canSpawn = maxSpawn > 0
+				&& this.blockHitSpawnCount < maxSpawn
+				&& this.blockHitCooldownTicks <= 0
+				&& this.remainingBlockHitChainBudget > 0
+				&& type.blockHitSpawnFx != null
+				&& !type.blockHitSpawnFx.isEmpty();
+		if (canSpawn) {
+			spawnBlockHitFx(trace.hitVec, this.surfaceNormal);
+			this.blockHitSpawnCount++;
+			this.blockHitCooldownTicks = Math.max(0, type.blockHitSpawnCooldownTicks);
+		}
+		if (type.blockHitKillSelf) {
+			this.setExpired();
+		}
+		return true;
+	}
+	
+	protected void spawnBlockHitFx(Vec3d hitPos, Vec3d normal) {
+		if (normal == null) {
+			normal = new Vec3d(0, 1, 0);
+		}
+		double f = type.surfaceNormalVelocityFactor;
+		Vec3d spawnPos = hitPos.add(normal.scale(SURFACE_RENDER_OFFSET));
+		List<SAParticleSystem> systems = SAFX.createFX(this.world, type.blockHitSpawnFx,
+				spawnPos.x, spawnPos.y, spawnPos.z, normal.x * f, normal.y * f, normal.z * f);
+		if (systems == null) {
+			return;
+		}
+		int childBudgetBase = Math.max(0, this.remainingBlockHitChainBudget - 1);
+		for (SAParticleSystem s : systems) {
+			s.scale = this.particleSystem != null ? this.particleSystem.scale : s.scale;
+			s.setSurfaceNormal(normal);
+			int childBudget = Math.min(childBudgetBase, Math.max(0, s.type.blockHitChainBudget));
+			s.setInheritedBlockHitChainBudget(childBudget);
+			ClientProxy.get().particleManager.addEffect(s);
+		}
+	}
+	
+	protected boolean shouldUseSurfaceWallAlign(Vec3d normal, String mode) {
+		String alignMode = mode == null ? "AUTO" : mode;
+		switch (alignMode.toUpperCase()) {
+		case "WALL":
+			return true;
+		case "GROUND":
+			return false;
+		case "AUTO":
+		default:
+			return Math.abs(normal.y) < 0.5;
+		}
+	}
+	
+	protected Vec3d[] buildWallAlignedQuad(Vec3d normal, float sx, float sy, double angleRad) {
+		Vec3d n = normal.normalize();
+		Vec3d helper = Math.abs(n.y) > 0.9 ? new Vec3d(1, 0, 0) : new Vec3d(0, 1, 0);
+		Vec3d tangent = helper.crossProduct(n).normalize();
+		Vec3d bitangent = n.crossProduct(tangent).normalize();
+		if (angleRad > 0.0001d) {
+			double cos = Math.cos(angleRad);
+			double sin = Math.sin(angleRad);
+			Vec3d t2 = tangent.scale(cos).add(bitangent.scale(sin));
+			Vec3d b2 = bitangent.scale(cos).subtract(tangent.scale(sin));
+			tangent = t2;
+			bitangent = b2;
+		}
+		Vec3d p1 = tangent.scale(-sx).add(bitangent.scale(-sy));
+		Vec3d p2 = tangent.scale(sx).add(bitangent.scale(-sy));
+		Vec3d p3 = tangent.scale(sx).add(bitangent.scale(sy));
+		Vec3d p4 = tangent.scale(-sx).add(bitangent.scale(sy));
+		return new Vec3d[] { p1, p2, p3, p4 };
 	}
 	
 }
