@@ -2,28 +2,23 @@ package com.modularwarfare.common.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import com.modularwarfare.client.render.BeamRenderer;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
-import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.World;
 import net.minecraft.entity.Entity;
-import com.modularwarfare.ModularWarfare;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import org.lwjgl.opengl.GL11;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.util.math.MathHelper;
 
 public class PacketDelayedShoot extends PacketBase {
 
@@ -92,6 +87,15 @@ public class PacketDelayedShoot extends PacketBase {
     @SideOnly(Side.CLIENT)
     public static class RayRenderer {
         private static final List<RayRenderData> activeRays = new ArrayList<>();
+        private static final ResourceLocation RAY_TEXTURE = new ResourceLocation("modularwarfare:textures/particles/targetline.png");
+        private static final float RAY_RADIUS = 0.01F;
+        private static final float RAY_ALPHA = 0.35F;
+        private static final float START_FADE = 1.5F;
+        private static final float END_FADE = 1.5F;
+        private static final float START_CLIP = 0.1F;
+        private static final float END_CLIP = 0.35F;
+        private static final Vec3d START_OFFSET = new Vec3d(0.0D, 0.0D, 0.0D);
+        private static final Vec3d END_OFFSET = new Vec3d(0.0D, 0.0D, 0.0D);
         
         static {
             MinecraftForge.EVENT_BUS.register(RayRenderer.class);
@@ -125,16 +129,12 @@ public class PacketDelayedShoot extends PacketBase {
             
             GlStateManager.pushMatrix();
             GlStateManager.translate(-playerX, -playerY, -playerZ);
-            GlStateManager.disableTexture2D();
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             GlStateManager.disableLighting();
             GlStateManager.depthMask(false);
             GlStateManager.disableDepth();
-            GlStateManager.glLineWidth(3.0F);
-            
-            Tessellator tessellator = Tessellator.getInstance();
-            BufferBuilder buffer = tessellator.getBuffer();
+            GlStateManager.disableCull();
             
             long currentTime = System.currentTimeMillis();
             
@@ -171,22 +171,49 @@ public class PacketDelayedShoot extends PacketBase {
                     endPos = targetEntity.getPositionEyes(partialTicks);
                 }
                 
-                Vec3d actualEndPos = checkRayBlocking(world, startPos, endPos);
-                
-                buffer.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-                buffer.pos(startPos.x, startPos.y, startPos.z).color(1.0F, 0.0F, 0.0F, 0.8F).endVertex();
-                buffer.pos(actualEndPos.x, actualEndPos.y, actualEndPos.z).color(1.0F, 0.0F, 0.0F, 0.8F).endVertex();
-                tessellator.draw();
+                Vec3d clippedStart = startPos.add(START_OFFSET);
+                Vec3d clippedEnd = endPos.add(END_OFFSET);
+                Vec3d actualEndPos = checkRayBlocking(world, clippedStart, clippedEnd);
+
+                Vec3d lineVec = actualEndPos.subtract(clippedStart);
+                double len = lineVec.length();
+                if (len < 0.001D) {
+                    return false;
+                }
+
+                Vec3d dir = lineVec.scale(1.0D / len);
+                double totalClip = START_CLIP + END_CLIP;
+                if (len <= totalClip + 0.001D) {
+                    return false;
+                }
+
+                Vec3d beamStart = clippedStart.add(dir.scale(START_CLIP));
+                Vec3d beamEnd = actualEndPos.subtract(dir.scale(END_CLIP));
+
+                BeamRenderer.renderTexturedCylinderBeam(
+                        beamStart,
+                        beamEnd,
+                        RAY_RADIUS,
+                        1.0F,
+                        1.0F,
+                        1.0F,
+                        RAY_ALPHA,
+                        RAY_TEXTURE,
+                        START_FADE,
+                        END_FADE,
+                        12,
+                        18,
+                        1.25F
+                );
                 
                 return false;
             });
             
-            GlStateManager.glLineWidth(1.0F);
             GlStateManager.enableDepth();
+            GlStateManager.enableCull();
             GlStateManager.depthMask(true);
             GlStateManager.enableLighting();
             GlStateManager.disableBlend();
-            GlStateManager.enableTexture2D();
             GlStateManager.popMatrix();
         }
         
