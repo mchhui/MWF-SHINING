@@ -216,6 +216,9 @@ public class SAFX {
 								case "NO_Z_TEST":
 									type.renderType = RenderType.NO_Z_TEST;
 									break;
+								case "NO_Z_TEST_ADDITIVE":
+									type.renderType = RenderType.NO_Z_TEST_ADDITIVE;
+									break;
 								default:
 									error = name;
 									break;

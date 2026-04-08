@@ -17,6 +17,8 @@ import safx.SAConfig;
 import safx.client.particle.list.ParticleList;
 import safx.client.particle.list.ParticleList.ParticleListIterator;
 import safx.client.render.GLStateSnapshot;
+import safx.client.render.SARenderHelper;
+import safx.client.render.SARenderHelper.RenderType;
 
 public class SAParticleManager {
 	
@@ -125,45 +127,55 @@ public class SAParticleManager {
         frust.setPosition(d0, d1, d2);*/
         
         GlStateManager.disableCull();
-        GlStateManager.enableBlend();
         GlStateManager.depthMask(false);
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        // 必须绑定光照贴图纹理，顶点 lightmap（尤其 ALPHA_SHADED）才会按环境变暗；否则采样异常会整片偏亮
+        Minecraft.getMinecraft().entityRenderer.enableLightmap();
         ResourceLocation[] loc = new ResourceLocation[1];
-        //使用魔法进行一个性能补丁 你不应该模仿这种写法
+        RenderType[] lastType = new RenderType[1];
+        // 按纹理 + RenderType 分批：混合模式与全局高亮随类型切换
         this.list.forEach(p -> {
-            if (loc[0] == null || !loc[0].equals(((SAParticle)p).type.texture)) {
+            SAParticle sp = (SAParticle) p;
+            if (loc[0] == null || !loc[0].equals(sp.type.texture) || lastType[0] != sp.type.renderType) {
                 if (loc[0] != null) {
                     Tessellator.getInstance().draw();
+                    SARenderHelper.disableBlendMode(lastType[0]);
                 }
-                loc[0] = ((SAParticle)p).type.texture;
+                loc[0] = sp.type.texture;
+                lastType[0] = sp.type.renderType;
                 Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
+                SARenderHelper.enableBlendMode(lastType[0]);
                 bufferbuilder.begin(GL11.GL_QUADS, SAParticle.VERTEX_FORMAT);
             }
             p.doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
         });
         if (loc[0] != null) {
-            Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
             Tessellator.getInstance().draw();
+            SARenderHelper.disableBlendMode(lastType[0]);
             loc[0] = null;
+            lastType[0] = null;
         }
         this.list_nosort.forEach(p -> {
-            if (loc[0] == null || !loc[0].equals(((SAParticle)p).type.texture)) {
+            SAParticle sp = (SAParticle) p;
+            if (loc[0] == null || !loc[0].equals(sp.type.texture) || lastType[0] != sp.type.renderType) {
                 if (loc[0] != null) {
                     Tessellator.getInstance().draw();
+                    SARenderHelper.disableBlendMode(lastType[0]);
                 }
-                loc[0] = ((SAParticle)p).type.texture;
+                loc[0] = sp.type.texture;
+                lastType[0] = sp.type.renderType;
                 Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
+                SARenderHelper.enableBlendMode(lastType[0]);
                 bufferbuilder.begin(GL11.GL_QUADS, SAParticle.VERTEX_FORMAT);
             }
             p.doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
         });
         if (loc[0] != null) {
-            Minecraft.getMinecraft().getTextureManager().bindTexture(loc[0]);
             Tessellator.getInstance().draw();
+            SARenderHelper.disableBlendMode(lastType[0]);
             loc[0] = null;
         }
-        GlStateManager.disableBlend();
+        Minecraft.getMinecraft().entityRenderer.disableLightmap();
         GlStateManager.depthMask(true);
     }
 
