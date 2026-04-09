@@ -49,6 +49,7 @@ public class HEEntityOBBObject extends OBBModelObject {
         public Quaternionf rotation = new Quaternionf();
         public Vector3f scale = new Vector3f();
         public Matrix4f worldMatrix = new Matrix4f();
+        public float explosionResistance = 0f;
     }
     
     public HEEntityOBBObject() {
@@ -101,6 +102,8 @@ public class HEEntityOBBObject extends OBBModelObject {
                  if (com.modularwarfare.ModConfig.INSTANCE.debug_hits_message) {
                      com.modularwarfare.ModularWarfare.LOGGER.info("[HEEntityOBBObject] 为节点 " + data.nodeName + " 创建OBB, 尺寸: " + data.scale);
                  }
+             } else {
+                 syncExplosionResistanceForNode(data.nodeName, data.explosionResistance);
              }
              
              // 首次更新时输出原始矩阵数据
@@ -115,6 +118,22 @@ public class HEEntityOBBObject extends OBBModelObject {
          firstUpdate = false;
      }
     
+    /**
+     * 爆炸抗性
+     */
+    private void syncExplosionResistanceForNode(String nodeName, float explosionResistance) {
+        OBBModelBone bone = nodeToBoneMap.get(nodeName);
+        if (bone == null) {
+            return;
+        }
+        for (java.util.Map.Entry<OBBModelBox, OBBModelBone> e : boneBinding.entrySet()) {
+            if (e.getValue() == bone) {
+                e.getKey().setExplosionResistance(explosionResistance);
+                return;
+            }
+        }
+    }
+
     /**
      * 为UPC节点创建OBB骨骼和碰撞箱
      */
@@ -164,7 +183,8 @@ public class HEEntityOBBObject extends OBBModelObject {
         box.center = new com.modularwarfare.utility.vector.Vector3f(0, 0, 0);
         box.anchor = new com.modularwarfare.utility.vector.Vector3f(0, 0, 0);
         box.rotation = new com.modularwarfare.utility.vector.Vector3f(0, 0, 0);
-        
+        box.setExplosionResistance(nodeData.explosionResistance);
+
         // 添加box到对象
         boxes.add(box);
         boneBinding.put(box, bone);

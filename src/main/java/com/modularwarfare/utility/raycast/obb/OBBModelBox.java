@@ -31,6 +31,8 @@ public class OBBModelBox {
     public Axis axis = new Axis();
     public Axis axisNormal = new Axis();
 
+    private float explosionResistance = 0f;
+
     private transient static final ObjModel debugBoxModel = ObjModelLoader
             .load(new ResourceLocation("modularwarfare:obb/model.obj"));
     private transient static final ResourceLocation debugBoxTex = new ResourceLocation(
@@ -80,6 +82,14 @@ public class OBBModelBox {
 
     }
 
+    public float getExplosionResistance() {
+        return explosionResistance;
+    }
+
+    public void setExplosionResistance(float explosionResistance) {
+        this.explosionResistance = explosionResistance;
+    }
+
     public OBBModelBox copy() {
         OBBModelBox box = new OBBModelBox();
         box.name = this.name;
@@ -89,6 +99,7 @@ public class OBBModelBox {
         box.center = new Vector3f(this.center);
         box.axis = axis.copy();
         box.axisNormal = axisNormal.copy();
+        box.explosionResistance = this.explosionResistance;
         return box;
     }
 

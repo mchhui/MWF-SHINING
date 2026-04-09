@@ -179,11 +179,22 @@ public class OBBPlayerManager {
         // calculateIntercept方法已移至基类OBBModelObject
     }
 
+    /** 内置玩家 OBB（player.obb.json）统一爆炸抗性，不在 JSON 中配置。 */
+    private static void applyBuiltinPlayerOBBResistance(PlayerOBBModelObject playerOBBObject) {
+        if (playerOBBObject == null) {
+            return;
+        }
+        for (OBBModelBox box : playerOBBObject.boxes) {
+            box.setExplosionResistance(0.5f);
+        }
+    }
+
     public static PlayerOBBModelObject getPlayerOBBObject(String name) {
         PlayerOBBModelObject playerOBBObject = playerOBBObjectMap.get(name);
         if (playerOBBObject == null) {
             playerOBBObject = BlockBenchOBBInfoLoader.loadOBBInfo(PlayerOBBModelObject.class,
                     new ResourceLocation("modularwarfare:obb/player.obb.json"));
+            applyBuiltinPlayerOBBResistance(playerOBBObject);
             playerOBBObjectMap.put(name, playerOBBObject);
         }
         return playerOBBObject;
@@ -210,6 +221,7 @@ public class OBBPlayerManager {
         if (playerOBBObject == null) {
             playerOBBObject = BlockBenchOBBInfoLoader.loadOBBInfo(PlayerOBBModelObject.class,
                     new ResourceLocation("modularwarfare:obb/player.obb.json"));
+            applyBuiltinPlayerOBBResistance(playerOBBObject);
             playerOBBObjectMap.put(event.player.getName(), playerOBBObject);
         }
         computePose(event,playerOBBObject, 1,false);
@@ -231,6 +243,7 @@ public class OBBPlayerManager {
         if (playerOBBObject == null) {
             playerOBBObject = BlockBenchOBBInfoLoader.loadOBBInfo(PlayerOBBModelObject.class,
                     new ResourceLocation("modularwarfare:obb/player.obb.json"));
+            applyBuiltinPlayerOBBResistance(playerOBBObject);
             playerOBBObjectMap.put(event.getEntityPlayer().getName(), playerOBBObject);
         }
         computePose(event,playerOBBObject, partialTick,false);

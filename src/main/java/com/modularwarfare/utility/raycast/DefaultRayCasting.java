@@ -52,6 +52,16 @@ public class DefaultRayCasting extends RayCasting {
         "minecraft:barrier"  // 屏障方块
     );
 
+    private static float blockExplosionResistanceForRayHit(World world, Vec3d rayStart, Vec3d rayEnd,
+        RayTraceResult blockHit, BlockPos blockPos, Block block) {
+        if (ModularWarfare.heBlockExplosionResistance != null) {
+            return ModularWarfare.heBlockExplosionResistance.getExplosionResistanceForBlockRayHit(world, rayStart, rayEnd,
+                blockHit, blockPos, block);
+        }
+        return block.getExplosionResistance(world, blockPos, null,
+            new Explosion(world, null, blockPos.getX(), blockPos.getY(), blockPos.getZ(), 1.f, false, false));
+    }
+
     public static void onShot() {
         shouldRenderShot = true;
         lastShotTime = System.currentTimeMillis();
@@ -65,6 +75,8 @@ public class DefaultRayCasting extends RayCasting {
         // 确保forward向量是单位向量
         forward = forward.normalize();
         Vec3d endVec = origin.add(forward.scale(maxDistance));
+        /** 完整弹道终点，用于 HE 烘焙盒与 glTF 节点抗性解析（{@code endVec} 可能被首段方块命中截断） */
+        final Vec3d fullBulletRayEnd = endVec;
 
         AxisAlignedBB bb = new AxisAlignedBB(new BlockPos(origin), new BlockPos(endVec)).grow(borderSize);
 
@@ -86,7 +98,8 @@ public class DefaultRayCasting extends RayCasting {
             // 如果不能穿透方块(穿透参数为0)或者方块的爆炸阻力大于最大可穿透阻力
             BlockPos blockPos = firstHit.getBlockPos();
             IBlockState blockState = world.getBlockState(blockPos);
-            float blockResistance = blockState.getBlock().getExplosionResistance(world, blockPos, null, new Explosion(world, null, blockPos.getX(), blockPos.getY(), blockPos.getZ(), 1.f, false, false));
+            float blockResistance = blockExplosionResistanceForRayHit(world, origin, fullBulletRayEnd, firstHit,
+                blockPos, blockState.getBlock());
             
             if (maxPenetrateBlockResistance <= 0 || blockResistance > maxPenetrateBlockResistance) {
 
@@ -334,12 +347,7 @@ public class DefaultRayCasting extends RayCasting {
 //                    }
                     if (currentHit instanceof OBBHit) {
                         OBBHit obbHit = (OBBHit) currentHit;
-                        if (obbHit.entity instanceof EntityPlayer) {
-                            penetrateSize -= 0.5f;
-                            break;
-                        }
-                        double avgSize = (obbHit.box.size.x + obbHit.box.size.y + obbHit.box.size.z) / 3;
-                        penetrateSize -= (float) avgSize;
+                        penetrateSize -= obbHit.box.getExplosionResistance();
                         break;
                     }
                     if (currentHit.rayTraceResult.typeOfHit == RayTraceResult.Type.ENTITY && currentHit.rayTraceResult.entityHit != null) {
@@ -354,7 +362,8 @@ public class DefaultRayCasting extends RayCasting {
                         BlockPos blockPos = new BlockPos(currentHit.rayTraceResult.hitVec);
                         IBlockState iBlockState = world.getBlockState(blockPos);
                         Block block = iBlockState.getBlock();
-                        float blockExplosionResistance = block.getExplosionResistance(world, blockPos, null, new Explosion(world, null, blockPos.getX(), blockPos.getY(), blockPos.getZ(), 1.f, false, false));
+                        float blockExplosionResistance = blockExplosionResistanceForRayHit(world, origin, fullBulletRayEnd,
+                            currentHit.rayTraceResult, blockPos, block);
                         penetrateBlocksResistance -= blockExplosionResistance;
                     }
                 }
@@ -511,7 +520,8 @@ public class DefaultRayCasting extends RayCasting {
                         if (block1.canCollideCheck(iblockstate1, stopOnLiquid)) {
                             RayTraceResult raytraceresult1 = iblockstate1.collisionRayTrace(world, blockpos, vec31, vec32);
                             if (raytraceresult1 != null) {
-                                float blockExplosionResistance = block1.getExplosionResistance(world, blockpos, null, new Explosion(world, null, blockpos.getX(), blockpos.getY(), blockpos.getZ(), 1.f, false, false));
+                                float blockExplosionResistance = blockExplosionResistanceForRayHit(world, vec31, vec32,
+                                    raytraceresult1, blockpos, block1);
                                 result.add(raytraceresult1);
                                 if (blockExplosionResistance < maxPenetrateBlockResistance && penetrateBlocksResistance > blockExplosionResistance) {
                                     penetrateBlocksResistance -= blockExplosionResistance;
