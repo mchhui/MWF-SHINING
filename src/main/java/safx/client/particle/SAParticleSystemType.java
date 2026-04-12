@@ -394,7 +394,8 @@ public class SAParticleSystemType extends SAFXType{
 		this.frames = other.frames;
 		this.gravity = other.gravity;
 		this.hasVariations = other.hasVariations;
-		this.initialDelayMax = other.initialDelayMin;
+		this.initialDelayMin = other.initialDelayMin;
+		this.initialDelayMax = other.initialDelayMax;
 		this.isHollow = other.isHollow;
 		this.lifetimeMax = other.lifetimeMax;
 		this.lifetimeMin = other.lifetimeMin;

@@ -104,10 +104,13 @@ public class SARenderHelper {
         		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,
         				(float) (combined & 65535), (float) (combined >> 16));
         	}
+        	GlStateManager.disableLighting();
         }
 
         if (usesHighlight(type)) {
         	SARenderHelper.enableFXLighting();
+        } else if (type != RenderType.ALPHA_SHADED) {
+        	GlStateManager.disableLighting();
         }
 	}
 	
@@ -115,9 +118,12 @@ public class SARenderHelper {
 		if (type == RenderType.ALPHA_SHADED) {
 			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit,
 					shadedPassSavedBrightnessX, shadedPassSavedBrightnessY);
+			GlStateManager.enableLighting();
 		}
 		if (usesHighlight(type)) {
 			SARenderHelper.disableFXLighting();
+		} else if (type != RenderType.ALPHA_SHADED) {
+			GlStateManager.enableLighting();
 		}
 		if (type != RenderType.SOLID) {
     		GlStateManager.disableBlend();
