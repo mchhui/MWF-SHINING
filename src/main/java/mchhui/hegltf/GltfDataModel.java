@@ -101,7 +101,9 @@ public class GltfDataModel {
                     DataAnimation animation;
                     String node = channel.getNodeModel().getName();
                     if (!gltfDataModel.animations.containsKey(node)) {
-                        gltfDataModel.animations.put(node, new DataAnimation());
+                        DataAnimation newAni = new DataAnimation();
+                        newAni.nodeName = node;
+                        gltfDataModel.animations.put(node, newAni);
                     }
                     animation = gltfDataModel.animations.get(node);
                     ArrayList<DataKeyframe> aniChannel;
@@ -175,7 +177,7 @@ public class GltfDataModel {
                 DataNode node = new DataNode();
                 node.unsafeNode = nodeModel;
                 if (gltfDataModel.nodes.containsKey(nodeModel.getName())) {
-                    throw new RuntimeException("The same node name");
+                    throw new RuntimeException("The same node name: \"" + nodeModel.getName() + "\"");
                 }
                 gltfDataModel.nodes.put(nodeModel.getName(), node);
                 if (nodeModel.getParent() == null) {

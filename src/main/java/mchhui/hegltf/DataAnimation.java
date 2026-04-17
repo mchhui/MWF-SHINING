@@ -1,6 +1,9 @@
 package mchhui.hegltf;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -14,6 +17,30 @@ public class DataAnimation {
     public ArrayList<DataKeyframe> rotChannel = new ArrayList<DataAnimation.DataKeyframe>();
     public ArrayList<DataKeyframe> sizeChannel = new ArrayList<DataAnimation.DataKeyframe>();
     public float theata90 = (float)Math.toRadians(90);
+    public String nodeName = null;
+
+    public static final int STEP_TRANSLATION = 1;
+    public static final int STEP_SCALE       = 2;
+    public static final int STEP_ROTATION    = 4;
+
+    public static Map<String, List<float[]>> currentStepRanges = null;
+
+    public static boolean isStepInterval(String nodeName, float leftTime, int channelBit) {
+        if (currentStepRanges == null || currentStepRanges.isEmpty()) return false;
+        List<float[]> nodeRanges = currentStepRanges.get(nodeName);
+        if (nodeRanges != null) {
+            for (float[] range : nodeRanges) {
+                if (leftTime >= range[0] && leftTime < range[1] && ((int) range[2] & channelBit) != 0) return true;
+            }
+        }
+        List<float[]> globalRanges = currentStepRanges.get(null);
+        if (globalRanges != null) {
+            for (float[] range : globalRanges) {
+                if (leftTime >= range[0] && leftTime < range[1] && ((int) range[2] & channelBit) != 0) return true;
+            }
+        }
+        return false;
+    }
 
     public Transform findTransform(float time,Vector3f pos,Vector3f size,Quaternionf rot) {
         Transform transform = new Transform(pos,size,rot);
@@ -24,6 +51,7 @@ public class DataAnimation {
         Vector4f vec = transform.pos;
         Vector4f vecTemp = new Vector4f();
         for (int i = 0; i < 2; i++) {
+            final int channelBit = (i == 0) ? STEP_TRANSLATION : STEP_SCALE;
             if (i == 1) {
                 channel = sizeChannel;
                 vec = transform.size;
@@ -50,6 +78,9 @@ public class DataAnimation {
                     float per = (time - channel.get(left).time) / (channel.get(right).time - channel.get(left).time);
                     if(per>1) {
                         per=1;
+                    }
+                    if (isStepInterval(this.nodeName, channel.get(left).time, channelBit)) {
+                        per = 0;
                     }
                     vec.set(channel.get(left).vec);
                     vec.mul(1 - per);
@@ -84,6 +115,9 @@ public class DataAnimation {
                 float per = (time - channel.get(left).time) / (channel.get(right).time - channel.get(left).time);
                 if(per>1) {
                     per=1;
+                }
+                if (isStepInterval(this.nodeName, channel.get(left).time, STEP_ROTATION)) {
+                    per = 0;
                 }
                 vec=channel.get(left).vec;
                 vecTemp=channel.get(right).vec;

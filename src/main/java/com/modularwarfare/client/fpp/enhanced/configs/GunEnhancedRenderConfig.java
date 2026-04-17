@@ -98,6 +98,9 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         //填入该组的对象会成为抛壳口的绑定点
         public ArrayList<EjectionGroup> ejectionGroups=new ArrayList<GunEnhancedRenderConfig.SpecialEffect.EjectionGroup>();
         
+        // 帧区间阶跃插值：该区间内的动画变化为瞬间跳变（step），而非线性过渡
+        public ArrayList<StepFrameRange> stepFrameRanges=new ArrayList<GunEnhancedRenderConfig.SpecialEffect.StepFrameRange>();
+        
         // X正左负右,Y正下负上,Z正前负后
         public Vector3f firstPersonShellEjectPos=new Vector3f(0, 0f, -0.2f);
         public Vector3f thirdPersonShellEjectPos;
@@ -117,6 +120,15 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
             
             public boolean ejectSmoke;
             public Vector3f ejectSmokeForce;
+        }
+        
+        public static class StepFrameRange{
+            public float startFrame;
+            public float endFrame;
+            public ArrayList<String> nodes = new ArrayList<>();
+            public boolean stepTranslation = true;
+            public boolean stepScale = true;
+            public boolean stepRotation = true;
         }
     }
 
