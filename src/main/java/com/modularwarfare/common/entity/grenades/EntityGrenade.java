@@ -4,6 +4,8 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.world.MWFExplosion;
+import com.modularwarfare.utility.DamageControlHelper;
+import com.modularwarfare.utility.RayUtil;
 import mchhui.modularmovements.coremod.ModularMovementsHooks;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -23,7 +25,9 @@ import net.minecraft.util.math.*;
 import net.minecraft.world.Explosion;
 import net.minecraft.world.World;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class EntityGrenade extends Entity {
 
@@ -43,6 +47,7 @@ public class EntityGrenade extends Entity {
     public boolean exploded = false;
     private Entity stuckEntity;
     private EnumFacing stuckFace;
+    protected final Set<Integer> impactedEntityIds = new HashSet<>();
 
     public EntityGrenade(World worldIn) {
         super(worldIn);
@@ -198,8 +203,15 @@ public class EntityGrenade extends Entity {
                                                                  this.motionY * this.motionY + 
                                                                  this.motionZ * this.motionZ);
                                 if (grenadeType.impactDamage > 0 && motionMagnitude > 0.1) {
-                                    entity.attackEntityFrom(DamageSource.causeThrownDamage(this, this.thrower), 
-                                                         grenadeType.impactDamage);
+                                    if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
+                                            && DamageControlHelper.canDamageTarget(this.thrower, entity, !grenadeType.throwerVulnerable)) {
+                                        boolean damaged = RayUtil.attackEntityWithoutKnockback(
+                                                entity,
+                                                DamageSource.causeThrownDamage(this, this.thrower),
+                                                grenadeType.impactDamage
+                                        );
+                                        DamageControlHelper.clearHurtResistantTime(entity, damaged);
+                                    }
                                 }
                                 
                                 if (grenadeType.isSticky) {
@@ -318,6 +330,7 @@ public class EntityGrenade extends Entity {
                 explosion.setFireLevel(grenadeType.explosionFireLevel);
                 explosion.setKnockLevel(grenadeType.explosionKnockLevel);
                 explosion.setBanShield(grenadeType.banShield);
+                explosion.setIgnoreFriendlyTargets(!grenadeType.throwerVulnerable);
                 
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);

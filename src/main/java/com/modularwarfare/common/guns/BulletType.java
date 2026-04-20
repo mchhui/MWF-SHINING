@@ -51,6 +51,7 @@ public class BulletType extends BaseType {
     public boolean damageWorld = true;
     public boolean allowBlockDrops = true;
     public boolean causesFire = false;
+    public boolean shooterVulnerable = false;
     
     public boolean isDynamicBullet=false;
     public boolean sameTextureAsGun=false;

@@ -3,8 +3,11 @@ package com.modularwarfare.common.entity;
 import java.util.List;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.BulletType;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.world.MWFExplosion;
+import com.modularwarfare.utility.DamageControlHelper;
+import com.modularwarfare.utility.RayUtil;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.IProjectile;
@@ -14,12 +17,16 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class EntityExplosiveProjectile extends EntityBullet implements IProjectile {
 
     private float gravity;
     private boolean hasSmoke;
     private boolean hasExplosion;
     private float impactDamage;
+    private final Set<Integer> impactedEntityIds = new HashSet<>();
 
     public EntityExplosiveProjectile(World world) {
         super(world);
@@ -61,7 +68,17 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
                 if (hasExplosion) {
                     explode();
                 }
-                entity.attackEntityFrom(DamageSource.causePlayerDamage(this.player), this.impactDamage);
+                BulletType bulletType = getBulletType();
+                boolean ignoreFriendlyTargets = bulletType != null && !bulletType.shooterVulnerable;
+                if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
+                        && DamageControlHelper.canDamageTarget(this.player, entity, ignoreFriendlyTargets)) {
+                    boolean damaged = RayUtil.attackEntityWithoutKnockback(
+                            entity,
+                            DamageSource.causePlayerDamage(this.player),
+                            this.impactDamage
+                    );
+                    DamageControlHelper.clearHurtResistantTime(entity, damaged);
+                }
                 this.setDead();
                 return;
             }
@@ -75,6 +92,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
                 MWFExplosion explosion = new MWFExplosion(this.world, this.player, posX, posY, posZ,
                         itemBullet.type.explosionRange, itemBullet.type.explosionDamage, itemBullet.type.explosionKnockback,
                         itemBullet.type.causesFire, itemBullet.type.damageWorld, itemBullet.type.allowBlockDrops);
+                explosion.setIgnoreFriendlyTargets(!itemBullet.type.shooterVulnerable);
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
                 
@@ -93,5 +111,10 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
             }
         }
         this.setDead();
+    }
+    
+    private BulletType getBulletType() {
+        ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());
+        return itemBullet != null ? itemBullet.type : null;
     }
 }

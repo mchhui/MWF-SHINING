@@ -3,8 +3,10 @@ package com.modularwarfare.common.entity;
 import java.util.List;
 
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.common.guns.BulletType;
 import com.modularwarfare.common.guns.ItemBullet;
-import com.modularwarfare.common.world.MWFExplosion;
+import com.modularwarfare.utility.DamageControlHelper;
+import com.modularwarfare.utility.RayUtil;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -16,6 +18,9 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import safx.SAPackets;
 import safx.packets.PacketSpawnParticleOnEntity;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class EntityThrowerProjectile extends EntityBullet implements IProjectile {
 
@@ -30,6 +35,7 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
     private float speedDecayFactor = 0.95f;
     private boolean hasHitGround = false;
     private int groundHitTime = 0;
+    private final Set<Integer> impactedEntityIds = new HashSet<>();
 
     public EntityThrowerProjectile(World world) {
         super(world);
@@ -128,7 +134,17 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
             if (entity != null && entity.canBeCollidedWith() && entity != this.player) {
                 if (entity instanceof EntityLivingBase) {
                     float damageMultiplier = hasHitGround ? 0.1f : 0.2f; // 碰撞地面后伤害降低
-                    entity.attackEntityFrom(DamageSource.causePlayerDamage(this.player), this.impactDamage * damageMultiplier);
+                    BulletType bulletType = getBulletType();
+                    boolean ignoreFriendlyTargets = bulletType != null && !bulletType.shooterVulnerable;
+                    if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
+                            && DamageControlHelper.canDamageTarget(this.player, entity, ignoreFriendlyTargets)) {
+                        boolean damaged = RayUtil.attackEntityWithoutKnockback(
+                                entity,
+                                DamageSource.causePlayerDamage(this.player),
+                                this.impactDamage * damageMultiplier
+                        );
+                        DamageControlHelper.clearHurtResistantTime(entity, damaged);
+                    }
                 }
             }
         }
@@ -137,5 +153,10 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
         this.posY += this.motionY;
         this.posZ += this.motionZ;
         this.setPosition(this.posX, this.posY, this.posZ);
+    }
+    
+    private BulletType getBulletType() {
+        ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());
+        return itemBullet != null ? itemBullet.type : null;
     }
 }

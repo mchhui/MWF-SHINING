@@ -41,6 +41,7 @@ import com.modularwarfare.common.entity.grenades.EntityGasGrenade;
 import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
+import com.modularwarfare.utility.DamageControlHelper;
 
 public class MWFExplosion
 {
@@ -67,6 +68,7 @@ public class MWFExplosion
     private int fireLevel = 0;
     private float knockLevel = 0;
     private boolean banShield = false;
+    private boolean ignoreFriendlyTargets = false;
     private int fireLifeTime = 100;
     private int fireDuration = 10;
     private float fireDamage = 2f;
@@ -110,6 +112,7 @@ public class MWFExplosion
         this.fireLevel = 0;
         this.knockLevel = 0;
         this.banShield = false;
+        this.ignoreFriendlyTargets = false;
     }
 
     public void doExplosionA()
@@ -261,7 +264,10 @@ public class MWFExplosion
                             DamageSource.causeExplosionDamage(this.explosion);
                             
                         if (damageSource != null) {
-                            entity.attackEntityFrom(damageSource, this.damage * (float)scale);
+                            if (DamageControlHelper.canDamageTarget(this.exploder, entity, this.ignoreFriendlyTargets)) {
+                                boolean damaged = entity.attackEntityFrom(damageSource, this.damage * (float)scale);
+                                DamageControlHelper.clearHurtResistantTime(entity, damaged);
+                            }
                         }
                             
                         if (entity instanceof EntityLivingBase && potionEffects != null) {
@@ -418,5 +424,9 @@ public class MWFExplosion
     
     public void setBanShield(boolean ban) {
         this.banShield = ban;
+    }
+    
+    public void setIgnoreFriendlyTargets(boolean ignoreFriendlyTargets) {
+        this.ignoreFriendlyTargets = ignoreFriendlyTargets;
     }
 }
