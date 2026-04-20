@@ -63,9 +63,9 @@ public class GunType extends BaseType {
     public float gunDamageHeadshotBonus = 0;
 
     /**
-     * 可以穿透的实体的碰撞大小
+     * 最大可连续穿透的碰撞箱大小累积值
      */
-    public float gunPenetrateSize = 0.f;
+    public float gunPenetrateSize = 0.1f;
     /**
      * 穿透后伤害线性衰减
      */
@@ -75,7 +75,7 @@ public class GunType extends BaseType {
      */
     public float gunMaxPenetrateBlockResistance = 0;
     /**
-     *  最大可连续穿透的阻力
+     *  最大可连续穿透的方块爆炸阻力累积值
      */
     public float gunPenetrateBlocksResistance = 0;
     /**
