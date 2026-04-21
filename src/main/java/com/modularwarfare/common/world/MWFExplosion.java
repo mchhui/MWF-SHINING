@@ -42,6 +42,7 @@ import com.modularwarfare.common.entity.grenades.EntityGrenade;
 import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
 import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
 import com.modularwarfare.utility.DamageControlHelper;
+import com.modularwarfare.utility.RayUtil;
 
 public class MWFExplosion
 {
@@ -257,6 +258,7 @@ public class MWFExplosion
                     Vec3d entityPos = entity.getPositionVector().add(0, entity.getEyeHeight() / 2, 0);
                     if (explosionThroughWalls || world.rayTraceBlocks(vec3d, entityPos, false, true, false) == null) {
                         double scale = Math.pow(1.0 - (distance / range), 2.0);
+                        float finalDamage = this.damage * (float)scale;
                         
                         // 如果启用了禁用盾牌，使用无法被盾牌格挡的伤害源
                         DamageSource damageSource = banShield ? 
@@ -264,8 +266,19 @@ public class MWFExplosion
                             DamageSource.causeExplosionDamage(this.explosion);
                             
                         if (damageSource != null) {
-                            if (DamageControlHelper.canDamageTarget(this.exploder, entity, this.ignoreFriendlyTargets)) {
-                                boolean damaged = entity.attackEntityFrom(damageSource, this.damage * (float)scale);
+                            boolean canDamage = DamageControlHelper.canDamageTarget(this.exploder, entity, this.ignoreFriendlyTargets);
+                            if (canDamage) {
+                                boolean damaged = RayUtil.attackEntityWithoutKnockback(entity, damageSource, finalDamage);
+                                boolean fallbackDamaged = false;
+                                if (!damaged && finalDamage > 0.0F) {
+                                    // 当服务端开启防爆时，可能会拦截 Explosion 类型伤害源，导致 attackEntityFrom 返回 false。
+                                    // 这里回退到通用/投掷者伤害源，保证爆炸伤害逻辑仍可生效。
+                                    DamageSource fallbackSource = this.buildFallbackDamageSource();
+                                    if (fallbackSource != null) {
+                                        fallbackDamaged = RayUtil.attackEntityWithoutKnockback(entity, fallbackSource, finalDamage);
+                                    }
+                                }
+                                damaged = damaged || fallbackDamaged;
                                 DamageControlHelper.clearHurtResistantTime(entity, damaged);
                             }
                         }
@@ -428,5 +441,16 @@ public class MWFExplosion
     
     public void setIgnoreFriendlyTargets(boolean ignoreFriendlyTargets) {
         this.ignoreFriendlyTargets = ignoreFriendlyTargets;
+    }
+
+    @Nullable
+    private DamageSource buildFallbackDamageSource() {
+        if (this.exploder instanceof EntityPlayer) {
+            return DamageSource.causePlayerDamage((EntityPlayer) this.exploder);
+        }
+        if (this.exploder instanceof EntityLivingBase) {
+            return DamageSource.causeMobDamage((EntityLivingBase) this.exploder);
+        }
+        return DamageSource.GENERIC;
     }
 }
