@@ -32,7 +32,8 @@ import java.util.Set;
 public class EntityGrenade extends Entity {
     private static final double FLYING_DRAG = 0.98D;
     private static final double GROUND_FRICTION = 0.8D;
-    private static final double ENTITY_HIT_BOUNCE_RETENTION = 0.3D;
+    private static final double ENTITY_HIT_BOUNCE_RETENTION = 0.15D;
+    private static final double BLOCK_HIT_BOUNCE_RETENTION = 0.15D;
 
     private static final DataParameter GRENADE_NAME = EntityDataManager.createKey(EntityGrenade.class, DataSerializers.STRING);
     private static final DataParameter<Boolean> IS_STUCK = EntityDataManager.createKey(EntityGrenade.class, DataSerializers.BOOLEAN);
@@ -48,6 +49,7 @@ public class EntityGrenade extends Entity {
     public boolean playedSound = false;
     public float fuse;
     public boolean exploded = false;
+    protected boolean hasBouncedOnGround = false;
     private Entity stuckEntity;
     private EnumFacing stuckFace;
     protected final Set<Integer> impactedEntityIds = new HashSet<>();
@@ -269,6 +271,7 @@ public class EntityGrenade extends Entity {
         compound.setDouble("motionY", this.motionY);
         compound.setDouble("motionZ", this.motionZ);
         compound.setFloat("fuse", this.fuse);
+        compound.setBoolean("hasBouncedOnGround", this.hasBouncedOnGround);
         compound.setBoolean("isStuck", isStuck());
         compound.setInteger("stuckEntityId", this.dataManager.get(STUCK_TO_ENTITY_ID));
         compound.setLong("stuckPos", this.dataManager.get(STUCK_POS).toLong());
@@ -286,6 +289,7 @@ public class EntityGrenade extends Entity {
         motionY = compound.getDouble("motionY");
         motionZ = compound.getDouble("motionZ");
         fuse = compound.getInteger("fuse");
+        hasBouncedOnGround = compound.getBoolean("hasBouncedOnGround");
         setStuck(compound.getBoolean("isStuck"));
         int entityId = compound.getInteger("stuckEntityId");
         if (entityId != -1) {
@@ -483,6 +487,8 @@ public class EntityGrenade extends Entity {
             } else if (grenadeType.instantExplode && !exploded) {
                 explode();
                 return true;
+            } else if (grenadeType.bounceOnBlock) {
+                applyBounceFromBlockHit(raytraceresult);
             }
         }
 
@@ -504,6 +510,48 @@ public class EntityGrenade extends Entity {
                 break;
             case Z:
                 this.motionZ = -this.motionZ * ENTITY_HIT_BOUNCE_RETENTION;
+                break;
+            default:
+                break;
+        }
+        Vec3d hit = trace.hitVec;
+        this.setPosition(
+                hit.x + side.getXOffset() * 0.05D,
+                hit.y + side.getYOffset() * 0.05D,
+                hit.z + side.getZOffset() * 0.05D
+        );
+        if (!this.world.isRemote) {
+            this.world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_HIT, SoundCategory.BLOCKS, 0.5f, 1.0f);
+        }
+    }
+
+    /** 沿方块碰撞面反弹；地面（UP 面）仅允许一次反弹。 */
+    protected void applyBounceFromBlockHit(RayTraceResult trace) {
+        if (trace == null || trace.sideHit == null || trace.hitVec == null) {
+            return;
+        }
+        EnumFacing side = trace.sideHit;
+        if (grenadeType == null) {
+            return;
+        }
+        if (!grenadeType.bounceOnBlock) {
+            return;
+        }
+        if (side == EnumFacing.UP && this.hasBouncedOnGround) {
+            return;
+        }
+        switch (side.getAxis()) {
+            case X:
+                this.motionX = -this.motionX * BLOCK_HIT_BOUNCE_RETENTION;
+                break;
+            case Y:
+                this.motionY = -this.motionY * BLOCK_HIT_BOUNCE_RETENTION;
+                if (side == EnumFacing.UP) {
+                    this.hasBouncedOnGround = true;
+                }
+                break;
+            case Z:
+                this.motionZ = -this.motionZ * BLOCK_HIT_BOUNCE_RETENTION;
                 break;
             default:
                 break;
