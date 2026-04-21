@@ -30,6 +30,9 @@ import java.util.List;
 import java.util.Set;
 
 public class EntityGrenade extends Entity {
+    private static final double FLYING_DRAG = 0.98D;
+    private static final double GROUND_FRICTION = 0.8D;
+    private static final double ENTITY_HIT_BOUNCE_RETENTION = 0.3D;
 
     private static final DataParameter GRENADE_NAME = EntityDataManager.createKey(EntityGrenade.class, DataSerializers.STRING);
     private static final DataParameter<Boolean> IS_STUCK = EntityDataManager.createKey(EntityGrenade.class, DataSerializers.BOOLEAN);
@@ -163,121 +166,10 @@ public class EntityGrenade extends Entity {
             }
         }
         else {
-            this.prevPosX = this.posX;
-            this.prevPosY = this.posY;
-            this.prevPosZ = this.posZ;
+            tickFlyingPhysicsStep();
 
-            if (!this.hasNoGravity()) {
-                this.motionY -= 0.04D;
-            }
-
-            this.motionX *= 0.98D;
-            this.motionY *= 0.98D;
-            this.motionZ *= 0.98D;
-
-            if (this.onGround) {
-                this.motionX *= 0.8D;
-                this.motionZ *= 0.8D;
-                if (Math.abs(motionX) < 0.1 && Math.abs(motionZ) < 0.1) {
-                    motionX = 0;
-                    motionZ = 0;
-                }
-                if (!playedSound) {
-                    world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_HIT, SoundCategory.BLOCKS, 0.50f, 1.0f);
-                    playedSound = true;
-                }
-            }
-
-            if (grenadeType != null) {
-                if (!exploded) {
-                    Vec3d currentPos = new Vec3d(this.posX, this.posY, this.posZ);
-                    Vec3d nextPos = new Vec3d(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
-                    
-                    List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this, 
-                        this.getEntityBoundingBox().expand(this.motionX, this.motionY, this.motionZ).grow(1.0D));
-                    
-                    if (!list.isEmpty()) {
-                        for (Entity entity : list) {
-                            if (entity != thrower && entity instanceof EntityLivingBase) {
-                                double motionMagnitude = Math.sqrt(this.motionX * this.motionX + 
-                                                                 this.motionY * this.motionY + 
-                                                                 this.motionZ * this.motionZ);
-                                if (grenadeType.impactDamage > 0 && motionMagnitude > 0.1) {
-                                    if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
-                                            && DamageControlHelper.canDamageTarget(this.thrower, entity, !grenadeType.throwerVulnerable)) {
-                                        boolean damaged = RayUtil.attackEntityWithoutKnockback(
-                                                entity,
-                                                DamageSource.causeThrownDamage(this, this.thrower),
-                                                grenadeType.impactDamage
-                                        );
-                                        DamageControlHelper.clearHurtResistantTime(entity, damaged);
-                                    }
-                                }
-                                
-                                if (grenadeType.isSticky) {
-                                    RayTraceResult entityTrace = entity.getEntityBoundingBox().calculateIntercept(currentPos, nextPos);
-                                    if (entityTrace != null) {
-                                        if (!this.world.isRemote) {
-                                            EntityGrenade newGrenade = new EntityGrenade(this.world, this.thrower, 0, this.grenadeType);
-                                            newGrenade.setPosition(entityTrace.hitVec.x, entityTrace.hitVec.y, entityTrace.hitVec.z);
-                                            newGrenade.motionX = 0;
-                                            newGrenade.motionY = 0;
-                                            newGrenade.motionZ = 0;
-                                            newGrenade.fuse = this.fuse;
-                                            newGrenade.setStuck(true);
-                                            newGrenade.setStuckToEntity(entity);
-                                            
-                                            this.world.spawnEntity(newGrenade);
-                                            this.setDead();
-                                        }
-                                        
-                                        return;
-                                    }
-                                } else if (grenadeType.instantExplode) {
-                                    explode();
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    RayTraceResult raytraceresult = this.world.rayTraceBlocks(currentPos, nextPos, false, true, false);
-
-                    if (raytraceresult != null && raytraceresult.typeOfHit == RayTraceResult.Type.BLOCK) {
-                        if (grenadeType.isSticky) {
-                            if (!this.world.isRemote) {
-                                BlockPos hitPos = raytraceresult.getBlockPos();
-                                EnumFacing hitFace = raytraceresult.sideHit;
-                                
-                                Vec3d hitVec = raytraceresult.hitVec;
-                                
-                                double offset = 0.01D;
-                                hitVec = hitVec.add(
-                                    hitFace.getXOffset() * offset,
-                                    hitFace.getYOffset() * offset,
-                                    hitFace.getZOffset() * offset
-                                );
-
-                                EntityGrenade newGrenade = new EntityGrenade(this.world, this.thrower, 0, this.grenadeType);
-                                newGrenade.setPosition(hitVec.x, hitVec.y, hitVec.z);
-                                newGrenade.motionX = 0;
-                                newGrenade.motionY = 0;
-                                newGrenade.motionZ = 0;
-                                newGrenade.fuse = this.fuse;
-                                newGrenade.setStuck(true);
-                                newGrenade.setStuckPos(hitPos, hitFace);
-                                
-                                this.world.spawnEntity(newGrenade);
-                                this.setDead();
-                            }
-                            
-                            return;
-                        } else if (grenadeType.instantExplode && !exploded) {
-                            explode();
-                            return;
-                        }
-                    }
-                }
+            if (processFlyingCollisions()) {
+                return;
             }
         }
 
@@ -457,5 +349,173 @@ public class EntityGrenade extends Entity {
 
     public int getStuckTicks() {
         return this.dataManager.get(STUCK_TICKS);
+    }
+
+    /** 飞行段每 tick：重力、空气阻尼、着地摩擦与着地音效。子类自定义 onUpdate 时应先调用本方法以保持与破片手雷一致。 */
+    protected void tickFlyingPhysicsStep() {
+        this.prevPosX = this.posX;
+        this.prevPosY = this.posY;
+        this.prevPosZ = this.posZ;
+
+        if (!this.hasNoGravity()) {
+            this.motionY -= 0.04D;
+        }
+
+        this.motionX *= FLYING_DRAG;
+        this.motionY *= FLYING_DRAG;
+        this.motionZ *= FLYING_DRAG;
+
+        if (this.onGround) {
+            this.motionX *= GROUND_FRICTION;
+            this.motionZ *= GROUND_FRICTION;
+            if (Math.abs(motionX) < 0.1 && Math.abs(motionZ) < 0.1) {
+                motionX = 0;
+                motionZ = 0;
+            }
+            if (!playedSound) {
+                world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_HIT, SoundCategory.BLOCKS, 0.50f, 1.0f);
+                playedSound = true;
+            }
+        }
+    }
+
+    /** 是否仍应对飞行轨迹做实体/方块碰撞（子类可按状态覆盖，例如爆炸后不再检测） */
+    protected boolean shouldProcessFlyingCollisions() {
+        return this.grenadeType != null && !this.exploded;
+    }
+
+    /**
+     * 飞行中：impact、生物反弹、黏附生物/方块、碰方块瞬爆。
+     *
+     * @return true 表示本 tick 已 explode/setDead，调用方应直接 return 结束 onUpdate
+     */
+    protected boolean processFlyingCollisions() {
+        if (!shouldProcessFlyingCollisions()) {
+            return false;
+        }
+
+        Vec3d currentPos = new Vec3d(this.posX, this.posY, this.posZ);
+        Vec3d nextPos = new Vec3d(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+
+        List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(this,
+                this.getEntityBoundingBox().expand(this.motionX, this.motionY, this.motionZ).grow(1.0D));
+
+        if (!list.isEmpty()) {
+            for (Entity entity : list) {
+                if (entity != thrower && entity instanceof EntityLivingBase) {
+                    double motionMagnitude = Math.sqrt(this.motionX * this.motionX
+                            + this.motionY * this.motionY
+                            + this.motionZ * this.motionZ);
+                    RayTraceResult entityTrace = entity.getEntityBoundingBox().calculateIntercept(currentPos, nextPos);
+                    if (grenadeType.impactDamage > 0 && motionMagnitude > 0.1) {
+                        if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
+                                && DamageControlHelper.canDamageTarget(this.thrower, entity, !grenadeType.throwerVulnerable)) {
+                            boolean damaged = RayUtil.attackEntityWithoutKnockback(
+                                    entity,
+                                    DamageSource.causeThrownDamage(this, this.thrower),
+                                    grenadeType.impactDamage
+                            );
+                            DamageControlHelper.clearHurtResistantTime(entity, damaged);
+                        }
+                    }
+                    if (grenadeType.bounceOnEntity && !grenadeType.isSticky && !grenadeType.instantExplode
+                            && motionMagnitude > 0.1 && entityTrace != null && entityTrace.sideHit != null) {
+                        applyBounceFromEntityHit(entityTrace);
+                        break;
+                    }
+                    if (grenadeType.isSticky) {
+                        if (entityTrace != null) {
+                            if (!this.world.isRemote) {
+                                EntityGrenade newGrenade = new EntityGrenade(this.world, this.thrower, 0, this.grenadeType);
+                                newGrenade.setPosition(entityTrace.hitVec.x, entityTrace.hitVec.y, entityTrace.hitVec.z);
+                                newGrenade.motionX = 0;
+                                newGrenade.motionY = 0;
+                                newGrenade.motionZ = 0;
+                                newGrenade.fuse = this.fuse;
+                                newGrenade.setStuck(true);
+                                newGrenade.setStuckToEntity(entity);
+
+                                this.world.spawnEntity(newGrenade);
+                                this.setDead();
+                            }
+
+                            return true;
+                        }
+                    } else if (grenadeType.instantExplode) {
+                        explode();
+                        return true;
+                    }
+                }
+            }
+        }
+
+        RayTraceResult raytraceresult = this.world.rayTraceBlocks(currentPos, nextPos, false, true, false);
+
+        if (raytraceresult != null && raytraceresult.typeOfHit == RayTraceResult.Type.BLOCK) {
+            if (grenadeType.isSticky) {
+                if (!this.world.isRemote) {
+                    BlockPos hitPos = raytraceresult.getBlockPos();
+                    EnumFacing hitFace = raytraceresult.sideHit;
+
+                    Vec3d hitVec = raytraceresult.hitVec;
+
+                    double offset = 0.01D;
+                    hitVec = hitVec.add(
+                            hitFace.getXOffset() * offset,
+                            hitFace.getYOffset() * offset,
+                            hitFace.getZOffset() * offset
+                    );
+
+                    EntityGrenade newGrenade = new EntityGrenade(this.world, this.thrower, 0, this.grenadeType);
+                    newGrenade.setPosition(hitVec.x, hitVec.y, hitVec.z);
+                    newGrenade.motionX = 0;
+                    newGrenade.motionY = 0;
+                    newGrenade.motionZ = 0;
+                    newGrenade.fuse = this.fuse;
+                    newGrenade.setStuck(true);
+                    newGrenade.setStuckPos(hitPos, hitFace);
+
+                    this.world.spawnEntity(newGrenade);
+                    this.setDead();
+                }
+
+                return true;
+            } else if (grenadeType.instantExplode && !exploded) {
+                explode();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** 沿实体 AABB 碰撞面反弹；法线方向出射速率约为入射的 {@link #ENTITY_HIT_BOUNCE_RETENTION}（反向） */
+    protected void applyBounceFromEntityHit(RayTraceResult trace) {
+        if (trace == null || trace.sideHit == null || trace.hitVec == null) {
+            return;
+        }
+        EnumFacing side = trace.sideHit;
+        switch (side.getAxis()) {
+            case X:
+                this.motionX = -this.motionX * ENTITY_HIT_BOUNCE_RETENTION;
+                break;
+            case Y:
+                this.motionY = -this.motionY * ENTITY_HIT_BOUNCE_RETENTION;
+                break;
+            case Z:
+                this.motionZ = -this.motionZ * ENTITY_HIT_BOUNCE_RETENTION;
+                break;
+            default:
+                break;
+        }
+        Vec3d hit = trace.hitVec;
+        this.setPosition(
+                hit.x + side.getXOffset() * 0.05D,
+                hit.y + side.getYOffset() * 0.05D,
+                hit.z + side.getZOffset() * 0.05D
+        );
+        if (!this.world.isRemote) {
+            this.world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_HIT, SoundCategory.BLOCKS, 0.5f, 1.0f);
+        }
     }
 }

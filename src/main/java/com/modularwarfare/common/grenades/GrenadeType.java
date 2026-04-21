@@ -50,6 +50,7 @@ public class GrenadeType extends BaseType {
     
     // 撞击伤害
     public float impactDamage = 1.0f;
+    public boolean bounceOnEntity = false;
     // 爆炸穿透墙壁
     public boolean explosionThroughWalls = false;
     // 爆炸效果

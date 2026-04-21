@@ -4,8 +4,6 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.init.ModSounds;
 import com.modularwarfare.common.network.PacketFlashClient;
-import com.modularwarfare.utility.DamageControlHelper;
-import com.modularwarfare.utility.RayUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.MoverType;
@@ -20,8 +18,6 @@ import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
-
-import java.util.List;
 
 public class EntityStunGrenade extends EntityGrenade {
 
@@ -54,52 +50,10 @@ public class EntityStunGrenade extends EntityGrenade {
 
     @Override
     public void onUpdate() {
-        this.prevPosX = this.posX;
-        this.prevPosY = this.posY;
-        this.prevPosZ = this.posZ;
+        tickFlyingPhysicsStep();
 
-        if (!this.hasNoGravity()) {
-            this.motionY -= 0.04D;
-        }
-
-        this.motionX *= 0.98D;
-        this.motionY *= 0.98D;
-        this.motionZ *= 0.98D;
-
-        if (this.onGround) {
-            this.motionX *= 0.8D;
-            this.motionZ *= 0.8D;
-            if (!playedSound) {
-                world.playSound(null, this.posX, this.posY, this.posZ, ModSounds.GRENADE_HIT, SoundCategory.BLOCKS, 0.50f, 1.0f);
-                playedSound = true;
-            }
-        }
-        
-        if (grenadeType != null && !exploded) {
-            List<Entity> list = this.world.getEntitiesWithinAABBExcludingEntity(
-                    this,
-                    this.getEntityBoundingBox().expand(this.motionX, this.motionY, this.motionZ).grow(1.0D)
-            );
-            if (!list.isEmpty()) {
-                double motionMagnitude = Math.sqrt(
-                        this.motionX * this.motionX +
-                        this.motionY * this.motionY +
-                        this.motionZ * this.motionZ
-                );
-                for (Entity entity : list) {
-                    if (entity != thrower && entity instanceof EntityLivingBase && grenadeType.impactDamage > 0 && motionMagnitude > 0.1) {
-                        if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
-                                && DamageControlHelper.canDamageTarget(this.thrower, entity, !grenadeType.throwerVulnerable)) {
-                            boolean damaged = RayUtil.attackEntityWithoutKnockback(
-                                    entity,
-                                    DamageSource.causeThrownDamage(this, this.thrower),
-                                    grenadeType.impactDamage
-                            );
-                            DamageControlHelper.clearHurtResistantTime(entity, damaged);
-                        }
-                    }
-                }
-            }
+        if (processFlyingCollisions()) {
+            return;
         }
 
         if (Math.abs(motionX) < 0.1 && Math.abs(motionZ) < 0.1) {
