@@ -17,6 +17,8 @@ import net.minecraft.client.renderer.entity.MWFRenderHelper;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerBipedArmor;
+import net.minecraft.client.renderer.entity.layers.LayerCustomHead;
+import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -29,6 +31,14 @@ public class FakeRenderPlayer extends RenderPlayer {
         this.mainModel = new FakePlayerModel(0.0F, useSmallArms);
         if(ModularWarfare.isLoadedObfuscate) {
             this.mainModel= new FakePlayerModelForObfuscateCompat(0.0F, useSmallArms);
+        }
+        for (int i = 0; i < this.layerRenderers.size(); i++) {
+            LayerRenderer<?> layer = this.layerRenderers.get(i);
+            if (layer instanceof LayerCustomHead) {
+                this.layerRenderers.remove(i);
+                this.layerRenderers.add(i, (LayerRenderer<AbstractClientPlayer>)(LayerRenderer<?>)new LayerCustomHead(this.getMainModel().bipedHead));
+                break;
+            }
         }
         for (int i = 0; i < this.layerRenderers.size(); i++) {
             if (this.layerRenderers.get(i).getClass() == LayerBipedArmor.class) {
