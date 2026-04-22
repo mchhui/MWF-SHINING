@@ -2,7 +2,6 @@ package com.modularwarfare.common.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import com.modularwarfare.client.render.BeamRenderer;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -19,6 +18,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.client.renderer.GlStateManager;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.modularwarfare.client.model.BeamRenderer;
 
 public class PacketDelayedShoot extends PacketBase {
 

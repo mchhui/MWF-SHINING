@@ -1,4 +1,4 @@
-package com.modularwarfare.client.render;
+package com.modularwarfare.client.model;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
