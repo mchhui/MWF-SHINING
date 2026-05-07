@@ -172,6 +172,7 @@ public class ClientProxy extends CommonProxy {
     public static boolean shoulderSurfingLoaded=false;
     public static boolean SGFXloaded=false;
     public static boolean dsSurroundLoaded=false;
+    public static boolean modularPropsLoaded = false;
     
     /**
      * Patches
@@ -230,6 +231,7 @@ public class ClientProxy extends CommonProxy {
         shoulderSurfingLoaded = Loader.isModLoaded("shouldersurfing");
         SGFXloaded = Loader.isModLoaded("sgfx");
         dsSurroundLoaded = Loader.isModLoaded("dsurround");  // 检测DS模组是否加载
+        modularPropsLoaded = Loader.isModLoaded("modularprops");
         
         if(shoulderSurfingLoaded) {
             ModularWarfare.LOGGER.info("ShoulderSurfing detected!");
@@ -239,6 +241,9 @@ public class ClientProxy extends CommonProxy {
         }
         if(dsSurroundLoaded) {
             ModularWarfare.LOGGER.info("Dynamic Surroundings detected! Using DS sound system.");
+        }
+        if (modularPropsLoaded) {
+            ModularWarfare.LOGGER.info("ModularProps detected! Custom item/block integrations enabled.");
         }
         
         //Smooth Swing Ticker Runnable
