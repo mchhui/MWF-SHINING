@@ -25,7 +25,9 @@ public class AnimationHandler {
         String str=buffer.readString(Short.MAX_VALUE);
         int type=buffer.readVarInt();
         FMLCommonHandler.instance().getMinecraftServerInstance().addScheduledTask(()->{
-            ModularWarfare.aniPlayer.playAni(uid, str, type); 
+            if (ModularWarfare.aniPlayer != null) {
+                ModularWarfare.aniPlayer.playAni(uid, str, type);
+            }
         });
     }
     
