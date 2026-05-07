@@ -3,6 +3,7 @@ package com.modularwarfare.client;
 import org.lwjgl.input.Keyboard;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.OffhandHideHelper;
 import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.api.RenderHandFisrtPersonEvent;
 import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
@@ -340,6 +341,10 @@ public class ClientRenderHooks {
         boolean result = false;
         if(mc.currentScreen instanceof GuiGunModify) {
         	return true;
+        }
+        if (hand == EnumHand.OFF_HAND && mc.player != null
+                && OffhandHideHelper.shouldHideOffhandForMainhand(mc.player.getHeldItemMainhand())) {
+            return true;
         }
         if (stack != null && stack.getItem() instanceof BaseItem) {
             BaseType type = ((BaseItem) stack.getItem()).baseType;

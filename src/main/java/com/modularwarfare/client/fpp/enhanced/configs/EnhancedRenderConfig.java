@@ -11,6 +11,7 @@ public class EnhancedRenderConfig {
 
     public String modelFileName = "";
     public int FPS=24;
+    public boolean hideOffhandItem = true;
     
     public ShowHandArmorType showHandArmorType=ShowHandArmorType.NONE;
     

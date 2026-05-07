@@ -3,6 +3,7 @@ package com.modularwarfare.client.model;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.model.layers.RenderLayerBackpack;
 import com.modularwarfare.client.model.layers.RenderLayerBody;
+import com.modularwarfare.client.model.layers.LayerHeldItemMw;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
 import com.modularwarfare.client.model.layers.RenderLayerHeldMelee;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGrenade;
@@ -18,6 +19,7 @@ import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.entity.layers.LayerBipedArmor;
 import net.minecraft.client.renderer.entity.layers.LayerCustomHead;
+import net.minecraft.client.renderer.entity.layers.LayerHeldItem;
 import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.relauncher.Side;
@@ -45,6 +47,13 @@ public class FakeRenderPlayer extends RenderPlayer {
                 //must to i-- next time
                 this.layerRenderers.remove(i);
                 i--;
+                break;
+            }
+        }
+        for (int i = 0; i < this.layerRenderers.size(); i++) {
+            if (this.layerRenderers.get(i).getClass() == LayerHeldItem.class) {
+                this.layerRenderers.set(i,
+                        (LayerRenderer<AbstractClientPlayer>) (LayerRenderer<?>) new LayerHeldItemMw(this));
                 break;
             }
         }
