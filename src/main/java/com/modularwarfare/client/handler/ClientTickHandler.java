@@ -11,12 +11,14 @@ import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
 import com.modularwarfare.client.fpp.enhanced.animation.EnhancedStateMachine;
 import com.modularwarfare.client.fpp.enhanced.animation.melee.AnimationMeleeController;
+import com.modularwarfare.client.input.OptifineInputUtil;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.gui.hud.FlashSystem;
 import com.modularwarfare.client.gui.hud.GunUI;
 import com.modularwarfare.client.laser.LaserRenderManager;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.ModelGun;
+import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
@@ -28,6 +30,9 @@ import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.common.guns.manager.FireManager;
 import com.modularwarfare.common.guns.manager.GunKickManager;
 import com.modularwarfare.common.type.BaseItem;
+
+import siz.addon.modularprops.common.custom.ItemBlockCustom;
+import siz.addon.modularprops.common.custom.ItemCustom;
 
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.client.ClientListener;
@@ -377,6 +382,15 @@ public final class ClientTickHandler {
     private static void onClientTickStart(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)
             return;
+
+        ItemStack heldMain = minecraft.player.getHeldItemMainhand();
+        boolean blockOptifineZoom = !heldMain.isEmpty()
+            && (heldMain.getItem() instanceof ItemGun
+                || heldMain.getItem() instanceof ItemGrenade
+                || heldMain.getItem() instanceof ItemMelee
+                || heldMain.getItem() instanceof ItemCustom
+                || heldMain.getItem() instanceof ItemBlockCustom);
+        OptifineInputUtil.disableZoom(blockOptifineZoom);
 
         GUN_ROT_X_LAST = GUN_ROT_X;
         GUN_ROT_Y_LAST = GUN_ROT_Y;
