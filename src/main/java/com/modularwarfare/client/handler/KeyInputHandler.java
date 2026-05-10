@@ -64,10 +64,6 @@ public final class KeyInputHandler {
         keyBinds.add(new KeyEntry(KeyType.LaserToggle));
         keyBinds.add(new KeyEntry(KeyType.GunTransform));
 
-        keyBinds.add(new KeyEntry(KeyType.Left));
-        keyBinds.add(new KeyEntry(KeyType.Right));
-        keyBinds.add(new KeyEntry(KeyType.Up));
-        keyBinds.add(new KeyEntry(KeyType.Down));
         keyBinds.add(new KeyEntry(KeyType.QuickViewToggle));
 
         if (ModularWarfare.DEV_ENV) {
@@ -302,18 +298,6 @@ public final class KeyInputHandler {
 //                    }
 //                    break;
 
-                case Left:
-                    ClientProxy.attachmentUI.processKeyInput(KeyType.Left);
-                    break;
-                case Right:
-                    ClientProxy.attachmentUI.processKeyInput(KeyType.Right);
-                    break;
-                case Up:
-                    ClientProxy.attachmentUI.processKeyInput(KeyType.Up);
-                    break;
-                case Down:
-                    ClientProxy.attachmentUI.processKeyInput(KeyType.Down);
-                    break;
                 default:
                     ModularWarfare.LOGGER.warn("Default case called on handleKeyInput for " + keyType.toString());
                     break;

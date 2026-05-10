@@ -2,10 +2,8 @@ package com.modularwarfare.client.gui.hud;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.client.ClientRenderHooks;
-import com.modularwarfare.client.input.KeyType;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.network.PacketGunAddAttachment;
-import com.modularwarfare.common.network.PacketGunUnloadAttachment;
 import com.modularwarfare.utility.RenderHelperMW;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
@@ -174,35 +172,35 @@ public class AttachmentUI {
         return attachments;
     }
 
-    public void processKeyInput(KeyType type) {
-        switch (type) {
-            case Left:
-                if ((selectedAttachTypeIndex - 1) >= 0) {
-                    selectedAttachTypeIndex--;
-                }
-                break;
-            case Right:
-                if ((selectedAttachTypeIndex + 1) < sizeAttachTypeIndex) {
-                    selectedAttachTypeIndex++;
-                }
-                break;
-            case Down:
-                if ((selectedAttachIndex - 1) >= 0) {
-                    selectedAttachIndex--;
-                }
-                if (selectedAttachIndex == 0) {
-                    if (selectedAttachEnum != null) {
-                        ModularWarfare.NETWORK.sendToServer(new PacketGunUnloadAttachment(selectedAttachEnum.getName(), false));
-                    }
-                }
-                break;
-            case Up:
-                if ((selectedAttachIndex + 1) < sizeAttachAttachIndex) {
-                    selectedAttachIndex++;
-                }
-                break;
-        }
-    }
+    // public void processKeyInput(KeyType type) {
+    //     switch (type) {
+    //         case Left:
+    //             if ((selectedAttachTypeIndex - 1) >= 0) {
+    //                 selectedAttachTypeIndex--;
+    //             }
+    //             break;
+    //         case Right:
+    //             if ((selectedAttachTypeIndex + 1) < sizeAttachTypeIndex) {
+    //                 selectedAttachTypeIndex++;
+    //             }
+    //             break;
+    //         case Down:
+    //             if ((selectedAttachIndex - 1) >= 0) {
+    //                 selectedAttachIndex--;
+    //             }
+    //             if (selectedAttachIndex == 0) {
+    //                 if (selectedAttachEnum != null) {
+    //                     ModularWarfare.NETWORK.sendToServer(new PacketGunUnloadAttachment(selectedAttachEnum.getName(), false));
+    //                 }
+    //             }
+    //             break;
+    //         case Up:
+    //             if ((selectedAttachIndex + 1) < sizeAttachAttachIndex) {
+    //                 selectedAttachIndex++;
+    //             }
+    //             break;
+    //     }
+    // }
 
 
     public String firstArrowType(int selectedAttachTypeIndex) {

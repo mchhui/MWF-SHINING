@@ -17,10 +17,6 @@ public enum KeyType {
     LaserToggle("Laser Toggle", Keyboard.KEY_L),
     GunTransform("Gun Transform", Keyboard.KEY_G), // 按G打开变换轮盘
 
-    Left("Left (Attach mode)", 203), // H
-    Right("Right (Attach mode)", 205), // H
-    Up("Up (Attach mode)", 200), // H
-    Down("Down (Attach mode)", 208), // H
     QuickViewToggle("Quick View Toggle", Keyboard.KEY_B);
 
 
