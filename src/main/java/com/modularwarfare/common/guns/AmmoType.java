@@ -22,6 +22,11 @@ public class AmmoType extends BaseType {
     public boolean allowEmptyMagazines = true;
 
     /**
+     * Empty magazines that are unloaded will not generate loot and will be directly destroyed
+     */
+    public boolean discardEmptyMagazine = false;
+
+    /**
      * If the ammo model need to be rendered on guns
      */
     public boolean isDynamicAmmo = false;

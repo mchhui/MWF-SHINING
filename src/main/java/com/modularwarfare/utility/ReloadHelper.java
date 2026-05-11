@@ -132,7 +132,9 @@ public class ReloadHelper {
             	if (!returnEmptyAmmo) {
             		int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
                 	returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
-                	entityPlayer.dropItem(returningAmmo, false);
+                	if (!returningAmmoItem.type.discardEmptyMagazine) {
+                	    entityPlayer.dropItem(returningAmmo, false);
+                	}
             	} else {
             		int currentAmmoCount = ItemGun.getMagazineBullets(gunStack);
                     returningAmmo.setItemDamage(returningAmmo.getMaxDamage() - currentAmmoCount);
