@@ -119,6 +119,9 @@ public class EnhancedStateMachine {
     }
 
     public void triggerShoot(AnimationController controller,ModelEnhancedGun model, GunType gunType, int fireTickDelay, boolean isFailed) {
+        if (isFailed && shooting && !isFailedShoot) {
+            return;
+        }
         lastGunRecoil = gunRecoil = 1F;
         lastGunSlide = gunSlide = 1F;
 
