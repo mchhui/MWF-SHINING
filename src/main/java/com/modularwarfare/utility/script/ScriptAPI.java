@@ -344,6 +344,109 @@ public class ScriptAPI {
             }
             return null;
         }
+
+        private static boolean nearlyEqual(float a, float b) {
+            return Math.abs(a - b) < 0.0001f;
+        }
+
+        private static BulletType bulletType(ItemStack stack) {
+            if (stack != null && stack.getItem() instanceof ItemBullet) {
+                return ((ItemBullet) stack.getItem()).type;
+            }
+            return null;
+        }
+
+        /**
+         * True when this bullet type deviates from stock ray-bullet defaults for projectile / MWF explosion fields,
+         * so launcher rockets show tooltip without spamming normal bullets that keep Java defaults.
+         */
+        public boolean hasProjectileExplosionTooltip(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            if (t == null) {
+                return false;
+            }
+            if (!nearlyEqual(t.projectileVelocity, 3f)) {
+                return true;
+            }
+            if (!nearlyEqual(t.impactDamage, 0.5f)) {
+                return true;
+            }
+            if (!nearlyEqual(t.explosionDamage, 30f)) {
+                return true;
+            }
+            if (!nearlyEqual(t.explosionRange, 6f)) {
+                return true;
+            }
+            if (!nearlyEqual(t.explosionKnockback, 1f)) {
+                return true;
+            }
+            if (!t.damageWorld) {
+                return true;
+            }
+            if (t.causesFire) {
+                return true;
+            }
+            if (!nearlyEqual(t.gravity, -0.01f)) {
+                return true;
+            }
+            if (!t.isSmoke) {
+                return true;
+            }
+            if (!t.isExplosion) {
+                return true;
+            }
+            return false;
+        }
+
+        public float getProjectileVelocity(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null ? t.projectileVelocity : 0f;
+        }
+
+        public float getImpactDamage(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null ? t.impactDamage : 0f;
+        }
+
+        public float getExplosionDamage(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null ? t.explosionDamage : 0f;
+        }
+
+        public float getExplosionRange(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null ? t.explosionRange : 0f;
+        }
+
+        public float getExplosionKnockback(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null ? t.explosionKnockback : 0f;
+        }
+
+        public boolean getIsExplosion(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null && t.isExplosion;
+        }
+
+        public boolean getDamageWorld(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null && t.damageWorld;
+        }
+
+        public boolean getCausesFire(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null && t.causesFire;
+        }
+
+        public float getProjectileGravity(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null ? t.gravity : 0f;
+        }
+
+        public boolean getProjectileSmoke(ItemStack stack) {
+            BulletType t = bulletType(stack);
+            return t != null && t.isSmoke;
+        }
     }
 
     public static class Input{

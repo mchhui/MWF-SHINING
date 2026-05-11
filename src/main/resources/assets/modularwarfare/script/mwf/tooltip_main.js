@@ -117,12 +117,29 @@ function updateBulletTooltip(stack, tiplist) {
     tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.basicinfo"));
     tiplist.add("§3" + ScriptAPI.Lang.format("mwf:gui.tooltip.damage") + ": §7 x" + ScriptAPI.Bullet.getDamageFactor(stack));
 
+    if (ScriptAPI.Bullet.hasProjectileExplosionTooltip(stack)) {
+        tiplist.add("");
+        tiplist.add(ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcherinfo"));
+        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.velocity") + ": §e" + ScriptAPI.Bullet.getProjectileVelocity(stack).toFixed(2));
+        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.impact") + ": §e" + ScriptAPI.Bullet.getImpactDamage(stack).toFixed(2));
+        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.explosion.enabled") + ": §e" + (ScriptAPI.Bullet.getIsExplosion(stack) ? ScriptAPI.Lang.format("mwf:gui.tooltip.yes") : ScriptAPI.Lang.format("mwf:gui.tooltip.no")));
+        if (ScriptAPI.Bullet.getIsExplosion(stack)) {
+            tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.explosion.damage") + ": §e" + ScriptAPI.Bullet.getExplosionDamage(stack).toFixed(1));
+            tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.explosion.range") + ": §e" + ScriptAPI.Bullet.getExplosionRange(stack).toFixed(1));
+            tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.explosion.knockback") + ": §e" + ScriptAPI.Bullet.getExplosionKnockback(stack).toFixed(2));
+        }
+        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.damageworld") + ": §e" + (ScriptAPI.Bullet.getDamageWorld(stack) ? ScriptAPI.Lang.format("mwf:gui.tooltip.yes") : ScriptAPI.Lang.format("mwf:gui.tooltip.no")));
+        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.causesfire") + ": §e" + (ScriptAPI.Bullet.getCausesFire(stack) ? ScriptAPI.Lang.format("mwf:gui.tooltip.yes") : ScriptAPI.Lang.format("mwf:gui.tooltip.no")));
+        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.gravity") + ": §e" + ScriptAPI.Bullet.getProjectileGravity(stack).toFixed(4));
+        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.launcher.smoke") + ": §e" + (ScriptAPI.Bullet.getProjectileSmoke(stack) ? ScriptAPI.Lang.format("mwf:gui.tooltip.yes") : ScriptAPI.Lang.format("mwf:gui.tooltip.no")));
+    }
+
     var bulletProperties = ScriptAPI.Bullet.getBulletProperties(stack);
     if (bulletProperties != null) {
         var allProperty = bulletProperties.get("All");
         if (allProperty != null) {
             if (allProperty.fireLevel > 0 || allProperty.explosionLevel > 0 || 
-                allProperty.knockLevel > 0 || allProperty.banShield ||
+                allProperty.knockLevel > 0 || allProperty.knockVerticalLevel != null || allProperty.banShield ||
                 (allProperty.potionEffects != null && allProperty.potionEffects.length > 0)) {
                 
                 tiplist.add("");
@@ -139,7 +156,10 @@ function updateBulletTooltip(stack, tiplist) {
                     }
                 }
                 
-                if (allProperty.knockLevel > 0) {
+                if (allProperty.knockVerticalLevel != null) {
+                    tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.property.knock.vertical.strength") + ": §9" + allProperty.knockVerticalLevel);
+                    tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.property.knock.horizontal.strength") + ": §9" + allProperty.knockLevel);
+                } else if (allProperty.knockLevel > 0) {
                     tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.property.knock") + ": §9" + allProperty.knockLevel);
                 }
                 
@@ -195,7 +215,10 @@ function updateBulletTooltip(stack, tiplist) {
                         }
                     }
                     
-                    if (bulletProperty.knockLevel > 0) {
+                    if (bulletProperty.knockVerticalLevel != null) {
+                        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.property.knock.vertical.strength") + ": §9" + bulletProperty.knockVerticalLevel);
+                        tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.property.knock.horizontal.strength") + ": §9" + bulletProperty.knockLevel);
+                    } else if (bulletProperty.knockLevel > 0) {
                         tiplist.add("§7- " + ScriptAPI.Lang.format("mwf:gui.tooltip.bullet.property.knock") + ": §9" + bulletProperty.knockLevel);
                     }
                     

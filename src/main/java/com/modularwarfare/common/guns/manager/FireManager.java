@@ -34,6 +34,7 @@ import com.modularwarfare.utility.raycast.hits.OBBHit;
 import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -231,7 +232,11 @@ public class FireManager {
                     if (bulletProperty.explosionLevel > 0) {
                         targetELB.world.createExplosion(null, targetELB.posX, targetELB.posY + 1, targetELB.posZ, bulletProperty.explosionLevel, bulletProperty.explosionBroken);
                     }
-                    if (bulletProperty.knockLevel > 0) {
+                    if (bulletProperty.knockVerticalLevel != null) {
+                        if (bulletProperty.knockLevel != 0f || bulletProperty.knockVerticalLevel.floatValue() != 0f) {
+                            applyBulletKnockLevelSplit(targetELB, shooter, bulletProperty.knockLevel, bulletProperty.knockVerticalLevel.floatValue());
+                        }
+                    } else if (bulletProperty.knockLevel > 0f) {
                         targetELB.knockBack(shooter, bulletProperty.knockLevel, shooter.posX - targetELB.posX, shooter.posZ - targetELB.posZ);
                     }
                     if (bulletProperty.banShield) {
@@ -309,6 +314,46 @@ public class FireManager {
                 if (headshot) {
                     EntityHeadShotEvent headShot = new EntityHeadShotEvent(victim, shooter);
                     MinecraftForge.EVENT_BUS.post(headShot);
+                }
+            }
+        }
+
+        /**
+         * knockVerticalLevel 非 null 时：knockLevel 为水平朝向射击者的「向后」击退，knockVertical 为竖直分量（正上，与原版 Y 上限一致）。
+         */
+        private static void applyBulletKnockLevelSplit(EntityLivingBase target, EntityLivingBase shooter, float knockBackLevel, float knockVertical) {
+            if (target.world.isRemote) {
+                return;
+            }
+            if (knockBackLevel == 0f && knockVertical == 0f) {
+                return;
+            }
+            if (target.getRNG().nextDouble() >= target.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).getAttributeValue()) {
+                return;
+            }
+            double bx = shooter.posX - target.posX;
+            double bz = shooter.posZ - target.posZ;
+            double len = Math.sqrt(bx * bx + bz * bz);
+            if (len < 1.0E-4D) {
+                float yr = (float) Math.toRadians(shooter.rotationYaw);
+                bx = Math.sin(yr);
+                bz = -Math.cos(yr);
+            } else {
+                bx /= len;
+                bz /= len;
+            }
+            target.isAirBorne = true;
+            if (knockBackLevel != 0f) {
+                target.motionX /= 2.0D;
+                target.motionZ /= 2.0D;
+                target.motionX += bx * (double) knockBackLevel;
+                target.motionZ += bz * (double) knockBackLevel;
+            }
+            if (knockVertical != 0f) {
+                target.motionY /= 2.0D;
+                target.motionY += knockVertical;
+                if (target.motionY > 0.4000000059604645D) {
+                    target.motionY = 0.4000000059604645D;
                 }
             }
         }
