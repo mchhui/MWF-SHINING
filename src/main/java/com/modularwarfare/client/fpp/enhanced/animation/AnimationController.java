@@ -410,7 +410,7 @@ public class AnimationController {
             }
             RenderGunEnhanced.ejectionTp=(float)(1-EJECTION_SMOKE);
         }
-        FIRE_FLASH-=0.3*stepTick;
+        FIRE_FLASH-=0.6*stepTick;
         if(FIRE_FLASH<=0) {
             anim.flashCount++;
             if(anim.flashCount>1000) {
