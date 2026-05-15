@@ -39,6 +39,7 @@ import com.modularwarfare.common.handler.data.VarBoolean;
 import com.modularwarfare.common.textures.TextureType;
 import com.modularwarfare.utility.OptifineHelper;
 import com.modularwarfare.utility.ReloadHelper;
+import com.modularwarfare.utility.RenderHelperMW;
 import com.modularwarfare.utility.maths.Interpolation;
 
 import mchhui.hegltf.DataAnimation;
@@ -48,26 +49,32 @@ import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
+import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderLivingBase;
+import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.EnumHandSide;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Timer;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
@@ -93,6 +100,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
@@ -118,6 +126,22 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
     public static boolean debug = false;
     public static boolean debug1 = false;
+
+    /** GLTF node name for {@code /mw-client debugnode}; null disables. */
+    public static volatile String debugGunNodeName = null;
+
+    private static final FloatBuffer DEBUG_MAT_BUF = BufferUtils.createFloatBuffer(16);
+    private static final FloatBuffer DEBUG_MV_BUF = BufferUtils.createFloatBuffer(16);
+    private static long debugParticleLastMs = 0L;
+    /** 3P only: full GL_MODELVIEW captured just before arm postRender in the last {@link #drawThirdGun} call. */
+    static final Matrix4f debugTP_preArmMV = new Matrix4f();
+
+    /** 3P: pre-arm MV keyed by {@link #tpPreArmStorageKey}. */
+    private static final ConcurrentHashMap<String, Matrix4f> tpPreArmMvByKey = new ConcurrentHashMap<>();
+
+    static String tpPreArmStorageKey(EntityLivingBase holder, RenderType rt) {
+        return holder.getUniqueID().toString() + "|" + rt.serializedName;
+    }
 
     private ShortBuffer pixelBuffer = null;
     private int lastWidth;
@@ -1456,6 +1480,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
                 ObjModelRenderer.glowTxtureMode=true;
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
+                renderGunNodeDebugWithInheritedTransform(model, true, new Matrix4f(mat), null, null);
                 GlStateManager.depthMask(true);
                 GlStateManager.enableLighting();
             }
@@ -1854,6 +1879,34 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         drawThirdGun(renderPlayer, renderType, player, demoStack, false);
     }
 
+    /**
+     * 第三人称枪械模型实例（按持有者 UUID 缓存），与 {@link #drawThirdGun} 使用同一套缓存键。
+     */
+    @SideOnly(Side.CLIENT)
+    public ModelEnhancedGun modelGunThirdPerson(GunType gunType, UUID holderId) {
+        return getOrCreateModel(gunType, false, holderId);
+    }
+
+    /**
+     * 将第三人称枪械模型动画时间与 {@link #drawThirdGun} 开头逻辑对齐（不含附件剔除等渲染状态）。
+     */
+    @SideOnly(Side.CLIENT)
+    public void applyThirdPersonGunAnimSync(ModelEnhancedGun model, EntityLivingBase holder) {
+        if (model == null || holder == null) {
+            return;
+        }
+        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
+        AnimationController controller = AnimationController.getController(holder, config);
+        if (controller.getPlayingAnimation() == AnimationType.DEFAULT
+                || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
+                || controller.getPlayingAnimation() == AnimationType.FIRE
+                || controller.getPlayingAnimation() == AnimationType.POST_FIRE) {
+            model.updateAnimation(controller.getTime(), true);
+        } else {
+            model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS), true);
+        }
+    }
+
     public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
             ItemStack demoStack, boolean sneakFlag) {
         if (!(demoStack.getItem() instanceof ItemGun))
@@ -1875,20 +1928,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 model = getOrCreateModel(gunType, false, player != null ? player.getUniqueID() : null);
             }
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
-        AnimationController controller;
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
-        // 这里可以考虑一下 是否可以对骨骼枪做一些优化
         if (player != null) {
-            controller = AnimationController.getController(player, config);
-            if (controller.getPlayingAnimation() == AnimationType.DEFAULT
-                    || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
-                    || controller.getPlayingAnimation() == AnimationType.FIRE
-                    || controller.getPlayingAnimation() == AnimationType.POST_FIRE) {
-                model.updateAnimation(controller.getTime(), true);
-            } else {
-                model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS),
-                        true);
-            }
+            applyThirdPersonGunAnimSync(model, player);
         } else {
             model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS), true);
         }
@@ -1974,6 +2016,14 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
         if (player != null && sneakFlag) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
+        }
+        // Capture full GL MODELVIEW before arm postRender (3P node → world uses its inverse).
+        DEBUG_MV_BUF.clear();
+        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, DEBUG_MV_BUF);
+        DEBUG_MV_BUF.rewind();
+        debugTP_preArmMV.set(DEBUG_MV_BUF);
+        if (player != null && (renderType == RenderType.PLAYER || renderType == RenderType.PLAYER_OFFHAND)) {
+            tpPreArmMvByKey.put(tpPreArmStorageKey(player, renderType), new Matrix4f().set(DEBUG_MV_BUF));
         }
         if (renderPlayer != null && renderPlayer.getMainModel() instanceof ModelBiped) {
             if (renderType == RenderType.PLAYER_OFFHAND) {
@@ -2347,6 +2397,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.enableLighting();
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
         model.renderPart("translucentModel");
+        renderGunNodeDebugWithInheritedTransform(model, false, null, player, renderType);
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.popMatrix();
     }
@@ -2871,6 +2922,398 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
     public org.joml.Matrix4f getGlobalTransform(EnhancedModel model, String name) {
         return model.getGlobalTransform(name);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static Matrix4f readCurrentGlModelview() {
+        DEBUG_MV_BUF.clear();
+        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, DEBUG_MV_BUF);
+        DEBUG_MV_BUF.rewind();
+        return new Matrix4f().set(DEBUG_MV_BUF);
+    }
+
+    @javax.annotation.Nullable
+    @SideOnly(Side.CLIENT)
+    public static Matrix4f tpPreArmMatrixCopy(EntityLivingBase holder, RenderType handLayer) {
+        if (holder == null || handLayer == null) {
+            return null;
+        }
+        Matrix4f m = tpPreArmMvByKey.get(tpPreArmStorageKey(holder, handLayer));
+        return m == null ? null : new Matrix4f(m);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static boolean hasTpPreArm(EntityLivingBase holder, RenderType handLayer) {
+        return holder != null && handLayer != null
+                && tpPreArmMvByKey.containsKey(tpPreArmStorageKey(holder, handLayer));
+    }
+
+    /**
+     * 3P：view space 中的节点位置 → 世界坐标。须与 {@link #drawThirdGun} 写入的 pre-arm 一致（主手/副手 layer）。
+     */
+    @javax.annotation.Nullable
+    @SideOnly(Side.CLIENT)
+    public static Vec3d tpNodeWorldFromRel(Vector3f rel, RenderManager rm, EntityLivingBase gunHolder,
+            RenderType thirdHandLayer) {
+        if (rel == null || rm == null || gunHolder == null || thirdHandLayer == null) {
+            return null;
+        }
+        Matrix4f pre = tpPreArmMvByKey.get(tpPreArmStorageKey(gunHolder, thirdHandLayer));
+        if (pre == null) {
+            return null;
+        }
+        return tpNodeWorldCore(rel, rm, pre, gunHolder);
+    }
+
+    /** 使用节点处完整 MODELVIEW（等价于对原点调用 {@link #tpNodeWorldFromRel}）。 */
+    @javax.annotation.Nullable
+    @SideOnly(Side.CLIENT)
+    public static Vec3d tpNodeWorldFromMv(Matrix4f modelViewAtNode, RenderManager rm, EntityLivingBase gunHolder,
+            RenderType thirdHandLayer) {
+        if (modelViewAtNode == null) {
+            return null;
+        }
+        Vector3f rel = new Vector3f();
+        modelViewAtNode.transformPosition(0f, 0f, 0f, rel);
+        return tpNodeWorldFromRel(rel, rm, gunHolder, thirdHandLayer);
+    }
+
+    private static Vec3d tpNodeWorldCore(Vector3f rel, RenderManager rm, Matrix4f preArmFull,
+            EntityLivingBase bodyForYaw) {
+        if (bodyForYaw == null) {
+            return Vec3d.ZERO;
+        }
+        Vector3f pLocal = new Vector3f();
+        new Matrix4f(preArmFull).invert().transformPosition(rel.x, rel.y, rel.z, pLocal);
+        float ryoRad = bodyForYaw.renderYawOffset * 0.017453292F;
+        float cosR = MathHelper.cos(ryoRad);
+        float sinR = MathHelper.sin(ryoRad);
+        double bx = pLocal.x * cosR + pLocal.z * sinR;
+        double by = -pLocal.y + bodyForYaw.getEyeHeight();
+        double bz = pLocal.x * sinR - pLocal.z * cosR;
+        return new Vec3d(rm.viewerPosX + bx, rm.viewerPosY + by, rm.viewerPosZ + bz);
+    }
+
+    /**
+     * 在第三人称枪械渲染的 GL 上下文中，对 {@code nodeName} 应用与模型一致的变换后读取 MV 并换算世界坐标。
+     */
+    @javax.annotation.Nullable
+    @SideOnly(Side.CLIENT)
+    public static Vec3d tpHeldNodeWorld(EntityLivingBase holder, RenderType thirdHandLayer, ModelEnhancedGun model,
+            String nodeName, RenderManager rm) {
+        if (holder == null || thirdHandLayer == null || model == null || rm == null || nodeName == null) {
+            return null;
+        }
+        if (!model.initCal) {
+            return null;
+        }
+        String bindKey = gunNodeBindKey(model, nodeName);
+        if (bindKey == null) {
+            return null;
+        }
+        final Vec3d[] out = new Vec3d[1];
+        model.applyGlobalTransformToOther(bindKey, () -> {
+            out[0] = tpNodeWorldFromMv(readCurrentGlModelview(), rm, holder, thirdHandLayer);
+        });
+        return out[0];
+    }
+
+    /** 第一人称：手掌根 × 节点全局矩阵 → 近似世界坐标。 */
+    @SideOnly(Side.CLIENT)
+    public static Vec3d fpNodeWorld(Matrix4f fpHandRootMat, Matrix4f nodeGlobalMat, Entity viewEntity,
+            float partialTicks) {
+        if (fpHandRootMat == null || nodeGlobalMat == null || viewEntity == null) {
+            return Vec3d.ZERO;
+        }
+        if (!(viewEntity instanceof EntityLivingBase)) {
+            return Vec3d.ZERO;
+        }
+        Matrix4f combined = new Matrix4f(fpHandRootMat).mul(nodeGlobalMat);
+        Vector3f p = new Vector3f();
+        combined.transformPosition(0f, 0f, 0f, p);
+        final double scale = sizeFactor / 10.0;
+        EntityLivingBase living = (EntityLivingBase) viewEntity;
+        Vec3d eye = living.getPositionEyes(partialTicks);
+        Vec3d forward = living.getLook(partialTicks);
+        if (forward.lengthSquared() < 1.0E-12D) {
+            return eye;
+        }
+        forward = forward.normalize();
+        Vec3d worldUp = new Vec3d(0.0D, 1.0D, 0.0D);
+        Vec3d right = forward.crossProduct(worldUp);
+        if (right.lengthSquared() < 1.0E-12D) {
+            right = new Vec3d(1.0D, 0.0D, 0.0D);
+        } else {
+            right = right.normalize();
+        }
+        Vec3d up = right.crossProduct(forward).normalize();
+        return eye.add(right.scale(p.x * scale)).add(up.scale(p.y * scale)).subtract(forward.scale(p.z * scale));
+    }
+
+    /**
+     * Resolves the parent node key used to mount {@code userInput} (same rules as {@code /mw-client debugnode}).
+     */
+    @SideOnly(Side.CLIENT)
+    public static String gunNodeBindKey(ModelEnhancedGun model, String userInput) {
+        if (userInput == null) {
+            return null;
+        }
+        String trimmed = userInput.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        Map<String, ?> ns = model.model.nodeStates;
+        if (ns == null || ns.isEmpty()) {
+            return null;
+        }
+        if (ns.containsKey(trimmed)) {
+            return trimmed;
+        }
+        for (String k : ns.keySet()) {
+            if (k.equalsIgnoreCase(trimmed)) {
+                return k;
+            }
+        }
+        if (ns.containsKey("gunModel")) {
+            return "gunModel";
+        }
+        return null;
+    }
+
+    private boolean gunDebugInputMatchesAnyNode(ModelEnhancedGun model, String trimmed) {
+        Map<String, ?> ns = model.model.nodeStates;
+        if (ns == null) {
+            return false;
+        }
+        if (ns.containsKey(trimmed)) {
+            return true;
+        }
+        for (String k : ns.keySet()) {
+            if (k.equalsIgnoreCase(trimmed)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void renderGunNodeDebugWithInheritedTransform(ModelEnhancedGun model, boolean firstPerson,
+            Matrix4f fpHandRootMatOrNull, EntityLivingBase tpHolderOrNull, RenderType tpLayerOrNull) {
+        String raw = debugGunNodeName;
+        if (raw == null || raw.trim().isEmpty()) {
+            return;
+        }
+        if (!model.initCal) {
+            return;
+        }
+        final String trimmed = raw.trim();
+        final String bindKey = gunNodeBindKey(model, trimmed);
+        if (bindKey == null) {
+            return;
+        }
+        final boolean fallbackGunModel = "gunModel".equals(bindKey) && !gunDebugInputMatchesAnyNode(model, trimmed);
+        final boolean fp = firstPerson;
+        final Matrix4f fpMat = fpHandRootMatOrNull == null ? null : new Matrix4f(fpHandRootMatOrNull);
+        final EntityLivingBase tpH = tpHolderOrNull;
+        final RenderType tpL = tpLayerOrNull;
+        model.applyGlobalTransformToOther(bindKey, () -> {
+            drawGunNodeDebugInNodeLocalSpace(model, trimmed, bindKey, fallbackGunModel, fp, fpMat, tpH, tpL);
+        });
+    }
+
+    /** Three decimals; near-zero prints as {@code 0.000} (no minus) to avoid -0.000 flicker. */
+    private static String fmtDbg3(double v) {
+        if (Double.isNaN(v) || Double.isInfinite(v)) {
+            return "0.000";
+        }
+        if (Math.abs(v) < 5e-4) {
+            return "0.000";
+        }
+        return String.format("%.3f", v);
+    }
+
+    private void drawGunNodeDebugInNodeLocalSpace(ModelEnhancedGun model, String userInputRaw, String bindKey,
+            boolean fallbackGunModel, boolean firstPerson, Matrix4f fpHandRootMatOrNull,
+            EntityLivingBase tpHolderOrNull, RenderType tpLayerOrNull) {
+        Minecraft mc = Minecraft.getMinecraft();
+        RenderManager rm = mc.getRenderManager();
+
+        Vector3f modelSpace = new Vector3f();
+        model.getGlobalTransform(bindKey).getTranslation(modelSpace);
+
+        Matrix4f mv = readCurrentGlModelview();
+        Vector3f rel = new Vector3f();
+        mv.transformPosition(0f, 0f, 0f, rel);
+        Entity viewEnt = mc.getRenderViewEntity();
+        float pt = getTimer().renderPartialTicks;
+        Vec3d debugWorldPos = null;
+        final String lineWorld;
+        if (firstPerson) {
+            if (fpHandRootMatOrNull != null && viewEnt != null) {
+                Vec3d w = fpNodeWorld(fpHandRootMatOrNull, model.getGlobalTransform(bindKey), viewEnt, pt);
+                debugWorldPos = w;
+                lineWorld = String.format("W1P %s %s %s", fmtDbg3(w.x), fmtDbg3(w.y), fmtDbg3(w.z));
+            } else {
+                lineWorld = String.format("MV %s %s %s", fmtDbg3(rel.x), fmtDbg3(rel.y), fmtDbg3(rel.z));
+            }
+        } else {
+            Vec3d w = null;
+            if (tpHolderOrNull != null && tpLayerOrNull != null) {
+                w = tpNodeWorldFromMv(mv, rm, tpHolderOrNull, tpLayerOrNull);
+            }
+            if (w == null && viewEnt instanceof EntityLivingBase) {
+                w = tpNodeWorldCore(rel, rm, debugTP_preArmMV, (EntityLivingBase) viewEnt);
+            }
+            if (w == null) {
+                w = Vec3d.ZERO;
+            }
+            debugWorldPos = w;
+            lineWorld = String.format("W3P %s %s %s", fmtDbg3(w.x), fmtDbg3(w.y), fmtDbg3(w.z));
+        }
+
+        if (debugWorldPos != null && mc.world != null) {
+            long now = System.currentTimeMillis();
+            if (now - debugParticleLastMs > 80L) {
+                debugParticleLastMs = now;
+                mc.world.spawnParticle(EnumParticleTypes.END_ROD,
+                        debugWorldPos.x, debugWorldPos.y, debugWorldPos.z, 0, 0.0, 0);
+            }
+        }
+
+        boolean prevDepth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean prevCull = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        GlStateManager.disableDepth();
+        GlStateManager.disableCull();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE,
+                DestFactor.ZERO);
+
+        boolean shaders = OptifineHelper.isShadersEnabled();
+        int prevProgram = 0;
+        try {
+            if (shaders) {
+                prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+                Shaders.useProgram(Shaders.ProgramNone);
+                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+            }
+
+            boolean prevLighting = GL11.glIsEnabled(GL11.GL_LIGHTING);
+            GlStateManager.disableLighting();
+            GlStateManager.disableTexture2D();
+            GlStateManager.glLineWidth(2.5F);
+            GL11.glEnable(GL11.GL_LINE_SMOOTH);
+
+            float axisLen = 0.22f;
+            Tessellator tess = Tessellator.getInstance();
+            BufferBuilder bb = tess.getBuffer();
+
+            bb.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+            bb.pos(0, 0, 0).color(1f, 0.25f, 0.25f, 1f).endVertex();
+            bb.pos(axisLen, 0, 0).color(1f, 0.25f, 0.25f, 1f).endVertex();
+            bb.pos(0, 0, 0).color(0.25f, 1f, 0.25f, 1f).endVertex();
+            bb.pos(0, axisLen, 0).color(0.25f, 1f, 0.25f, 1f).endVertex();
+            bb.pos(0, 0, 0).color(0.3f, 0.55f, 1f, 1f).endVertex();
+            bb.pos(0, 0, axisLen).color(0.3f, 0.55f, 1f, 1f).endVertex();
+            tess.draw();
+
+            float r = 0.12f;
+            float cr = fallbackGunModel ? 1f : 1f;
+            float cg = fallbackGunModel ? 0.55f : 1f;
+            float cb = fallbackGunModel ? 0.2f : 1f;
+            GlStateManager.pushMatrix();
+            applyBillboardFacingCameraFromCurrentModelview();
+            bb.begin(GL11.GL_LINE_LOOP, DefaultVertexFormats.POSITION_COLOR);
+            for (int i = 0; i < 32; i++) {
+                float ang = (float) (i / 32.0 * Math.PI * 2);
+                bb.pos((float) Math.cos(ang) * r, (float) Math.sin(ang) * r, 0).color(cr, cg, cb, 1f).endVertex();
+            }
+            tess.draw();
+            GlStateManager.popMatrix();
+
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            GlStateManager.glLineWidth(1.0F);
+            GlStateManager.enableTexture2D();
+            if (prevLighting) {
+                GlStateManager.enableLighting();
+            }
+            // Draw text inside ProgramNone block so blend is not affected by glow/scene shaders
+            String lineModel = (fallbackGunModel ? "[?] " : "") + bindKey + " "
+                    + String.format("%s %s %s", fmtDbg3(modelSpace.x), fmtDbg3(modelSpace.y), fmtDbg3(modelSpace.z));
+            int colorModel = fallbackGunModel ? 0xFFAA88 : 0xFFFFAA;
+            drawGunNodeDebugTextBillboardLocal(mc, rm, lineModel, lineWorld, colorModel, 0x88DDFF, 0xCC000000, 1.0f);
+        } finally {
+            if (shaders) {
+                GL20.glUseProgram(prevProgram);
+            }
+        }
+
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+        if (prevCull) {
+            GlStateManager.enableCull();
+        }
+        if (prevDepth) {
+            GlStateManager.enableDepth();
+        }
+    }
+
+    private void applyBillboardFacingCameraFromCurrentModelview() {
+        DEBUG_MV_BUF.clear();
+        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, DEBUG_MV_BUF);
+        DEBUG_MV_BUF.rewind();
+        Matrix4f mv = new Matrix4f().set(DEBUG_MV_BUF);
+        Matrix3f r3 = new Matrix3f();
+        mv.get3x3(r3);
+        Matrix4f rot = new Matrix4f().set3x3(r3);
+        rot.normalize3x3();
+        Quaternionf q = new Quaternionf();
+        rot.getNormalizedRotation(q);
+        q.conjugate();
+        Matrix4f cancel = new Matrix4f().rotation(q);
+        DEBUG_MAT_BUF.clear();
+        cancel.get(DEBUG_MAT_BUF);
+        DEBUG_MAT_BUF.rewind();
+        GlStateManager.multMatrix(DEBUG_MAT_BUF);
+    }
+
+    private void drawGunNodeDebugTextBillboardLocal(Minecraft mc, RenderManager rm, String lineModel, String lineWorld,
+            int colorModel, int colorWorld, int backgroundColour, float scale) {
+        FontRenderer fr = rm.getFontRenderer();
+        int w1 = fr.getStringWidth(lineModel);
+        int w2 = fr.getStringWidth(lineWorld);
+        int w = Math.max(w1, w2);
+
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(0f, 0.22f, 0.04f);
+        applyBillboardFacingCameraFromCurrentModelview();
+        GlStateManager.glNormal3f(0.0F, 1.0F, 0.0F);
+        GlStateManager.disableDepth();
+        GlStateManager.depthMask(false);
+        GlStateManager.enableTexture2D();
+        float s = 0.052F * scale;
+        GlStateManager.scale(s, -s, s);
+        GlStateManager.disableLighting();
+
+        int y0 = -30;
+        int y1 = -14;
+        int boxH = 34;
+        int half = w / 2;
+        GlStateManager.pushMatrix();
+        // drawColouredRect enables+disables blend internally; re-enable for font rendering
+        RenderHelperMW.drawColouredRect(-half - 1, y0 - 1, w + 2, boxH + 2, backgroundColour);
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE,
+                DestFactor.ZERO);
+        int x1 = (int) Math.floor(-w / 2.0 + (w - w1) / 2.0);
+        int x2 = (int) Math.floor(-w / 2.0 + (w - w2) / 2.0);
+        fr.drawString(lineModel, (float) x1, (float) y0, colorModel, false);
+        fr.drawString(lineWorld, (float) x2, (float) y1, colorWorld, false);
+        GlStateManager.popMatrix();
+
+        GlStateManager.disableBlend();
+        GlStateManager.enableLighting();
+        GlStateManager.enableDepth();
+        GlStateManager.depthMask(true);
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+        GlStateManager.popMatrix();
     }
 
     private Matrix3f genMatrixFromQuaternion(Quaternion quaternion) {
