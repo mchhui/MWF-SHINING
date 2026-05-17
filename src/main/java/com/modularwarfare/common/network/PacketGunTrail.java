@@ -1,9 +1,7 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.client.model.InstantBulletRenderer;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.utility.vector.Vector3f;
+import com.modularwarfare.client.trail.TrailOriginResolver;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -29,15 +27,15 @@ public class PacketGunTrail extends PacketBase {
     String model;
     String tex;
     boolean glow;
+    int shooterEntityId;
 
     public PacketGunTrail() {
     } // Don't delete
 
-    public PacketGunTrail(GunType gunType, String model, String tex, boolean glow, double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed) {
-        this(gunType.internalName, model, tex, glow, X, Y, Z, motionX, motionZ, x, y, z, range, bulletspeed);
-    }
-
-    public PacketGunTrail(String gunType, String model, String tex, boolean glow, double X, double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range, float bulletspeed) {
+    public PacketGunTrail(int shooterEntityId, String gunType, String model, String tex, boolean glow, double X,
+            double Y, double Z, double motionX, double motionZ, double x, double y, double z, double range,
+            float bulletspeed) {
+        this.shooterEntityId = shooterEntityId;
         this.posX = X;
         this.posY = Y;
         this.posZ = Z;
@@ -83,6 +81,7 @@ public class PacketGunTrail extends PacketBase {
         buf.writeString(model);
         buf.writeString(tex);
         buf.writeBoolean(glow);
+        buf.writeInt(shooterEntityId);
     }
 
     @Override
@@ -106,6 +105,7 @@ public class PacketGunTrail extends PacketBase {
         model = buf.readString(Short.MAX_VALUE);
         tex = buf.readString(Short.MAX_VALUE);
         glow = buf.readBoolean();
+        shooterEntityId = buf.readInt();
     }
 
     @Override
@@ -115,12 +115,11 @@ public class PacketGunTrail extends PacketBase {
 
     @Override
     public void handleClientSide(EntityPlayer entityPlayer) {
-
-        double dx = this.dirX * this.range;
-        double dy = this.dirY * this.range;
-        double dz = this.dirZ * this.range;
-        final Vector3f vec = new Vector3f((float) posX, (float) posY, (float) posZ);
-        InstantBulletRenderer.AddTrail(new InstantBulletRenderer.InstantShotTrail(ModularWarfare.gunTypes.get(gunType).type, model, tex, glow, vec, new Vector3f((float) (vec.x + dx + motionX), (float) (vec.y + dy), (float) (vec.z + dz + motionZ)), this.bulletspeed));
+        if (TrailOriginResolver.shouldIgnoreServerTrailForLocalShooter(shooterEntityId)) {
+            return;
+        }
+        TrailOriginResolver.queueGunTrail(shooterEntityId, gunType, model, tex, glow, posX, posY, posZ, motionX,
+                motionZ, dirX, dirY, dirZ, range, bulletspeed);
     }
 
 }

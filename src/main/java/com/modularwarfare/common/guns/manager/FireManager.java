@@ -54,6 +54,7 @@ import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.relauncher.Side;
 
 import com.modularwarfare.client.model.InstantBulletTeslaRender;
+import com.modularwarfare.client.trail.TrailOriginResolver;
 
 import javax.annotation.Nullable;
 import javax.management.RuntimeErrorException;
@@ -369,6 +370,7 @@ public class FireManager {
             ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
             // fetch hit list
             List<BulletHit> rayTraceList = new ArrayList<>();
+            List<List<BulletHit>> perPelletHits = null;
             boolean forceServerCalc = false;
             if (shooter instanceof EntityPlayerMP) {
                 EntityPlayerMP player = (EntityPlayerMP)shooter;
@@ -391,19 +393,24 @@ public class FireManager {
                     rayTraceList.add(new BulletHit(result, hit.hitboxType, hit.distance, hit.remainingPenetrate, hit.remainingBlockPenetrate));
                 });
             } else {
+                perPelletHits = new ArrayList<>();
                 for (int i = 0; i < numBullets; i++) {
                     List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.SERVER, world, fireData.rotationPitch, fireData.rotationYaw, shooter, fireData.weaponRange, itemGun);
                     if (rayTrace == null) {
                         continue;
                     }
                     rayTraceList.addAll(rayTrace);
+                    perPelletHits.add(rayTrace);
                 }
             }
 
             customBulletHitPipeline(shooter, fireData, rayTraceList);
 
-            // trail
-            drawTrail(rayTraceList.isEmpty() ? null : rayTraceList.get(0), shooter, fireData);
+            if (fireData.clientSuggetions != null && !forceServerCalc) {
+                drawTrailsFromMergedHits(rayTraceList, shooter, fireData);
+            } else {
+                drawTrailsPerPellet(perPelletHits, shooter, fireData);
+            }
 
             // hit effect
             ArrayList<Consumer<BulletHit>> hitEffecters = new ArrayList<Consumer<BulletHit>>();
@@ -705,8 +712,7 @@ public class FireManager {
                 // 强制更新瞄准数据,确保使用最新的数据
                 aimData.updateForced(entityPlayer, itemGun);
                 customBulletHitPipeline(entityPlayer, fireData, aimData.rayTraceList);
-                // 发送尾迹渲染请求
-                drawTrail((aimData.rayTraceList.isEmpty() ? null : aimData.rayTraceList.get(0)), entityPlayer, fireData);
+                queueClientPredictedTrails(entityPlayer, fireData, aimData.rayTraceList);
                 ArrayList<PacketGunFire.Hit> hits = new ArrayList<PacketGunFire.Hit>();
                 for (BulletHit rayTrace : aimData.rayTraceList) {
                     PacketGunFire.Hit hit = new PacketGunFire.Hit();
@@ -859,6 +865,122 @@ public class FireManager {
         }
     }
 
+    @Nullable
+    private static BulletHit farthestHit(List<BulletHit> hits) {
+        if (hits == null || hits.isEmpty()) {
+            return null;
+        }
+        BulletHit farthest = hits.get(0);
+        for (int i = 1; i < hits.size(); i++) {
+            BulletHit hit = hits.get(i);
+            if (hit.distance > farthest.distance) {
+                farthest = hit;
+            }
+        }
+        return farthest;
+    }
+
+    /** 客户端命中列表按弹丸合并上传；distance 回退视为新弹丸。 */
+    private static List<List<BulletHit>> groupHitsByPellet(List<BulletHit> merged) {
+        List<List<BulletHit>> groups = new ArrayList<>();
+        List<BulletHit> current = new ArrayList<>();
+        double groupMaxDist = -1.0D;
+        for (BulletHit hit : merged) {
+            if (!current.isEmpty() && hit.distance < groupMaxDist - 1.0E-4D) {
+                groups.add(current);
+                current = new ArrayList<>();
+                groupMaxDist = -1.0D;
+            }
+            current.add(hit);
+            if (hit.distance > groupMaxDist) {
+                groupMaxDist = hit.distance;
+            }
+        }
+        if (!current.isEmpty()) {
+            groups.add(current);
+        }
+        return groups;
+    }
+
+    private static void drawTrailsPerPellet(List<List<BulletHit>> perPellet, EntityLivingBase shooter, FireData fireData) {
+        if (perPellet == null || perPellet.isEmpty()) {
+            drawTrail(null, shooter, fireData);
+            return;
+        }
+        for (List<BulletHit> pelletHits : perPellet) {
+            drawTrail(farthestHit(pelletHits), shooter, fireData);
+        }
+    }
+
+    private static void drawTrailsFromMergedHits(List<BulletHit> merged, EntityLivingBase shooter, FireData fireData) {
+        if (merged == null || merged.isEmpty()) {
+            drawTrail(null, shooter, fireData);
+            return;
+        }
+        for (List<BulletHit> pelletHits : groupHitsByPellet(merged)) {
+            drawTrail(farthestHit(pelletHits), shooter, fireData);
+        }
+    }
+
+    private static void queueClientPredictedTrails(EntityPlayer shooter, FireData fireData, List<BulletHit> merged) {
+        if (!shooter.world.isRemote) {
+            return;
+        }
+        if (merged == null || merged.isEmpty()) {
+            queueClientTrail(shooter, fireData, null);
+            return;
+        }
+        for (List<BulletHit> pelletHits : groupHitsByPellet(merged)) {
+            queueClientTrail(shooter, fireData, farthestHit(pelletHits));
+        }
+    }
+
+    private static void queueClientTrail(EntityPlayer shooter, FireData fireData, BulletHit baseHit) {
+        GunType gunType = fireData.gunType;
+        ItemStack gunStack = fireData.gunStack;
+        Vec3d origin = shooter.getPositionEyes(1.0f);
+        Vec3d endVec = null;
+        if (baseHit != null && baseHit.rayTraceResult != null && baseHit.rayTraceResult.hitVec != null) {
+            endVec = baseHit.rayTraceResult.hitVec;
+        }
+        if (endVec == null) {
+            Vec3d forward = shooter.getLookVec();
+            endVec = origin.add(forward.scale(gunType.weaponMaxRange));
+        }
+        Vec3d direction = endVec.subtract(origin).normalize();
+
+        String model = null;
+        String tex = null;
+        boolean glow = gunType.customTrailGlow;
+        ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
+        BulletType bulletType = bulletItem.type;
+        if (bulletType != null) {
+            model = bulletType.trailModel;
+            tex = bulletType.trailTex;
+            if (model != null && tex != null && !model.isEmpty() && !tex.isEmpty()) {
+                glow = bulletType.trailGlow;
+            }
+        }
+        model = Optional.ofNullable(model).orElse(gunType.customTrailModel);
+        tex = Optional.ofNullable(tex).orElse(gunType.customTrailTexture);
+        if (model == null) {
+            model = "";
+        }
+        if (tex == null) {
+            tex = "";
+        }
+
+        int shooterId = shooter.getEntityId();
+        if (gunType.useTeslaTrails) {
+            TrailOriginResolver.queueTeslaTrail(shooterId, origin.x, origin.y, origin.z,
+                    endVec.x, endVec.y, endVec.z, 10f, gunType.internalName);
+        } else {
+            TrailOriginResolver.queueGunTrail(shooterId, gunType.internalName, model,
+                    tex, glow, origin.x, origin.y, origin.z, shooter.motionX, shooter.motionZ, direction.x,
+                    direction.y, direction.z, origin.distanceTo(endVec), 10);
+        }
+    }
+
     private static void drawTrail(BulletHit baseHit, EntityLivingBase shooter, FireData fireData) {
         GunType gunType = fireData.gunType;
         ItemStack gunStack = fireData.gunStack;
@@ -898,18 +1020,13 @@ public class FireManager {
         }
 
         if (!shooter.world.isRemote) {
-            // SERVER
             if (gunType.useTeslaTrails) {
-                ModularWarfare.NETWORK.sendToDimension(new PacketTeslaTrail(origin.x, origin.y, origin.z, endVec.x, endVec.y, endVec.z, 10f, gunType.internalName), shooter.dimension);
+                ModularWarfare.NETWORK.sendToDimension(new PacketTeslaTrail(shooter.getEntityId(), origin.x, origin.y,
+                        origin.z, endVec.x, endVec.y, endVec.z, 10f, gunType.internalName), shooter.dimension);
             } else {
-                ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(gunType.internalName, model, tex, glow, origin.x, origin.y, origin.z, shooter.motionX, shooter.motionZ, direction.x, direction.y, direction.z, origin.distanceTo(endVec), 10), shooter.dimension);
-            }
-        } else {
-            // CLIENT
-            if (gunType.useTeslaTrails) {
-                ModularWarfare.NETWORK.sendToServer(new PacketTeslaTrailAskServer(origin.x, origin.y, origin.z, endVec.x, endVec.y, endVec.z, 10f, gunType));
-            } else {
-                ModularWarfare.NETWORK.sendToServer(new PacketGunTrailAskServer(gunType, model, tex, glow, origin.x, origin.y, origin.z, shooter.motionX, shooter.motionZ, direction.x, direction.y, direction.z, origin.distanceTo(endVec), 10));
+                ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(shooter.getEntityId(), gunType.internalName,
+                        model, tex, glow, origin.x, origin.y, origin.z, shooter.motionX, shooter.motionZ, direction.x,
+                        direction.y, direction.z, origin.distanceTo(endVec), 10), shooter.dimension);
             }
         }
     }

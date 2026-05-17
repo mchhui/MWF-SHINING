@@ -1,10 +1,7 @@
 package com.modularwarfare.common.network;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.client.model.InstantBulletTeslaRender;
-import com.modularwarfare.common.guns.GunType;
-import com.modularwarfare.common.guns.ItemGun;
-import com.modularwarfare.utility.vector.Vector3f;
+import com.modularwarfare.client.trail.TrailOriginResolver;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,12 +19,14 @@ public class PacketTeslaTrail extends PacketBase {
     double targetZ;
     float bulletSpeed;
     String gunTypeName;
+    int shooterEntityId;
 
     public PacketTeslaTrail() {
     }
 
-    public PacketTeslaTrail(double startX, double startY, double startZ, 
-                           double endX, double endY, double endZ, float bulletSpeed, String gunTypeName) {
+    public PacketTeslaTrail(int shooterEntityId, double startX, double startY, double startZ, double endX, double endY,
+            double endZ, float bulletSpeed, String gunTypeName) {
+        this.shooterEntityId = shooterEntityId;
         this.posX = startX;
         this.posY = startY;
         this.posZ = startZ;
@@ -49,6 +48,7 @@ public class PacketTeslaTrail extends PacketBase {
         buf.writeDouble(targetZ);
         buf.writeFloat(bulletSpeed);
         buf.writeString(gunTypeName);
+        buf.writeInt(shooterEntityId);
     }
 
     @Override
@@ -62,6 +62,7 @@ public class PacketTeslaTrail extends PacketBase {
         targetZ = buf.readDouble();
         bulletSpeed = buf.readFloat();
         gunTypeName = buf.readString(32767);
+        shooterEntityId = buf.readInt();
     }
 
     @Override
@@ -70,17 +71,10 @@ public class PacketTeslaTrail extends PacketBase {
 
     @Override
     public void handleClientSide(EntityPlayer entityPlayer) {
-        Vector3f origin = new Vector3f((float)posX, (float)posY, (float)posZ);
-        Vector3f target = new Vector3f((float)targetX, (float)targetY, (float)targetZ);
-        
-        // 获取GunType
-        GunType gunType = null;
-        if(gunTypeName != null && !gunTypeName.isEmpty()) {
-            if(ModularWarfare.gunTypes.containsKey(gunTypeName)) {
-                gunType = ((ItemGun)ModularWarfare.gunTypes.get(gunTypeName)).type;
-            }
+        if (TrailOriginResolver.shouldIgnoreServerTrailForLocalShooter(shooterEntityId)) {
+            return;
         }
-        
-        InstantBulletTeslaRender.AddTeslaTrail(new InstantBulletTeslaRender.TeslaTrail(origin, target, bulletSpeed, gunType));
+        TrailOriginResolver.queueTeslaTrail(shooterEntityId, posX, posY, posZ, targetX, targetY, targetZ, bulletSpeed,
+                gunTypeName);
     }
 } 

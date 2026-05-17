@@ -64,7 +64,8 @@ public class PacketTeslaTrailAskServer extends PacketBase {
     public void handleServerSide(EntityPlayerMP entityPlayer) {
         // 服务器收到请求后,向所有客户端广播特斯拉效果
         ModularWarfare.NETWORK.sendToDimension(
-            new PacketTeslaTrail(posX, posY, posZ, targetX, targetY, targetZ, bulletSpeed, gunTypeName),
+            new PacketTeslaTrail(entityPlayer.getEntityId(), posX, posY, posZ, targetX, targetY, targetZ, bulletSpeed,
+                    gunTypeName),
             entityPlayer.dimension);
     }
 

@@ -2,6 +2,8 @@ package com.modularwarfare.client.fpp.enhanced.renderers;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.api.GunNodeWorld;
+import com.modularwarfare.client.trail.TrailOriginResolver;
 import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreFirstLayer;
 import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreSecondLayer;
 import com.modularwarfare.api.RenderHandSleeveEnhancedEvent;
@@ -96,11 +98,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.Nullable;
 
 import static com.modularwarfare.client.fpp.basic.renderers.RenderParameters.*;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
@@ -133,15 +137,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     private static final FloatBuffer DEBUG_MAT_BUF = BufferUtils.createFloatBuffer(16);
     private static final FloatBuffer DEBUG_MV_BUF = BufferUtils.createFloatBuffer(16);
     private static long debugParticleLastMs = 0L;
-    /** 3P only: full GL_MODELVIEW captured just before arm postRender in the last {@link #drawThirdGun} call. */
-    static final Matrix4f debugTP_preArmMV = new Matrix4f();
-
-    /** 3P: pre-arm MV keyed by {@link #tpPreArmStorageKey}. */
-    private static final ConcurrentHashMap<String, Matrix4f> tpPreArmMvByKey = new ConcurrentHashMap<>();
-
-    static String tpPreArmStorageKey(EntityLivingBase holder, RenderType rt) {
-        return holder.getUniqueID().toString() + "|" + rt.serializedName;
-    }
 
     private ShortBuffer pixelBuffer = null;
     private int lastWidth;
@@ -227,6 +222,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GunType gunType = ((ItemGun) item.getItem()).type;
         if (gunType == null)
             return;
+
+        GunNodeWorld.trackTrailOriginNode(gunType);
+        GunNodeWorld.clearFpCache(player);
 
         ModelEnhancedGun model = getOrCreateModel(gunType, true, player.getUniqueID());
         if(!(Minecraft.getMinecraft().getRenderViewEntity() instanceof AbstractClientPlayer)) {
@@ -1480,7 +1478,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
                 ObjModelRenderer.glowTxtureMode=true;
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
-                renderGunNodeDebugWithInheritedTransform(model, true, new Matrix4f(mat), null, null);
+                updateFpTrailNodeCache(model, new Matrix4f(mat), player);
                 GlStateManager.depthMask(true);
                 GlStateManager.enableLighting();
             }
@@ -1623,6 +1621,11 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
+
+        if (type == CustomItemRenderType.EQUIPPED_FIRST_PERSON
+                && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
+            TrailOriginResolver.flushPendingTrailsAfterFirstPersonGun(partialTicks);
+        }
     }
 
     private void renderLaserModel(AttachmentRenderConfig.Laser laserConfig, ModelAttachment attachmentModel, float bx, float by, float worldScale, AnimationType currentAction, boolean laserEnabled) {
@@ -1879,19 +1882,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         drawThirdGun(renderPlayer, renderType, player, demoStack, false);
     }
 
-    /**
-     * 第三人称枪械模型实例（按持有者 UUID 缓存），与 {@link #drawThirdGun} 使用同一套缓存键。
-     */
     @SideOnly(Side.CLIENT)
-    public ModelEnhancedGun modelGunThirdPerson(GunType gunType, UUID holderId) {
-        return getOrCreateModel(gunType, false, holderId);
-    }
-
-    /**
-     * 将第三人称枪械模型动画时间与 {@link #drawThirdGun} 开头逻辑对齐（不含附件剔除等渲染状态）。
-     */
-    @SideOnly(Side.CLIENT)
-    public void applyThirdPersonGunAnimSync(ModelEnhancedGun model, EntityLivingBase holder) {
+    private void applyThirdPersonGunAnimSync(ModelEnhancedGun model, EntityLivingBase holder) {
         if (model == null || holder == null) {
             return;
         }
@@ -2016,14 +2008,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
         if (player != null && sneakFlag) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
-        }
-        // Capture full GL MODELVIEW before arm postRender (3P node → world uses its inverse).
-        DEBUG_MV_BUF.clear();
-        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, DEBUG_MV_BUF);
-        DEBUG_MV_BUF.rewind();
-        debugTP_preArmMV.set(DEBUG_MV_BUF);
-        if (player != null && (renderType == RenderType.PLAYER || renderType == RenderType.PLAYER_OFFHAND)) {
-            tpPreArmMvByKey.put(tpPreArmStorageKey(player, renderType), new Matrix4f().set(DEBUG_MV_BUF));
         }
         if (renderPlayer != null && renderPlayer.getMainModel() instanceof ModelBiped) {
             if (renderType == RenderType.PLAYER_OFFHAND) {
@@ -2397,7 +2381,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.enableLighting();
         OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
         model.renderPart("translucentModel");
-        renderGunNodeDebugWithInheritedTransform(model, false, null, player, renderType);
         GlStateManager.shadeModel(GL11.GL_FLAT);
         GlStateManager.popMatrix();
     }
@@ -2925,97 +2908,11 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     }
 
     @SideOnly(Side.CLIENT)
-    public static Matrix4f readCurrentGlModelview() {
+    private static Matrix4f readCurrentGlModelview() {
         DEBUG_MV_BUF.clear();
         GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, DEBUG_MV_BUF);
         DEBUG_MV_BUF.rewind();
         return new Matrix4f().set(DEBUG_MV_BUF);
-    }
-
-    @javax.annotation.Nullable
-    @SideOnly(Side.CLIENT)
-    public static Matrix4f tpPreArmMatrixCopy(EntityLivingBase holder, RenderType handLayer) {
-        if (holder == null || handLayer == null) {
-            return null;
-        }
-        Matrix4f m = tpPreArmMvByKey.get(tpPreArmStorageKey(holder, handLayer));
-        return m == null ? null : new Matrix4f(m);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public static boolean hasTpPreArm(EntityLivingBase holder, RenderType handLayer) {
-        return holder != null && handLayer != null
-                && tpPreArmMvByKey.containsKey(tpPreArmStorageKey(holder, handLayer));
-    }
-
-    /**
-     * 3P：view space 中的节点位置 → 世界坐标。须与 {@link #drawThirdGun} 写入的 pre-arm 一致（主手/副手 layer）。
-     */
-    @javax.annotation.Nullable
-    @SideOnly(Side.CLIENT)
-    public static Vec3d tpNodeWorldFromRel(Vector3f rel, RenderManager rm, EntityLivingBase gunHolder,
-            RenderType thirdHandLayer) {
-        if (rel == null || rm == null || gunHolder == null || thirdHandLayer == null) {
-            return null;
-        }
-        Matrix4f pre = tpPreArmMvByKey.get(tpPreArmStorageKey(gunHolder, thirdHandLayer));
-        if (pre == null) {
-            return null;
-        }
-        return tpNodeWorldCore(rel, rm, pre, gunHolder);
-    }
-
-    /** 使用节点处完整 MODELVIEW（等价于对原点调用 {@link #tpNodeWorldFromRel}）。 */
-    @javax.annotation.Nullable
-    @SideOnly(Side.CLIENT)
-    public static Vec3d tpNodeWorldFromMv(Matrix4f modelViewAtNode, RenderManager rm, EntityLivingBase gunHolder,
-            RenderType thirdHandLayer) {
-        if (modelViewAtNode == null) {
-            return null;
-        }
-        Vector3f rel = new Vector3f();
-        modelViewAtNode.transformPosition(0f, 0f, 0f, rel);
-        return tpNodeWorldFromRel(rel, rm, gunHolder, thirdHandLayer);
-    }
-
-    private static Vec3d tpNodeWorldCore(Vector3f rel, RenderManager rm, Matrix4f preArmFull,
-            EntityLivingBase bodyForYaw) {
-        if (bodyForYaw == null) {
-            return Vec3d.ZERO;
-        }
-        Vector3f pLocal = new Vector3f();
-        new Matrix4f(preArmFull).invert().transformPosition(rel.x, rel.y, rel.z, pLocal);
-        float ryoRad = bodyForYaw.renderYawOffset * 0.017453292F;
-        float cosR = MathHelper.cos(ryoRad);
-        float sinR = MathHelper.sin(ryoRad);
-        double bx = pLocal.x * cosR + pLocal.z * sinR;
-        double by = -pLocal.y + bodyForYaw.getEyeHeight();
-        double bz = pLocal.x * sinR - pLocal.z * cosR;
-        return new Vec3d(rm.viewerPosX + bx, rm.viewerPosY + by, rm.viewerPosZ + bz);
-    }
-
-    /**
-     * 在第三人称枪械渲染的 GL 上下文中，对 {@code nodeName} 应用与模型一致的变换后读取 MV 并换算世界坐标。
-     */
-    @javax.annotation.Nullable
-    @SideOnly(Side.CLIENT)
-    public static Vec3d tpHeldNodeWorld(EntityLivingBase holder, RenderType thirdHandLayer, ModelEnhancedGun model,
-            String nodeName, RenderManager rm) {
-        if (holder == null || thirdHandLayer == null || model == null || rm == null || nodeName == null) {
-            return null;
-        }
-        if (!model.initCal) {
-            return null;
-        }
-        String bindKey = gunNodeBindKey(model, nodeName);
-        if (bindKey == null) {
-            return null;
-        }
-        final Vec3d[] out = new Vec3d[1];
-        model.applyGlobalTransformToOther(bindKey, () -> {
-            out[0] = tpNodeWorldFromMv(readCurrentGlModelview(), rm, holder, thirdHandLayer);
-        });
-        return out[0];
     }
 
     /** 第一人称：手掌根 × 节点全局矩阵 → 近似世界坐标。 */
@@ -3096,28 +2993,44 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         return false;
     }
 
-    private void renderGunNodeDebugWithInheritedTransform(ModelEnhancedGun model, boolean firstPerson,
-            Matrix4f fpHandRootMatOrNull, EntityLivingBase tpHolderOrNull, RenderType tpLayerOrNull) {
-        String raw = debugGunNodeName;
-        if (raw == null || raw.trim().isEmpty()) {
+    private void updateFpTrailNodeCache(ModelEnhancedGun model, Matrix4f fpHandRootMat, EntityLivingBase holder) {
+        if (holder == null || fpHandRootMat == null || !model.initCal) {
             return;
         }
-        if (!model.initCal) {
+        LinkedHashSet<String> nodeNames = new LinkedHashSet<>();
+        String debugRaw = debugGunNodeName;
+        if (debugRaw != null && !debugRaw.trim().isEmpty()) {
+            nodeNames.add(debugRaw.trim());
+        }
+        nodeNames.addAll(GunNodeWorld.trackedTrailNodes());
+        if (nodeNames.isEmpty()) {
             return;
         }
-        final String trimmed = raw.trim();
-        final String bindKey = gunNodeBindKey(model, trimmed);
-        if (bindKey == null) {
+        Minecraft mc = Minecraft.getMinecraft();
+        Entity viewEnt = mc.getRenderViewEntity();
+        float pt = mc.getRenderPartialTicks();
+        if (!(viewEnt instanceof EntityLivingBase)) {
             return;
         }
-        final boolean fallbackGunModel = "gunModel".equals(bindKey) && !gunDebugInputMatchesAnyNode(model, trimmed);
-        final boolean fp = firstPerson;
-        final Matrix4f fpMat = fpHandRootMatOrNull == null ? null : new Matrix4f(fpHandRootMatOrNull);
-        final EntityLivingBase tpH = tpHolderOrNull;
-        final RenderType tpL = tpLayerOrNull;
-        model.applyGlobalTransformToOther(bindKey, () -> {
-            drawGunNodeDebugInNodeLocalSpace(model, trimmed, bindKey, fallbackGunModel, fp, fpMat, tpH, tpL);
-        });
+        final Matrix4f fpMat = new Matrix4f(fpHandRootMat);
+        final String debugTrimmed = debugRaw == null ? null : debugRaw.trim();
+        for (String trimmed : nodeNames) {
+            final String bindKey = gunNodeBindKey(model, trimmed);
+            if (bindKey == null) {
+                continue;
+            }
+            final boolean debugThis = debugTrimmed != null && trimmed.equals(debugTrimmed);
+            final boolean fallbackGunModel = "gunModel".equals(bindKey) && !gunDebugInputMatchesAnyNode(model, trimmed);
+            model.applyGlobalTransformToOther(bindKey, () -> {
+                Vec3d w = fpNodeWorld(fpMat, model.getGlobalTransform(bindKey), viewEnt, pt);
+                if (w != null) {
+                    GunNodeWorld.putFpCache(holder, trimmed, w);
+                }
+                if (debugThis) {
+                    drawGunNodeDebugOverlay(model, trimmed, bindKey, fallbackGunModel, w);
+                }
+            });
+        }
     }
 
     /** Three decimals; near-zero prints as {@code 0.000} (no minus) to avoid -0.000 flicker. */
@@ -3131,43 +3044,24 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         return String.format("%.3f", v);
     }
 
-    private void drawGunNodeDebugInNodeLocalSpace(ModelEnhancedGun model, String userInputRaw, String bindKey,
-            boolean fallbackGunModel, boolean firstPerson, Matrix4f fpHandRootMatOrNull,
-            EntityLivingBase tpHolderOrNull, RenderType tpLayerOrNull) {
+    private void drawGunNodeDebugOverlay(ModelEnhancedGun model, String userInputRaw, String bindKey,
+            boolean fallbackGunModel, Vec3d worldPos) {
         Minecraft mc = Minecraft.getMinecraft();
         RenderManager rm = mc.getRenderManager();
 
         Vector3f modelSpace = new Vector3f();
         model.getGlobalTransform(bindKey).getTranslation(modelSpace);
 
-        Matrix4f mv = readCurrentGlModelview();
-        Vector3f rel = new Vector3f();
-        mv.transformPosition(0f, 0f, 0f, rel);
-        Entity viewEnt = mc.getRenderViewEntity();
-        float pt = getTimer().renderPartialTicks;
-        Vec3d debugWorldPos = null;
         final String lineWorld;
-        if (firstPerson) {
-            if (fpHandRootMatOrNull != null && viewEnt != null) {
-                Vec3d w = fpNodeWorld(fpHandRootMatOrNull, model.getGlobalTransform(bindKey), viewEnt, pt);
-                debugWorldPos = w;
-                lineWorld = String.format("W1P %s %s %s", fmtDbg3(w.x), fmtDbg3(w.y), fmtDbg3(w.z));
-            } else {
-                lineWorld = String.format("MV %s %s %s", fmtDbg3(rel.x), fmtDbg3(rel.y), fmtDbg3(rel.z));
-            }
+        Vec3d debugWorldPos = worldPos;
+        if (debugWorldPos != null) {
+            lineWorld = String.format("W1P %s %s %s", fmtDbg3(debugWorldPos.x), fmtDbg3(debugWorldPos.y),
+                    fmtDbg3(debugWorldPos.z));
         } else {
-            Vec3d w = null;
-            if (tpHolderOrNull != null && tpLayerOrNull != null) {
-                w = tpNodeWorldFromMv(mv, rm, tpHolderOrNull, tpLayerOrNull);
-            }
-            if (w == null && viewEnt instanceof EntityLivingBase) {
-                w = tpNodeWorldCore(rel, rm, debugTP_preArmMV, (EntityLivingBase) viewEnt);
-            }
-            if (w == null) {
-                w = Vec3d.ZERO;
-            }
-            debugWorldPos = w;
-            lineWorld = String.format("W3P %s %s %s", fmtDbg3(w.x), fmtDbg3(w.y), fmtDbg3(w.z));
+            Matrix4f mv = readCurrentGlModelview();
+            Vector3f rel = new Vector3f();
+            mv.transformPosition(0f, 0f, 0f, rel);
+            lineWorld = String.format("MV %s %s %s", fmtDbg3(rel.x), fmtDbg3(rel.y), fmtDbg3(rel.z));
         }
 
         if (debugWorldPos != null && mc.world != null) {
