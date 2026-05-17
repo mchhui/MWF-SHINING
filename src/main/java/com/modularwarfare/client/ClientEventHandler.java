@@ -3,6 +3,7 @@ package com.modularwarfare.client;
 import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.model.ModelAttachment;
+import com.modularwarfare.client.trail.TrailOriginResolver;
 import com.modularwarfare.common.guns.*;
 import com.modularwarfare.utility.maths.MathUtils;
 import net.minecraft.network.play.INetHandlerPlayClient;
@@ -270,8 +271,10 @@ public class ClientEventHandler {
     
     @SubscribeEvent
     public void renderWorld(RenderWorldLastEvent event) {
-        InstantBulletRenderer.RenderAllTrails(event.getPartialTicks());
-        InstantBulletTeslaRender.RenderAllTeslaTrails(event.getPartialTicks());
+        float pt = event.getPartialTicks();
+        
+        TrailOriginResolver.flushPendingTrailsAfterWorld(pt);
+        TrailOriginResolver.renderTrailsOnly(pt);
         LaserDotRenderer.renderLaserDots();
     }
     
