@@ -31,9 +31,6 @@ import com.modularwarfare.common.guns.manager.FireManager;
 import com.modularwarfare.common.guns.manager.GunKickManager;
 import com.modularwarfare.common.type.BaseItem;
 
-import siz.addon.modularprops.common.custom.ItemBlockCustom;
-import siz.addon.modularprops.common.custom.ItemCustom;
-
 import mchhui.modularmovements.ModularMovements;
 import mchhui.modularmovements.tactical.client.ClientListener;
 
@@ -41,6 +38,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
@@ -378,6 +376,26 @@ public final class ClientTickHandler {
         }
     }
 
+    private static Class<?> modularPropsItemCustomClass;
+    private static Class<?> modularPropsItemBlockCustomClass;
+    private static boolean modularPropsClassesResolved;
+
+    private static boolean isModularPropsHeldItem(Item item) {
+        if (!ClientProxy.modularPropsLoaded) {
+            return false;
+        }
+        if (!modularPropsClassesResolved) {
+            modularPropsClassesResolved = true;
+            try {
+                modularPropsItemCustomClass = Class.forName("siz.addon.modularprops.common.custom.ItemCustom");
+                modularPropsItemBlockCustomClass = Class.forName("siz.addon.modularprops.common.custom.ItemBlockCustom");
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        return (modularPropsItemCustomClass != null && modularPropsItemCustomClass.isInstance(item))
+            || (modularPropsItemBlockCustomClass != null && modularPropsItemBlockCustomClass.isInstance(item));
+    }
+
 
     private static void onClientTickStart(Minecraft minecraft) {
         if (minecraft.player == null || minecraft.world == null)
@@ -388,8 +406,7 @@ public final class ClientTickHandler {
             && (heldMain.getItem() instanceof ItemGun
                 || heldMain.getItem() instanceof ItemGrenade
                 || heldMain.getItem() instanceof ItemMelee
-                || heldMain.getItem() instanceof ItemCustom
-                || heldMain.getItem() instanceof ItemBlockCustom);
+                || isModularPropsHeldItem(heldMain.getItem()));
         OptifineInputUtil.disableZoom(blockOptifineZoom);
 
         GUN_ROT_X_LAST = GUN_ROT_X;
