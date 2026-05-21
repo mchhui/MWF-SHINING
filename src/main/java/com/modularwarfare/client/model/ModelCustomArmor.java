@@ -333,65 +333,59 @@ public class ModelCustomArmor extends MWModelBipedBase {
                 this.setRotationAnglesObfuscate(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
             } else {
                 super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
-                if (this.rightArmPose == ModelBiped.ArmPose.BOW_AND_ARROW)
-                {
-                    this.bipedRightArm.rotateAngleY = -0.1F + this.bipedHead.rotateAngleY;
-                    this.bipedRightArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                    this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY + 0.4F;
-                    this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                    ItemStack itemstack = ((EntityLivingBase)entityIn).getHeldItemMainhand();
-                    if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
-                        if (itemstack.getItem() instanceof ItemGun) {
-                            BaseType type = ((BaseItem) itemstack.getItem()).baseType;
-                            if (type.hasModel()) {
-                                if (((GunType)type).animationType.equals(WeaponAnimationType.ENHANCED)) {
-                                    GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)type.enhancedModel.config;
-                                    if(config.renderOffhandPart) {
-                                        this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
-                                        this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                                        this.bipedLeftArmwear.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
-                                        this.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                applyBowAndArrowPose(entityIn);
             }
             MinecraftForge.EVENT_BUS.post(new RenderBonesEvent.RotationAngles(this, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn));
         }
 
         public void setRotationAnglesObfuscate(float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn) {
             this.resetRotationAngles();
-            if (!ModelPlayerEventHelper.postSetupAnglesPre((EntityPlayer)entityIn, this, Minecraft.getMinecraft().getRenderPartialTicks())) {
-                super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
-                ModelPlayerEventHelper.postSetupAnglesPost((EntityPlayer)entityIn, this, Minecraft.getMinecraft().getRenderPartialTicks());
-                if (this.rightArmPose == ModelBiped.ArmPose.BOW_AND_ARROW)
-                {
-                    this.bipedRightArm.rotateAngleY = -0.1F + this.bipedHead.rotateAngleY;
-                    this.bipedRightArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                    this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY + 0.4F;
-                    this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                    ItemStack itemstack = ((EntityLivingBase)entityIn).getHeldItemMainhand();
-                    if (itemstack != ItemStack.EMPTY && !itemstack.isEmpty()) {
-                        if (itemstack.getItem() instanceof ItemGun) {
-                            BaseType type = ((BaseItem) itemstack.getItem()).baseType;
-                            if (type.hasModel()) {
-                                if (((GunType)type).animationType.equals(WeaponAnimationType.ENHANCED)) {
-                                    GunEnhancedRenderConfig config = (GunEnhancedRenderConfig)type.enhancedModel.config;
-                                    if(config.renderOffhandPart) {
-                                        this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
-                                        this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                                        this.bipedLeftArmwear.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
-                                        this.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
-                                    }
-                                }
-                            }
-                        }
-                    }
+            if (entityIn instanceof EntityPlayer) {
+                EntityPlayer player = (EntityPlayer) entityIn;
+                if (!ModelPlayerEventHelper.postSetupAnglesPre(player, this, Minecraft.getMinecraft().getRenderPartialTicks())) {
+                    super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
+                    ModelPlayerEventHelper.postSetupAnglesPost(player, this, Minecraft.getMinecraft().getRenderPartialTicks());
+                    applyBowAndArrowPose(entityIn);
                 }
+            } else {
+                super.setRotationAngles(limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch, scaleFactor, entityIn);
+                applyBowAndArrowPose(entityIn);
             }
             this.setupRotationAngles();
+        }
+
+        private void applyBowAndArrowPose(Entity entityIn) {
+            if (this.rightArmPose != ModelBiped.ArmPose.BOW_AND_ARROW) {
+                return;
+            }
+            this.bipedRightArm.rotateAngleY = -0.1F + this.bipedHead.rotateAngleY;
+            this.bipedRightArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+            this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY + 0.4F;
+            this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+            if (!(entityIn instanceof EntityLivingBase)) {
+                return;
+            }
+            ItemStack itemstack = ((EntityLivingBase) entityIn).getHeldItemMainhand();
+            if (itemstack == ItemStack.EMPTY || itemstack.isEmpty()) {
+                return;
+            }
+            if (!(itemstack.getItem() instanceof ItemGun)) {
+                return;
+            }
+            BaseType type = ((BaseItem) itemstack.getItem()).baseType;
+            if (!type.hasModel()) {
+                return;
+            }
+            if (!((GunType) type).animationType.equals(WeaponAnimationType.ENHANCED)) {
+                return;
+            }
+            GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) type.enhancedModel.config;
+            if (config.renderOffhandPart) {
+                this.bipedLeftArm.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
+                this.bipedLeftArm.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+                this.bipedLeftArmwear.rotateAngleY = 0.1F + this.bipedHead.rotateAngleY;
+                this.bipedLeftArmwear.rotateAngleX = -((float)Math.PI / 2F) + this.bipedHead.rotateAngleX;
+            }
         }
 
         @Override
