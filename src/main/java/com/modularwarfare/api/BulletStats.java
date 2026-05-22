@@ -311,6 +311,7 @@ public final class BulletStats {
             row.put("fireLevel", p.fireLevel);
             row.put("explosionLevel", p.explosionLevel);
             row.put("explosionBroken", p.explosionBroken);
+            row.put("explosionOnBlock", p.explosionOnBlock);
             row.put("knockLevel", p.knockLevel);
             row.put("knockVerticalLevel", p.knockVerticalLevel);
             row.put("banShield", p.banShield);

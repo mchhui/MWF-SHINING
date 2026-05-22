@@ -217,10 +217,13 @@ public class FireManager {
                 }
             }
 
-            // bullet special effect
+            BulletProperty bulletProperty = null;
             if (victim instanceof EntityLivingBase && bulletItem.type.bulletProperties != null && !bulletItem.type.bulletProperties.isEmpty()) {
-                EntityLivingBase targetELB = (EntityLivingBase)victim;
-                BulletProperty bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName()) != null ? bulletItem.type.bulletProperties.get(targetELB.getName()) : bulletItem.type.bulletProperties.get("All");
+                EntityLivingBase targetELB = (EntityLivingBase) victim;
+                bulletProperty = bulletItem.type.bulletProperties.get(targetELB.getName());
+                if (bulletProperty == null) {
+                    bulletProperty = bulletItem.type.bulletProperties.get("All");
+                }
                 if (bulletProperty != null) {
                     if (bulletProperty.potionEffects != null) {
                         for (PotionEntry potionEntry : bulletProperty.potionEffects) {
@@ -232,13 +235,6 @@ public class FireManager {
                     }
                     if (bulletProperty.explosionLevel > 0) {
                         targetELB.world.createExplosion(null, targetELB.posX, targetELB.posY + 1, targetELB.posZ, bulletProperty.explosionLevel, bulletProperty.explosionBroken);
-                    }
-                    if (bulletProperty.knockVerticalLevel != null) {
-                        if (bulletProperty.knockLevel != 0f || bulletProperty.knockVerticalLevel.floatValue() != 0f) {
-                            applyBulletKnockLevelSplit(targetELB, shooter, bulletProperty.knockLevel, bulletProperty.knockVerticalLevel.floatValue());
-                        }
-                    } else if (bulletProperty.knockLevel > 0f) {
-                        targetELB.knockBack(shooter, bulletProperty.knockLevel, shooter.posX - targetELB.posX, shooter.posZ - targetELB.posZ);
                     }
                     if (bulletProperty.banShield) {
                         if (targetELB instanceof EntityPlayer) {
@@ -277,13 +273,61 @@ public class FireManager {
             if (amount.get() < 0) {
                 amount.set(0);
             }
+            boolean hasCustomKnock = false;
+            if (bulletProperty != null) {
+                if (bulletProperty.knockVerticalLevel != null) {
+                    hasCustomKnock = bulletProperty.knockLevel != 0f
+                            || bulletProperty.knockVerticalLevel.floatValue() != 0f;
+                } else {
+                    hasCustomKnock = bulletProperty.knockLevel > 0f;
+                }
+            }
             boolean damageSuccess = false;
             if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                damageSuccess = RayUtil.attackEntityWithoutKnockback(victim, damageSource, (float)amount.get());
+                damageSuccess = RayUtil.attackEntityWithoutKnockback(victim, damageSource, (float) amount.get(),
+                        !hasCustomKnock);
             } else {
-                damageSuccess = victim.attackEntityFrom(damageSource, (float)amount.get());
+                damageSuccess = victim.attackEntityFrom(damageSource, (float) amount.get());
             }
             victim.hurtResistantTime = 0;
+
+            if (victim instanceof EntityLivingBase && bulletProperty != null && hasCustomKnock) {
+                EntityLivingBase targetELB = (EntityLivingBase) victim;
+                if (!targetELB.world.isRemote) {
+                    float knockBackLevel = bulletProperty.knockLevel;
+                    float knockVertical = bulletProperty.knockVerticalLevel != null
+                            ? bulletProperty.knockVerticalLevel.floatValue() : 0f;
+                    if (targetELB.getRNG().nextDouble() >= targetELB
+                            .getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).getAttributeValue()) {
+                        double bx = targetELB.posX - shooter.posX;
+                        double bz = targetELB.posZ - shooter.posZ;
+                        double len = Math.sqrt(bx * bx + bz * bz);
+                        if (len < 1.0E-4D) {
+                            float yr = (float) Math.toRadians(shooter.rotationYaw);
+                            bx = -Math.sin(yr);
+                            bz = Math.cos(yr);
+                        } else {
+                            bx /= len;
+                            bz /= len;
+                        }
+                        targetELB.isAirBorne = true;
+                        if (knockBackLevel != 0f) {
+                            targetELB.motionX /= 2.0D;
+                            targetELB.motionZ /= 2.0D;
+                            targetELB.motionX += bx * (double) knockBackLevel;
+                            targetELB.motionZ += bz * (double) knockBackLevel;
+                        }
+                        if (knockVertical != 0f) {
+                            targetELB.motionY /= 2.0D;
+                            targetELB.motionY += knockVertical;
+                            if (targetELB.motionY > 0.4000000059604645D) {
+                                targetELB.motionY = 0.4000000059604645D;
+                            }
+                        }
+                        targetELB.velocityChanged = true;
+                    }
+                }
+            }
 
             // victim player's plate
             if (damageSuccess) {
@@ -315,46 +359,6 @@ public class FireManager {
                 if (headshot) {
                     EntityHeadShotEvent headShot = new EntityHeadShotEvent(victim, shooter);
                     MinecraftForge.EVENT_BUS.post(headShot);
-                }
-            }
-        }
-
-        /**
-         * knockVerticalLevel 非 null 时：knockLevel 为水平朝向射击者的「向后」击退，knockVertical 为竖直分量（正上，与原版 Y 上限一致）。
-         */
-        private static void applyBulletKnockLevelSplit(EntityLivingBase target, EntityLivingBase shooter, float knockBackLevel, float knockVertical) {
-            if (target.world.isRemote) {
-                return;
-            }
-            if (knockBackLevel == 0f && knockVertical == 0f) {
-                return;
-            }
-            if (target.getRNG().nextDouble() >= target.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).getAttributeValue()) {
-                return;
-            }
-            double bx = shooter.posX - target.posX;
-            double bz = shooter.posZ - target.posZ;
-            double len = Math.sqrt(bx * bx + bz * bz);
-            if (len < 1.0E-4D) {
-                float yr = (float) Math.toRadians(shooter.rotationYaw);
-                bx = Math.sin(yr);
-                bz = -Math.cos(yr);
-            } else {
-                bx /= len;
-                bz /= len;
-            }
-            target.isAirBorne = true;
-            if (knockBackLevel != 0f) {
-                target.motionX /= 2.0D;
-                target.motionZ /= 2.0D;
-                target.motionX += bx * (double) knockBackLevel;
-                target.motionZ += bz * (double) knockBackLevel;
-            }
-            if (knockVertical != 0f) {
-                target.motionY /= 2.0D;
-                target.motionY += knockVertical;
-                if (target.motionY > 0.4000000059604645D) {
-                    target.motionY = 0.4000000059604645D;
                 }
             }
         }
@@ -432,6 +436,15 @@ public class FireManager {
                 gunType.playSoundPos(blockPos, world, WeaponSoundType.Crack, null, 1.0f, false);
                 ItemGun.doHit(rayTrace.rayTraceResult);
                 ItemGun.playHitEffect(world, rayTrace.rayTraceResult);
+                if (!world.isRemote && bulletItem.type.bulletProperties != null
+                        && !bulletItem.type.bulletProperties.isEmpty()) {
+                    BulletProperty blockProperty = bulletItem.type.bulletProperties.get("All");
+                    if (blockProperty != null && blockProperty.explosionOnBlock && blockProperty.explosionLevel > 0f) {
+                        Vec3d hit = rayTrace.rayTraceResult.hitVec;
+                        world.createExplosion(null, hit.x, hit.y, hit.z, blockProperty.explosionLevel,
+                                blockProperty.explosionBroken);
+                    }
+                }
             });
             hitEffecters.add((rayTrace) -> {
                 if (!(rayTrace.getEntity() instanceof EntityPlayer)) {

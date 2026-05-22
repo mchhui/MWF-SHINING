@@ -11,6 +11,7 @@ public class BulletProperty {
     public int fireLevel=0;
     public float explosionLevel=0;
     public boolean explosionBroken=false;
+    public boolean explosionOnBlock = false;
     public float knockLevel=0;
     public Float knockVerticalLevel = null;
     public boolean banShield=false;
