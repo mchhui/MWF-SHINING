@@ -2,6 +2,7 @@ package com.modularwarfare.client.trail;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunNodeWorld;
+import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.InstantBulletTeslaRender;
 import com.modularwarfare.common.guns.GunType;
@@ -86,6 +87,11 @@ public final class TrailOriginResolver {
         boolean localFirstPerson = shooterEntityId == mc.player.getEntityId()
                 && mc.gameSettings.thirdPersonView == 0;
         if (!localFirstPerson) {
+            return packetOrigin;
+        }
+
+        GunEnhancedRenderConfig renderConfig = ModularWarfare.getRenderConfig(gunType, GunEnhancedRenderConfig.class);
+        if (renderConfig == null || !renderConfig.fpTrailOriginCorrection) {
             return packetOrigin;
         }
 

@@ -34,6 +34,7 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public HashSet<String> thirdHideOffhandPart=new HashSet<String>();
     public HashSet<String> thirdShowOffhandPart=new HashSet<String>();
 
+    public boolean fpTrailOriginCorrection = false;
     public String trailOriginNode = "flashModel";
     public Vector3f trailNodeWorldThirdPos = new Vector3f(0F, 0F, 0F);
 
