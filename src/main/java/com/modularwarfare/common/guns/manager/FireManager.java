@@ -283,9 +283,8 @@ public class FireManager {
                 }
             }
             boolean damageSuccess = false;
-            if (!ModConfig.INSTANCE.shots.knockback_entity_damage) {
-                damageSuccess = RayUtil.attackEntityWithoutKnockback(victim, damageSource, (float) amount.get(),
-                        !hasCustomKnock);
+            if (!ModConfig.INSTANCE.shots.knockback_entity_damage || hasCustomKnock) {
+                damageSuccess = RayUtil.attackEntityWithoutKnockback(victim, damageSource, (float) amount.get(), true);
             } else {
                 damageSuccess = victim.attackEntityFrom(damageSource, (float) amount.get());
             }
@@ -310,14 +309,15 @@ public class FireManager {
                             bx /= len;
                             bz /= len;
                         }
-                        targetELB.isAirBorne = true;
                         if (knockBackLevel != 0f) {
+                            targetELB.isAirBorne = true;
                             targetELB.motionX /= 2.0D;
                             targetELB.motionZ /= 2.0D;
                             targetELB.motionX += bx * (double) knockBackLevel;
                             targetELB.motionZ += bz * (double) knockBackLevel;
                         }
-                        if (knockVertical != 0f) {
+                        if (bulletProperty.knockVerticalLevel != null && knockVertical != 0f) {
+                            targetELB.isAirBorne = true;
                             targetELB.motionY /= 2.0D;
                             targetELB.motionY += knockVertical;
                             if (targetELB.motionY > 0.4000000059604645D) {
