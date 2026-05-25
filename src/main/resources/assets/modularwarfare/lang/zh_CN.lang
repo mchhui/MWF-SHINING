@@ -122,6 +122,9 @@ mwf:dictionary.armor.slot.vest=防弹背心
 # 药水效果
 effect.modularwarfare.stun=眩晕
 
+# 箱子界面
+mwf:gui.chest.backpack=背包
+
 # 背包相关
 mwf:gui.tooltip.backpack.type=背包类型
 mwf:gui.tooltip.backpack.storage=储存背包

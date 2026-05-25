@@ -122,6 +122,9 @@ mwf:dictionary.armor.slot.vest=Бронежилет
 # Эффекты зелий
 effect.modularwarfare.stun=Оглушение
 
+# Интерфейс сундука
+mwf:gui.chest.backpack=Рюкзак
+
 # Рюкзаки
 mwf:gui.tooltip.backpack.type=Тип рюкзака
 mwf:gui.tooltip.backpack.storage=Складской рюкзак

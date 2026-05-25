@@ -32,7 +32,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
+import com.modularwarfare.client.gui.GuiChestModified;
+import com.modularwarfare.common.container.ContainerChestModified;
+import com.modularwarfare.mixin.client.accessor.IGuiChestAccessor;
+import com.modularwarfare.mixin.client.accessor.IGuiContainerAccessor;
+import net.minecraft.client.gui.inventory.GuiChest;
+import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.ContainerChest;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
@@ -49,7 +58,9 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
+import com.modularwarfare.utility.ModUtil;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -352,15 +363,46 @@ public class ClientEventHandler {
 
     @SubscribeEvent
     public void onGuiLaunch(GuiOpenEvent event) {
+        final Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player == null || event.getGui() == null) {
+            return;
+        }
+
+        if (ModConfig.INSTANCE.general.customChestGui && event.getGui() instanceof GuiChest
+                && !(event.getGui() instanceof GuiChestModified)) {
+            replaceChestGui(event, mc);
+        }
+
         if (serverCustomInventory) {
-            if (event.getGui() != null && event.getGui().getClass() == GuiInventory.class) {
-                final EntityPlayer player = Minecraft.getMinecraft().player;
+            if (event.getGui().getClass() == GuiInventory.class) {
+                final EntityPlayer player = mc.player;
                 if (!player.isCreative()) {
                     event.setCanceled(true);
                     ModularWarfare.NETWORK.sendToServer(new PacketOpenGui(0));
                 }
             }
         }
+    }
+
+    private static void replaceChestGui(final GuiOpenEvent event, final Minecraft mc) {
+        final GuiChest guiChest = (GuiChest) event.getGui();
+        final Container guiContainer = ((IGuiContainerAccessor) guiChest).getInventorySlots();
+
+        final IInventory chestInventory;
+        int windowId = 0;
+        if (ContainerChestModified.isVanillaChestContainer(guiContainer)) {
+            chestInventory = ((ContainerChest) guiContainer).getLowerChestInventory();
+            windowId = guiContainer.windowId;
+        } else {
+            final IGuiChestAccessor accessor = (IGuiChestAccessor) guiChest;
+            chestInventory = accessor.getLowerChestInventory();
+            if (mc.player.openContainer != null) {
+                windowId = mc.player.openContainer.windowId;
+            }
+        }
+
+        final ContainerChestModified modified = ContainerChestModified.fromChestInventory(chestInventory, mc.player, windowId);
+        event.setGui(new GuiChestModified(modified));
     }
 
     @SubscribeEvent
@@ -440,6 +482,13 @@ public class ClientEventHandler {
                 }
             }
         }
+    }
+
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public void onTextureStitchPre(final TextureStitchEvent.Pre event) {
+        event.getMap().registerSprite(new ResourceLocation(ModUtil.SLOT_TEXTURE_BACKPACK));
+        event.getMap().registerSprite(new ResourceLocation(ModUtil.SLOT_TEXTURE_VEST));
     }
 
 }

@@ -37,6 +37,7 @@ import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.extra.ItemLight;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.handler.ChestContainerHandler;
 import com.modularwarfare.common.handler.CommonEventHandler;
 import com.modularwarfare.common.handler.GuiHandler;
 import com.modularwarfare.common.melee.ItemMelee;
@@ -544,6 +545,7 @@ public class ModularWarfare {
 
         MinecraftForge.EVENT_BUS.register(new ModPotions());
         MinecraftForge.EVENT_BUS.register(new CommonEventHandler());
+        MinecraftForge.EVENT_BUS.register(new ChestContainerHandler());
         MinecraftForge.EVENT_BUS.register(new PlayerStateManager());
         MinecraftForge.EVENT_BUS.register(this);
     }

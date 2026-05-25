@@ -1,5 +1,6 @@
 package com.modularwarfare.utility;
 
+import com.modularwarfare.ModularWarfare;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -33,6 +34,9 @@ public class ModUtil {
     public static final int BACKPACK_SLOT_OFFSET_Y = 7;
     public static final int BACKPACK_CONTENT_OFFSET_X = 180;
     public static final int BACKPACK_CONTENT_OFFSET_Y = 18;
+
+    public static final String SLOT_TEXTURE_BACKPACK = ModularWarfare.MOD_ID + ":gui/slot_backpack";
+    public static final String SLOT_TEXTURE_VEST = ModularWarfare.MOD_ID + ":gui/slot_vest";
 
     private static String OS = System.getProperty("os.name").toLowerCase();
 
