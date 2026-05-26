@@ -38,6 +38,7 @@ public final class ChestGuiLayout {
     public static final int EQUIP_X = BACKPACK_X + BACKPACK_COLS * SLOT + 12;
     public static final int EQUIP_Y = CHEST_Y;
 
+    /** 玩家区顶边：始终在固定 6 行箱子区域下方 */
     public static final int PLAYER_Y = CHEST_Y + CHEST_ROWS * SLOT + 14;
     public static final int HOTBAR_Y = PLAYER_Y + 3 * SLOT + 4;
 

@@ -4,6 +4,11 @@ import com.modularwarfare.ModConfig;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
+import com.modularwarfare.common.container.chest.ChestPaddingInventory;
+import com.modularwarfare.common.container.chest.FixedSixRowChestInventory;
+import com.modularwarfare.common.container.chest.IPaddingSlot;
+import com.modularwarfare.common.container.chest.SlotBackpackDisplayPadding;
+import com.modularwarfare.common.container.chest.SlotChestPadding;
 import com.modularwarfare.common.guns.ItemAttachment;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.network.PacketGunAddAttachment;
@@ -38,7 +43,9 @@ public class ContainerChestModified extends Container {
             EntityEquipmentSlot.HEAD, EntityEquipmentSlot.CHEST, EntityEquipmentSlot.LEGS, EntityEquipmentSlot.FEET
     };
 
+
     public final IInventory chestInventory;
+    public final FixedSixRowChestInventory chestView;
     public final int chestSlotCount;
     public final EntityPlayer player;
     public IExtraItemHandler extra;
@@ -46,6 +53,7 @@ public class ContainerChestModified extends Container {
     public ContainerChestModified(final IInventory chestInventory, final EntityPlayer player) {
         this.chestInventory = chestInventory;
         this.chestSlotCount = chestInventory.getSizeInventory();
+        this.chestView = new FixedSixRowChestInventory(chestInventory);
         this.player = player;
         this.addSlots(player.inventory, player);
     }
@@ -53,7 +61,38 @@ public class ContainerChestModified extends Container {
     public static ContainerChestModified fromVanillaChest(final ContainerChest vanilla, final EntityPlayer player) {
         final ContainerChestModified modified = new ContainerChestModified(vanilla.getLowerChestInventory(), player);
         modified.windowId = vanilla.windowId;
+        copyStacksFromVanilla(vanilla, modified);
         return modified;
+    }
+
+    public static void copyStacksFromVanilla(final Container source, final ContainerChestModified target) {
+        for (final Slot targetSlot : target.inventorySlots) {
+            final ItemStack stack = findStackInSource(source, target, targetSlot);
+            if (!stack.isEmpty()) {
+                targetSlot.putStack(stack.copy());
+            }
+        }
+        target.inventoryItemStacks.clear();
+        for (final Slot slot : target.inventorySlots) {
+            target.inventoryItemStacks.add(slot.getStack());
+        }
+    }
+
+    @Nullable
+    private static ItemStack findStackInSource(final Container source, final ContainerChestModified target, final Slot targetSlot) {
+        final IInventory targetInv = targetSlot.inventory;
+        final int targetIdx = targetSlot.getSlotIndex();
+        for (final Slot sourceSlot : source.inventorySlots) {
+            final IInventory sourceInv = sourceSlot.inventory;
+            final int sourceIdx = sourceSlot.getSlotIndex();
+            if (targetInv == target.chestView && sourceInv == target.chestInventory && sourceIdx == targetIdx) {
+                return sourceSlot.getStack();
+            }
+            if (targetInv == sourceInv && sourceIdx == targetIdx) {
+                return sourceSlot.getStack();
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     public static ContainerChestModified fromChestInventory(final IInventory chestInventory, final EntityPlayer player, final int windowId) {
@@ -66,16 +105,78 @@ public class ContainerChestModified extends Container {
         return container instanceof ContainerChest && !(container instanceof ContainerChestModified);
     }
 
+    public int getChestAreaSlotCount() {
+        return ChestGuiLayout.CHEST_SLOTS;
+    }
+
+    public boolean isChestPaddingSlot(final int containerSlotIndex) {
+        return containerSlotIndex >= this.chestSlotCount && containerSlotIndex < getChestAreaSlotCount();
+    }
+
+    public boolean isPaddingSlot(final int containerSlotIndex) {
+        if (containerSlotIndex < 0 || containerSlotIndex >= this.inventorySlots.size()) {
+            return false;
+        }
+        final Slot slot = this.inventorySlots.get(containerSlotIndex);
+        return slot instanceof IPaddingSlot && ((IPaddingSlot) slot).isPaddingSlot();
+    }
+
+    public int getBackpackDisplayEnd() {
+        return getBackpackContentsStart() + ChestGuiLayout.BACKPACK_DISPLAY_SLOTS;
+    }
+
     public int getPlayerMainStart() {
-        return this.chestSlotCount;
+        return getChestAreaSlotCount();
     }
 
     public int getHotbarStart() {
-        return this.chestSlotCount + 27;
+        return getChestAreaSlotCount() + 27;
     }
 
     public int getArmorStart() {
-        return this.chestSlotCount + PLAYER_SLOT_COUNT;
+        return getChestAreaSlotCount() + PLAYER_SLOT_COUNT;
+    }
+
+    public void applySlotLayout() {
+        for (final Slot slot : this.inventorySlots) {
+            if (slot.inventory == this.chestView) {
+                final int index = slot.getSlotIndex();
+                slot.xPos = ChestGuiLayout.chestSlotX(index % ChestGuiLayout.CHEST_COLS);
+                slot.yPos = ChestGuiLayout.chestSlotY(index / ChestGuiLayout.CHEST_COLS);
+            } else if (slot.inventory instanceof InventoryPlayer) {
+                this.applyPlayerInventorySlotLayout(slot);
+            } else if (slot instanceof SlotBackpack) {
+                slot.xPos = ChestGuiLayout.equipSlotX();
+                slot.yPos = ChestGuiLayout.equipSlotY(5);
+            } else if (slot instanceof SlotVest) {
+                slot.xPos = ChestGuiLayout.equipSlotX();
+                slot.yPos = ChestGuiLayout.equipSlotY(6);
+            } else if (slot instanceof SlotItemHandler || slot instanceof SlotBackpackDisplayPadding) {
+                final int index = slot.getSlotIndex();
+                if (index >= 0 && index < ChestGuiLayout.BACKPACK_DISPLAY_SLOTS) {
+                    slot.xPos = ChestGuiLayout.backpackSlotX(index % ChestGuiLayout.BACKPACK_COLS);
+                    slot.yPos = ChestGuiLayout.backpackSlotY(index / ChestGuiLayout.BACKPACK_COLS);
+                }
+            }
+        }
+    }
+
+    private void applyPlayerInventorySlotLayout(final Slot slot) {
+        final int index = slot.getSlotIndex();
+        if (index >= 9 && index < 36) {
+            final int grid = index - 9;
+            slot.xPos = ChestGuiLayout.playerSlotX(grid % 9);
+            slot.yPos = ChestGuiLayout.playerSlotY(grid / 9);
+        } else if (index >= 0 && index < 9) {
+            slot.xPos = ChestGuiLayout.playerSlotX(index);
+            slot.yPos = ChestGuiLayout.hotbarSlotY();
+        } else if (index >= 36 && index <= 39) {
+            slot.xPos = ChestGuiLayout.equipSlotX();
+            slot.yPos = ChestGuiLayout.equipSlotY(39 - index);
+        } else if (index == 40) {
+            slot.xPos = ChestGuiLayout.equipSlotX();
+            slot.yPos = ChestGuiLayout.equipSlotY(4);
+        }
     }
 
     public int getOffhandIndex() {
@@ -110,10 +211,10 @@ public class ContainerChestModified extends Container {
         this.inventoryItemStacks.clear();
         this.extra = entityPlayer.getCapability(CapabilityExtra.CAPABILITY, null);
 
-        for (int index = 0; index < this.chestSlotCount; ++index) {
+        for (int index = 0; index < ChestGuiLayout.CHEST_SLOTS; ++index) {
             final int row = index / ChestGuiLayout.CHEST_COLS;
             final int col = index % ChestGuiLayout.CHEST_COLS;
-            this.addSlotToContainer(new Slot(this.chestInventory, index,
+            this.addSlotToContainer(new SlotChestPadding(this.chestView, index,
                     ChestGuiLayout.chestSlotX(col), ChestGuiLayout.chestSlotY(row)));
         }
 
@@ -182,21 +283,32 @@ public class ContainerChestModified extends Container {
             });
         }
 
-        this.addBackpackContentSlots();
+        this.addBackpackDisplaySlots();
+        this.applySlotLayout();
     }
 
-    private void addBackpackContentSlots() {
-        if (this.extra == null || !this.extra.getStackInSlot(0).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
-            return;
-        }
-        final IItemHandler backpackInvent = this.extra.getStackInSlot(0).getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
-        final int slots = Math.min(backpackInvent.getSlots(), ChestGuiLayout.BACKPACK_DISPLAY_SLOTS);
+    private void addBackpackDisplaySlots() {
+        final int usedSlots = this.getBackpackContentSlotCount();
+        final IItemHandler backpackInvent = usedSlots > 0
+                ? this.extra.getStackInSlot(0).getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)
+                : null;
 
-        for (int i = 0; i < slots; i++) {
+        for (int i = 0; i < ChestGuiLayout.BACKPACK_DISPLAY_SLOTS; i++) {
             final int col = i % ChestGuiLayout.BACKPACK_COLS;
             final int row = i / ChestGuiLayout.BACKPACK_COLS;
-            this.addSlotToContainer(new SlotItemHandler(backpackInvent, i,
-                    ChestGuiLayout.backpackSlotX(col), ChestGuiLayout.backpackSlotY(row)) {
+            final int x = ChestGuiLayout.backpackSlotX(col);
+            final int y = ChestGuiLayout.backpackSlotY(row);
+
+            if (backpackInvent != null && i < usedSlots) {
+                this.addBackpackContentSlot(backpackInvent, i, x, y);
+            } else {
+                this.addSlotToContainer(new SlotBackpackDisplayPadding(ChestPaddingInventory.INSTANCE, i, x, y));
+            }
+        }
+    }
+
+    private void addBackpackContentSlot(final IItemHandler backpackInvent, final int i, final int x, final int y) {
+            this.addSlotToContainer(new SlotItemHandler(backpackInvent, i, x, y) {
                 @Override
                 public boolean isItemValid(@Nonnull final ItemStack stack) {
                     if (stack.getItem() instanceof ItemBackpack) {
@@ -226,11 +338,19 @@ public class ContainerChestModified extends Container {
                     return numGuns;
                 }
             });
-        }
     }
 
     @Override
     public ItemStack slotClick(final int slotId, final int dragType, final ClickType clickTypeIn, final EntityPlayer entityPlayer) {
+        if (slotId >= 0 && slotId < this.inventorySlots.size() && this.isPaddingSlot(slotId)) {
+            return ItemStack.EMPTY;
+        }
+        if (slotId < 0 && slotId != -999) {
+            return ItemStack.EMPTY;
+        }
+        if (slotId >= this.inventorySlots.size()) {
+            return ItemStack.EMPTY;
+        }
         if (clickTypeIn == ClickType.QUICK_MOVE) {
             return super.slotClick(slotId, dragType, clickTypeIn, entityPlayer);
         }
@@ -241,7 +361,8 @@ public class ContainerChestModified extends Container {
 
         final ItemStack held = entityPlayer.inventory.getItemStack();
         if (ModConfig.INSTANCE.guns.acceptAttachmentDrag && entityPlayer instanceof EntityPlayerMP
-                && slotId != -999 && dragType == 0 && clickTypeIn == ClickType.PICKUP && !held.isEmpty()) {
+                && slotId >= 0 && slotId < this.inventorySlots.size() && slotId != -999
+                && dragType == 0 && clickTypeIn == ClickType.PICKUP && !held.isEmpty()) {
             final ItemStack clickItem = this.inventorySlots.get(slotId).getStack();
             if (held.getItem() instanceof ItemAttachment && clickItem.getItem() instanceof ItemGun) {
                 final ItemGun gun = (ItemGun) clickItem.getItem();
@@ -298,6 +419,10 @@ public class ContainerChestModified extends Container {
         final int armorStart = getArmorStart();
         final int backpackContentsStart = getBackpackContentsStart();
         final int backpackContentsEnd = getBackpackContentsEnd();
+
+        if (this.isPaddingSlot(index)) {
+            return ItemStack.EMPTY;
+        }
 
         if (index >= 0 && index < chestEnd) {
             transferred = this.mergeItemStack(sourceStack, playerMainStart, hotbarStart + 9, false);

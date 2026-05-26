@@ -6,6 +6,7 @@ import com.modularwarfare.common.entity.item.EntityItemLoot;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.network.PacketClientKillFeedEntry;
 import com.modularwarfare.common.network.PacketExplosion;
+import com.modularwarfare.common.network.PacketSyncCustomChestGui;
 import com.modularwarfare.common.network.PacketVerification;
 import com.modularwarfare.common.type.BaseItem;
 import net.minecraft.block.BlockContainer;
@@ -59,6 +60,9 @@ public class CommonEventHandler {
     
     @SubscribeEvent
     public void onPlayerJoin(PlayerLoggedInEvent event) {
+        if (event.player instanceof EntityPlayerMP) {
+            ModularWarfare.NETWORK.sendTo(PacketSyncCustomChestGui.fromServerConfig(), (EntityPlayerMP) event.player);
+        }
         if(ModConfig.INSTANCE.general.modified_pack_server_kick||ModConfig.INSTANCE.general.directory_pack_server_kick) {
             playerTimeoutMap.put(event.player.getName(), System.currentTimeMillis());  
         }

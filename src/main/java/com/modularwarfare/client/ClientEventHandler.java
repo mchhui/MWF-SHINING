@@ -32,6 +32,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
+import com.modularwarfare.client.chest.ClientChestGuiSettings;
 import com.modularwarfare.client.gui.GuiChestModified;
 import com.modularwarfare.common.container.ContainerChestModified;
 import com.modularwarfare.mixin.client.accessor.IGuiChestAccessor;
@@ -41,6 +42,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ContainerChest;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.EntityPlayer;
@@ -55,6 +57,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputUpdateEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
@@ -361,6 +364,14 @@ public class ClientEventHandler {
         }
     }
 
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SideOnly(Side.CLIENT)
+    public void onChestGuiDrawPost(final GuiScreenEvent.DrawScreenEvent.Post event) {
+        if (event.getGui() instanceof GuiChestModified) {
+            ((ContainerChestModified) ((GuiChestModified) event.getGui()).inventorySlots).applySlotLayout();
+        }
+    }
+
     @SubscribeEvent
     public void onGuiLaunch(GuiOpenEvent event) {
         final Minecraft mc = Minecraft.getMinecraft();
@@ -368,9 +379,12 @@ public class ClientEventHandler {
             return;
         }
 
-        if (ModConfig.INSTANCE.general.customChestGui && event.getGui() instanceof GuiChest
+        if (ClientChestGuiSettings.isEnabled() && event.getGui() instanceof GuiChest
                 && !(event.getGui() instanceof GuiChestModified)) {
-            replaceChestGui(event, mc);
+            final IInventory chestInventory = ((IGuiChestAccessor) event.getGui()).getLowerChestInventory();
+            if (ClientChestGuiSettings.shouldApply(chestInventory)) {
+                replaceChestGui(event, mc);
+            }
         }
 
         if (serverCustomInventory) {
@@ -385,23 +399,27 @@ public class ClientEventHandler {
     }
 
     private static void replaceChestGui(final GuiOpenEvent event, final Minecraft mc) {
-        final GuiChest guiChest = (GuiChest) event.getGui();
-        final Container guiContainer = ((IGuiContainerAccessor) guiChest).getInventorySlots();
+        final EntityPlayer player = mc.player;
+        final ContainerChestModified modified;
 
-        final IInventory chestInventory;
-        int windowId = 0;
-        if (ContainerChestModified.isVanillaChestContainer(guiContainer)) {
-            chestInventory = ((ContainerChest) guiContainer).getLowerChestInventory();
-            windowId = guiContainer.windowId;
+        if (player.openContainer instanceof ContainerChestModified) {
+            modified = (ContainerChestModified) player.openContainer;
         } else {
-            final IGuiChestAccessor accessor = (IGuiChestAccessor) guiChest;
-            chestInventory = accessor.getLowerChestInventory();
-            if (mc.player.openContainer != null) {
-                windowId = mc.player.openContainer.windowId;
+            final Container syncTarget = ContainerChestModified.isVanillaChestContainer(player.openContainer)
+                    ? player.openContainer
+                    : ((IGuiContainerAccessor) event.getGui()).getInventorySlots();
+
+            if (ContainerChestModified.isVanillaChestContainer(syncTarget)) {
+                modified = ContainerChestModified.fromVanillaChest((ContainerChest) syncTarget, player);
+            } else {
+                final GuiChest guiChest = (GuiChest) event.getGui();
+                final IInventory chestInventory = ((IGuiChestAccessor) guiChest).getLowerChestInventory();
+                final int windowId = player.openContainer != null ? player.openContainer.windowId : 0;
+                modified = ContainerChestModified.fromChestInventory(chestInventory, player, windowId);
             }
+            player.openContainer = modified;
         }
 
-        final ContainerChestModified modified = ContainerChestModified.fromChestInventory(chestInventory, mc.player, windowId);
         event.setGui(new GuiChestModified(modified));
     }
 
@@ -420,6 +438,12 @@ public class ClientEventHandler {
         if (event.getRegistrations().contains("MWF_sync_allowGunModifyGui_disabled")) {
             serverAllowGunModifyGui = !isRegister;
         }
+    }
+
+    @SubscribeEvent
+    @SideOnly(Side.CLIENT)
+    public void onClientDisconnect(final FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
+        ClientChestGuiSettings.clear();
     }
     
     @SideOnly(Side.CLIENT)

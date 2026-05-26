@@ -30,6 +30,7 @@ public class ModConfig {
         this.killFeed = new KillFeed();
         this.sprintBlendNodes = new SprintBlendNodes();
         this.gunStats = new GunStats();
+        this.customChestGui = new CustomChestGui();
     }
 
     //general
@@ -37,7 +38,6 @@ public class ModConfig {
 
     public static class General {
         public boolean customInventory = true;
-        public boolean customChestGui = false;
         public boolean allowGunModifyGui = true;
         public boolean disableHideGui = true;
         public boolean prototype_pack_extraction = false;
@@ -154,6 +154,24 @@ public class ModConfig {
     public static class GunStats {
         public float maxDamageReference = 20.0f;
         public float maxHeadshotBonusReference = 10.0f;
+    }
+
+    public CustomChestGui customChestGui = new CustomChestGui();
+
+    public static class CustomChestGui {
+        public boolean enable = false;
+        public String filterMode = "whitelist";
+        public List<ChestGuiFilter> filters = new ArrayList<>();
+
+        public CustomChestGui() {
+            final ChestGuiFilter defaultFilter = new ChestGuiFilter();
+            defaultFilter.guiName = "allChest";
+            this.filters.add(defaultFilter);
+        }
+
+        public static class ChestGuiFilter {
+            public String guiName = "allChest";
+        }
     }
 
     public static class SprintBlendNodes {

@@ -1,19 +1,17 @@
 package com.modularwarfare.client.gui;
 
+import com.modularwarfare.common.container.chest.ChestPlaceholderItems;
 import com.modularwarfare.common.container.ContainerChestModified;
+import com.modularwarfare.common.container.chest.IPaddingSlot;
 import com.modularwarfare.utility.ChestGuiLayout;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
+import net.minecraft.inventory.Slot;
 
 
 public class GuiChestModified extends GuiContainer {
-
-    private static final ItemStack BARRIER_PLACEHOLDER = new ItemStack(Blocks.BARRIER);
 
     private static final int COLOR_PANEL = 0xC0101010;
     private static final int COLOR_SLOT_BORDER = 0xFF373737;
@@ -30,15 +28,44 @@ public class GuiChestModified extends GuiContainer {
 
     @Override
     public void drawScreen(final int mouseX, final int mouseY, final float partialTicks) {
-        if (!(this.mc.player.openContainer instanceof ContainerChestModified)) {
+        if (!(this.inventorySlots instanceof ContainerChestModified)) {
             return;
+        }
+        final ContainerChestModified container = (ContainerChestModified) this.inventorySlots;
+        if (this.mc.player.openContainer != container) {
+            this.mc.player.openContainer = container;
         }
         this.oldMouseX = mouseX;
         this.oldMouseY = mouseY;
+        container.applySlotLayout();
         this.drawDefaultBackground();
         this.drawPlayerModelOutsidePanel();
         super.drawScreen(mouseX, mouseY, partialTicks);
+        container.applySlotLayout();
         this.renderHoveredToolTip(mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderHoveredToolTip(final int mouseX, final int mouseY) {
+        if (this.isPaddingSlotHovered(mouseX, mouseY)) {
+            return;
+        }
+        super.renderHoveredToolTip(mouseX, mouseY);
+    }
+
+    private boolean isPaddingSlotHovered(final int mouseX, final int mouseY) {
+        for (final Slot slot : this.inventorySlots.inventorySlots) {
+            if (slot == null || !this.isPointInRegion(slot.xPos, slot.yPos, 16, 16, mouseX, mouseY)) {
+                continue;
+            }
+            if (slot instanceof IPaddingSlot && ((IPaddingSlot) slot).isPaddingSlot()) {
+                return true;
+            }
+            if (ChestPlaceholderItems.isPlaceholder(slot.getStack())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 模型绘制在面板左缘外侧，避免遮挡箱子格 */
@@ -57,7 +84,6 @@ public class GuiChestModified extends GuiContainer {
         this.fontRenderer.drawString(this.getChestSectionTitle(), ChestGuiLayout.CHEST_X, 6, 0x404040);
         this.fontRenderer.drawString(I18n.format("container.inventory"), ChestGuiLayout.CHEST_X, ChestGuiLayout.PLAYER_Y - 12, 0x404040);
         this.fontRenderer.drawString(this.getBackpackSectionTitle(), ChestGuiLayout.BACKPACK_X, 6, 0x404040);
-        this.drawBarrierPlaceholders();
     }
 
     private String getChestSectionTitle() {
@@ -68,7 +94,7 @@ public class GuiChestModified extends GuiContainer {
         if (this.inventorySlots instanceof ContainerChestModified) {
             final ContainerChestModified container = (ContainerChestModified) this.inventorySlots;
             if (container.extra != null) {
-                final ItemStack backpack = container.extra.getStackInSlot(0);
+                final net.minecraft.item.ItemStack backpack = container.extra.getStackInSlot(0);
                 if (!backpack.isEmpty()) {
                     return backpack.getDisplayName();
                 }
@@ -103,36 +129,5 @@ public class GuiChestModified extends GuiContainer {
     private void drawSlotFrame(final int x, final int y) {
         this.drawRect(x, y, x + ChestGuiLayout.SLOT, y + ChestGuiLayout.SLOT, COLOR_SLOT_BORDER);
         this.drawRect(x + 1, y + 1, x + ChestGuiLayout.SLOT - 1, y + ChestGuiLayout.SLOT - 1, COLOR_SLOT_FILL);
-    }
-
-    private void drawBarrierPlaceholders() {
-        if (!(this.inventorySlots instanceof ContainerChestModified)) {
-            return;
-        }
-        final ContainerChestModified container = (ContainerChestModified) this.inventorySlots;
-
-        RenderHelper.enableGUIStandardItemLighting();
-        GlStateManager.enableRescaleNormal();
-
-        for (int index = container.chestSlotCount; index < ChestGuiLayout.CHEST_SLOTS; index++) {
-            final int col = index % ChestGuiLayout.CHEST_COLS;
-            final int row = index / ChestGuiLayout.CHEST_COLS;
-            this.drawBarrierAt(ChestGuiLayout.chestSlotX(col), ChestGuiLayout.chestSlotY(row));
-        }
-
-        final int backpackUsed = container.getBackpackContentSlotCount();
-        for (int index = backpackUsed; index < ChestGuiLayout.BACKPACK_DISPLAY_SLOTS; index++) {
-            final int col = index % ChestGuiLayout.BACKPACK_COLS;
-            final int row = index / ChestGuiLayout.BACKPACK_COLS;
-            this.drawBarrierAt(ChestGuiLayout.backpackSlotX(col), ChestGuiLayout.backpackSlotY(row));
-        }
-
-        GlStateManager.disableRescaleNormal();
-        RenderHelper.disableStandardItemLighting();
-    }
-
-    private void drawBarrierAt(final int relX, final int relY) {
-        this.itemRender.renderItemAndEffectIntoGUI(BARRIER_PLACEHOLDER, relX, relY);
-        this.itemRender.renderItemOverlayIntoGUI(this.fontRenderer, BARRIER_PLACEHOLDER, relX, relY, null);
     }
 }
