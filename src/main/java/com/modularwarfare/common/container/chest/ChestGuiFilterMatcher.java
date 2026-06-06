@@ -6,6 +6,8 @@ import net.minecraft.inventory.InventoryEnderChest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public final class ChestGuiFilterMatcher {
 
@@ -77,9 +79,32 @@ public final class ChestGuiFilterMatcher {
         if (END_CHEST.equalsIgnoreCase(rule)) {
             return isEnderChest(chestInventory);
         }
+        return matchesDisplayName(chestInventory, rule);
+    }
+
+    /**
+     * 界面展示名匹配：优先按 Java 正则（{@code find}）匹配，语法非法时回退为精确相等。
+     * 示例：{@code .*③.*}、{@code ^§f战利品$}、{@code 战利品}
+     */
+    private static boolean matchesDisplayName(final IInventory chestInventory, final String rule) {
         final String formatted = chestInventory.getDisplayName().getFormattedText();
         final String plain = chestInventory.getDisplayName().getUnformattedText();
-        return rule.equals(formatted) || rule.equals(plain);
+        final String inventoryName = chestInventory.getName();
+        try {
+            final Pattern pattern = Pattern.compile(rule);
+            return matchesAny(pattern, formatted, plain, inventoryName);
+        } catch (final PatternSyntaxException ignored) {
+            return rule.equals(formatted) || rule.equals(plain) || rule.equals(inventoryName);
+        }
+    }
+
+    private static boolean matchesAny(final Pattern pattern, final String... texts) {
+        for (final String text : texts) {
+            if (text != null && pattern.matcher(text).find()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isEnderChest(final IInventory inventory) {
