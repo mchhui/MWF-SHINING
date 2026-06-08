@@ -45,13 +45,21 @@ public final class ChestGuiLayout {
     /**
      * 玩家模型预览：相对 guiLeft 的 X（负值 = 面板左缘外侧），相对 guiTop 的 Y。
      */
-    public static final int MODEL_OUTSIDE_OFFSET_X = -54;
+    public static final int MODEL_OUTSIDE_OFFSET_X = -24;
     public static final int MODEL_OUTSIDE_OFFSET_Y = CHEST_Y + 48;
 
     public static final int GUI_WIDTH = EQUIP_X + SLOT + MARGIN + 18;
     public static final int GUI_HEIGHT = HOTBAR_Y + SLOT + MARGIN + 8;
 
     private ChestGuiLayout() {
+    }
+
+    public static int chestSlotBgX(final int col) {
+        return CHEST_X + col * SLOT;
+    }
+
+    public static int chestSlotBgY(final int row) {
+        return CHEST_Y + row * SLOT;
     }
 
     public static int chestSlotX(final int col) {
@@ -62,6 +70,14 @@ public final class ChestGuiLayout {
         return CHEST_Y + row * SLOT + SLOT_OFFSET_Y;
     }
 
+    public static int playerSlotBgX(final int col) {
+        return CHEST_X + col * SLOT;
+    }
+
+    public static int playerSlotBgY(final int row) {
+        return PLAYER_Y + row * SLOT;
+    }
+
     public static int playerSlotX(final int col) {
         return CHEST_X + col * SLOT + SLOT_OFFSET_X;
     }
@@ -70,8 +86,20 @@ public final class ChestGuiLayout {
         return PLAYER_Y + row * SLOT + SLOT_OFFSET_Y;
     }
 
+    public static int hotbarSlotBgY() {
+        return HOTBAR_Y;
+    }
+
     public static int hotbarSlotY() {
         return HOTBAR_Y + SLOT_OFFSET_Y;
+    }
+
+    public static int backpackSlotBgX(final int col) {
+        return BACKPACK_X + col * SLOT;
+    }
+
+    public static int backpackSlotBgY(final int row) {
+        return BACKPACK_Y + row * SLOT;
     }
 
     public static int backpackSlotX(final int col) {
@@ -80,6 +108,14 @@ public final class ChestGuiLayout {
 
     public static int backpackSlotY(final int row) {
         return BACKPACK_Y + row * SLOT + SLOT_OFFSET_Y;
+    }
+
+    public static int equipSlotBgX() {
+        return EQUIP_X;
+    }
+
+    public static int equipSlotBgY(final int index) {
+        return EQUIP_Y + index * SLOT;
     }
 
     public static int equipSlotX() {

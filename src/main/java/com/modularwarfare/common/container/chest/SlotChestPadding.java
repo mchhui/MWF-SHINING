@@ -3,8 +3,7 @@ package com.modularwarfare.common.container.chest;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+
 
 public class SlotChestPadding extends net.minecraft.inventory.Slot implements IPaddingSlot {
 
@@ -28,7 +27,7 @@ public class SlotChestPadding extends net.minecraft.inventory.Slot implements IP
 
     @Override
     public boolean isItemValid(final ItemStack stack) {
-        return !this.padding && !ChestPlaceholderItems.isPlaceholder(stack) && super.isItemValid(stack);
+        return !this.padding && super.isItemValid(stack);
     }
 
     @Override
@@ -37,17 +36,8 @@ public class SlotChestPadding extends net.minecraft.inventory.Slot implements IP
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public ItemStack getStack() {
-        if (this.padding) {
-            return ChestPlaceholderItems.getBarrierStack();
-        }
-        return super.getStack();
-    }
-
-    @Override
     public void putStack(final ItemStack stack) {
-        if (this.padding || ChestPlaceholderItems.isPlaceholder(stack)) {
+        if (this.padding) {
             return;
         }
         super.putStack(stack);
@@ -62,17 +52,8 @@ public class SlotChestPadding extends net.minecraft.inventory.Slot implements IP
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public boolean getHasStack() {
-        if (this.padding) {
-            return true;
-        }
-        return super.getHasStack();
-    }
-
-    @Override
     public ItemStack onTake(final EntityPlayer playerIn, final ItemStack stack) {
-        if (this.padding || ChestPlaceholderItems.isPlaceholder(stack)) {
+        if (this.padding) {
             return ItemStack.EMPTY;
         }
         return super.onTake(playerIn, stack);

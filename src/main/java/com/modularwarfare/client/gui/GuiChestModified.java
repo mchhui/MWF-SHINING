@@ -1,11 +1,11 @@
 package com.modularwarfare.client.gui;
 
-import com.modularwarfare.common.container.chest.ChestPlaceholderItems;
 import com.modularwarfare.common.container.ContainerChestModified;
 import com.modularwarfare.common.container.chest.IPaddingSlot;
 import com.modularwarfare.utility.ChestGuiLayout;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.inventory.Slot;
@@ -14,16 +14,19 @@ import net.minecraft.inventory.Slot;
 public class GuiChestModified extends GuiContainer {
 
     private static final int COLOR_PANEL = 0xC0101010;
-    private static final int COLOR_SLOT_BORDER = 0xFF373737;
-    private static final int COLOR_SLOT_FILL = 0xFF8B8B8B;
-
-    private float oldMouseX;
-    private float oldMouseY;
+    private static final int COLOR_PADDING_BORDER = 0xFF1E1E1E;
+    private static final int COLOR_PADDING_FILL = 0xC0483838;
 
     public GuiChestModified(final ContainerChestModified container) {
         super(container);
         this.xSize = ChestGuiLayout.GUI_WIDTH;
         this.ySize = ChestGuiLayout.GUI_HEIGHT;
+    }
+
+    @Override
+    public void initGui() {
+        super.initGui();
+        this.applyChestSlotLayout();
     }
 
     @Override
@@ -35,14 +38,34 @@ public class GuiChestModified extends GuiContainer {
         if (this.mc.player.openContainer != container) {
             this.mc.player.openContainer = container;
         }
-        this.oldMouseX = mouseX;
-        this.oldMouseY = mouseY;
-        container.applySlotLayout();
+        this.applyChestSlotLayout();
         this.drawDefaultBackground();
-        this.drawPlayerModelOutsidePanel();
         super.drawScreen(mouseX, mouseY, partialTicks);
-        container.applySlotLayout();
+        this.drawPlayerModelOnTop(mouseX, mouseY);
         this.renderHoveredToolTip(mouseX, mouseY);
+    }
+
+    private void drawPlayerModelOnTop(final int mouseX, final int mouseY) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableDepth();
+        final int modelX = this.guiLeft + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_X;
+        final int modelY = this.guiTop + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_Y;
+        GuiInventory.drawEntityOnScreen(
+                modelX,
+                modelY,
+                30,
+                (float) modelX - mouseX,
+                (float) modelY - 50.0F - mouseY,
+                (EntityLivingBase) this.mc.player);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableTexture2D();
+    }
+
+    private void applyChestSlotLayout() {
+        if (this.inventorySlots instanceof ContainerChestModified) {
+            ((ContainerChestModified) this.inventorySlots).applySlotLayout();
+        }
     }
 
     @Override
@@ -54,29 +77,17 @@ public class GuiChestModified extends GuiContainer {
     }
 
     private boolean isPaddingSlotHovered(final int mouseX, final int mouseY) {
-        for (final Slot slot : this.inventorySlots.inventorySlots) {
-            if (slot == null || !this.isPointInRegion(slot.xPos, slot.yPos, 16, 16, mouseX, mouseY)) {
-                continue;
-            }
-            if (slot instanceof IPaddingSlot && ((IPaddingSlot) slot).isPaddingSlot()) {
-                return true;
-            }
-            if (ChestPlaceholderItems.isPlaceholder(slot.getStack())) {
-                return true;
-            }
-        }
-        return false;
+        final Slot slot = this.getHoveredSlot(mouseX, mouseY);
+        return slot instanceof IPaddingSlot && ((IPaddingSlot) slot).isPaddingSlot();
     }
 
-    /** 模型绘制在面板左缘外侧，避免遮挡箱子格 */
-    private void drawPlayerModelOutsidePanel() {
-        GuiPlayerInventory.drawEntityOnScreen(
-                this.guiLeft + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_X,
-                this.guiTop + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_Y,
-                30,
-                this.guiLeft + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_X - this.oldMouseX,
-                this.guiTop + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_Y - 50 - this.oldMouseY,
-                (EntityLivingBase) this.mc.player);
+    private Slot getHoveredSlot(final int mouseX, final int mouseY) {
+        for (final Slot slot : this.inventorySlots.inventorySlots) {
+            if (slot != null && this.isPointInRegion(slot.xPos, slot.yPos, 16, 16, mouseX, mouseY)) {
+                return slot;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -105,29 +116,80 @@ public class GuiChestModified extends GuiContainer {
 
     @Override
     protected void drawGuiContainerBackgroundLayer(final float partialTicks, final int mouseX, final int mouseY) {
+        if (!(this.inventorySlots instanceof ContainerChestModified)) {
+            return;
+        }
+        final ContainerChestModified container = (ContainerChestModified) this.inventorySlots;
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         final int left = this.guiLeft;
         final int top = this.guiTop;
 
         this.drawRect(left, top, left + this.xSize, top + this.ySize, COLOR_PANEL);
 
-        this.drawSlotGrid(left, top, ChestGuiLayout.CHEST_X, ChestGuiLayout.CHEST_Y, ChestGuiLayout.CHEST_COLS, ChestGuiLayout.CHEST_ROWS);
-        this.drawSlotGrid(left, top, ChestGuiLayout.BACKPACK_X, ChestGuiLayout.BACKPACK_Y, ChestGuiLayout.BACKPACK_COLS, ChestGuiLayout.BACKPACK_ROWS);
-        this.drawSlotGrid(left, top, ChestGuiLayout.CHEST_X, ChestGuiLayout.PLAYER_Y, 9, 3);
-        this.drawSlotGrid(left, top, ChestGuiLayout.CHEST_X, ChestGuiLayout.HOTBAR_Y, 9, 1);
-        this.drawSlotGrid(left, top, ChestGuiLayout.EQUIP_X, ChestGuiLayout.EQUIP_Y, 1, 7);
+        this.drawChestAreaSlots(left, top, container);
+        this.drawBackpackAreaSlots(left, top, container);
+        this.drawPlayerAreaSlots(left, top);
+
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableTexture2D();
     }
 
-    private void drawSlotGrid(final int guiLeft, final int guiTop, final int originX, final int originY, final int cols, final int rows) {
-        for (int row = 0; row < rows; row++) {
-            for (int col = 0; col < cols; col++) {
-                this.drawSlotFrame(guiLeft + originX + col * ChestGuiLayout.SLOT, guiTop + originY + row * ChestGuiLayout.SLOT);
+    private void drawChestAreaSlots(final int guiLeft, final int guiTop, final ContainerChestModified container) {
+        for (int index = 0; index < ChestGuiLayout.CHEST_SLOTS; index++) {
+            final int col = index % ChestGuiLayout.CHEST_COLS;
+            final int row = index / ChestGuiLayout.CHEST_COLS;
+            final int x = guiLeft + ChestGuiLayout.chestSlotBgX(col);
+            final int y = guiTop + ChestGuiLayout.chestSlotBgY(row);
+            if (index >= container.chestSlotCount) {
+                this.drawDisabledSlotFrame(x, y);
+            } else {
+                this.drawSlotTexture(x, y);
             }
         }
     }
 
-    private void drawSlotFrame(final int x, final int y) {
-        this.drawRect(x, y, x + ChestGuiLayout.SLOT, y + ChestGuiLayout.SLOT, COLOR_SLOT_BORDER);
-        this.drawRect(x + 1, y + 1, x + ChestGuiLayout.SLOT - 1, y + ChestGuiLayout.SLOT - 1, COLOR_SLOT_FILL);
+    private void drawBackpackAreaSlots(final int guiLeft, final int guiTop, final ContainerChestModified container) {
+        final int usedSlots = Math.min(container.getBackpackContentSlotCount(), ChestGuiLayout.BACKPACK_DISPLAY_SLOTS);
+        for (int index = 0; index < ChestGuiLayout.BACKPACK_DISPLAY_SLOTS; index++) {
+            final int col = index % ChestGuiLayout.BACKPACK_COLS;
+            final int row = index / ChestGuiLayout.BACKPACK_COLS;
+            final int x = guiLeft + ChestGuiLayout.backpackSlotBgX(col);
+            final int y = guiTop + ChestGuiLayout.backpackSlotBgY(row);
+            if (index >= usedSlots) {
+                this.drawDisabledSlotFrame(x, y);
+            } else {
+                this.drawSlotTexture(x, y);
+            }
+        }
+    }
+
+    private void drawPlayerAreaSlots(final int guiLeft, final int guiTop) {
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                this.drawSlotTexture(
+                        guiLeft + ChestGuiLayout.playerSlotBgX(col),
+                        guiTop + ChestGuiLayout.playerSlotBgY(row));
+            }
+        }
+        for (int col = 0; col < 9; col++) {
+            this.drawSlotTexture(
+                    guiLeft + ChestGuiLayout.playerSlotBgX(col),
+                    guiTop + ChestGuiLayout.hotbarSlotBgY());
+        }
+        for (int i = 0; i < 7; i++) {
+            this.drawSlotTexture(
+                    guiLeft + ChestGuiLayout.equipSlotBgX(),
+                    guiTop + ChestGuiLayout.equipSlotBgY(i));
+        }
+    }
+
+    private void drawSlotTexture(final int x, final int y) {
+        this.mc.getTextureManager().bindTexture(GuiInventoryModified.ICONS);
+        this.drawTexturedModalRect(x, y, 0, 0, ChestGuiLayout.SLOT, ChestGuiLayout.SLOT);
+    }
+
+    private void drawDisabledSlotFrame(final int x, final int y) {
+        this.drawRect(x, y, x + ChestGuiLayout.SLOT, y + ChestGuiLayout.SLOT, COLOR_PADDING_BORDER);
+        this.drawRect(x + 1, y + 1, x + ChestGuiLayout.SLOT - 1, y + ChestGuiLayout.SLOT - 1, COLOR_PADDING_FILL);
     }
 }

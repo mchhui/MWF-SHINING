@@ -35,6 +35,12 @@ public class ModUtil {
     public static final int BACKPACK_CONTENT_OFFSET_X = 180;
     public static final int BACKPACK_CONTENT_OFFSET_Y = 18;
 
+    public static final int BACKPACK_CONTENT_COLS = 6;
+    public static final int BACKPACK_CONTENT_PANEL_WIDTH = BACKPACK_CONTENT_COLS * INVENTORY_SLOT_SIZE_PIXELS + 10;
+
+    public static final int PLAYER_MODEL_PREVIEW_X = 51;
+    public static final int PLAYER_MODEL_PREVIEW_Y = 75;
+
     public static final String SLOT_TEXTURE_BACKPACK = ModularWarfare.MOD_ID + ":gui/slot_backpack";
     public static final String SLOT_TEXTURE_VEST = ModularWarfare.MOD_ID + ":gui/slot_vest";
 

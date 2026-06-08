@@ -3,8 +3,6 @@ package com.modularwarfare.common.container.chest;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class SlotBackpackDisplayPadding extends net.minecraft.inventory.Slot implements IPaddingSlot {
 
@@ -33,24 +31,12 @@ public class SlotBackpackDisplayPadding extends net.minecraft.inventory.Slot imp
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public ItemStack getStack() {
-        return ChestPlaceholderItems.getBarrierStack();
-    }
-
-    @Override
     public void putStack(final ItemStack stack) {
     }
 
     @Override
     public ItemStack decrStackSize(final int amount) {
         return ItemStack.EMPTY;
-    }
-
-    @Override
-    @SideOnly(Side.CLIENT)
-    public boolean getHasStack() {
-        return true;
     }
 
     @Override

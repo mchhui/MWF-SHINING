@@ -137,15 +137,15 @@ public class ContainerInventoryModified extends Container {
         if (this.extra.getStackInSlot(0).hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
             final IItemHandler backpackInvent = this.extra.getStackInSlot(0).getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
 
-            int xP = 0;
-            int yP = 0;
             final int x = 1 + ModUtil.BACKPACK_CONTENT_OFFSET_X;
             final int y = 1 + ModUtil.BACKPACK_CONTENT_OFFSET_Y;
 
             for (int i = 0; i < backpackInvent.getSlots(); i++) {
+                final int col = i % ModUtil.BACKPACK_CONTENT_COLS;
+                final int row = i / ModUtil.BACKPACK_CONTENT_COLS;
                 this.addSlotToContainer(
-                        new SlotItemHandler(backpackInvent, i, x + (xP * ModUtil.INVENTORY_SLOT_SIZE_PIXELS),
-                                -1 + y + (yP * ModUtil.INVENTORY_SLOT_SIZE_PIXELS)) {
+                        new SlotItemHandler(backpackInvent, i, x + (col * ModUtil.INVENTORY_SLOT_SIZE_PIXELS),
+                                -1 + y + (row * ModUtil.INVENTORY_SLOT_SIZE_PIXELS)) {
                             // Don't allow nesting backpacks if they are bigger (or have the same size) as the current extraslots
                             @Override
                             public boolean isItemValid(@Nonnull final ItemStack stack) {
@@ -185,12 +185,6 @@ public class ContainerInventoryModified extends Container {
                                 return numGuns;
                             }
                         });
-                xP++;
-
-                if ((xP % 4) == 0) {
-                    xP = 0;
-                    yP++;
-                }
             }
         }
     }
