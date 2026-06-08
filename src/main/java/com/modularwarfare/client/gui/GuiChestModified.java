@@ -13,7 +13,7 @@ import net.minecraft.inventory.Slot;
 
 public class GuiChestModified extends GuiContainer {
 
-    private static final int COLOR_PANEL = 0xC0101010;
+    private static final int COLOR_PANEL = 0xFF101010;
     private static final int COLOR_PADDING_BORDER = 0xFF1E1E1E;
     private static final int COLOR_PADDING_FILL = 0xC0483838;
 
@@ -46,8 +46,7 @@ public class GuiChestModified extends GuiContainer {
     }
 
     private void drawPlayerModelOnTop(final int mouseX, final int mouseY) {
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableTexture2D();
+        this.prepareTextureDraw();
         GlStateManager.enableDepth();
         final int modelX = this.guiLeft + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_X;
         final int modelY = this.guiTop + ChestGuiLayout.MODEL_OUTSIDE_OFFSET_Y;
@@ -58,8 +57,7 @@ public class GuiChestModified extends GuiContainer {
                 (float) modelX - mouseX,
                 (float) modelY - 50.0F - mouseY,
                 (EntityLivingBase) this.mc.player);
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableTexture2D();
+        this.prepareTextureDraw();
     }
 
     private void applyChestSlotLayout() {
@@ -120,18 +118,17 @@ public class GuiChestModified extends GuiContainer {
             return;
         }
         final ContainerChestModified container = (ContainerChestModified) this.inventorySlots;
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         final int left = this.guiLeft;
         final int top = this.guiTop;
 
+        this.prepareTextureDraw();
         this.drawRect(left, top, left + this.xSize, top + this.ySize, COLOR_PANEL);
 
         this.drawChestAreaSlots(left, top, container);
         this.drawBackpackAreaSlots(left, top, container);
         this.drawPlayerAreaSlots(left, top);
 
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        GlStateManager.enableTexture2D();
+        this.prepareTextureDraw();
     }
 
     private void drawChestAreaSlots(final int guiLeft, final int guiTop, final ContainerChestModified container) {
@@ -184,6 +181,7 @@ public class GuiChestModified extends GuiContainer {
     }
 
     private void drawSlotTexture(final int x, final int y) {
+        this.prepareTextureDraw();
         this.mc.getTextureManager().bindTexture(GuiInventoryModified.ICONS);
         this.drawTexturedModalRect(x, y, 0, 0, ChestGuiLayout.SLOT, ChestGuiLayout.SLOT);
     }
@@ -191,5 +189,17 @@ public class GuiChestModified extends GuiContainer {
     private void drawDisabledSlotFrame(final int x, final int y) {
         this.drawRect(x, y, x + ChestGuiLayout.SLOT, y + ChestGuiLayout.SLOT, COLOR_PADDING_BORDER);
         this.drawRect(x + 1, y + 1, x + ChestGuiLayout.SLOT - 1, y + ChestGuiLayout.SLOT - 1, COLOR_PADDING_FILL);
+    }
+
+    private void prepareTextureDraw() {
+        GlStateManager.disableLighting();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                GlStateManager.SourceFactor.ONE,
+                GlStateManager.DestFactor.ZERO);
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        GlStateManager.enableTexture2D();
     }
 }
