@@ -377,6 +377,21 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 	}
 
 	@Override
+	public double getPosX() {
+		return this.posX;
+	}
+
+	@Override
+	public double getPosY() {
+		return this.posY;
+	}
+
+	@Override
+	public double getPosZ() {
+		return this.posZ;
+	}
+
+	@Override
 	public boolean shouldRemove() {
 		return !this.isAlive();
 	}

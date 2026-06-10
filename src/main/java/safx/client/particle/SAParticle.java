@@ -1,6 +1,7 @@
 package safx.client.particle;
 
 import java.awt.Color;
+import java.nio.FloatBuffer;
 import java.util.List;
 import org.lwjgl.opengl.GL11;
 import net.minecraft.client.Minecraft;
@@ -30,6 +31,8 @@ import safx.client.render.SARenderHelper;
 import safx.client.render.SARenderHelper.RenderType;
 //import safx.client.render.item.RenderItemBase;
 import safx.debug.Keybinds;
+import safx.SAConfig;
+import safx.util.LightCache;
 import safx.util.MathUtil;
 import net.minecraftforge.fml.common.Loader;
 import safx.client.ClientProxy;
@@ -83,6 +86,9 @@ public class SAParticle extends Particle implements ISAParticle {
 	protected int blockHitCooldownTicks = 0;
 	protected int remainingBlockHitChainBudget = 0;
 	protected static final double SURFACE_RENDER_OFFSET = 0.01D;
+
+	private final double[] quadLocal = new double[12];
+	private final double[] axisScratch = new double[3];
 	
 	//int angle;
 
@@ -338,7 +344,6 @@ public class SAParticle extends Particle implements ISAParticle {
         	fPosY += (float)(this.surfaceNormal.y * SURFACE_RENDER_OFFSET);
         	fPosZ += (float)(this.surfaceNormal.z * SURFACE_RENDER_OFFSET);
         }
-        float r = fscale;
 		int col = currentFrame % type.columns;
 		int row = (currentFrame / type.columns);
 		float u = 1.f/type.columns;
@@ -353,7 +358,6 @@ public class SAParticle extends Particle implements ISAParticle {
 //        buffer.begin(7, VERTEX_FORMAT);
         double a = (angle + (partialTickTime * angleRate)) * MathUtil.D2R;
 		
-        // Fix for non-square aspect ratio frames
         float aspect = (float)type.rows / (float)type.columns;
         float fscaleX = fscale;
         float fscaleY = fscale;
@@ -363,52 +367,186 @@ public class SAParticle extends Particle implements ISAParticle {
             fscaleX = fscale * aspect;
         }
         
-		Vec3d p1, p2, p3, p4;
 		if (this.type.surfaceAligned && this.surfaceNormal != null && shouldUseSurfaceWallAlign(this.surfaceNormal, this.type.surfaceAlignMode)) {
-			Vec3d[] wallQuad = buildWallAlignedQuad(this.surfaceNormal, fscaleX, fscaleY, a);
-			p1 = wallQuad[0];
-			p2 = wallQuad[1];
-			p3 = wallQuad[2];
-			p4 = wallQuad[3];
-		}else if (this.type.groundAligned || (this.type.surfaceAligned && this.surfaceNormal != null)) {
+			this.buildWallAlignedQuadIntoScratch(this.surfaceNormal, fscaleX, fscaleY, a);
+		} else if (this.type.groundAligned || (this.type.surfaceAligned && this.surfaceNormal != null)) {
 			float sx = fscaleX;
-			float sz = fscaleY; // Usually Y/V axis maps to Z on ground
-			p1 = new Vec3d(-sx,0,-sz);
-			p2 = new Vec3d(sx,0,-sz);
-			p3 = new Vec3d(sx,0,sz);
-			p4 = new Vec3d(-sx,0,sz);
+			float sz = fscaleY;
+			this.putQuadVertex(0, -sx, 0, -sz);
+			this.putQuadVertex(1, sx, 0, -sz);
+			this.putQuadVertex(2, sx, 0, sz);
+			this.putQuadVertex(3, -sx, 0, sz);
 			if (a > 0.0001f) {
-				p1 = p1.rotateYaw((float) a);
-				p2 = p2.rotateYaw((float) a);
-				p3 = p3.rotateYaw((float) a);
-				p4 = p4.rotateYaw((float) a);
+				double sinA = Math.sin(a);
+				double cosA = Math.cos(a);
+				for (int vi = 0; vi < 4; vi++) {
+					this.rotateQuadVertexY(vi, sinA, cosA);
+				}
 			}
-		}else {
-	        p1 = new Vec3d((double)(- rotX * fscaleX - rotXY * fscaleY), (double)(- rotZ * fscaleY), (double)(- rotYZ * fscaleX - rotXZ * fscaleY));
-	        p2 = new Vec3d((double)(- rotX * fscaleX + rotXY * fscaleY), (double)( + rotZ * fscaleY), (double)( - rotYZ * fscaleX + rotXZ * fscaleY));
-	        p3 = new Vec3d((double)( rotX * fscaleX + rotXY * fscaleY), (double)( + rotZ * fscaleY), (double)( + rotYZ * fscaleX + rotXZ * fscaleY));
-	        p4 = new Vec3d((double)( rotX * fscaleX - rotXY * fscaleY), (double)( - rotZ * fscaleY), (double)( + rotYZ * fscaleX - rotXZ * fscaleY));        
-	        if (a > 0.0001f) {
-		        Vec3d axis = p1.normalize().crossProduct(p2.normalize());
+		} else {
+	        this.putQuadVertex(0, -rotX * fscaleX - rotXY * fscaleY, -rotZ * fscaleY, -rotYZ * fscaleX - rotXZ * fscaleY);
+	        this.putQuadVertex(1, -rotX * fscaleX + rotXY * fscaleY, rotZ * fscaleY, -rotYZ * fscaleX + rotXZ * fscaleY);
+	        this.putQuadVertex(2, rotX * fscaleX + rotXY * fscaleY, rotZ * fscaleY, rotYZ * fscaleX + rotXZ * fscaleY);
+	        this.putQuadVertex(3, rotX * fscaleX - rotXY * fscaleY, -rotZ * fscaleY, rotYZ * fscaleX - rotXZ * fscaleY);
+	        if (a > 0.0001d) {
+	        	this.computeBillboardRotationAxis();
 				double cosa = Math.cos(a);
 				double sina = Math.sin(a);
-		        
-		        p1 = rotAxis(p1, axis, sina, cosa);
-		        p2 = rotAxis(p2, axis, sina, cosa);
-		        p3 = rotAxis(p3, axis, sina, cosa);
-		        p4 = rotAxis(p4, axis, sina, cosa);     
-	        }	        		
+				double ax = axisScratch[0];
+				double ay = axisScratch[1];
+				double az = axisScratch[2];
+		        for (int vi = 0; vi < 4; vi++) {
+		        	this.applyRotAxisToVertex(vi, ax, ay, az, sina, cosa);
+		        }
+	        }
 		}
 		int packedLight = this.getBrightnessForRender(partialTickTime);
 		int lmU = packedLight >> 16 & 65535;
 		int lmV = packedLight & 65535;
-		buffer.pos(p1.x + fPosX, p1.y + fPosY, p1.z + fPosZ).tex((double)ua, (double)va).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
-		buffer.pos(p2.x + fPosX, p2.y + fPosY, p2.z + fPosZ).tex((double)ub, (double)vb).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
-		buffer.pos(p3.x + fPosX, p3.y + fPosY, p3.z + fPosZ).tex((double)uc, (double)vc).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
-		buffer.pos(p4.x + fPosX, p4.y + fPosY, p4.z + fPosZ).tex((double)ud, (double)vd).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha).lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
-//        Tessellator.getInstance().draw();
-//        disableBlendMode();
+		this.writeQuad(buffer, fPosX, fPosY, fPosZ, ua, va, ub, vb, uc, vc, ud, vd, lmU, lmV);
     }
+
+	public boolean canUseInstancedRender() {
+		if (this.type == null || this.itemAttached || this.type.streak) {
+			return false;
+		}
+		return true;
+	}
+
+	public boolean packInstanced(FloatBuffer buffer, float partialTickTime) {
+		if (!this.canUseInstancedRender()) {
+			return false;
+		}
+		float progress = ((float) this.particleAge + partialTickTime) / (float) this.particleMaxAge;
+		this.preRenderStep(progress);
+		int currentFrame;
+		if (this.type.hasVariations) {
+			currentFrame = this.variationFrame;
+		} else {
+			currentFrame = ((int) ((float) this.type.frames * (progress * this.animationSpeed))) % this.type.frames;
+		}
+		float scale = this.sizePrev + (this.size - this.sizePrev) * partialTickTime;
+		float fscale = 0.1F * scale;
+		float fPosX = (float) (this.prevPosX + (this.posX - this.prevPosX) * (double) partialTickTime - SAParticleManager.interpPosX);
+		float fPosY = (float) (this.prevPosY + (this.posY - this.prevPosY) * (double) partialTickTime - SAParticleManager.interpPosY);
+		float fPosZ = (float) (this.prevPosZ + (this.posZ - this.prevPosZ) * (double) partialTickTime - SAParticleManager.interpPosZ);
+		float renderMode = 0.0f;
+		float nx = 0.0f;
+		float ny = 0.0f;
+		float nz = 0.0f;
+		if (this.type.surfaceAligned && this.surfaceNormal != null) {
+			fPosX += (float) (this.surfaceNormal.x * SURFACE_RENDER_OFFSET);
+			fPosY += (float) (this.surfaceNormal.y * SURFACE_RENDER_OFFSET);
+			fPosZ += (float) (this.surfaceNormal.z * SURFACE_RENDER_OFFSET);
+			if (this.shouldUseSurfaceWallAlign(this.surfaceNormal, this.type.surfaceAlignMode)) {
+				renderMode = 2.0f;
+				nx = (float) this.surfaceNormal.x;
+				ny = (float) this.surfaceNormal.y;
+				nz = (float) this.surfaceNormal.z;
+			} else {
+				renderMode = 1.0f;
+			}
+		} else if (this.type.groundAligned) {
+			renderMode = 1.0f;
+		}
+		float aspect = (float) this.type.rows / (float) this.type.columns;
+		float fscaleX = fscale;
+		float fscaleY = fscale;
+		if (aspect > 1.0f) {
+			fscaleY = fscale / aspect;
+		} else {
+			fscaleX = fscale * aspect;
+		}
+		int col = currentFrame % this.type.columns;
+		int row = currentFrame / this.type.columns;
+		float cellU = 1.0f / this.type.columns;
+		float cellV = 1.0f / this.type.rows;
+		float u0 = col * cellU;
+		float u1 = (col + 1) * cellU;
+		float v0 = row * cellV;
+		float v1 = (row + 1) * cellV;
+		int packedLight = this.getBrightnessForRender(partialTickTime);
+		float lmU = packedLight >> 16 & 65535;
+		float lmV = packedLight & 65535;
+		float angleRad = (float) ((this.angle + partialTickTime * this.angleRate) * MathUtil.D2R);
+		buffer.put(fPosX).put(fPosY).put(fPosZ).put(renderMode);
+		buffer.put(fscaleX).put(fscaleY).put(u0).put(u1);
+		buffer.put(v0).put(v1).put(this.particleRed).put(this.particleGreen);
+		buffer.put(this.particleBlue).put(this.particleAlpha).put(lmU).put(lmV);
+		buffer.put(nx).put(ny).put(nz).put(angleRad);
+		return true;
+	}
+
+	private void putQuadVertex(int vertex, double x, double y, double z) {
+		int i = vertex * 3;
+		this.quadLocal[i] = x;
+		this.quadLocal[i + 1] = y;
+		this.quadLocal[i + 2] = z;
+	}
+
+	private void rotateQuadVertexY(int vertex, double sinA, double cosA) {
+		int i = vertex * 3;
+		double x = this.quadLocal[i];
+		double z = this.quadLocal[i + 2];
+		this.quadLocal[i] = x * cosA - z * sinA;
+		this.quadLocal[i + 2] = x * sinA + z * cosA;
+	}
+
+	private void computeBillboardRotationAxis() {
+		double x0 = this.quadLocal[0];
+		double y0 = this.quadLocal[1];
+		double z0 = this.quadLocal[2];
+		double x1 = this.quadLocal[3];
+		double y1 = this.quadLocal[4];
+		double z1 = this.quadLocal[5];
+		double len0 = Math.sqrt(x0 * x0 + y0 * y0 + z0 * z0);
+		double len1 = Math.sqrt(x1 * x1 + y1 * y1 + z1 * z1);
+		if (len0 > 1.0E-6D) {
+			x0 /= len0;
+			y0 /= len0;
+			z0 /= len0;
+		}
+		if (len1 > 1.0E-6D) {
+			x1 /= len1;
+			y1 /= len1;
+			z1 /= len1;
+		}
+		this.axisScratch[0] = y0 * z1 - z0 * y1;
+		this.axisScratch[1] = z0 * x1 - x0 * z1;
+		this.axisScratch[2] = x0 * y1 - y0 * x1;
+	}
+
+	private void applyRotAxisToVertex(int vertex, double ax, double ay, double az, double sina, double cosa) {
+		int i = vertex * 3;
+		double px = this.quadLocal[i];
+		double py = this.quadLocal[i + 1];
+		double pz = this.quadLocal[i + 2];
+		double v1x = ay * pz - az * py;
+		double v1y = az * px - ax * pz;
+		double v1z = ax * py - ay * px;
+		double d1 = ax * px + ay * py + az * pz;
+		double oneMinusCosa = 1.0D - cosa;
+		this.quadLocal[i] = px * cosa + v1x * sina + ax * d1 * oneMinusCosa;
+		this.quadLocal[i + 1] = py * cosa + v1y * sina + ay * d1 * oneMinusCosa;
+		this.quadLocal[i + 2] = pz * cosa + v1z * sina + az * d1 * oneMinusCosa;
+	}
+
+	private void writeQuad(BufferBuilder buffer, float fPosX, float fPosY, float fPosZ,
+			float ua, float va, float ub, float vb, float uc, float vc, float ud, float vd,
+			int lmU, int lmV) {
+		buffer.pos(this.quadLocal[0] + fPosX, this.quadLocal[1] + fPosY, this.quadLocal[2] + fPosZ)
+				.tex(ua, va).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha)
+				.lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
+		buffer.pos(this.quadLocal[3] + fPosX, this.quadLocal[4] + fPosY, this.quadLocal[5] + fPosZ)
+				.tex(ub, vb).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha)
+				.lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
+		buffer.pos(this.quadLocal[6] + fPosX, this.quadLocal[7] + fPosY, this.quadLocal[8] + fPosZ)
+				.tex(uc, vc).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha)
+				.lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
+		buffer.pos(this.quadLocal[9] + fPosX, this.quadLocal[10] + fPosY, this.quadLocal[11] + fPosZ)
+				.tex(ud, vd).color(this.particleRed, this.particleGreen, this.particleBlue, this.particleAlpha)
+				.lightmap(lmU, lmV).normal(0.0f, 1.0f, 0.0f).endVertex();
+	}
     
     /**
      * interpolate colors and alpha values
@@ -498,6 +636,12 @@ public class SAParticle extends Particle implements ISAParticle {
     @Override
     public int getBrightnessForRender(float partialTicks) {
     	if (this.type != null && this.type.renderType == RenderType.ALPHA_SHADED) {
+    		if (SAConfig.cl_enableLightCache) {
+    			double x = this.prevPosX + (this.posX - this.prevPosX) * (double) partialTicks;
+    			double y = this.prevPosY + (this.posY - this.prevPosY) * (double) partialTicks;
+    			double z = this.prevPosZ + (this.posZ - this.prevPosZ) * (double) partialTicks;
+    			return LightCache.getPackedLight(this.world, x, y, z);
+    		}
     		return super.getBrightnessForRender(partialTicks);
     	}
     	// ALPHA / SOLID / NO_Z_TEST：顶点满亮无环境压暗；ADDITIVE / NO_Z_TEST_ADDITIVE 同顶点满亮 + 全局高亮（见 SARenderHelper）
@@ -584,9 +728,84 @@ public class SAParticle extends Particle implements ISAParticle {
 		//  return p1.scale(cosa).add(axis.crossProduct(p1).scale(Math.sin(a))).add(axis.scale(axis.dotProduct(p1)*(1.0 - Math.cos(a))));			
 	}
 
+	private void buildWallAlignedQuadIntoScratch(Vec3d normal, float sx, float sy, double angleRad) {
+		double nx = normal.x;
+		double ny = normal.y;
+		double nz = normal.z;
+		double nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+		if (nLen > 1.0E-6D) {
+			nx /= nLen;
+			ny /= nLen;
+			nz /= nLen;
+		}
+		double hx, hy, hz;
+		if (Math.abs(ny) > 0.9D) {
+			hx = 1.0D;
+			hy = 0.0D;
+			hz = 0.0D;
+		} else {
+			hx = 0.0D;
+			hy = 1.0D;
+			hz = 0.0D;
+		}
+		double tx = hy * nz - hz * ny;
+		double ty = hz * nx - hx * nz;
+		double tz = hx * ny - hy * nx;
+		double tLen = Math.sqrt(tx * tx + ty * ty + tz * tz);
+		if (tLen > 1.0E-6D) {
+			tx /= tLen;
+			ty /= tLen;
+			tz /= tLen;
+		}
+		double bx = ny * tz - nz * ty;
+		double by = nz * tx - nx * tz;
+		double bz = nx * ty - ny * tx;
+		double bLen = Math.sqrt(bx * bx + by * by + bz * bz);
+		if (bLen > 1.0E-6D) {
+			bx /= bLen;
+			by /= bLen;
+			bz /= bLen;
+		}
+		if (angleRad > 0.0001d) {
+			double cos = Math.cos(angleRad);
+			double sin = Math.sin(angleRad);
+			double t2x = tx * cos + bx * sin;
+			double t2y = ty * cos + by * sin;
+			double t2z = tz * cos + bz * sin;
+			double b2x = bx * cos - tx * sin;
+			double b2y = by * cos - ty * sin;
+			double b2z = bz * cos - tz * sin;
+			tx = t2x;
+			ty = t2y;
+			tz = t2z;
+			bx = b2x;
+			by = b2y;
+			bz = b2z;
+		}
+		this.putQuadVertex(0, tx * -sx + bx * -sy, ty * -sx + by * -sy, tz * -sx + bz * -sy);
+		this.putQuadVertex(1, tx * sx + bx * -sy, ty * sx + by * -sy, tz * sx + bz * -sy);
+		this.putQuadVertex(2, tx * sx + bx * sy, ty * sx + by * sy, tz * sx + bz * sy);
+		this.putQuadVertex(3, tx * -sx + bx * sy, ty * -sx + by * sy, tz * -sx + bz * sy);
+	}
+
 	@Override
 	public Vec3d getPos() {
 		return new Vec3d(this.posX, this.posY, this.posZ);
+	}
+
+	@Override
+	public double getPosX() {
+		return this.posX;
+	}
+
+	@Override
+	public double getPosY() {
+		return this.posY;
+	}
+
+	@Override
+	public double getPosZ() {
+		return this.posZ;
 	}
 
 	@Override
@@ -741,26 +960,6 @@ public class SAParticle extends Particle implements ISAParticle {
 		default:
 			return Math.abs(normal.y) < 0.5;
 		}
-	}
-	
-	protected Vec3d[] buildWallAlignedQuad(Vec3d normal, float sx, float sy, double angleRad) {
-		Vec3d n = normal.normalize();
-		Vec3d helper = Math.abs(n.y) > 0.9 ? new Vec3d(1, 0, 0) : new Vec3d(0, 1, 0);
-		Vec3d tangent = helper.crossProduct(n).normalize();
-		Vec3d bitangent = n.crossProduct(tangent).normalize();
-		if (angleRad > 0.0001d) {
-			double cos = Math.cos(angleRad);
-			double sin = Math.sin(angleRad);
-			Vec3d t2 = tangent.scale(cos).add(bitangent.scale(sin));
-			Vec3d b2 = bitangent.scale(cos).subtract(tangent.scale(sin));
-			tangent = t2;
-			bitangent = b2;
-		}
-		Vec3d p1 = tangent.scale(-sx).add(bitangent.scale(-sy));
-		Vec3d p2 = tangent.scale(sx).add(bitangent.scale(-sy));
-		Vec3d p3 = tangent.scale(sx).add(bitangent.scale(sy));
-		Vec3d p4 = tangent.scale(-sx).add(bitangent.scale(sy));
-		return new Vec3d[] { p1, p2, p3, p4 };
 	}
 	
 }

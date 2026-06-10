@@ -15,6 +15,8 @@ public class SAConfig {
 	public static boolean cl_enableDeathFX;
 	public static boolean cl_enableDeathFX_Gore;
 	public static int cl_sortPassesPerTick;
+	public static boolean cl_enableLightCache;
+	public static boolean cl_enableInstancedParticles;
 	/**
 	 * CATEGORIES
 	 */
@@ -42,7 +44,9 @@ public class SAConfig {
 		
 		cl_enableDeathFX = config.getBoolean("EnableDeathEffects", CLIENTSIDE, true, "Enable Death Effects, pure clientside check.");
 		cl_enableDeathFX_Gore = config.getBoolean("EnableGoreDeathEffect", CLIENTSIDE, true, "Enable the gore Death Effect, requires DeathEffects to be enabled, pure clientside check.");
-		cl_sortPassesPerTick = config.getInt("ParticleDepthSortPasses", CLIENTSIDE, 10, 0, 20, "How many bubble sort passes should be performed each tick on particles. 0=off. Clientside");
+		cl_sortPassesPerTick = config.getInt("ParticleDepthSortPasses", CLIENTSIDE, 0, 0, 20, "Deprecated: depth sorting is now done per texture bucket at render time. Leave at 0.");
+		cl_enableLightCache = config.getBoolean("EnableParticleLightCache", CLIENTSIDE, true, "Cache block light lookups for ALPHA_SHADED particles (same block shares one query per frame). Clientside.");
+		cl_enableInstancedParticles = config.getBoolean("EnableInstancedParticleRendering", CLIENTSIDE, true, "Use GPU instanced draw for camera-facing particles (requires GL_ARB_draw_instanced). Clientside.");
 		
 		if(config.hasChanged()) {
 			config.save();

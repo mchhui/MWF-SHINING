@@ -8,6 +8,12 @@ import net.minecraft.util.math.Vec3d;
 public interface ISAParticle {
 
 	public Vec3d getPos();
+
+	double getPosX();
+
+	double getPosY();
+
+	double getPosZ();
 	
 	public boolean shouldRemove();
 	public void updateTick();

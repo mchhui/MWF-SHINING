@@ -82,6 +82,7 @@ import safx.SAPackets;
 import safx.SagerFX;
 
 import safx.client.ClientProxy;
+import safx.util.LightCache;
 
 import safx.client.render.GLStateSnapshot;
 import safx.client.render.entities.projectiles.DeathEffectEntityRenderer;
@@ -143,6 +144,7 @@ public class SAEventHandler {
 //		GLStateSnapshot states = new GLStateSnapshot();
 		//System.out.println("***********BEFORE**********");
 		//states.printDebug();
+		LightCache.beginFrame();
 		ClientProxy.get().particleManager.renderParticles(Minecraft.getMinecraft().getRenderViewEntity(), event.getPartialTicks());
 //		states.restore();
 		//System.out.println("<<<<<<<<<<<AFTER>>>>>>>>>>>>");
