@@ -15,7 +15,7 @@ import safx.util.SALogger;
 @SideOnly(Side.CLIENT)
 public final class SAInstancedParticleShader {
 
-	private static final int SHADER_REVISION = 2;
+	private static final int SHADER_REVISION = 3;
 
 	public static final int INSTANCE_FLOATS = 20;
 	public static final int INSTANCE_BYTES = INSTANCE_FLOATS * 4;
@@ -75,7 +75,7 @@ public final class SAInstancedParticleShader {
 			"    offset.z = sa_RotYZ * scaleX * sx + sa_RotXZ * scaleY * sy;\n" +
 			"    if (abs(angle) > 0.001) {\n" +
 			"      vec3 right = normalize(vec3(sa_RotX, 0.0, sa_RotYZ));\n" +
-			"      vec3 up = vec3(-sa_RotXY, sa_RotZ, -sa_RotXZ);\n" +
+			"      vec3 up = vec3(sa_RotXY, sa_RotZ, sa_RotXZ);\n" +
 			"      float ox = dot(offset, right);\n" +
 			"      float oy = dot(offset, up);\n" +
 			"      float ca = cos(angle);\n" +
