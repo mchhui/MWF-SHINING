@@ -44,7 +44,7 @@ public class EntityCustomFire extends Entity {
         
         // 创建火焰特效
         if (!this.world.isRemote && this.isAddedToWorld()) {
-            SAPackets.network.sendToAll(new PacketSpawnParticleOnEntity("ExplosionFire", this, 0, 0, 0, true));
+            SAPackets.sendEffectToAllAround(new PacketSpawnParticleOnEntity("ExplosionFire", this, 0, 0, 0, true), this, 512.0);
         }
     }
 

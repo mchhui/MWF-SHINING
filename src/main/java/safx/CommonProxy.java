@@ -108,9 +108,9 @@ public abstract class CommonProxy implements ISAInitializer {
 	
 	public void createFXOnBoxWithPacket(String name, Entity ent, String boxName, long duration, float scale, boolean enableSmoothing, int smoothingSubdivisions) {
 		if (!ent.world.isRemote) {
-			SAPackets.network.sendToAllAround(
+			SAPackets.sendEffectToAllAround(
 				new safx.packets.PacketSpawnParticleOnBox(name, ent, boxName, duration, scale, enableSmoothing, smoothingSubdivisions),
-				SAPackets.targetPointAroundEnt(ent, 512.0)
+				ent, 512.0
 			);
 		}
 	}

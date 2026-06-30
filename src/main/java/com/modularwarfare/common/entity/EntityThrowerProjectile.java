@@ -99,7 +99,7 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
         RayTraceResult raytraceresult = this.world.rayTraceBlocks(vec3d1, vec3d, false, true, false);
 
         if (hasSmoke) {
-            SAPackets.network.sendToDimension((new PacketSpawnParticleOnEntity("FlamethrowerTrail", this, 0, 0, 0, true)), this.dimension);
+            SAPackets.sendEffectToAllAround(new PacketSpawnParticleOnEntity("FlamethrowerTrail", this, 0, 0, 0, true), this, 512.0);
         }
 
         if (raytraceresult != null && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {

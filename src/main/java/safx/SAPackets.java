@@ -4,11 +4,13 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
@@ -41,6 +43,38 @@ public class SAPackets implements ISAInitializer {
 	
 	public static TargetPoint targetPointAroundEnt(TileEntity ent, double distance){
 		return new TargetPoint(ent.getWorld().provider.getDimension(), ent.getPos().getX(), ent.getPos().getY(), ent.getPos().getZ(), distance);
+	}
+
+	/** 虚拟世界等场景下实体/世界维度与客户端不一致，特效发包须用最近玩家维度。 */
+	public static int getEffectDimension(World world, double posX, double posY, double posZ) {
+		EntityPlayer nearestPlayer = world.getClosestPlayer(posX, posY, posZ, 512, false);
+		if (nearestPlayer != null) {
+			return nearestPlayer.dimension;
+		}
+		return world.provider.getDimension();
+	}
+
+	public static int getEffectDimension(Entity ent) {
+		return getEffectDimension(ent.world, ent.posX, ent.posY, ent.posZ);
+	}
+
+	public static TargetPoint targetPointForEffect(Entity ent, double distance) {
+		return new TargetPoint(getEffectDimension(ent), ent.posX, ent.posY, ent.posZ, distance);
+	}
+
+	public static TargetPoint targetPointForEffect(World world, double posX, double posY, double posZ, double distance) {
+		return new TargetPoint(getEffectDimension(world, posX, posY, posZ), posX, posY, posZ, distance);
+	}
+
+	public static void sendEffectToAllAround(IMessage packet, World world, double posX, double posY, double posZ, double distance) {
+		EntityPlayer nearestPlayer = world.getClosestPlayer(posX, posY, posZ, distance, false);
+		if (nearestPlayer != null) {
+			network.sendToAllAround(packet, new TargetPoint(nearestPlayer.dimension, posX, posY, posZ, distance));
+		}
+	}
+
+	public static void sendEffectToAllAround(IMessage packet, Entity ent, double distance) {
+		sendEffectToAllAround(packet, ent.world, ent.posX, ent.posY, ent.posZ, distance);
 	}
 	
 	@Override

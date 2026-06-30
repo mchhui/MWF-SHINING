@@ -9,7 +9,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.NetworkRegistry.TargetPoint;
 import safx.SAPackets;
 import safx.packets.PacketSpawnParticle;
 import safx.packets.PacketSpawnParticleOnEntity;
@@ -114,9 +113,9 @@ public class CommandFX extends CommandBase {
                 return;
             }
             
-            SAPackets.network.sendToAllAround(
+            SAPackets.sendEffectToAllAround(
                 new PacketSpawnParticleOnEntity(fxName, targetEntity, offsetX, offsetY, offsetZ, attachToHead, EntityCondition.NONE, scale),
-                new TargetPoint(nearestPlayer.dimension, targetEntity.posX, targetEntity.posY, targetEntity.posZ, 512)
+                targetEntity, 512.0
             );
             
             sender.sendMessage(new TextComponentString("§aAttached effect §e" + fxName + " §ato entity " + targetEntity.getName() + 
@@ -223,38 +222,32 @@ public class CommandFX extends CommandBase {
             }
             
             World world;
-            int dimension;
             if (worldName != null) {
                 world = getWorldByName(server, worldName);
                 if (world == null) {
                     sender.sendMessage(new TextComponentString("§cWorld '" + worldName + "' not found!"));
                     return;
                 }
-                dimension = world.provider.getDimension();
             } else if (sender instanceof EntityPlayerMP) {
                 world = ((EntityPlayerMP) sender).world;
-                dimension = ((EntityPlayerMP) sender).dimension;
             } else {
                 world = server.getWorld(0);
-                dimension = 0;
             }
 
-            TargetPoint targetPoint = new TargetPoint(dimension, posX, posY, posZ, 128);
-            
             int effectiveArgsLength = worldNameIndex != -1 ? args.length - 1 : args.length;
 
             if (effectiveArgsLength == 4) {
-                SAPackets.network.sendToAllAround(
+                SAPackets.sendEffectToAllAround(
                     new PacketSpawnParticle(fxName, posX, posY, posZ), 
-                    targetPoint
+                    world, posX, posY, posZ, 128.0
                 );
                 sender.sendMessage(new TextComponentString("§aSpawned effect §e" + fxName + " §aat (" + formatDouble(posX) + ", " + formatDouble(posY) + ", " + formatDouble(posZ) + ") §ain world §e" + world.getWorldInfo().getWorldName()));
             }
             else if (effectiveArgsLength == 5) {
                 float scale = Float.parseFloat(args[4]);
-                SAPackets.network.sendToAllAround(
+                SAPackets.sendEffectToAllAround(
                     new PacketSpawnParticle(fxName, posX, posY, posZ, scale), 
-                    targetPoint
+                    world, posX, posY, posZ, 128.0
                 );
                 sender.sendMessage(new TextComponentString("§aSpawned effect §e" + fxName + " §aat (" + formatDouble(posX) + ", " + formatDouble(posY) + ", " + formatDouble(posZ) + ") §ain world §e" + world.getWorldInfo().getWorldName() + " §awith scale: §e" + scale));
             }
@@ -263,9 +256,9 @@ public class CommandFX extends CommandBase {
                 double motionY = Double.parseDouble(args[5]);
                 double motionZ = Double.parseDouble(args[6]);
                 
-                SAPackets.network.sendToAllAround(
+                SAPackets.sendEffectToAllAround(
                     new PacketSpawnParticle(fxName, posX, posY, posZ, motionX, motionY, motionZ), 
-                    targetPoint
+                    world, posX, posY, posZ, 128.0
                 );
                 sender.sendMessage(new TextComponentString("§aSpawned effect §e" + fxName + " §aat (" + formatDouble(posX) + ", " + formatDouble(posY) + ", " + formatDouble(posZ) + ") §ain world §e" + world.getWorldInfo().getWorldName() + " §awith motion: §e(" + formatDouble(motionX) + ", " + formatDouble(motionY) + ", " + formatDouble(motionZ) + ")"));
             }
@@ -275,9 +268,9 @@ public class CommandFX extends CommandBase {
                 double motionZ = Double.parseDouble(args[6]);
                 float scale = Float.parseFloat(args[7]);
                 
-                SAPackets.network.sendToAllAround(
+                SAPackets.sendEffectToAllAround(
                     new PacketSpawnParticle(fxName, posX, posY, posZ, motionX, motionY, motionZ, scale), 
-                    targetPoint
+                    world, posX, posY, posZ, 128.0
                 );
                 sender.sendMessage(new TextComponentString("§aSpawned effect §e" + fxName + " §aat (" + formatDouble(posX) + ", " + formatDouble(posY) + ", " + formatDouble(posZ) + ") §ain world §e" + world.getWorldInfo().getWorldName() + " §awith motion: §e(" + formatDouble(motionX) + ", " + formatDouble(motionY) + ", " + formatDouble(motionZ) + ") §aand scale: §e" + scale));
             }

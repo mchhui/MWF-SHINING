@@ -214,14 +214,14 @@ public class MWFExplosion
                     
                     // 生成实体后发送特效包
                     if (fireEntity.isAddedToWorld()) {
-                        SAPackets.network.sendToAll(new PacketSpawnParticleOnEntity(
+                        SAPackets.sendEffectToAllAround(new PacketSpawnParticleOnEntity(
                             "FlamethrowerTrail", 
                             fireEntity, 
                             0, 0, 0, 
                             true,
                             EntityCondition.ENTITY_ALIVE,
                             1.5f
-                        ));
+                        ), fireEntity, 512.0);
                     }
                 }
             }
