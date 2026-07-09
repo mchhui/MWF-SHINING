@@ -37,10 +37,6 @@ import net.minecraft.potion.PotionEffect;
 import com.modularwarfare.common.guns.PotionEntry;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.entity.EntityCustomFire;
-import com.modularwarfare.common.entity.grenades.EntityGasGrenade;
-import com.modularwarfare.common.entity.grenades.EntityGrenade;
-import com.modularwarfare.common.entity.grenades.EntitySmokeGrenade;
-import com.modularwarfare.common.entity.grenades.EntityStunGrenade;
 import com.modularwarfare.utility.DamageControlHelper;
 import com.modularwarfare.utility.RayUtil;
 
@@ -241,21 +237,20 @@ public class MWFExplosion
 
         for (Entity entity : list)
         {
-            if (!entity.isImmuneToExplosions())
-            {
-                // 跳过火焰实体和手雷实体
-                if (entity instanceof EntityCustomFire ||
-                    entity instanceof EntityGrenade ||
-                    entity instanceof EntitySmokeGrenade ||
-                    entity instanceof EntityStunGrenade ||
-                    entity instanceof EntityGasGrenade) {
-                    continue;
-                }
+            if (!(entity instanceof EntityLivingBase)) {
+                continue;
+            }
+            EntityLivingBase livingEntity = (EntityLivingBase) entity;
 
-                double distance = entity.getDistance(this.x, this.y, this.z);
+            if (livingEntity.isImmuneToExplosions())
+            {
+                continue;
+            }
+
+                double distance = livingEntity.getDistance(this.x, this.y, this.z);
                 if (distance <= range)
                 {
-                    Vec3d entityPos = entity.getPositionVector().add(0, entity.getEyeHeight() / 2, 0);
+                    Vec3d entityPos = livingEntity.getPositionVector().add(0, livingEntity.getEyeHeight() / 2, 0);
                     if (explosionThroughWalls || world.rayTraceBlocks(vec3d, entityPos, false, true, false) == null) {
                         double scale = Math.pow(1.0 - (distance / range), 2.0);
                         float finalDamage = this.damage * (float)scale;
@@ -266,25 +261,24 @@ public class MWFExplosion
                             DamageSource.causeExplosionDamage(this.explosion);
                             
                         if (damageSource != null) {
-                            boolean canDamage = DamageControlHelper.canDamageTarget(this.exploder, entity, this.ignoreFriendlyTargets);
+                            boolean canDamage = DamageControlHelper.canDamageTarget(this.exploder, livingEntity, this.ignoreFriendlyTargets);
                             if (canDamage) {
-                                boolean damaged = RayUtil.attackEntityWithoutKnockback(entity, damageSource, finalDamage);
+                                boolean damaged = RayUtil.attackEntityWithoutKnockback(livingEntity, damageSource, finalDamage);
                                 boolean fallbackDamaged = false;
                                 if (!damaged && finalDamage > 0.0F) {
                                     // 当服务端开启防爆时，可能会拦截 Explosion 类型伤害源，导致 attackEntityFrom 返回 false。
                                     // 这里回退到通用/投掷者伤害源，保证爆炸伤害逻辑仍可生效。
                                     DamageSource fallbackSource = this.buildFallbackDamageSource();
                                     if (fallbackSource != null) {
-                                        fallbackDamaged = RayUtil.attackEntityWithoutKnockback(entity, fallbackSource, finalDamage);
+                                        fallbackDamaged = RayUtil.attackEntityWithoutKnockback(livingEntity, fallbackSource, finalDamage);
                                     }
                                 }
                                 damaged = damaged || fallbackDamaged;
-                                DamageControlHelper.clearHurtResistantTime(entity, damaged);
+                                DamageControlHelper.clearHurtResistantTime(livingEntity, damaged);
                             }
                         }
                             
-                        if (entity instanceof EntityLivingBase && potionEffects != null) {
-                            EntityLivingBase livingEntity = (EntityLivingBase) entity;
+                        if (potionEffects != null) {
                             for (PotionEntry potionEntry : potionEffects) {
                                 if (potionEntry != null && potionEntry.potionEffect != null) {
                                     livingEntity.addPotionEffect(new PotionEffect(potionEntry.potionEffect.getPotion(), potionEntry.duration, potionEntry.level));
@@ -292,13 +286,13 @@ public class MWFExplosion
                             }
                         }
                         
-                        if (fireLevel > 0 && entity instanceof EntityLivingBase) {
-                            entity.setFire(fireLevel);
+                        if (fireLevel > 0) {
+                            livingEntity.setFire(fireLevel);
                         }
                         
-                        double d5 = entity.posX - this.x;
-                        double d7 = entity.posY + (double)entity.getEyeHeight() - this.y;
-                        double d9 = entity.posZ - this.z;
+                        double d5 = livingEntity.posX - this.x;
+                        double d7 = livingEntity.posY + (double)livingEntity.getEyeHeight() - this.y;
+                        double d9 = livingEntity.posZ - this.z;
                         double d13 = (double)MathHelper.sqrt(d5 * d5 + d7 * d7 + d9 * d9);
                         if (d13 != 0.0D)
                         {
@@ -307,13 +301,13 @@ public class MWFExplosion
                             d9 = d9 / d13;
                             
                             double knockbackStrength = scale * (this.knockback + this.knockLevel);
-                            entity.motionX += d5 * knockbackStrength;
-                            entity.motionY += d7 * knockbackStrength;
-                            entity.motionZ += d9 * knockbackStrength;
+                            livingEntity.motionX += d5 * knockbackStrength;
+                            livingEntity.motionY += d7 * knockbackStrength;
+                            livingEntity.motionZ += d9 * knockbackStrength;
 
-                            if (entity instanceof EntityPlayer)
+                            if (livingEntity instanceof EntityPlayer)
                             {
-                                EntityPlayer entityplayer = (EntityPlayer)entity;
+                                EntityPlayer entityplayer = (EntityPlayer)livingEntity;
                                 if (!entityplayer.isSpectator() && (!entityplayer.isCreative() || !entityplayer.capabilities.isFlying))
                                 {
                                     this.playerKnockbackMap.put(entityplayer, new Vec3d(d5 * knockbackStrength, d7 * knockbackStrength, d9 * knockbackStrength));
@@ -322,7 +316,6 @@ public class MWFExplosion
                         }
                     }
                 }
-            }
         }
     }
 

@@ -3,6 +3,7 @@ package com.modularwarfare.common.entity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.MoverType;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
@@ -88,10 +89,14 @@ public class EntityCustomFire extends Entity {
             List<Entity> nearbyEntities = this.world.getEntitiesWithinAABBExcludingEntity(this, boundingBox);
             
             for (Entity entity : nearbyEntities) {
-                if (entity != this.exploder && !entity.isImmuneToFire()) {
-                    if (this.throughWalls || this.canSee(entity)) {
-                        entity.attackEntityFrom(DamageSource.IN_FIRE, this.damage);
-                        entity.setFire(this.fireDuration);
+                if (!(entity instanceof EntityLivingBase)) {
+                    continue;
+                }
+                EntityLivingBase livingEntity = (EntityLivingBase) entity;
+                if (livingEntity != this.exploder && !livingEntity.isImmuneToFire()) {
+                    if (this.throughWalls || this.canSee(livingEntity)) {
+                        livingEntity.attackEntityFrom(DamageSource.IN_FIRE, this.damage);
+                        livingEntity.setFire(this.fireDuration);
                     }
                 }
             }
