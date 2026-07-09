@@ -29,6 +29,7 @@ import safx.client.particle.SAParticleSystemType.AlphaEntry;
 import safx.client.particle.SAParticleSystemType.ColorEntry;
 import safx.client.render.SARenderHelper;
 import safx.client.render.SARenderHelper.RenderType;
+import safx.client.render.particle.SAInstancedParticleShader;
 //import safx.client.render.item.RenderItemBase;
 import safx.debug.Keybinds;
 import safx.SAConfig;
@@ -415,6 +416,9 @@ public class SAParticle extends Particle implements ISAParticle {
 
 	public boolean packInstanced(FloatBuffer buffer, float partialTickTime) {
 		if (!this.canUseInstancedRender()) {
+			return false;
+		}
+		if (buffer.remaining() < SAInstancedParticleShader.INSTANCE_FLOATS) {
 			return false;
 		}
 		float progress = ((float) this.particleAge + partialTickTime) / (float) this.particleMaxAge;

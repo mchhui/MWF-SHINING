@@ -26,10 +26,12 @@ import safx.client.render.SARenderHelper;
 import safx.client.render.SARenderHelper.RenderType;
 
 /**
- * GPU instanced draw path: one {@code glDrawArraysInstanced} per texture bucket.
+ * GPU instanced draw path: one {@code glDrawArraysInstanced} per texture bucket (batched when needed).
  */
 @SideOnly(Side.CLIENT)
 public final class SAInstancedParticleRenderer {
+
+	private static final int MAX_INSTANCES_PER_BATCH = 8192;
 
 	/** Matches CPU writeQuad vertex order: v0..v3. */
 	private static final float[] QUAD_CORNERS = {
@@ -41,7 +43,7 @@ public final class SAInstancedParticleRenderer {
 
 	private static SAInstancedParticleRenderer instance;
 	private final SAInstancedParticleShader shader = new SAInstancedParticleShader();
-	private final FloatBuffer instanceBuffer = BufferUtils.createFloatBuffer(8192 * SAInstancedParticleShader.INSTANCE_FLOATS);
+	private final FloatBuffer instanceBuffer = BufferUtils.createFloatBuffer(MAX_INSTANCES_PER_BATCH * SAInstancedParticleShader.INSTANCE_FLOATS);
 	private final FloatBuffer mvpBuffer = BufferUtils.createFloatBuffer(16);
 	private final FloatBuffer projectionScratch = BufferUtils.createFloatBuffer(16);
 	private final FloatBuffer modelViewScratch = BufferUtils.createFloatBuffer(16);
@@ -80,17 +82,6 @@ public final class SAInstancedParticleRenderer {
 		if (particles.isEmpty()) {
 			return 0;
 		}
-		instanceBuffer.clear();
-		int packed = 0;
-		for (int i = 0; i < particles.size(); i++) {
-			SAParticle particle = particles.get(i);
-			if (particle.canUseInstancedRender() && particle.packInstanced(instanceBuffer, partialTicks)) {
-				packed++;
-			}
-		}
-		if (packed == 0) {
-			return 0;
-		}
 		Minecraft mc = Minecraft.getMinecraft();
 		TextureManager textureManager = mc.getTextureManager();
 		textureManager.bindTexture(texture);
@@ -98,20 +89,39 @@ public final class SAInstancedParticleRenderer {
 		if (particleTex == null) {
 			return 0;
 		}
-		instanceBuffer.flip();
 		this.uploadMvp();
-		this.ensureInstanceVbo(packed);
 		this.ensureQuadVbo();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVbo);
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceBuffer, GL15.GL_STREAM_DRAW);
 		int prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
 		boolean useLightmap = renderType == RenderType.ALPHA_SHADED;
+		int totalPacked = 0;
+		int index = 0;
 		try {
 			SARenderHelper.enableBlendMode(renderType);
 			shader.bindUniforms(rotX, rotZ, rotYZ, rotXY, rotXZ, mvpBuffer, 0, useLightmap);
-			this.bindVertexAttributes();
 			this.bindDrawTextures(mc, particleTex.getGlTextureId(), useLightmap);
-			ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, 4, packed);
+			while (index < particles.size()) {
+				instanceBuffer.clear();
+				int packed = 0;
+				while (index < particles.size() && packed < MAX_INSTANCES_PER_BATCH) {
+					if (instanceBuffer.remaining() < SAInstancedParticleShader.INSTANCE_FLOATS) {
+						break;
+					}
+					SAParticle particle = particles.get(index++);
+					if (particle.canUseInstancedRender() && particle.packInstanced(instanceBuffer, partialTicks)) {
+						packed++;
+					}
+				}
+				if (packed == 0) {
+					break;
+				}
+				instanceBuffer.flip();
+				this.ensureInstanceVbo(packed);
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVbo);
+				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceBuffer, GL15.GL_STREAM_DRAW);
+				this.bindVertexAttributes();
+				ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, 4, packed);
+				totalPacked += packed;
+			}
 			SARenderHelper.disableBlendMode(renderType);
 		} finally {
 			GL20.glUseProgram(prevProgram);
@@ -121,7 +131,7 @@ public final class SAInstancedParticleRenderer {
 				GL20.glDisableVertexAttribArray(i);
 			}
 		}
-		return packed;
+		return totalPacked;
 	}
 
 	private void ensureQuadVbo() {
