@@ -682,8 +682,8 @@ public class ClientProxy extends CommonProxy {
             if (!cpSounds.containsKey(contentPack))
                 cpSounds.put(contentPack, new ArrayList<String>());
 
-            for (WeaponSoundType weaponSoundType : baseType.weaponSoundMap.keySet()) {
-                ArrayList<SoundEntry> soundEntries = baseType.weaponSoundMap.get(weaponSoundType);
+            for (String soundEventKey : baseType.weaponSoundMap.keySet()) {
+                ArrayList<SoundEntry> soundEntries = baseType.weaponSoundMap.get(soundEventKey);
                 for (SoundEntry soundEntry : soundEntries) {
                     if (soundEntry.soundName != null && !cpSounds.get(contentPack).contains(soundEntry.soundName))
                         cpSounds.get(contentPack).add(soundEntry.soundName);

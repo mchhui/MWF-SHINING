@@ -859,14 +859,14 @@ public class FireManager {
             if (barrelAttachment.type.barrel.isSuppressor) {
                 handler.accept(WeaponSoundType.FireSuppressed);
             } else {
-                if (ItemGun.getAmmoCount(gunStack) <= 1 && gunType.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+                if (ItemGun.getAmmoCount(gunStack) <= 1 && gunType.hasWeaponSound(WeaponSoundType.FireLast)) {
                     handler.accept(WeaponSoundType.FireLast);
                 } else {
                     handler.accept(WeaponSoundType.Fire);
                 }
             }
         } else {
-            if (ItemGun.getAmmoCount(gunStack) <= 1 && gunType.weaponSoundMap.containsKey(WeaponSoundType.FireLast)) {
+            if (ItemGun.getAmmoCount(gunStack) <= 1 && gunType.hasWeaponSound(WeaponSoundType.FireLast)) {
                 handler.accept(WeaponSoundType.FireLast);
             } else {
                 handler.accept(WeaponSoundType.Fire);

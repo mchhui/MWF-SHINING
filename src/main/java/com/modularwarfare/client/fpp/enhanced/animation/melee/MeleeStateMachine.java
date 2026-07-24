@@ -19,13 +19,17 @@ import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketSwing;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.ISound;
+import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundEvent;
 
 public class MeleeStateMachine {
 	public static enum Phase {
@@ -37,13 +41,55 @@ public class MeleeStateMachine {
 	public boolean isHeavy = false;
 	public boolean canDealDamage = false;
 	public boolean bounced = false;
+	/** Per-phase attack sounds; earlier phases keep playing when later ones start. */
+	private final ISound[] phaseSounds = new ISound[Phase.values().length];
 
 	public void reset() {
+		// Only stop current + not-yet-played phase sounds; leave already-played ones alone.
+		stopCurrentAndUnplayedPhaseSounds();
 		attackPhase = Phase.POST;
 		canDealDamage = false;
 		this.isHeavy = false;
 		this.lastAttackPhase = null;
 		this.bounced = false;
+	}
+
+	public void stopAllPhaseSounds() {
+		for (Phase phase : Phase.values()) {
+			stopPhaseSound(phase);
+		}
+	}
+
+	public void stopCurrentAndUnplayedPhaseSounds() {
+		if (attackPhase == null) {
+			return;
+		}
+		Phase[] phases = Phase.values();
+		for (int i = attackPhase.ordinal(); i < phases.length; i++) {
+			stopPhaseSound(phases[i]);
+		}
+	}
+
+	public void stopPhaseSound(Phase phase) {
+		if (phase == null) {
+			return;
+		}
+		int index = phase.ordinal();
+		if (phaseSounds[index] != null) {
+			Minecraft.getMinecraft().getSoundHandler().stopSound(phaseSounds[index]);
+			phaseSounds[index] = null;
+		}
+	}
+
+	private void playAttackPhaseSound(EntityPlayer player, MeleeType type, WeaponSoundType soundType) {
+		// Do not stop earlier phase sounds — only replace this phase's tracked instance.
+		int order = RenderMelee.controller != null ? RenderMelee.controller.currentOrder : 0;
+		SoundEvent se = type.getSound(player, soundType, order);
+		if (se != null) {
+			ISound sound = PositionedSoundRecord.getRecord(se, 1, 1);
+			Minecraft.getMinecraft().getSoundHandler().playSound(sound);
+			phaseSounds[attackPhase.ordinal()] = sound;
+		}
 	}
 
 	public void onRenderTickUpdate(float partialTick) {
@@ -108,31 +154,31 @@ public class MeleeStateMachine {
 				if (!isHeavy) {
 					switch (attackPhase) {
 						case PRE:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleePreAttack);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleePreAttack);
 							break;
 						case FIRST:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleeAttack);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleeAttack);
 							break;
 						case SECOND:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleeAttackSecond);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleeAttackSecond);
 							break;
 						case POST:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleePostAttack);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleePostAttack);
 							break;
 					}
 				} else {
 					switch (attackPhase) {
 						case PRE:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleePreAttackHeavy);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleePreAttackHeavy);
 							break;
 						case FIRST:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleeAttackHeavy);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleeAttackHeavy);
 							break;
 						case SECOND:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleeAttackHeavySecond);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleeAttackHeavySecond);
 							break;
 						case POST:
-							((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleePostAttackHeavy);
+							playAttackPhaseSound(player, meleeType, WeaponSoundType.MeleePostAttackHeavy);
 							break;
 					}
 				}

@@ -300,8 +300,8 @@ public class AnimationController {
                 GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
                 SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.Inspect);
                 if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
-                    && ((ItemGun)player.getHeldItemMainhand().getItem()).type.weaponSoundMap
-                        .containsKey(WeaponSoundType.InspectEmpty)) {
+                    && ((ItemGun)player.getHeldItemMainhand().getItem()).type
+                        .hasWeaponSound(WeaponSoundType.InspectEmpty)) {
                     se = type.getSound((EntityPlayer)player, WeaponSoundType.InspectEmpty);
                 }
                 if(se!=null) {
@@ -851,8 +851,8 @@ public class AnimationController {
                             if(type.animationType==WeaponAnimationType.ENHANCED&&config==type.enhancedModel.config) {
                                 SoundEvent se = type.getSound((EntityPlayer)player, WeaponSoundType.Draw);
                                 if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
-                                    && ((ItemGun)player.getHeldItemMainhand().getItem()).type.weaponSoundMap
-                                        .containsKey(WeaponSoundType.DrawEmpty)) {
+                                    && ((ItemGun)player.getHeldItemMainhand().getItem()).type
+                                        .hasWeaponSound(WeaponSoundType.DrawEmpty)) {
                                     se = type.getSound((EntityPlayer)player, WeaponSoundType.DrawEmpty);
                                 }
                                 if(se!=null) {
@@ -904,8 +904,8 @@ public class AnimationController {
                 if (item instanceof ItemGun) {
                     GunType type = ((ItemGun)player.getHeldItemMainhand().getItem()).type;
                     if (!ItemGun.hasNextShot(player.getHeldItemMainhand())
-                        && ((ItemGun)player.getHeldItemMainhand().getItem()).type.weaponSoundMap
-                            .containsKey(WeaponSoundType.TakedownEmpty)) {
+                        && ((ItemGun)player.getHeldItemMainhand().getItem()).type
+                            .hasWeaponSound(WeaponSoundType.TakedownEmpty)) {
                         type.playClientSound((EntityPlayer)player, WeaponSoundType.TakedownEmpty);
                     }else {
                         type.playClientSound((EntityPlayer)player, WeaponSoundType.Takedown);

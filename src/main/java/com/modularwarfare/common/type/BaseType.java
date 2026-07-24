@@ -75,8 +75,9 @@ public class BaseType {
 
     /**
      * SOUNDS
+     * Keys are event names (e.g. "meleePreAttack") or order variants ("meleePreAttack_0").
      */
-    public HashMap<WeaponSoundType, ArrayList<SoundEntry>> weaponSoundMap;
+    public HashMap<String, ArrayList<SoundEntry>> weaponSoundMap;
     public boolean allowDefaultSounds = true;
     
     /**
@@ -180,7 +181,47 @@ public class BaseType {
      * SOUND
      */
 
+    public boolean hasWeaponSound(WeaponSoundType weaponSoundType) {
+        return weaponSoundType != null && hasWeaponSound(weaponSoundType.eventName);
+    }
+
+    public boolean hasWeaponSound(String eventName) {
+        return weaponSoundMap != null && eventName != null && weaponSoundMap.containsKey(eventName);
+    }
+
+    @Nullable
+    public ArrayList<SoundEntry> getWeaponSoundEntries(WeaponSoundType weaponSoundType) {
+        if (weaponSoundType == null) {
+            return null;
+        }
+        return getWeaponSoundEntries(weaponSoundType.eventName);
+    }
+
+    @Nullable
+    public ArrayList<SoundEntry> getWeaponSoundEntries(WeaponSoundType weaponSoundType, int order) {
+        if (weaponSoundType == null) {
+            return null;
+        }
+        ArrayList<SoundEntry> ordered = getWeaponSoundEntries(weaponSoundType.eventName + "_" + order);
+        if (ordered != null) {
+            return ordered;
+        }
+        return getWeaponSoundEntries(weaponSoundType.eventName);
+    }
+
+    @Nullable
+    public ArrayList<SoundEntry> getWeaponSoundEntries(String eventName) {
+        if (weaponSoundMap == null || eventName == null) {
+            return null;
+        }
+        return weaponSoundMap.get(eventName);
+    }
+
     public void playClientSound(EntityPlayer player, WeaponSoundType weaponSoundType) {
+        playClientSound(player, weaponSoundType, -1);
+    }
+
+    public void playClientSound(EntityPlayer player, WeaponSoundType weaponSoundType, int order) {
         if (weaponSoundType == null) {
             ModularWarfare.LOGGER.error(String.format("[%s] Attempted to play sound with null weaponSoundType", this.internalName));
             return;
@@ -190,9 +231,13 @@ public class BaseType {
             ModularWarfare.LOGGER.error(String.format("[%s] weaponSoundMap is null, cannot play sound for event '%s'", this.internalName, weaponSoundType.eventName));
             return;
         }
+
+        ArrayList<SoundEntry> entries = order >= 0
+                ? getWeaponSoundEntries(weaponSoundType, order)
+                : getWeaponSoundEntries(weaponSoundType);
         
-        if (weaponSoundMap.containsKey(weaponSoundType)) {
-            for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
+        if (entries != null) {
+            for (SoundEntry soundEntry : entries) {
                 if(soundEntry.soundName == null) {
                     ModularWarfare.LOGGER.error(String.format("[%s] Sound entry for event '%s' has null soundName", this.internalName, weaponSoundType.eventName));
                     continue;
@@ -222,17 +267,20 @@ public class BaseType {
     }
     
     public SoundEvent getSound(EntityPlayer player, WeaponSoundType weaponSoundType) {
+        return getSound(player, weaponSoundType, -1);
+    }
+
+    public SoundEvent getSound(EntityPlayer player, WeaponSoundType weaponSoundType, int order) {
         if (weaponSoundType != null) {
-            if(weaponSoundMap != null) {
-                if (weaponSoundMap.containsKey(weaponSoundType)) {
-                    for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
-                        return ClientProxy.modSounds.get(soundEntry.soundName);
-                    }
-                }else {
-                    if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
-                        return ClientProxy.modSounds.get(weaponSoundType.defaultSound);
-                    }
+            ArrayList<SoundEntry> entries = order >= 0
+                    ? getWeaponSoundEntries(weaponSoundType, order)
+                    : getWeaponSoundEntries(weaponSoundType);
+            if (entries != null) {
+                for (SoundEntry soundEntry : entries) {
+                    return ClientProxy.modSounds.get(soundEntry.soundName);
                 }
+            } else if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
+                return ClientProxy.modSounds.get(weaponSoundType.defaultSound);
             }
         }
         return null;
@@ -244,9 +292,10 @@ public class BaseType {
 
     public void playSoundPos(BlockPos pos, World world, WeaponSoundType weaponSoundType, EntityPlayer excluded, float volume, boolean linear) {
         if (weaponSoundType != null) {
-            if (weaponSoundMap.containsKey(weaponSoundType)) {
+            ArrayList<SoundEntry> entries = getWeaponSoundEntries(weaponSoundType);
+            if (entries != null) {
                 Random random = new Random();
-                for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
+                for (SoundEntry soundEntry : entries) {
                     int soundRange = soundEntry.soundRange != null ? soundEntry.soundRange : weaponSoundType.defaultRange;
                     for (EntityPlayer hearingPlayer : world.getEntities(EntityPlayer.class, e -> e.getPosition().getDistance(pos.getX(), pos.getY(), pos.getZ()) <= soundRange)) {
                         //Send sound packet for simple sounds (no distant sound effect)
@@ -281,11 +330,12 @@ public class BaseType {
 
     public void playSound(EntityLivingBase entityPlayer, WeaponSoundType weaponSoundType, ItemStack stack, @Nullable EntityPlayer excluded) {
         if (weaponSoundType != null) {
-            if (weaponSoundMap.containsKey(weaponSoundType)) {
+            ArrayList<SoundEntry> entries = getWeaponSoundEntries(weaponSoundType);
+            if (entries != null) {
                 BlockPos originPos = entityPlayer.getPosition();
                 World world = entityPlayer.world;
                 Random random = new Random();
-                for (SoundEntry soundEntry : weaponSoundMap.get(weaponSoundType)) {
+                for (SoundEntry soundEntry : entries) {
                     float soundRange = soundEntry.soundRange != null ? soundEntry.soundRange : weaponSoundType.defaultRange;
                     if (soundEntry.soundNameDistant != null && soundEntry.soundMaxRange != null) {
                         int maxSoundRange = soundEntry.soundMaxRange;

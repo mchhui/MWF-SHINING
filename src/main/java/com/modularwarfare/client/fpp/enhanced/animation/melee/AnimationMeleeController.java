@@ -19,6 +19,8 @@ import com.modularwarfare.utility.maths.Interpolation;
 
 import it.unimi.dsi.fastutil.Hash;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.ISound;
+import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -33,6 +35,7 @@ import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EntitySelectors;
+import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
@@ -70,6 +73,10 @@ public class AnimationMeleeController {
     public static MeleeStateMachine stateMachine = new MeleeStateMachine();
 
     public static int currentOrder = 0;
+    public static int drawOrder = 0;
+    public static int inspectOrder = 0;
+    public static int defaultOrder = 0;
+    public static int sprintOrder = 0;
     public static boolean keepOrder = false;
     public static int oldCurrentItem;
     public static ItemStack oldItemstack;
@@ -77,6 +84,8 @@ public class AnimationMeleeController {
     public MeleeRenderConfig config;
     public MeleeType type;
     private ActionPlaybackMelee playback;
+    public ISound inspectSound = null;
+    private final Random animRandom = new Random();
 
     public AnimationMeleeController(MeleeRenderConfig config, MeleeType type) {
         this.config = config;
@@ -84,16 +93,32 @@ public class AnimationMeleeController {
         this.playback = new ActionPlaybackMelee(config);
         this.playback.action = AnimationMeleeType.DEFAULT;
         currentOrder = 0;
-        // currentRandomAnim.put(AnimationMeleeType.DRAW, 0);
-        // currentRandomAnim.put(AnimationMeleeType.INSPECT, 0);
-        // currentRandomAnim.put(AnimationMeleeType.PREATTACK, 0);
-        // currentRandomAnim.put(AnimationMeleeType.ATTACK, 0);
-        // currentRandomAnim.put(AnimationMeleeType.ATTACKSEC, 0);
-        // currentRandomAnim.put(AnimationMeleeType.POSTATTACK, 0);
-        // currentRandomAnim.put(AnimationMeleeType.PREHEAVYATTACK, 0);
-        // currentRandomAnim.put(AnimationMeleeType.HEAVYATTACK, 0);
-        // currentRandomAnim.put(AnimationMeleeType.HEAVYATTACKSEC, 0);
-        // currentRandomAnim.put(AnimationMeleeType.POSTATTACK, 0);
+        drawOrder = 0;
+        inspectOrder = 0;
+        defaultOrder = pickRandomOrder(AnimationMeleeType.DEFAULT);
+        sprintOrder = pickRandomOrder(AnimationMeleeType.SPRINT);
+    }
+
+    public int pickRandomOrder(AnimationMeleeType animType) {
+        if (config == null || config.meleeAnimations == null) {
+            return 0;
+        }
+        ArrayList<MeleeRenderConfig.Animation> list = config.meleeAnimations.get(animType);
+        if (list == null || list.isEmpty()) {
+            return 0;
+        }
+        return animRandom.nextInt(list.size());
+    }
+
+    public int clampOrder(AnimationMeleeType animType, int order) {
+        if (config == null || config.meleeAnimations == null) {
+            return 0;
+        }
+        ArrayList<MeleeRenderConfig.Animation> list = config.meleeAnimations.get(animType);
+        if (list == null || list.isEmpty() || order < 0 || order >= list.size()) {
+            return 0;
+        }
+        return order;
     }
 
     public void reset(boolean resetSprint) {
@@ -108,7 +133,16 @@ public class AnimationMeleeController {
         }
         SPRINT_LOOP=0;
 
+        if (inspectSound != null) {
+            Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
+            inspectSound = null;
+        }
+
         currentOrder = 0;
+        drawOrder = pickRandomOrder(AnimationMeleeType.DRAW);
+        defaultOrder = pickRandomOrder(AnimationMeleeType.DEFAULT);
+        sprintOrder = pickRandomOrder(AnimationMeleeType.SPRINT);
+        this.stateMachine.stopAllPhaseSounds();
         this.stateMachine.reset();
         updateActionAndTime();
     }
@@ -136,7 +170,7 @@ public class AnimationMeleeController {
                             this.ATTACK = 0;
                             if (this.stateMachine.isHeavy) {
                                 ((ItemMelee) item).type.playClientSound(Minecraft.getMinecraft().player,
-                                        WeaponSoundType.MeleeBouncedHeavy);
+                                        WeaponSoundType.MeleeBouncedHeavy, currentOrder);
                                 AnimationInfo ai = ((ItemMelee) Minecraft.getMinecraft().player.getHeldItemMainhand()
                                         .getItem()).type.getAnimationInfo(AnimationMeleeType.HEAVYATTACK,
                                                 RenderMelee.controller.currentOrder);
@@ -144,7 +178,7 @@ public class AnimationMeleeController {
                                 ModularWarfare.NETWORK.sendToServer(new PacketSwing(ai.checkBounced.animationName));
                             } else {
                                 ((ItemMelee) item).type.playClientSound(Minecraft.getMinecraft().player,
-                                        WeaponSoundType.MeleeBounced);
+                                        WeaponSoundType.MeleeBounced, currentOrder);
                                 AnimationInfo ai = ((ItemMelee) Minecraft.getMinecraft().player.getHeldItemMainhand()
                                         .getItem()).type.getAnimationInfo(AnimationMeleeType.ATTACK,
                                                 RenderMelee.controller.currentOrder);
@@ -472,14 +506,17 @@ public class AnimationMeleeController {
         }
         stateMachine.onRenderTickUpdate(stepTick);
         /** DEFAULT **/
-        double defaultSpeed = config.meleeAnimations.get(AnimationMeleeType.DEFAULT).get(0).getSpeed(config.FPS) * stepTick;
+        defaultOrder = clampOrder(AnimationMeleeType.DEFAULT, defaultOrder);
+        double defaultSpeed = config.meleeAnimations.get(AnimationMeleeType.DEFAULT).get(defaultOrder).getSpeed(config.FPS) * stepTick;
         DEFAULT = Math.max(0F, DEFAULT + defaultSpeed);
         if (DEFAULT > 1) {
             DEFAULT = 0;
+            defaultOrder = pickRandomOrder(AnimationMeleeType.DEFAULT);
         }
 
         /** DRAW **/
-        double drawSpeed = config.meleeAnimations.get(AnimationMeleeType.DRAW).get(0).getSpeed(config.FPS) * stepTick;
+        drawOrder = clampOrder(AnimationMeleeType.DRAW, drawOrder);
+        double drawSpeed = config.meleeAnimations.get(AnimationMeleeType.DRAW).get(drawOrder).getSpeed(config.FPS) * stepTick;
         DRAW = Math.max(0, DRAW + drawSpeed);
         if (DRAW > 1F) {
             DRAW = 1F;
@@ -525,7 +562,8 @@ public class AnimationMeleeController {
             SPRINT_LOOP = 0;
             SPRINT_RANDOM = 0;
         } else {
-            double sprintLoopSpeed = config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(0).getSpeed(config.FPS) * stepTick
+            sprintOrder = clampOrder(AnimationMeleeType.SPRINT, sprintOrder);
+            double sprintLoopSpeed = config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(sprintOrder).getSpeed(config.FPS) * stepTick
                     * (moveDistance / 0.15f);
             boolean flagSprintRand = false;
             if (flag) {
@@ -540,10 +578,11 @@ public class AnimationMeleeController {
                 sprintLoopCoolTime = time + 100;
             }
             if (!flagSprintRand) {
-                SPRINT_RANDOM -= config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(0).getSpeed(config.FPS) * 3 * stepTick;
+                SPRINT_RANDOM -= config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(sprintOrder).getSpeed(config.FPS) * 3 * stepTick;
             }
             if (SPRINT_LOOP > 1) {
                 SPRINT_LOOP = 0;
+                sprintOrder = pickRandomOrder(AnimationMeleeType.SPRINT);
             }
             if (SPRINT_RANDOM > 1) {
                 SPRINT_RANDOM = 0;
@@ -556,10 +595,33 @@ public class AnimationMeleeController {
             }
         }
         /** INSPECT **/
+        if (INSPECT == 0) {
+            if (DRAW < 1.0) {
+                INSPECT = 1.0;
+            } else {
+                inspectOrder = pickRandomOrder(AnimationMeleeType.INSPECT);
+                if (inspectSound != null) {
+                    Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
+                    inspectSound = null;
+                }
+                SoundEvent se = type.getSound(player, WeaponSoundType.MeleeInspect, inspectOrder);
+                if (se != null) {
+                    inspectSound = PositionedSoundRecord.getRecord(se, 1, 1);
+                    Minecraft.getMinecraft().getSoundHandler().playSound(inspectSound);
+                }
+            }
+        }
+        if (INSPECT == 1) {
+            if (inspectSound != null) {
+                Minecraft.getMinecraft().getSoundHandler().stopSound(inspectSound);
+                inspectSound = null;
+            }
+        }
         if (!config.meleeAnimations.containsKey(AnimationMeleeType.INSPECT)) {
             INSPECT = 1;
         } else {
-            double modeChangeVal = config.meleeAnimations.get(AnimationMeleeType.INSPECT).get(0).getSpeed(config.FPS)
+            inspectOrder = clampOrder(AnimationMeleeType.INSPECT, inspectOrder);
+            double modeChangeVal = config.meleeAnimations.get(AnimationMeleeType.INSPECT).get(inspectOrder).getSpeed(config.FPS)
                     * stepTick;
             INSPECT += modeChangeVal;
             if (INSPECT >= 1) {
@@ -582,7 +644,7 @@ public class AnimationMeleeController {
             if (stack.getItem() instanceof ItemMelee) {
                 if (playSound)
                     ((ItemMelee) stack.getItem()).type.playClientSound(Minecraft.getMinecraft().player,
-                            WeaponSoundType.MeleeDraw);
+                            WeaponSoundType.MeleeDraw, drawOrder);
             }
         }
         if (oldItemstack != Minecraft.getMinecraft().player.getHeldItemMainhand()) {
@@ -618,13 +680,13 @@ public class AnimationMeleeController {
         }
         switch (this.playback.action) {
             case DEFAULT:
-                this.playback.updateTime(0, DEFAULT);
+                this.playback.updateTime(clampOrder(AnimationMeleeType.DEFAULT, defaultOrder), DEFAULT);
                 break;
             case DRAW:
-                this.playback.updateTime(0, DRAW);
+                this.playback.updateTime(clampOrder(AnimationMeleeType.DRAW, drawOrder), DRAW);
                 break;
             case INSPECT:
-                this.playback.updateTime(0, INSPECT);
+                this.playback.updateTime(clampOrder(AnimationMeleeType.INSPECT, inspectOrder), INSPECT);
                 break;
             default:
                 this.playback.updateTime(currentOrder, ATTACK);//
@@ -645,8 +707,9 @@ public class AnimationMeleeController {
         if(!config.meleeAnimations.containsKey(AnimationMeleeType.SPRINT)) {
             return 0;
         }
-        double startTime = config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(0).getStartTime(config.FPS);
-        double endTime = config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(0).getEndTime(config.FPS);
+        int order = clampOrder(AnimationMeleeType.SPRINT, sprintOrder);
+        double startTime = config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(order).getStartTime(config.FPS);
+        double endTime = config.meleeAnimations.get(AnimationMeleeType.SPRINT).get(order).getEndTime(config.FPS);
         double result = Interpolation.LINEAR.interpolate(startTime, endTime, SPRINT_LOOP);
         if(Double.isNaN(result)) {
             return 0;
@@ -744,32 +807,15 @@ public class AnimationMeleeController {
     }
 
     public void applyAnim(AnimationMeleeType type) {
-        boolean playSound = true;
         Item item = Minecraft.getMinecraft().player.getHeldItemMainhand().getItem();
         if (item instanceof ItemMelee) {
-            MeleeType meleeType = ((ItemMelee) item).type;
             switch (type) {
                 case INSPECT:
                     if (INSPECT == 1F) {
-                        // applyRandomAnim(AnimationMeleeType.INSPECT);
                         INSPECT = 0;
-                        if (playSound)
-                            ((ItemMelee) item).type.playClientSound(Minecraft.getMinecraft().player,
-                                    WeaponSoundType.MeleeInspect);
                     }
                     break;
                 default:
-                    // if(meleeType.resetAttackOnClick) {
-                    // applyRandomAnim(AnimationMeleeType.ATTACK);
-                    // ATTACK = 0;
-                    // if(playSound)
-                    // ((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleeAttack);
-                    // } else if(ATTACK == 1F){
-                    // applyRandomAnim(AnimationMeleeType.ATTACK);
-                    // ATTACK = 0;
-                    // if(playSound)
-                    // ((ItemMelee) item).type.playClientSound(player, WeaponSoundType.MeleeAttack);
-                    // }
                     break;
             }
         }
