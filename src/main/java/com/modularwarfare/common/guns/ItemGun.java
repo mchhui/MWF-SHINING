@@ -51,6 +51,7 @@ public class ItemGun extends BaseItem {
     public static boolean fireButtonHeld = false;
     public static boolean lastFireButtonHeld = false;
     public static final String LASER_ENABLED_NBT = "laser_enabled";
+    public static final String FLASHLIGHT_ENABLED_NBT = "flashlight_enabled";
     public static final String TRANSFORM_STATE_NBT = "transform_state";
     public static final String LAST_TRANSFORM_STATE_NBT = "last_transform_state";
     public GunType type;
@@ -657,6 +658,20 @@ public class ItemGun extends BaseItem {
             return false;
         }
         return stack.getTagCompound().getBoolean(LASER_ENABLED_NBT);
+    }
+
+    public void setFlashlightEnabled(ItemStack stack, boolean enabled) {
+        if (!stack.hasTagCompound()) {
+            stack.setTagCompound(new NBTTagCompound());
+        }
+        stack.getTagCompound().setBoolean(FLASHLIGHT_ENABLED_NBT, enabled);
+    }
+
+    public boolean getFlashlightEnabled(ItemStack stack) {
+        if (!stack.hasTagCompound()) {
+            return false;
+        }
+        return stack.getTagCompound().getBoolean(FLASHLIGHT_ENABLED_NBT);
     }
 
     /**

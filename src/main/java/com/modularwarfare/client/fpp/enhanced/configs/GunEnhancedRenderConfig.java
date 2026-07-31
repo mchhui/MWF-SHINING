@@ -38,6 +38,8 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     public String trailOriginNode = "flashModel";
     public Vector3f trailNodeWorldThirdPos = new Vector3f(0F, 0F, 0F);
 
+    public String flashlightOriginNode = "flashModel";
+
    
 
     public static class Sprint {

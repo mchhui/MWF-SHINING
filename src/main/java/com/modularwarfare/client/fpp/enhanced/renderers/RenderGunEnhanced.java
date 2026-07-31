@@ -224,6 +224,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             return;
 
         GunNodeWorld.trackTrailOriginNode(gunType);
+        GunNodeWorld.trackFlashlightOriginNode(gunType);
         GunNodeWorld.clearFpCache(player);
 
         ModelEnhancedGun model = getOrCreateModel(gunType, true, player.getUniqueID());
@@ -2035,6 +2036,12 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             GlStateManager.translate(-thirdPoint.x, -thirdPoint.y, -thirdPoint.z);
         }
 
+        if (player != null && renderType == RenderType.PLAYER) {
+            GunNodeWorld.trackTrailOriginNode(gunType);
+            GunNodeWorld.trackFlashlightOriginNode(gunType);
+            cacheTpFlashlightArmPose(player, readCurrentGlModelview());
+        }
+
         /**
          * gun
          */
@@ -2919,21 +2926,30 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     @SideOnly(Side.CLIENT)
     public static Vec3d fpNodeWorld(Matrix4f fpHandRootMat, Matrix4f nodeGlobalMat, Entity viewEntity,
             float partialTicks) {
+        GunNodeWorld.NodePose pose = fpNodePose(fpHandRootMat, nodeGlobalMat, viewEntity, partialTicks);
+        return pose != null ? pose.pos : Vec3d.ZERO;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static GunNodeWorld.NodePose fpNodePose(Matrix4f fpHandRootMat, Matrix4f nodeGlobalMat, Entity viewEntity,
+            float partialTicks) {
         if (fpHandRootMat == null || nodeGlobalMat == null || viewEntity == null) {
-            return Vec3d.ZERO;
+            return null;
         }
         if (!(viewEntity instanceof EntityLivingBase)) {
-            return Vec3d.ZERO;
+            return null;
         }
         Matrix4f combined = new Matrix4f(fpHandRootMat).mul(nodeGlobalMat);
         Vector3f p = new Vector3f();
         combined.transformPosition(0f, 0f, 0f, p);
+        Vector3f d = new Vector3f();
+        combined.transformDirection(1f, 0f, 0f, d);
         final double scale = sizeFactor / 10.0;
         EntityLivingBase living = (EntityLivingBase) viewEntity;
         Vec3d eye = living.getPositionEyes(partialTicks);
         Vec3d forward = living.getLook(partialTicks);
         if (forward.lengthSquared() < 1.0E-12D) {
-            return eye;
+            return new GunNodeWorld.NodePose(eye, new Vec3d(0, 0, 1));
         }
         forward = forward.normalize();
         Vec3d worldUp = new Vec3d(0.0D, 1.0D, 0.0D);
@@ -2944,7 +2960,14 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             right = right.normalize();
         }
         Vec3d up = right.crossProduct(forward).normalize();
-        return eye.add(right.scale(p.x * scale)).add(up.scale(p.y * scale)).subtract(forward.scale(p.z * scale));
+        Vec3d world = eye.add(right.scale(p.x * scale)).add(up.scale(p.y * scale)).subtract(forward.scale(p.z * scale));
+        Vec3d worldDir = right.scale(d.x).add(up.scale(d.y)).subtract(forward.scale(d.z));
+        if (worldDir.lengthSquared() < 1.0E-12D) {
+            worldDir = forward;
+        } else {
+            worldDir = worldDir.normalize();
+        }
+        return new GunNodeWorld.NodePose(world, worldDir);
     }
 
     /**
@@ -2997,12 +3020,16 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (holder == null || fpHandRootMat == null || !model.initCal) {
             return;
         }
+        if (cloud.siz.atomic.api.render.AtomicGBufferCompat.isShadowDepthActive()) {
+            return;
+        }
         LinkedHashSet<String> nodeNames = new LinkedHashSet<>();
         String debugRaw = debugGunNodeName;
         if (debugRaw != null && !debugRaw.trim().isEmpty()) {
             nodeNames.add(debugRaw.trim());
         }
         nodeNames.addAll(GunNodeWorld.trackedTrailNodes());
+        nodeNames.addAll(GunNodeWorld.trackedFlashlightNodes());
         if (nodeNames.isEmpty()) {
             return;
         }
@@ -3022,15 +3049,61 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             final boolean debugThis = debugTrimmed != null && trimmed.equals(debugTrimmed);
             final boolean fallbackGunModel = "gunModel".equals(bindKey) && !gunDebugInputMatchesAnyNode(model, trimmed);
             model.applyGlobalTransformToOther(bindKey, () -> {
-                Vec3d w = fpNodeWorld(fpMat, model.getGlobalTransform(bindKey), viewEnt, pt);
-                if (w != null) {
-                    GunNodeWorld.putFpCache(holder, trimmed, w);
+                GunNodeWorld.NodePose pose = fpNodePose(fpMat, model.getGlobalTransform(bindKey), viewEnt, pt);
+                if (pose != null) {
+                    GunNodeWorld.putFpCache(holder, trimmed, pose.pos, pose.dir);
                 }
                 if (debugThis) {
-                    drawGunNodeDebugOverlay(model, trimmed, bindKey, fallbackGunModel, w);
+                    drawGunNodeDebugOverlay(model, trimmed, bindKey, fallbackGunModel, pose != null ? pose.pos : null);
                 }
             });
         }
+        com.modularwarfare.client.flashlight.FlashlightLightSync.onPoseCached(holder);
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void cacheTpFlashlightArmPose(EntityLivingBase holder, Matrix4f tpGunRootMv) {
+        if (holder == null || tpGunRootMv == null) {
+            return;
+        }
+        if (cloud.siz.atomic.api.render.AtomicGBufferCompat.isShadowDepthActive()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getMinecraft();
+        Entity viewEnt = mc.getRenderViewEntity() != null ? mc.getRenderViewEntity() : holder;
+        float pt = mc.getRenderPartialTicks();
+        Vec3d camPos = net.minecraft.client.renderer.ActiveRenderInfo.projectViewFromEntity(viewEnt, pt);
+        Vec3d camForward = viewEnt.getLook(pt);
+        if (mc.gameSettings.thirdPersonView == 2) {
+            camForward = camForward.scale(-1.0D);
+        }
+        if (camForward.lengthSquared() < 1.0E-12D) {
+            camForward = new Vec3d(0, 0, 1);
+        } else {
+            camForward = camForward.normalize();
+        }
+        Vec3d worldUp = new Vec3d(0.0D, 1.0D, 0.0D);
+        Vec3d camRight = camForward.crossProduct(worldUp);
+        if (camRight.lengthSquared() < 1.0E-12D) {
+            camRight = new Vec3d(1.0D, 0.0D, 0.0D);
+        } else {
+            camRight = camRight.normalize();
+        }
+        Vec3d camUp = camRight.crossProduct(camForward).normalize();
+
+        Vector3f p = new Vector3f();
+        tpGunRootMv.transformPosition(0f, 0f, 0f, p);
+        Vector3f d = new Vector3f();
+        tpGunRootMv.transformDirection(1f, 0f, 0f, d);
+        Vec3d world = camPos.add(camRight.scale(p.x)).add(camUp.scale(p.y)).add(camForward.scale(-p.z));
+        Vec3d worldDir = camRight.scale(d.x).add(camUp.scale(d.y)).add(camForward.scale(-d.z));
+        if (worldDir.lengthSquared() < 1.0E-12D) {
+            Vec3d look = holder.getLook(pt);
+            worldDir = look.lengthSquared() > 1.0E-12D ? look.normalize() : camForward;
+        } else {
+            worldDir = worldDir.normalize();
+        }
+        com.modularwarfare.client.flashlight.FlashlightLightSync.putTpArmPose(holder, world, worldDir);
     }
 
     /** Three decimals; near-zero prints as {@code 0.000} (no minus) to avoid -0.000 flicker. */

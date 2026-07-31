@@ -18,6 +18,8 @@ import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
+import com.modularwarfare.client.laser.LaserRenderManager;
+import com.modularwarfare.client.flashlight.FlashlightRenderManager;
 import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.scope.ScopeUtils;
 import com.modularwarfare.common.armor.ArmorType;
@@ -180,7 +182,7 @@ public class ClientRenderHooks {
     
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     void onRender(RenderPlayerEvent.Pre event) {
-        boolean aim = AnimationUtils.isAiming.containsKey(event.getEntityPlayer().getUniqueID());
+        boolean aim = isThirdPersonAiming(event.getEntityPlayer().getUniqueID());
         if (!aim) {
             return;
         }
@@ -763,7 +765,7 @@ public class ClientRenderHooks {
             ModelBiped biped = (ModelBiped) event.getRenderer().getMainModel();
             Entity entity = event.getEntity();
             if (type.id == 1 && entity instanceof EntityPlayer) {
-                if (AnimationUtils.isAiming.containsKey(entity.getUniqueID())) {
+                if (isThirdPersonAiming(entity.getUniqueID())) {
                     biped.rightArmPose = ArmPose.BOW_AND_ARROW;
                 } else {
                     biped.rightArmPose = ArmPose.BLOCK;
@@ -830,6 +832,32 @@ public class ClientRenderHooks {
         }
 
         return x + dT * f3;
+    }
+
+    public static boolean isThirdPersonAiming(java.util.UUID playerId) {
+        if (playerId == null) {
+            return false;
+        }
+        if (AnimationUtils.isAiming.containsKey(playerId)) {
+            return true;
+        }
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.player != null && mc.player.getUniqueID().equals(playerId)) {
+            ItemStack held = mc.player.getHeldItemMainhand();
+            if (held.getItem() instanceof ItemGun) {
+                ItemGun gun = (ItemGun) held.getItem();
+                if (GunType.getAttachment(held, AttachmentPresetEnum.Laser) != null && gun.getLaserEnabled(held)) {
+                    return true;
+                }
+                if (GunType.getAttachment(held, AttachmentPresetEnum.Flashlight) != null && gun.getFlashlightEnabled(held)) {
+                    return true;
+                }
+            }
+        }
+        if (LaserRenderManager.getInstance().getLaserState(playerId)) {
+            return true;
+        }
+        return FlashlightRenderManager.getInstance().getFlashlightState(playerId);
     }
 
 }

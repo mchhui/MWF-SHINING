@@ -22,6 +22,7 @@ public class AttachmentRenderConfig {
     public AttachmentRenderConfig.Grip grip = new AttachmentRenderConfig.Grip();
     public AttachmentRenderConfig.Stock stock = new AttachmentRenderConfig.Stock();
     public AttachmentRenderConfig.Laser laser = new AttachmentRenderConfig.Laser();
+    public AttachmentRenderConfig.Flashlight flashlight = new AttachmentRenderConfig.Flashlight();
     public AttachmentRenderConfig.Pistolgrip pistolgrip = new AttachmentRenderConfig.Pistolgrip();
     public AttachmentRenderConfig.Handguard handguard = new AttachmentRenderConfig.Handguard();
 
@@ -106,6 +107,22 @@ public class AttachmentRenderConfig {
         public float laserAlpha = 1.0f;
         public double maxDistance = 100f;
         public float dotSize = 2.0f;
+    }
+
+    /** Atomic 射灯；线性 RGB。firstPerson/thirdPerson 为偏移与旋转微调。 */
+    public static class Flashlight {
+        public float[] color = {1.0f, 0.95f, 0.85f};
+        public float intensity = 5.0f;
+        public float range = 28.0f;
+        public float innerDeg = 10.0f;
+        public float outerDeg = 26.0f;
+        public ViewTune firstPerson = new ViewTune();
+        public ViewTune thirdPerson = new ViewTune();
+
+        public static class ViewTune {
+            public Vector3f posOffset = new Vector3f(0F, 0F, 0F);
+            public Vector3f rotOffset = new Vector3f(0F, 0F, 0F);
+        }
     }
 
     

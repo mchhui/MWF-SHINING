@@ -16,6 +16,7 @@ import com.modularwarfare.client.gui.hud.GunTransformHUD;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
 import com.modularwarfare.client.laser.LaserRenderManager;
+import com.modularwarfare.client.flashlight.FlashlightRenderManager;
 import com.modularwarfare.common.grenades.GrenadeType;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
@@ -23,6 +24,7 @@ import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
 import com.modularwarfare.common.network.PacketGunUnloadAttachment;
 import com.modularwarfare.common.network.PacketLaserToggle;
+import com.modularwarfare.common.network.PacketFlashlightToggle;
 import com.modularwarfare.utility.MWSound;
 import com.modularwarfare.utility.script.ScriptHost;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
@@ -231,14 +233,16 @@ public final class KeyInputHandler {
 
                 case Flashlight:
                     if(!entityPlayer.isSpectator()) {
-                        if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {
-                            if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
-                                final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-                                if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Flashlight) != null) {
-                                    final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(gunStack, AttachmentPresetEnum.Flashlight).getItem();
-                                    if (itemAttachment != null) {
-                                        RenderGunStatic.isLightOn = !RenderGunStatic.isLightOn;
-                                    }
+                        if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
+                            final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+                            if (GunType.getAttachment(gunStack, AttachmentPresetEnum.Flashlight) != null) {
+                                final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(gunStack, AttachmentPresetEnum.Flashlight).getItem();
+                                if (itemAttachment != null) {
+                                    boolean flashlightEnabled = !((ItemGun) gunStack.getItem()).getFlashlightEnabled(gunStack);
+                                    ((ItemGun) gunStack.getItem()).setFlashlightEnabled(gunStack, flashlightEnabled);
+                                    FlashlightRenderManager.getInstance().setFlashlightState(entityPlayer.getUniqueID(), flashlightEnabled);
+                                    RenderGunStatic.isLightOn = flashlightEnabled;
+                                    ModularWarfare.NETWORK.sendToServer(new PacketFlashlightToggle(flashlightEnabled));
                                     ModularWarfare.PROXY.playSound(new MWSound(entityPlayer.getPosition(), "attachment.apply", 1f, 1f));
                                 }
                             }

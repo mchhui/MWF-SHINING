@@ -16,6 +16,9 @@ import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.gui.hud.FlashSystem;
 import com.modularwarfare.client.gui.hud.GunUI;
 import com.modularwarfare.client.laser.LaserRenderManager;
+import com.modularwarfare.client.flashlight.FlashlightLightSync;
+import com.modularwarfare.client.flashlight.FlashlightRenderManager;
+import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.ModelGun;
 import com.modularwarfare.common.melee.ItemMelee;
@@ -129,6 +132,7 @@ public final class ClientTickHandler {
         switch (event.phase) {
             case START: {
                 //System.out.println(ClientTickHandler.reloadEnhancedPrognosisAmmoRendering);
+                FlashlightLightSync.tick();
                 float renderTick = event.renderTickTime;
                 renderTick *= 60.0F / Minecraft.getDebugFPS();
                 StateEntry.smoothing = renderTick;
@@ -231,10 +235,14 @@ public final class ClientTickHandler {
 
         if (player.getHeldItemMainhand().isEmpty()) {
             LaserRenderManager.getInstance().setLaserState(player.getUniqueID(), false);
+            FlashlightRenderManager.getInstance().setFlashlightState(player.getUniqueID(), false);
+            RenderGunStatic.isLightOn = false;
         }
 
         if (player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() instanceof ItemGun) {
             LaserRenderManager.getInstance().updateLaserState(player.getUniqueID(), player.getHeldItemMainhand());
+            FlashlightRenderManager.getInstance().updateFlashlightState(player.getUniqueID(), player.getHeldItemMainhand());
+            RenderGunStatic.isLightOn = ((ItemGun) player.getHeldItemMainhand().getItem()).getFlashlightEnabled(player.getHeldItemMainhand());
             float adsSpeed = 0F;
             ItemGun gun=(ItemGun)player.getHeldItemMainhand().getItem();
             gun.onUpdateClient(player, player.world, player.getHeldItemMainhand(), gun, gun.type);
@@ -321,6 +329,7 @@ public final class ClientTickHandler {
                     RenderParameters.GUN_CHANGE_Y = 1.0f-RenderParameters.GUN_CHANGE_Y;
                 }
                 LaserRenderManager.getInstance().updateLaserState(player.getUniqueID(), player.getHeldItemMainhand());
+                FlashlightRenderManager.getInstance().updateFlashlightState(player.getUniqueID(), player.getHeldItemMainhand());
             }
             if(GUN_CHANGE_Y<0.5) {
                 lastItemStack = ItemStack.EMPTY;
