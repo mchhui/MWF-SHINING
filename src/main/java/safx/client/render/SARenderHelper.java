@@ -2,6 +2,8 @@ package safx.client.render;
 
 import org.lwjgl.opengl.GL11;
 
+import com.modularwarfare.client.compat.AtomicShaderCompat;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -36,6 +38,8 @@ public class SARenderHelper {
 		lastBrightnessY= OpenGlHelper.lastBrightnessY;
 
 		GlStateManager.disableLighting();
+		// Atomic: ADDITIVE highlight stays fullbright via lightmap 240 (WorldLast forward /
+		// particle_forward). Mesh-fill emissive is not used here — SAFX draws after composite.
 		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
     }
 	
@@ -97,6 +101,10 @@ public class SARenderHelper {
         	shadedPassSavedBrightnessX = OpenGlHelper.lastBrightnessX;
         	shadedPassSavedBrightnessY = OpenGlHelper.lastBrightnessY;
         	Minecraft mc = Minecraft.getMinecraft();
+        	// Atomic WorldLast sanitize already enabled lightmap; keep sampling block+sky brightness.
+        	if (AtomicShaderCompat.isAtomicLoaded()) {
+        		mc.entityRenderer.enableLightmap();
+        	}
         	Entity view = mc.getRenderViewEntity();
         	if (view != null && mc.world != null) {
         		BlockPos eyePos = new BlockPos(view.posX, view.posY + (double) view.getEyeHeight(), view.posZ);

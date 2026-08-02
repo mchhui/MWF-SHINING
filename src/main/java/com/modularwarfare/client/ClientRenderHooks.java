@@ -19,6 +19,7 @@ import com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.laser.LaserRenderManager;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.flashlight.FlashlightRenderManager;
 import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.scope.ScopeUtils;
@@ -449,7 +450,11 @@ public class ClientRenderHooks {
                         if (needMirrorResources) {
                             ClientProxy.scopeUtils.initBlur();  
                         }
-                        OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());  
+                        OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+                        // OptiFine / scope FBO steal drops Hand MRT drawBuffers — restore fill + gun PBR.
+                        if (AtomicShaderCompat.isGBufferFillActive()) {
+                            AtomicShaderCompat.rebindFillAndGunPbr();
+                        }
                     }
                     GlStateManager.pushMatrix();
 

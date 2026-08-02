@@ -140,11 +140,19 @@ public class SAEventHandler {
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent
 	public static void onRenderWorldLast(RenderWorldLastEvent event) {
-
+		// Timing: after Atomic composite. Atomic WorldLast HIGHEST runs WorldLastGlSanitize
+		// (program 0 / main FBO / lightmap). Do not assume prior-pass GL state.
+		// RenderType split (see SARenderHelper):
+		//   ADDITIVE / NO_Z_TEST_ADDITIVE → fullbright lightmap 240 (highlight)
+		//   ALPHA_SHADED → block+sky lightmap (Atomic brightness)
+		//   ALPHA / SOLID / NO_Z_TEST → albedo only after sanitize
 //		GLStateSnapshot states = new GLStateSnapshot();
 		//System.out.println("***********BEFORE**********");
 		//states.printDebug();
 		LightCache.beginFrame();
+		if (com.modularwarfare.client.compat.AtomicShaderCompat.isAtomicLoaded()) {
+			Minecraft.getMinecraft().entityRenderer.enableLightmap();
+		}
 		ClientProxy.get().particleManager.renderParticles(Minecraft.getMinecraft().getRenderViewEntity(), event.getPartialTicks());
 //		states.restore();
 		//System.out.println("<<<<<<<<<<<AFTER>>>>>>>>>>>>");

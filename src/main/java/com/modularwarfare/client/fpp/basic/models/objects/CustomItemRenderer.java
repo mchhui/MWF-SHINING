@@ -4,6 +4,8 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.RenderHandSleeveEnhancedEvent;
 import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreFirstLayer;
 import com.modularwarfare.api.RenderHandFisrtPersonEnhancedEvent.PreSecondLayer;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
+import com.modularwarfare.client.compat.TextureSamplingRegistry;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig.ShowHandArmorType;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
@@ -70,11 +72,17 @@ public class CustomItemRenderer {
         if (cachedBadSkins.contains(type + "_" + fileName + "_glow")) {
             return false;
         }
-        bindTexture(type, fileName + "_glow", true, false);
+        // Glow is not a PBR albedo — skip Atomic PBR rebind (would steal TEX0).
+        bindTexture(type, fileName + "_glow", true, false, false);
         return true;
     }
     
     public void bindTexture(String type, String fileName, boolean saveBad, boolean printException) {
+        bindTexture(type, fileName, saveBad, printException, true);
+    }
+
+    public void bindTexture(String type, String fileName, boolean saveBad, boolean printException,
+            boolean ensureAtomicPbr) {
         String pathFormat = "skins/%s/%s.png";
 
         if (renderEngine == null)
@@ -88,7 +96,14 @@ public class CustomItemRenderer {
             ResourceLocation resourceLocation = new ResourceLocation(ModularWarfare.MOD_ID,
                     String.format(pathFormat, type, fileName));
             if (cachedSkins.containsKey(type + "_" + fileName)) {
-                renderEngine.bindTexture(cachedSkins.get(type + "_" + fileName));
+                resourceLocation = cachedSkins.get(type + "_" + fileName);
+                renderEngine.bindTexture(resourceLocation);
+                TextureSamplingRegistry.registerIfAbsent(resourceLocation, false);
+                if (ensureAtomicPbr) {
+                    AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(resourceLocation);
+                } else {
+                    TextureSamplingRegistry.restoreAlbedoSampling(resourceLocation);
+                }
                 return;
             } else if (renderEngine.getTexture(resourceLocation) == null) {
                 ITextureObject itextureobject = new SimpleTexture(resourceLocation);
@@ -96,6 +111,13 @@ public class CustomItemRenderer {
             }
 
             renderEngine.bindTexture(resourceLocation);
+            // Default FLAT = nearest; ClientProxy.loadTextures overwrites when sampling is known.
+            TextureSamplingRegistry.registerIfAbsent(resourceLocation, false);
+            if (ensureAtomicPbr) {
+                AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(resourceLocation);
+            } else {
+                TextureSamplingRegistry.restoreAlbedoSampling(resourceLocation);
+            }
         } catch (Exception e) {
             ResourceLocation resourceLocation = new ResourceLocation(ModularWarfare.MOD_ID,
                     String.format(pathFormat, "default", type, fileName));

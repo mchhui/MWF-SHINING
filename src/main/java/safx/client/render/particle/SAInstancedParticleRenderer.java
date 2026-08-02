@@ -165,6 +165,8 @@ public final class SAInstancedParticleRenderer {
 		if (!useLightmap) {
 			return;
 		}
+		// Atomic WorldLast: force-enable lightmap so ALPHA_SHADED samples Atomic brightness,
+		// not a stale / unbound unit left by the previous deferred pass.
 		mc.entityRenderer.enableLightmap();
 		GL13.glActiveTexture(OpenGlHelper.lightmapTexUnit);
 		GL11.glEnable(GL11.GL_TEXTURE_2D);

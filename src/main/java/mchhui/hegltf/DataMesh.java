@@ -1,5 +1,7 @@
 package mchhui.hegltf;
 
+import com.modularwarfare.client.compat.AtomicShaderCompat;
+import com.modularwarfare.client.compat.TextureSamplingRegistry;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
 
@@ -50,10 +52,21 @@ public class DataMesh {
                 t.printStackTrace();
             }
         }
-        // 如果需要 可加入纹理处理内容
+        // Must rebind fill/MRT before every draw — morph / FBO / program 0 otherwise leave
+        // only COLOR0 (albedo×lightmap) and empty normal/material → no sky/custom lights.
+        AtomicShaderCompat.rebindFillAndGunPbr();
+        // Atomic fill: write emissive into material.A with albedo still on TEX0 (no EQUAL fake pass).
+        boolean atomicGlow = ObjModelRenderer.glowTxtureMode
+                && AtomicShaderCompat.prepareGlowMapEmissive(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
         this.callVAO();
-        
-        if(ObjModelRenderer.glowTxtureMode) {
+        if (atomicGlow) {
+            AtomicShaderCompat.clearEmissive();
+            TextureSamplingRegistry.restoreDefaultTexUnit();
+            return;
+        }
+
+        if(ObjModelRenderer.glowTxtureMode && !AtomicShaderCompat.isGBufferFillActive()
+                && !AtomicShaderCompat.isShadowDepthActive()) {
             if(!ObjModelRenderer.customItemRenderer.bindTextureGlow(ObjModelRenderer.glowType, ObjModelRenderer.glowPath)) {
                 return;
             }

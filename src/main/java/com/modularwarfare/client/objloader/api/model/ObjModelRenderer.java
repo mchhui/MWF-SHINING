@@ -2,6 +2,8 @@ package com.modularwarfare.client.objloader.api.model;
 
 
 import com.modularwarfare.ModConfig;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
+import com.modularwarfare.client.compat.TextureSamplingRegistry;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.objloader.ObjModel;
 import com.modularwarfare.client.objloader.part.ModelObject;
@@ -87,9 +89,19 @@ public class ObjModelRenderer {
     public void render(float scale) {
         float x = OpenGlHelper.lastBrightnessX;
         float y = OpenGlHelper.lastBrightnessY;
+        // Restore fill/MRT before fixed-pipeline VAO (same as DataMesh).
+        AtomicShaderCompat.rebindFillAndGunPbr();
+        boolean atomicFill = AtomicShaderCompat.isGBufferFillActive()
+                && !AtomicShaderCompat.isShadowDepthActive();
+        boolean atomicGlowMap = glowTxtureMode
+                && AtomicShaderCompat.prepareGlowMapEmissive(glowType, glowPath);
         if (this.glow) {
-            GlStateManager.disableLighting();
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+            if (atomicFill) {
+                AtomicShaderCompat.setEmissiveFlat(1f);
+            } else {
+                GlStateManager.disableLighting();
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+            }
         }
         if (!this.isHidden) {
             if (!this.compiled) {
@@ -148,11 +160,15 @@ public class ObjModelRenderer {
                 GlStateManager.popMatrix();
             }
         }
-        if (this.glow) {
+        if (atomicGlowMap || (this.glow && atomicFill)) {
+            AtomicShaderCompat.clearEmissive();
+        }
+        if (this.glow && !atomicFill) {
             GlStateManager.disableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x, y);
         }
-        if(glowTxtureMode) {
+        if (glowTxtureMode && !atomicGlowMap && !atomicFill
+                && !AtomicShaderCompat.isShadowDepthActive()) {
             if(!customItemRenderer.bindTextureGlow(glowType, glowPath)) {
                 return;
             }

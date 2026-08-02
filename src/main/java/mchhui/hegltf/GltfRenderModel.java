@@ -19,6 +19,7 @@ import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Quaternion;
 
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.utility.OptifineHelper;
 
 import mchhui.hegltf.DataAnimation.Transform;
@@ -212,11 +213,7 @@ public class GltfRenderModel {
 
                 GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
                 GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
-                if(OptifineHelper.isShadersEnabled()) {
-                    GL20.glUseProgram(OptifineHelper.getProgram());
-                }else {
-                    GL20.glUseProgram(0);  
-                }
+                restoreProgramAfterSkinCompute();
             }
             
         }
@@ -244,14 +241,23 @@ public class GltfRenderModel {
 
                 GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
                 GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
-                if(OptifineHelper.isShadersEnabled()) {
-                    GL20.glUseProgram(OptifineHelper.getProgram());
-                }else {
-                    GL20.glUseProgram(0);  
-                }
+                restoreProgramAfterSkinCompute();
             }
         }
         return true;
+    }
+
+    /** After skin SSBO compute: restore Atomic fill/shadow or OptiFine program (do not leave program 0). */
+    private static void restoreProgramAfterSkinCompute() {
+        if (AtomicShaderCompat.isShadowDepthActive() || AtomicShaderCompat.isGBufferFillActive()) {
+            AtomicShaderCompat.rebindFillAndGunPbr();
+            return;
+        }
+        if (OptifineHelper.isShadersEnabled()) {
+            GL20.glUseProgram(OptifineHelper.getProgram());
+        } else {
+            GL20.glUseProgram(0);
+        }
     }
 
     // 阴阳！哈哈哈 下次试试aplle和pear XD
@@ -260,6 +266,8 @@ public class GltfRenderModel {
         if (!geoModel.loaded) {
             return;
         }
+        // Batch start: restore g_buffer_fill + MRT + gun _n/_s.
+        AtomicShaderCompat.rebindFillAndGunPbr();
         for (Entry<String, DataNode> e : geoModel.nodes.entrySet()) {
             if (sun != null && !sun.isEmpty() && !sun.contains(e.getKey())) {
                 continue;
