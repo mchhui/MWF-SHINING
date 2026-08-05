@@ -10,7 +10,6 @@ import com.modularwarfare.api.RenderHandSleeveEnhancedEvent;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
 import com.modularwarfare.client.compat.AtomicShaderCompat;
-import com.modularwarfare.client.compat.MwfAtomicGunPoseCache;
 import com.modularwarfare.client.compat.TextureSamplingRegistry;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.model.ModelCustomArmor;
@@ -1979,15 +1978,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
     public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
             ItemStack demoStack, boolean sneakFlag) {
-        drawThirdGun(renderPlayer, renderType, player, demoStack, sneakFlag, false);
-    }
-
-    /**
-     * @param skipWorldTransforms when true, caller already loaded {@code T(-origin)*worldGunRoot}
-     *                            (Atomic External shadow); skip arm / config / pose cache.
-     */
-    public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
-            ItemStack demoStack, boolean sneakFlag, boolean skipWorldTransforms) {
         if (!(demoStack.getItem() instanceof ItemGun))
             return;
         GunType gunType = ((ItemGun) demoStack.getItem()).type;
@@ -2098,7 +2088,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         ClientProxy.gunEnhancedRenderer.color(1, 1, 1, 1f);
 
-        if (!skipWorldTransforms) {
         if (player != null && sneakFlag) {
             GlStateManager.translate(0.0F, 0.2F, 0.0F);
         }
@@ -2133,13 +2122,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             GunNodeWorld.trackFlashlightOriginNode(gunType);
             cacheTpFlashlightArmPose(player, readCurrentGlModelview());
         }
-        if (atomicShadowOnly) {
-            // Keep any color-frame world matrix; only warm entityId/stack for External.
-            touchTpGunPoseForAtomicShadow(player, renderType, demoStack, sneakFlag);
-        } else {
-            cacheTpGunPoseForAtomic(player, renderType, demoStack, sneakFlag, readCurrentGlModelview());
-        }
-        } // !skipWorldTransforms
 
         /**
          * gun
@@ -2525,83 +2507,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (bindingTexture != null) {
             TextureSamplingRegistry.restoreAlbedoSampling(bindingTexture);
         }
-    }
-
-    @SideOnly(Side.CLIENT)
-    private void cacheTpGunPoseForAtomic(EntityLivingBase player, RenderType renderType, ItemStack stack,
-            boolean sneakFlag, Matrix4f camRelativeGunRoot) {
-        if (!AtomicShaderCompat.isAtomicLoaded() || renderType == null || stack == null || stack.isEmpty()) {
-            return;
-        }
-        String key;
-        float x, y, z;
-        int entityId = -1;
-        if (player != null) {
-            key = "p:" + player.getUniqueID() + ":" + renderType.serializedName;
-            x = (float) player.posX;
-            y = (float) (player.posY + player.getEyeHeight() * 0.5);
-            z = (float) player.posZ;
-            entityId = player.getEntityId();
-        } else {
-            key = "s:" + renderType.serializedName + ":" + System.identityHashCode(stack);
-            Minecraft mc = Minecraft.getMinecraft();
-            Entity view = mc.getRenderViewEntity();
-            if (view == null) {
-                return;
-            }
-            x = (float) view.posX;
-            y = (float) view.posY;
-            z = (float) view.posZ;
-        }
-        float[] worldMat = camRelativeGunRoot != null
-                ? MwfAtomicGunPoseCache.camRelativeMvToWorldMatrix(camRelativeGunRoot)
-                : null;
-        MwfAtomicGunPoseCache.put(key, x, y, z, worldMat, stack, renderType.serializedName, sneakFlag, entityId);
-    }
-
-    @SideOnly(Side.CLIENT)
-    private void touchTpGunPoseForAtomicShadow(EntityLivingBase player, RenderType renderType, ItemStack stack,
-            boolean sneakFlag) {
-        if (!AtomicShaderCompat.isAtomicLoaded() || renderType == null || stack == null || stack.isEmpty()) {
-            return;
-        }
-        String key;
-        float x, y, z;
-        int entityId = -1;
-        if (player != null) {
-            key = "p:" + player.getUniqueID() + ":" + renderType.serializedName;
-            x = (float) player.posX;
-            y = (float) (player.posY + player.getEyeHeight() * 0.5);
-            z = (float) player.posZ;
-            entityId = player.getEntityId();
-        } else {
-            return;
-        }
-        MwfAtomicGunPoseCache.touchForShadowPass(key, x, y, z, stack, renderType.serializedName, sneakFlag,
-                entityId);
-    }
-
-    /**
-     * Atomic External shadow: draw opaque TP gun with MODELVIEW already
-     * {@code T(-origin) * worldGunRoot}.
-     */
-    @SideOnly(Side.CLIENT)
-    public void drawThirdGunForAtomicShadow(ItemStack demoStack, String renderTypeName, EntityLivingBase player,
-            boolean sneakFlag) {
-        if (demoStack == null || demoStack.isEmpty() || renderTypeName == null) {
-            return;
-        }
-        RenderType renderType = null;
-        for (RenderType t : RenderType.values()) {
-            if (renderTypeName.equals(t.serializedName)) {
-                renderType = t;
-                break;
-            }
-        }
-        if (renderType == null) {
-            return;
-        }
-        drawThirdGun(null, renderType, player, demoStack, sneakFlag, true);
     }
 
     @SideOnly(Side.CLIENT)

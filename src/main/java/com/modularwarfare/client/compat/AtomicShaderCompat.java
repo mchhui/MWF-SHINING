@@ -24,24 +24,6 @@ public final class AtomicShaderCompat {
 
     public static final String MODID = "siz_atomicshader";
 
-    private static final ThreadLocal<ShadowDepthSession> SHADOW_SESSION = new ThreadLocal<>();
-    private static final java.nio.FloatBuffer LIGHT_VP_UPLOAD =
-            org.lwjgl.BufferUtils.createFloatBuffer(16);
-
-    private static final class ShadowDepthSession {
-        final Runnable rebindDepth;
-        final float[] lightViewProj;
-        final float originX, originY, originZ;
-
-        ShadowDepthSession(Runnable rebindDepth, float[] lightViewProj, float ox, float oy, float oz) {
-            this.rebindDepth = rebindDepth;
-            this.lightViewProj = lightViewProj;
-            this.originX = ox;
-            this.originY = oy;
-            this.originZ = oz;
-        }
-    }
-
     private static ResourceLocation currentFillAlbedo;
 
     private AtomicShaderCompat() {
@@ -97,62 +79,12 @@ public final class AtomicShaderCompat {
         AtomicGBufferCompat.rebindFillIfActive();
     }
 
-    public static void beginShadowDepthExternal(Runnable rebind, float[] lightViewProj, float originX,
-            float originY, float originZ) {
-        float[] vpCopy = null;
-        if (lightViewProj != null && lightViewProj.length >= 16) {
-            vpCopy = new float[16];
-            System.arraycopy(lightViewProj, 0, vpCopy, 0, 16);
-        }
-        SHADOW_SESSION.set(new ShadowDepthSession(rebind, vpCopy, originX, originY, originZ));
-    }
-
-    public static void endShadowDepthExternal() {
-        SHADOW_SESSION.remove();
-    }
-
-    public static void beginShadowDepthDrawBatch() {
-        ShadowDepthSession s = SHADOW_SESSION.get();
-        if (s == null) {
-            return;
-        }
-        if (s.rebindDepth != null) {
-            try {
-                s.rebindDepth.run();
-            } catch (Throwable ignored) {
-            }
-        }
-        applyShadowFixedPipeline(s, true);
-    }
-
+    /**
+     * After morph during entity-sun / custom shadow fill via {@code renderEntity}:
+     * drop compute/skin programs so fixed-pipeline depth writes work.
+     */
     public static void restoreShadowFixedPipelineAfterMorph() {
-        ShadowDepthSession s = SHADOW_SESSION.get();
-        if (s == null) {
-            return;
-        }
-        if (s.rebindDepth != null) {
-            try {
-                s.rebindDepth.run();
-            } catch (Throwable ignored) {
-            }
-        }
-        applyShadowFixedPipeline(s, false);
-    }
-
-    private static void applyShadowFixedPipeline(ShadowDepthSession s, boolean resetModelviewToOrigin) {
         GL20.glUseProgram(0);
-        GlStateManager.matrixMode(5889);
-        if (s.lightViewProj != null) {
-            LIGHT_VP_UPLOAD.clear();
-            LIGHT_VP_UPLOAD.put(s.lightViewProj, 0, 16);
-            LIGHT_VP_UPLOAD.flip();
-            GL11.glLoadMatrix(LIGHT_VP_UPLOAD);
-        }
-        GlStateManager.matrixMode(5888);
-        if (resetModelviewToOrigin) {
-            GlStateManager.loadIdentity();
-            GlStateManager.translate(-s.originX, -s.originY, -s.originZ);
-        }
         GlStateManager.disableBlend();
         GlStateManager.enableDepth();
         GlStateManager.depthMask(true);
