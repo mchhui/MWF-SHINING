@@ -63,6 +63,9 @@ public final class FlashlightLightSync {
         if (!(holder instanceof EntityPlayer) || !AtomicLightApi.isAvailable()) {
             return;
         }
+        if (!cloud.siz.atomic.api.render.AtomicPipelineApi.isPipelineEnabled()) {
+            return;
+        }
         if (cloud.siz.atomic.api.render.AtomicGBufferCompat.isShadowDepthActive()) {
             return;
         }
@@ -70,7 +73,8 @@ public final class FlashlightLightSync {
     }
 
     public static void tick() {
-        if (!AtomicLightApi.isAvailable()) {
+        if (!AtomicLightApi.isAvailable()
+                || !cloud.siz.atomic.api.render.AtomicPipelineApi.isPipelineEnabled()) {
             clearAll();
             return;
         }

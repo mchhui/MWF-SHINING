@@ -50,7 +50,7 @@ public final class MwfAtomicDrawBridge {
     }
 
     public static boolean shouldSkipLegacyForwardDraw() {
-        return AtomicShaderCompat.isAtomicLoaded();
+        return AtomicShaderCompat.isPipelineEnabled();
     }
 
     @SubscribeEvent

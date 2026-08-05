@@ -37,28 +37,30 @@ public final class AtomicShaderCompat {
         return isAtomicLoaded() && AtomicGBufferCompat.isAvailable();
     }
 
-    /** World entity fill OR first-person hand fill. */
+    /** Deferred master switch — when false, all Atomic compat must use vanilla MWF paths. */
+    public static boolean isPipelineEnabled() {
+        return isAvailable() && AtomicGBufferCompat.isPipelineEnabled();
+    }
+
+    /** World entity fill OR first-person hand fill (requires master on). */
     public static boolean isGBufferFillActive() {
-        return isAvailable() && AtomicGBufferCompat.isGBufferFillActive();
+        return isPipelineEnabled() && AtomicGBufferCompat.isGBufferFillActive();
     }
 
     public static boolean isShadowDepthActive() {
-        return isAvailable() && AtomicGBufferCompat.isShadowDepthActive();
+        return isPipelineEnabled() && AtomicGBufferCompat.isShadowDepthActive();
     }
 
     public static boolean isPipelineTakingOverExternalMeshes() {
-        return isAvailable() && AtomicGBufferCompat.isPipelineTakingOverExternalMeshes();
+        return isPipelineEnabled() && AtomicGBufferCompat.isPipelineTakingOverExternalMeshes();
     }
 
     /**
      * When Atomic owns deferred mesh: skip color draws outside fill/shadow
-     * (avoids fullbright forward dual-paint).
+     * (avoids fullbright forward dual-paint). When master is off, never skip.
      */
     public static boolean shouldSkipLegacyColorDraw() {
-        if (!isAtomicLoaded()) {
-            return false;
-        }
-        if (!isAvailable()) {
+        if (!isPipelineEnabled()) {
             return false;
         }
         if (isGBufferFillActive() || isShadowDepthActive()) {
