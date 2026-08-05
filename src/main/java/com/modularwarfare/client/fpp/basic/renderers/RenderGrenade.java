@@ -2,6 +2,7 @@ package com.modularwarfare.client.fpp.basic.renderers;
 
 import com.modularwarfare.api.GunBobbingEvent;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.model.ModelGrenade;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
@@ -44,6 +45,10 @@ public class RenderGrenade extends CustomItemRenderer {
     public void renderItem(CustomItemRenderType type, EnumHand hand, ItemStack item, Object... data) {
         if (!(item.getItem() instanceof ItemGrenade))
             return;
+
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
+            return;
+        }
 
         GrenadeType grenadeType = ((ItemGrenade) item.getItem()).type;
         if (grenadeType == null)
@@ -170,8 +175,10 @@ public class RenderGrenade extends CustomItemRenderer {
                 String path = skinId > 0 ? "skins/" + grenadeType.modelSkins[skinId].getSkin() : grenadeType.modelSkins[0].getSkin();
                 bindTexture("grenades", path);
                 GL11.glScalef(modelScale, modelScale, modelScale);
+                AtomicShaderCompat.beginOpaqueFillCapture();
                 model.renderPart("grenadeModel", f);
                 model.renderPart("pinModel", f);
+                AtomicShaderCompat.afterOpaqueMesh();
             }
             GL11.glPopMatrix();
         }

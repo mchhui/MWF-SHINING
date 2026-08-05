@@ -166,6 +166,52 @@ public final class AtomicShaderCompat {
     }
 
     /**
+     * Bind an albedo for the current fill mesh and adopt it as {@code currentFillAlbedo}.
+     * Clears leftover emissive so glow from a previous item cannot tint the next mesh.
+     */
+    public static void bindFillAlbedo(ResourceLocation albedo) {
+        if (albedo == null) {
+            return;
+        }
+        Minecraft.getMinecraft().getTextureManager().bindTexture(albedo);
+        if (isGBufferFillActive() && !isShadowDepthActive()) {
+            clearEmissive();
+            ensurePbrMapsForBoundAlbedo(albedo);
+        } else {
+            TextureSamplingRegistry.restoreAlbedoSampling(albedo);
+        }
+    }
+
+    /**
+     * Start opaque mesh capture while Atomic Hand/Entity fill is active: disable soft blend
+     * (SrcA into MRT → black fringes) and restore fill + last albedo PBR maps.
+     * Soft translucent layers must use {@code finishHandDeferredIfActive} (FP) or
+     * {@code AtomicExternalDrawEvent.EntityForwardOverlay} after composite — not this path.
+     * <p>
+     * Call {@link #bindFillAlbedo} / {@link #ensurePbrMapsForBoundAlbedo} for the mesh about to
+     * draw <b>before</b> this, or {@link #rebindFillAndGunPbr} will restore a stale item albedo.
+     */
+    public static void beginOpaqueFillCapture() {
+        if (!isGBufferFillActive() || isShadowDepthActive()) {
+            return;
+        }
+        GlStateManager.disableBlend();
+        GlStateManager.enableDepth();
+        GlStateManager.depthMask(true);
+        rebindFillAndGunPbr();
+    }
+
+    /**
+     * After an opaque mesh (or morph) during fill: restore MRT + gun/item PBR bindings.
+     */
+    public static void afterOpaqueMesh() {
+        if (!isGBufferFillActive() && !isShadowDepthActive()) {
+            return;
+        }
+        rebindFillAndGunPbr();
+    }
+
+    /**
      * Soft alpha FX (muzzle flash / smoke) must not {@code enableBlend} into Hand/Entity MRT:
      * SrcA blend fades RGB into clear(0) → black fringes. Use replace + alpha discard instead.
      */

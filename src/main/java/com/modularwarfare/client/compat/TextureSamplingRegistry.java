@@ -15,6 +15,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Remembers MWF skin/effect sampling (NEAREST vs LINEAR) and re-applies it after Atomic
  * PBR hot-swap / multi-tex-unit binds, which can leave the wrong filter on the albedo
  * or leave a non-TEX0 unit active (leaking into fire / particles).
+ * <p>
+ * {@code glTexParameteri} is sticky on the GL texture object — never call
+ * {@link #applyBoundFilter} unless that albedo is currently bound on TEX0. After MWF draws,
+ * call {@link #restoreVanillaBlocksAtlasSampling()} so the blocks atlas is not left LINEAR.
  */
 @SideOnly(Side.CLIENT)
 public final class TextureSamplingRegistry {
@@ -42,6 +46,7 @@ public final class TextureSamplingRegistry {
     }
 
     public static void applyBoundFilter(boolean linear) {
+        // Sticky on the currently bound TEX0 object — caller must bind the intended albedo first.
         int filter = linear ? GL11.GL_LINEAR : GL11.GL_NEAREST;
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, filter);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, filter);
@@ -69,5 +74,29 @@ public final class TextureSamplingRegistry {
     /** Force TEX0 active so later vanilla/Atomic binds do not hit TEX2–TEX5. */
     public static void restoreDefaultTexUnit() {
         OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
+    }
+
+    /**
+     * Reset vanilla blocks-atlas filter/mipmap after MWF LINEAR skins or multi-unit binds may
+     * have sticky-{@code glTexParameteri}'d the atlas (blurry/black fire, seamed water).
+     * Uses sprite mode ({@code setBlurMipmap(false,false)}) — safe for fire overlays; Atomic
+     * restores world mip settings again before water.
+     */
+    public static void restoreVanillaBlocksAtlasSampling() {
+        restoreDefaultTexUnit();
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.getTextureManager() == null) {
+            return;
+        }
+        try {
+            GlStateManager.enableTexture2D();
+            ITextureObject tex =
+                    mc.getTextureManager()
+                            .getTexture(net.minecraft.client.renderer.texture.TextureMap.LOCATION_BLOCKS_TEXTURE);
+            if (tex != null) {
+                tex.setBlurMipmap(false, false);
+            }
+        } catch (Throwable ignored) {
+        }
     }
 }

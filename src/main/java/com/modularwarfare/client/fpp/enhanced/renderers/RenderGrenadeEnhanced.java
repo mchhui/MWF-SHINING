@@ -18,6 +18,7 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
@@ -79,6 +80,10 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
         EntityPlayerSP player = (EntityPlayerSP)Minecraft.getMinecraft().player;
         if (!(item.getItem() instanceof ItemGrenade))
             return;
+
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
+            return;
+        }
 
         GrenadeType grenadeType = ((ItemGrenade)item.getItem()).type;
         if (grenadeType == null)
@@ -166,8 +171,12 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.matrixMode(GL11.GL_MODELVIEW);
         GlStateManager.loadIdentity();
         GlStateManager.multMatrix(floatBuffer);
-        GlStateManager.enableBlend();
-        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
+        if (!AtomicShaderCompat.isGBufferFillActive()) {
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
+        } else {
+            GlStateManager.disableBlend();
+        }
         GlStateManager.shadeModel(GL11.GL_SMOOTH);
         model.updateAnimation(controller.getTime(), true);
         /**
@@ -178,6 +187,7 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
              * player left hand
              * */
             bindPlayerSkin();
+            AtomicShaderCompat.rebindFillAndGunPbr();
             ObjModelRenderer.glowTxtureMode=false;
             renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
             ObjModelRenderer.glowTxtureMode=true;
@@ -190,6 +200,7 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
              * player left hand
              * */
             bindPlayerSkin();
+            AtomicShaderCompat.rebindFillAndGunPbr();
             ObjModelRenderer.glowTxtureMode=false;
             renderHandAndArmor(EnumHandSide.RIGHT, player, config, modelPlayer, model);
             ObjModelRenderer.glowTxtureMode=true;
@@ -201,7 +212,9 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
             }
             String grenadePath = skinId > 0 ? grenadeType.modelSkins[skinId].getSkin() : grenadeType.modelSkins[0].getSkin();
             bindTexture("grenades", grenadePath);
+            AtomicShaderCompat.beginOpaqueFillCapture();
             model.renderPartExcept(DEFAULT_EXCEPT);
+            AtomicShaderCompat.afterOpaqueMesh();
         });
         
         GlStateManager.popMatrix();
@@ -274,6 +287,10 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
     public void renderThirdPersonGrenade(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player, ItemStack demoStack, boolean sneakFlag) {
         if (!(demoStack.getItem() instanceof ItemGrenade)) return;
         
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
+            return;
+        }
+
         GrenadeType grenadeType = ((ItemGrenade) demoStack.getItem()).type;
         if (grenadeType == null || grenadeType.animationType != WeaponAnimationType.ENHANCED) return;
 
@@ -374,7 +391,9 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
                 "leftArmSlimModel", "leftArmLayerSlimModel",
                 "rightArmSlimModel", "rightArmLayerSlimModel"
             ));
+        AtomicShaderCompat.beginOpaqueFillCapture();
         model.renderPartExcept(exceptParts);
+        AtomicShaderCompat.afterOpaqueMesh();
 
         ObjModelRenderer.glowTxtureMode = glowTxtureMode;
         GlStateManager.shadeModel(GL11.GL_FLAT);
@@ -400,11 +419,13 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
     public void bindTexture(ResourceLocation location) {
         bindingTexture = location;
         Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
+        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
     }
 
     public void bindPlayerSkin() {
         bindingTexture = Minecraft.getMinecraft().player.getLocationSkin();
         Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
+        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
     }
 
     public void bindCustomHands(TextureType handTextureType) {
@@ -412,5 +433,6 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
             bindingTexture = handTextureType.resourceLocations.get(0);
         }
         Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
+        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
     }
 }

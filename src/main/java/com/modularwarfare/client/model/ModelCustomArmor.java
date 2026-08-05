@@ -12,7 +12,9 @@ import com.modularwarfare.client.model.ModelCustomArmor.Bones.BonePart.EnumBoneT
 import com.modularwarfare.client.objloader.MWModelBipedBase;
 import com.modularwarfare.client.objloader.api.ObjModelLoader;
 import com.modularwarfare.client.objloader.api.model.ObjModelRenderer;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.patch.obfuscate.ModelPlayerEventHelper;
+import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.guns.GunType;
 import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
@@ -36,6 +38,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 
 import org.lwjgl.opengl.GL11;
@@ -186,12 +189,20 @@ public class ModelCustomArmor extends MWModelBipedBase {
             ObjModelRenderer part = this.staticModel.getPart(modelPart);
             if (part != null) {
                 if (part != null) {
+                    ResourceLocation armorAlbedo = resolveArmorAlbedoLocation();
                     ObjModelRenderer.glowType = "armor";
-                    ObjModelRenderer.glowPath = type.modelSkins[0].getSkin();
+                    ObjModelRenderer.glowPath = resolveArmorGlowSkin();
                     boolean glow = ObjModelRenderer.glowTxtureMode;
                     ObjModelRenderer.glowTxtureMode = true;
                     if(!translucentBatch) {
+                        if (AtomicShaderCompat.isGBufferFillActive()) {
+                            AtomicShaderCompat.bindFillAlbedo(armorAlbedo);
+                            AtomicShaderCompat.beginOpaqueFillCapture();
+                        }
                         part.render(f5);
+                        if (AtomicShaderCompat.isGBufferFillActive()) {
+                            AtomicShaderCompat.afterOpaqueMesh();
+                        }
                         //穿mwf护甲才开启半透明渲染batch
                         needTranslucentBatchBuf=true;
                     }else {
@@ -225,6 +236,40 @@ public class ModelCustomArmor extends MWModelBipedBase {
             }
             GlStateManager.popMatrix();
         }
+    }
+
+    /** Match {@link com.modularwarfare.common.armor.ItemMWArmor#getArmorTexture} path rules. */
+    private ResourceLocation resolveArmorAlbedoLocation() {
+        return new ResourceLocation(ModularWarfare.MOD_ID, "skins/armor/" + resolveArmorTexturePath() + ".png");
+    }
+
+    private String resolveArmorGlowSkin() {
+        String path = resolveArmorTexturePath();
+        // glow map is skins/armor/<skin>_glow.png via glowType=armor + glowPath=skin name
+        if (path.startsWith("skins/")) {
+            return path.substring("skins/".length());
+        }
+        return path;
+    }
+
+    private String resolveArmorTexturePath() {
+        String skin = type.modelSkins[0].getSkin();
+        int skinId = 0;
+        if (renderingEntity instanceof EntityLivingBase) {
+            for (ItemStack stack : ((EntityLivingBase) renderingEntity).getArmorInventoryList()) {
+                if (!stack.isEmpty() && stack.getItem() instanceof ItemMWArmor
+                        && ((ItemMWArmor) stack.getItem()).type == type) {
+                    if (stack.hasTagCompound() && stack.getTagCompound().hasKey("skinId")) {
+                        skinId = stack.getTagCompound().getInteger("skinId");
+                    }
+                    break;
+                }
+            }
+        }
+        if (skinId > 0 && type.modelSkins.length > skinId) {
+            return "skins/" + type.modelSkins[skinId].getSkin();
+        }
+        return skin;
     }
 
     /**

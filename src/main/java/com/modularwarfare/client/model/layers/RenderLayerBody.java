@@ -1,18 +1,14 @@
 package com.modularwarfare.client.model.layers;
 
 import com.modularwarfare.ModularWarfare;
-import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.model.ModelCustomArmor;
-import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
-import com.modularwarfare.common.type.BaseItem;
-import com.modularwarfare.common.type.BaseType;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
@@ -35,6 +31,9 @@ public class RenderLayerBody implements LayerRenderer<EntityPlayer> {
     }
 
     public void doRenderLayer(final EntityPlayer player, final float limbSwing, final float limbSwingAmount, final float partialTicks, final float ageInTicks, final float netHeadYaw, final float headPitch, final float scale) {
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
+            return;
+        }
         final int[] slots = new int[]{1};
 
         if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
@@ -60,10 +59,15 @@ public class RenderLayerBody implements LayerRenderer<EntityPlayer> {
             GlStateManager.enableRescaleNormal();
             final int skinId = 0;
             String path = skinId > 0 ? "skins/" + armorType.modelSkins[skinId].getSkin() : armorType.modelSkins[0].getSkin();
-            Minecraft.getMinecraft().getRenderManager().renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "skins/armor/" + path + ".png"));
+            ResourceLocation albedo = new ResourceLocation(ModularWarfare.MOD_ID, "skins/armor/" + path + ".png");
+            AtomicShaderCompat.bindFillAlbedo(albedo);
+            AtomicShaderCompat.beginOpaqueFillCapture();
             GL11.glScalef(1.0f, 1.0f, 1.0f);
             GlStateManager.shadeModel(GL11.GL_SMOOTH);
+            armorModel.renderingEntity = player;
             armorModel.render("armorModel", this.renderer.getMainModel().bipedBody, 0.0625f, 1f);
+            AtomicShaderCompat.afterOpaqueMesh();
+            AtomicShaderCompat.clearEmissive();
             GlStateManager.shadeModel(GL11.GL_FLAT);
             GlStateManager.popMatrix();
         }

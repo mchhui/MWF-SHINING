@@ -31,6 +31,7 @@ public final class MwfAtomicDrawBridge {
         if (!busRegistered) {
             busRegistered = true;
             MinecraftForge.EVENT_BUS.register(INSTANCE);
+            MinecraftForge.EVENT_BUS.register(ArmorTranslucentOverlay.INSTANCE);
         }
         tryEnableGBuffer();
     }
@@ -55,6 +56,10 @@ public final class MwfAtomicDrawBridge {
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            ArmorTranslucentOverlay.beginFrame();
+            return;
+        }
         if (event.phase != TickEvent.Phase.END) {
             return;
         }

@@ -2,7 +2,7 @@ package com.modularwarfare.client.model.layers;
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
-import com.modularwarfare.client.ClientEventHandler;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.model.ModelBackpack;
 import com.modularwarfare.common.backpacks.ItemBackpack;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
@@ -31,6 +31,9 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
     }
 
     public void doRenderLayer(final EntityPlayer player, final float limbSwing, final float limbSwingAmount, final float partialTicks, final float ageInTicks, final float netHeadYaw, final float headPitch, final float scale) {
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
+            return;
+        }
 
         if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
             final IExtraItemHandler extraSlots = player.getCapability(CapabilityExtra.CAPABILITY, null);
@@ -58,8 +61,9 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                 }
 
                 String path = skinId > 0 ? backpack.type.modelSkins[skinId].getSkin() : backpack.type.modelSkins[0].getSkin();
-
-                Minecraft.getMinecraft().getRenderManager().renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "skins/backpacks/" + path + ".png"));
+                ResourceLocation albedo = new ResourceLocation(ModularWarfare.MOD_ID, "skins/backpacks/" + path + ".png");
+                AtomicShaderCompat.bindFillAlbedo(albedo);
+                AtomicShaderCompat.beginOpaqueFillCapture();
 
                 ModelBackpack model = (ModelBackpack) backpack.type.model;
 
@@ -76,7 +80,11 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                     float lastBrightnessX = OpenGlHelper.lastBrightnessX;
                     float lastBrightnessY = OpenGlHelper.lastBrightnessY;
 
-                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+                    if (AtomicShaderCompat.isGBufferFillActive()) {
+                        AtomicShaderCompat.beginFlatEmissiveHighlight();
+                    } else {
+                        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+                    }
 
                     if(!player.isElytraFlying()) {
                         model.render("jetOnModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
@@ -84,10 +92,16 @@ public class RenderLayerBackpack implements LayerRenderer<EntityPlayer> {
                         model.render("jetBoostModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                     }
 
-                    OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lastBrightnessX, lastBrightnessY);
+                    if (AtomicShaderCompat.isGBufferFillActive()) {
+                        AtomicShaderCompat.endFlatEmissiveHighlight();
+                    } else {
+                        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lastBrightnessX, lastBrightnessY);
+                    }
                 } else {
                     model.render("jetOffModel", 1f, ((ModelBackpack)backpack.type.model).config.extra.modelScale);
                 }
+                AtomicShaderCompat.afterOpaqueMesh();
+                AtomicShaderCompat.clearEmissive();
                 GlStateManager.shadeModel(GL11.GL_FLAT);
                 GlStateManager.popMatrix();
                 GlStateManager.enableLighting();

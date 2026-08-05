@@ -3,6 +3,7 @@ package com.modularwarfare.client.fpp.enhanced.renderers;
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.ClientRenderHooks;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderType;
 import com.modularwarfare.client.fpp.basic.models.objects.CustomItemRenderer;
 import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
@@ -105,6 +106,10 @@ public class RenderMelee extends CustomItemRenderer {
     public void renderItem(CustomItemRenderType type, EnumHand hand, ItemStack item, Object... data) {
         if (!(item.getItem() instanceof ItemMelee))
             return;
+
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
+            return;
+        }
 
         MeleeType meleeType = ((ItemMelee) item.getItem()).type;
         if (meleeType == null)
@@ -279,6 +284,7 @@ public class RenderMelee extends CustomItemRenderer {
                     "sprint_righthand", true, true, () -> {
                     ObjModelRenderer.glowTxtureMode = false;
                     bindPlayerSkin();
+                    AtomicShaderCompat.rebindFillAndGunPbr();
                     ClientProxy.gunEnhancedRenderer.renderHandAndArmor(EnumHandSide.RIGHT, player, config, modelPlayer, model);
                     ObjModelRenderer.glowTxtureMode = true;
                 });
@@ -295,7 +301,9 @@ public class RenderMelee extends CustomItemRenderer {
                 String meleePath = skinId > 0 ? meleeType.modelSkins[skinId].getSkin()
                         : meleeType.modelSkins[0].getSkin();
                 bindTexture("melee", meleePath);
+                AtomicShaderCompat.beginOpaqueFillCapture();
                 model.renderPartExcept(renderSetExpect);
+                AtomicShaderCompat.afterOpaqueMesh();
 
                 /**
                  * player left hand
@@ -312,6 +320,7 @@ public class RenderMelee extends CustomItemRenderer {
                     "sprint_lefthand", true, true, () -> {
                     ObjModelRenderer.glowTxtureMode = false;
                     bindPlayerSkin();
+                    AtomicShaderCompat.rebindFillAndGunPbr();
                     ClientProxy.gunEnhancedRenderer.renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
                     ObjModelRenderer.glowTxtureMode = true;
                 });
@@ -325,6 +334,9 @@ public class RenderMelee extends CustomItemRenderer {
     
     public void drawThirdMelee(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player, ItemStack demoStack, boolean sneakFlag) {
         if (!(demoStack.getItem() instanceof ItemMelee)) {
+            return;
+        }
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
             return;
         }
         BaseType type = ((BaseItem)demoStack.getItem()).baseType;
@@ -386,7 +398,9 @@ public class RenderMelee extends CustomItemRenderer {
         boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode = true;
 
-        model.renderPartExcept(RenderParameters.partsWithAmmo);
+        AtomicShaderCompat.beginOpaqueFillCapture();
+        model.renderPartExcept(renderSetExpect);
+        AtomicShaderCompat.afterOpaqueMesh();
 
         ObjModelRenderer.glowTxtureMode = glowTxtureMode;
         GlStateManager.popMatrix();
@@ -404,11 +418,13 @@ public class RenderMelee extends CustomItemRenderer {
     public void bindTexture(ResourceLocation location) {
         bindingTexture = location;
         Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
+        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
     }
 
     public void bindPlayerSkin() {
         bindingTexture = Minecraft.getMinecraft().player.getLocationSkin();
         Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
+        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
     }
 
     public void blendTransform(EnhancedModel model, ItemStack gunStack, boolean basicSprint, float time,
