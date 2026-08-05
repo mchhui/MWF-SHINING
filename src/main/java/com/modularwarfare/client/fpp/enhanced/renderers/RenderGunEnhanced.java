@@ -175,6 +175,28 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
     private boolean renderingMagazine = true;
 
+    /**
+     * Mirror sight soft draw deferred until after opaque attachments + {@code finishHandDeferred}.
+     * Must re-apply gun binding transform — otherwise overlayModel floats in world space.
+     */
+    private AttachmentType pendingScopeType;
+    private ModelAttachment pendingScopeModel;
+    private boolean pendingScopeAiming;
+    private float pendingScopeWorldScale;
+    private String pendingScopeBinding;
+    private String pendingScopeTexDir;
+    private String pendingScopeTexPath;
+    private boolean hasPendingScope;
+
+    private void clearPendingScope() {
+        hasPendingScope = false;
+        pendingScopeType = null;
+        pendingScopeModel = null;
+        pendingScopeBinding = null;
+        pendingScopeTexDir = null;
+        pendingScopeTexPath = null;
+    }
+
     private float linearInterpolation(float start, float end, float alpha) {
         return start + (end - start) * alpha;
     }
@@ -232,6 +254,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GunNodeWorld.trackTrailOriginNode(gunType);
         GunNodeWorld.trackFlashlightOriginNode(gunType);
         GunNodeWorld.clearFpCache(player);
+        clearPendingScope();
 
         ModelEnhancedGun model = getOrCreateModel(gunType, true, player.getUniqueID());
         if(!(Minecraft.getMinecraft().getRenderViewEntity() instanceof AbstractClientPlayer)) {
@@ -1327,25 +1350,54 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             if (config.attachment.containsKey(attachmentType.internalName)) {
                                 binding = config.attachment.get(attachmentType.internalName).binding;
                             }
-                            model.applyGlobalTransformToOther(binding, () -> {
-                                if (attachmentType.sameTextureAsGun) {
-                                    bindTexture("guns", gunPath);
-                                } else {
-                                    int attachmentsSkinId = 0;
-                                    if (itemStack.hasTagCompound()) {
-                                        if (itemStack.getTagCompound().hasKey("skinId")) {
-                                            attachmentsSkinId = itemStack.getTagCompound().getInteger("skinId");
-                                        }
+                            final String sightBinding = binding;
+                            final String attTexDir;
+                            final String attTexPath;
+                            if (attachmentType.sameTextureAsGun) {
+                                attTexDir = "guns";
+                                attTexPath = gunPath;
+                            } else {
+                                int attachmentsSkinId = 0;
+                                if (itemStack.hasTagCompound()) {
+                                    if (itemStack.getTagCompound().hasKey("skinId")) {
+                                        attachmentsSkinId = itemStack.getTagCompound().getInteger("skinId");
                                     }
-                                    String attachmentsPath = attachmentsSkinId > 0 ? attachmentType.modelSkins[attachmentsSkinId].getSkin()
-                                            : attachmentType.modelSkins[0].getSkin();
-                                    bindTexture("attachments", attachmentsPath);
                                 }
+                                attTexDir = "attachments";
+                                attTexPath = attachmentsSkinId > 0
+                                        ? attachmentType.modelSkins[attachmentsSkinId].getSkin()
+                                        : attachmentType.modelSkins[0].getSkin();
+                            }
+                            model.applyGlobalTransformToOther(binding, () -> {
+                                bindTexture(attTexDir, attTexPath);
                                 renderAttachment(config, attachment.typeName, attachmentType.internalName, item, () -> {
                                     attachmentModel.renderAttachment(worldScale);
                                     ObjModelRenderer.glowTxtureMode=false;
                                     if(attachment==AttachmentPresetEnum.Sight) {
-                                        renderScopeGlass(attachmentType, attachmentModel, controller.ADS > 0, worldScale);
+                                        // Mirror sight parts (Atomic Hand fill):
+                                        // - overlayModel: hip-fire only → fill (开镜消失)
+                                        // - overlaySolidModel / scopeModel: ADS only → after finishHand (skip fill)
+                                        if (!ScopeUtils.isIndsideGunRendering
+                                                && attachmentType.sight.modeType.isMirror) {
+                                            final boolean aiming = controller.ADS > 0;
+                                            if (atomicFill) {
+                                                if (!aiming) {
+                                                    drawSightOverlayModelIntoFill(attachmentType, attachmentModel,
+                                                            worldScale);
+                                                } else {
+                                                    pendingScopeType = attachmentType;
+                                                    pendingScopeModel = attachmentModel;
+                                                    pendingScopeAiming = true;
+                                                    pendingScopeWorldScale = worldScale;
+                                                    pendingScopeBinding = sightBinding;
+                                                    pendingScopeTexDir = attTexDir;
+                                                    pendingScopeTexPath = attTexPath;
+                                                    hasPendingScope = true;
+                                                }
+                                            } else {
+                                                renderScopeGlass(attachmentType, attachmentModel, aiming, worldScale);
+                                            }
+                                        }
                                     }
                                     AnimationType currentAction = null;
                                     if (anim != null && anim.controller != null) {
@@ -1393,9 +1445,45 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
                 
                 /**
+                 * Soft FX + scope: finish Hand MRT + lighting first (vanilla SrcA on COLOR0).
+                 * Never during renderInsideGun (blur FBO) — that would light an empty hand RT and
+                 * make the real FP renderItem hit shouldSkipLegacyColorDraw (invisible gun).
+                 */
+                if (atomicFill && !ScopeUtils.isIndsideGunRendering) {
+                    cloud.siz.atomic.api.render.AtomicGBufferCompat.finishHandDeferredIfActive();
+                    GlStateManager.enableBlend();
+                    GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
+                            SourceFactor.ONE, DestFactor.ZERO);
+                }
+                if (hasPendingScope && pendingScopeType != null && pendingScopeModel != null
+                        && pendingScopeBinding != null && pendingScopeAiming
+                        && !ScopeUtils.isIndsideGunRendering) {
+                    final AttachmentType scopeType = pendingScopeType;
+                    final ModelAttachment scopeModel = pendingScopeModel;
+                    final float scopeScale = pendingScopeWorldScale;
+                    final String scopeBinding = pendingScopeBinding;
+                    final String scopeTexDir = pendingScopeTexDir;
+                    final String scopeTexPath = pendingScopeTexPath;
+                    clearPendingScope();
+                    // ADS only: overlaySolid (color filter) + overlay fade + scopeModel — never Hand fill.
+                    model.applyGlobalTransformToOther(scopeBinding, () -> {
+                        if (scopeTexDir != null && scopeTexPath != null) {
+                            bindTexture(scopeTexDir, scopeTexPath);
+                        }
+                        renderAttachment(config, AttachmentPresetEnum.Sight.typeName, scopeType.internalName, item,
+                                () -> {
+                                    renderScopeGlassAiming(scopeType, scopeModel, scopeScale);
+                                });
+                    });
+                } else {
+                    clearPendingScope();
+                }
+                /**
                  *  flashmodel panelModel
                  *  */
-                if (atomicFill) {
+                // After finishHand, isGBufferFillActive is false — use legacy blend paths.
+                final boolean handFillSoft = AtomicShaderCompat.isGBufferFillActive();
+                if (handFillSoft) {
                     AtomicShaderCompat.rebindFillAndGunPbr();
                 }
                 // Shadow mid-fill: opaque + attachments already drawn; skip FX / translucent.
@@ -1404,7 +1492,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
                 GlStateManager.depthMask(false);
                 GlStateManager.disableLighting();
-                if (atomicFill) {
+                if (handFillSoft) {
                     // Cutout + emissive: no SrcA blend into Hand MRT (black fringes).
                     AtomicShaderCompat.beginCutoutEmissiveFx();
                 } else {
@@ -1420,7 +1508,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
                 if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType().showFlashModel() && !player.isInWater()) {
                     ObjModelRenderer.glowTxtureMode=false;
-                    if (!atomicFill) {
+                    if (!handFillSoft) {
                         if (ScopeUtils.isIndsideGunRendering) {
                             GlStateManager.tryBlendFuncSeparate(SourceFactor.ONE, DestFactor.ZERO, SourceFactor.ONE,
                                 DestFactor.ZERO);
@@ -1503,7 +1591,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     }
                     GlStateManager.popMatrix();
                 }
-                if (atomicFill) {
+                if (handFillSoft) {
                     AtomicShaderCompat.endCutoutEmissiveFx();
                 } else {
                     GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
@@ -1514,19 +1602,19 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 GlStateManager.enableLighting();
                 bindTexture("guns", gunPath);
                 // Scope glass etc.: MRT cannot soft-blend; cutout avoids black fringes.
-                if (atomicFill) {
+                if (handFillSoft) {
                     GlStateManager.disableBlend();
                     GlStateManager.enableAlpha();
                     GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
                     AtomicShaderCompat.rebindFillAndGunPbr();
                 }
                 model.renderPart("translucentModel");
-                if (atomicFill) {
+                if (handFillSoft) {
                     AtomicShaderCompat.rebindFillAndGunPbr();
                 }
                 GlStateManager.disableLighting();
                 ObjModelRenderer.glowTxtureMode=false;
-                if (atomicFill) {
+                if (handFillSoft) {
                     AtomicShaderCompat.beginCutoutEmissiveFx();
                 } else {
                     OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
@@ -1537,7 +1625,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     Minecraft.getMinecraft().getTextureManager().bindTexture(panelTex);
                     model.renderPart("panelModel");
                 }
-                if (atomicFill) {
+                if (handFillSoft) {
                     AtomicShaderCompat.endCutoutEmissiveFx();
                 }
                 ObjModelRenderer.glowTxtureMode=true;
@@ -1569,9 +1657,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
          * 但是出于现状考虑 暂时设在isRenderHand0渲染
          * 需要处理深度遮蔽 可以延迟渲染
          * 就像镜面渲染一样 MC的手部半透明一坨大便 只好延迟到hud渲染
-         * Atomic Hand MRT: soft smoke/eject uses SrcA blend → black fringes; skip under fill.
+         * Atomic Hand MRT: soft smoke/eject uses SrcA — after finishHandDeferred fill is off.
         */
-        if (isRenderHand0 && !atomicShadowOnly && !atomicFill) {
+        if (isRenderHand0 && !atomicShadowOnly && !AtomicShaderCompat.isGBufferFillActive()) {
             if (config.specialEffect.postSmokeGroups != null) {
                 config.specialEffect.postSmokeGroups.forEach((group) -> {
                     Matrix4f mat2 = new Matrix4f(mat);
@@ -1622,7 +1710,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.color(1, 1, 1,1);
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         if(isRenderHand0&&!ScopeUtils.isIndsideGunRendering&&!atomicShadowOnly) {
-            if (atomicFill) {
+            if (AtomicShaderCompat.isGBufferFillActive()) {
                 AtomicShaderCompat.rebindFillAndGunPbr();
             }
             for(int i=0;i<shellEffects.length;i++) {
@@ -1650,7 +1738,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
                 GlStateManager.popMatrix();
             }
-            if (atomicFill) {
+            if (AtomicShaderCompat.isGBufferFillActive()) {
                 AtomicShaderCompat.rebindFillAndGunPbr();
             }
             if(shellEffects.length!=ModConfig.INSTANCE.client.shellEffectCapacity) {
@@ -2664,146 +2752,168 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (ScopeUtils.isIndsideGunRendering) {
             return;
         }
-        
         if (!attachmentType.sight.modeType.isMirror) {
             return;
         }
-        
         if (ClientProxy.scopeUtils.blurFramebuffer == null) {
             return;
         }
-
-        // Atomic fill hip-fire only: match vanilla else-branch (overlayModel mask, no solid).
-        // Aiming must keep the original blur-FBO / world-onto-scope path; then restore fill.
-        if (AtomicShaderCompat.isGBufferFillActive() && !AtomicShaderCompat.isShadowDepthActive()
-                && !isAiming) {
-            renderScopeOverlayHipfireAtomic(attachmentType, modelAttachment, worldScale);
+        if (Minecraft.getMinecraft().world == null) {
             return;
         }
-        
-        if (Minecraft.getMinecraft().world != null) {
-            if (isAiming) {
-                if (OptifineHelper.isShadersEnabled()) {
-                    Shaders.pushProgram();
-                    Shaders.useProgram(Shaders.ProgramNone);
-                }
-
-                Minecraft mc = Minecraft.getMinecraft();
-                float alpha = 1 - adsSwitch;
-
-                if (alpha > 0.2) {
-                    alpha = 1;
-                } else {
-                    alpha /= 0.2f;
-                }
-                GL20.glUseProgram(Programs.normalProgram);
-                GL11.glPushMatrix();
-                int tex = ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
-
-                ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
-
-                GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0,
-                        GL_TEXTURE_2D, ScopeUtils.OVERLAY_TEX, 0);
-                GlStateManager.clearColor(0, 0, 0, 0);
-                GL11.glClearColor(0, 0, 0, 0);
-                GlStateManager.colorMask(true, true, true, true);
-                GlStateManager.depthMask(true);
-                GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
-                copyDepthBuffer();
-                ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
-                GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
-
-                // GlStateManager.disableLighting();
-                GlStateManager.enableBlend();
-                GlStateManager.blendFunc(SourceFactor.ONE, DestFactor.ZERO);
-                GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-                modelAttachment.renderOverlaySolid(worldScale);
-
-                GL20.glUseProgram(0);
-                if (OptifineHelper.isShadersEnabled()) {
-                    Shaders.popProgram();
-                }
-
-                GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
-                        SourceFactor.ONE, DestFactor.ZERO);
-                GlStateManager.color(1.0f, 1.0f, 1.0f, alpha);
-                if (attachmentType.sight.usedDefaultOverlayModelTexture) {
-                    ResourceLocation black = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png");
-                    if (AtomicShaderCompat.isGBufferFillActive()) {
-                        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(black);
-                    } else {
-                        renderEngine.bindTexture(black);
-                    }
-                }
-                // 必要的colormask(2023.3.26又注:今天看起来是莫名其妙)
-                GlStateManager.colorMask(true, true, true, true);
-                modelAttachment.renderOverlay(worldScale);
-                GlStateManager.colorMask(true, true, true, true);
-                GlStateManager.disableBlend();
-                // GlStateManager.enableLighting();
-
-                ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
-                GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0,
-                        GL_TEXTURE_2D, tex, 0);
-                GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
-                copyDepthBuffer();
-                ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
-                GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
-                GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-
-                GlStateManager.colorMask(true, true, true, false);
-                GlStateManager.disableBlend();
-                // 忘记这玩意有什么用了 好像和镜面的光照渲染有关系
-                renderWorldOntoScope(attachmentType, modelAttachment, worldScale, false);
-                GlStateManager.enableBlend();
-                GlStateManager.colorMask(true, true, true, true);
-
-                ContextCapabilities contextCapabilities = GLContext.getCapabilities();
-                if (contextCapabilities.OpenGL43) {
-                    GL43.glCopyImageSubData(tex, GL_TEXTURE_2D, 0, 0, 0, 0, ScopeUtils.SCOPE_LIGHTMAP_TEX,
-                            GL_TEXTURE_2D, 0, 0, 0, 0, mc.displayWidth, mc.displayHeight, 1);
-
-                } else {
-                    GL11.glBindTexture(GL_TEXTURE_2D, tex);
-                    GL11.glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, mc.displayWidth, mc.displayHeight);
-                }
-                OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
-                GL11.glPopMatrix();
-                if (AtomicShaderCompat.isGBufferFillActive()) {
-                    TextureSamplingRegistry.restoreDefaultTexUnit();
-                    AtomicShaderCompat.rebindFillAndGunPbr();
-                }
-
-            } else {
-                GL11.glPushMatrix();
-                GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-                if (attachmentType.sight.usedDefaultOverlayModelTexture) {
-                    renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
-                }
-                modelAttachment.renderOverlay(worldScale);
-                GL11.glPopMatrix();
-            }
+        if (isAiming) {
+            renderScopeGlassAiming(attachmentType, modelAttachment, worldScale);
+        } else {
+            renderScopeOverlayHipfire(attachmentType, modelAttachment, worldScale);
         }
     }
 
     /**
-     * Atomic hip-fire only — mirrors the vanilla {@code !isAiming} branch:
-     * {@code overlayModel} (+ default black mask), <b>no</b> {@code overlaySolidModel}.
+     * Hip-fire {@code overlayModel} into Hand fill (deferred). Not used for ADS.
+     * Caller must already be under the sight attachment transform with fill active.
+     * Slight polygon offset avoids z-fight with coplanar {@code attachmentModel}.
      */
     @SideOnly(Side.CLIENT)
-    private void renderScopeOverlayHipfireAtomic(AttachmentType attachmentType, ModelAttachment modelAttachment,
+    private void drawSightOverlayModelIntoFill(AttachmentType attachmentType, ModelAttachment modelAttachment,
             float worldScale) {
-        TextureSamplingRegistry.restoreDefaultTexUnit();
+        AtomicShaderCompat.rebindFillAndGunPbr();
         GlStateManager.disableBlend();
+        GlStateManager.enableAlpha();
+        GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
         GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
         if (attachmentType.sight.usedDefaultOverlayModelTexture) {
             ResourceLocation black = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png");
-            // Keep black across per-mesh rebindFillAndGunPbr.
             AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(black);
         }
+        // Pull forward vs attachmentModel (same fill depth, near-coplanar optics).
+        GlStateManager.enablePolygonOffset();
+        GlStateManager.doPolygonOffset(-1.0F, -1.0F);
         modelAttachment.renderOverlay(worldScale);
-        TextureSamplingRegistry.restoreDefaultTexUnit();
+        GlStateManager.disablePolygonOffset();
         AtomicShaderCompat.rebindFillAndGunPbr();
+    }
+
+    /** Vanilla hip-fire branch: {@code overlayModel} only (no solid / scope). */
+    @SideOnly(Side.CLIENT)
+    private void renderScopeOverlayHipfire(AttachmentType attachmentType, ModelAttachment modelAttachment,
+            float worldScale) {
+        GL11.glPushMatrix();
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+        if (attachmentType.sight.usedDefaultOverlayModelTexture) {
+            renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
+        }
+        modelAttachment.renderOverlay(worldScale);
+        GL11.glPopMatrix();
+    }
+
+    /**
+     * ADS only, after Hand fill is finished — each part once:
+     * <ol>
+     * <li>{@code overlaySolidModel} — attachment albedo color filter → OVERLAY_TEX</li>
+     * <li>{@code overlayModel} — fades with adsSwitch (开镜消失)</li>
+     * <li>clear depth + recopy (original) then {@code scopeModel}</li>
+     * </ol>
+     * Original FP anti-z-fight: {@code zNear=1e-5}, {@code depthRange[0,0.6]}, strict order,
+     * and a depth clear between overlay pair and scopeModel. After Atomic fill, attachment
+     * depth was written by g_buffer_fill; fixed-pipeline overlays must polygon-offset or they
+     * flicker against that depth when optics are coplanar.
+     */
+    @SideOnly(Side.CLIENT)
+    private void renderScopeGlassAiming(AttachmentType attachmentType, ModelAttachment modelAttachment,
+            float worldScale) {
+        if (OptifineHelper.isShadersEnabled()) {
+            Shaders.pushProgram();
+            Shaders.useProgram(Shaders.ProgramNone);
+        }
+
+        // Same FP depth window as ClientRenderHooks (not reversed-Z; compressed range + tiny near).
+        GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
+        GlStateManager.depthFunc(GL11.GL_LEQUAL);
+
+        Minecraft mc = Minecraft.getMinecraft();
+        float alpha = 1 - adsSwitch;
+
+        if (alpha > 0.2) {
+            alpha = 1;
+        } else {
+            alpha /= 0.2f;
+        }
+        GL20.glUseProgram(Programs.normalProgram);
+        GL11.glPushMatrix();
+        int tex = ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
+
+        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+
+        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, ScopeUtils.OVERLAY_TEX, 0);
+        GlStateManager.clearColor(0, 0, 0, 0);
+        GL11.glClearColor(0, 0, 0, 0);
+        GlStateManager.colorMask(true, true, true, true);
+        GlStateManager.depthMask(true);
+        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
+        copyDepthBuffer();
+        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+        GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
+
+        // Phase A: solid then overlay share one depth buffer (order fixed). Offset vs fill depth.
+        GlStateManager.enablePolygonOffset();
+        GlStateManager.doPolygonOffset(-1.0F, -1.0F);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(SourceFactor.ONE, DestFactor.ZERO);
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+        modelAttachment.renderOverlaySolid(worldScale);
+
+        GL20.glUseProgram(0);
+        if (OptifineHelper.isShadersEnabled()) {
+            Shaders.popProgram();
+        }
+
+        GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
+                SourceFactor.ONE, DestFactor.ZERO);
+        GlStateManager.color(1.0f, 1.0f, 1.0f, alpha);
+        if (attachmentType.sight.usedDefaultOverlayModelTexture) {
+            renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
+        }
+        // Decal-style: test against solid/attachment, do not rewrite depth (stops solid↔overlay fight).
+        GlStateManager.doPolygonOffset(-1.5F, -1.5F);
+        GlStateManager.depthMask(false);
+        GlStateManager.colorMask(true, true, true, true);
+        modelAttachment.renderOverlay(worldScale);
+        GlStateManager.depthMask(true);
+        GlStateManager.disablePolygonOffset();
+        GlStateManager.disableBlend();
+
+        // Phase B (original): fresh depth from main, then scopeModel alone — no fight with overlays.
+        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, tex, 0);
+        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
+        copyDepthBuffer();
+        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+        GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
+        GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+
+        GlStateManager.enablePolygonOffset();
+        GlStateManager.doPolygonOffset(-1.0F, -1.0F);
+        GlStateManager.colorMask(true, true, true, false);
+        GlStateManager.disableBlend();
+        renderWorldOntoScope(attachmentType, modelAttachment, worldScale, false);
+        GlStateManager.disablePolygonOffset();
+        GlStateManager.enableBlend();
+        GlStateManager.colorMask(true, true, true, true);
+
+        ContextCapabilities contextCapabilities = GLContext.getCapabilities();
+        if (contextCapabilities.OpenGL43) {
+            GL43.glCopyImageSubData(tex, GL_TEXTURE_2D, 0, 0, 0, 0, ScopeUtils.SCOPE_LIGHTMAP_TEX,
+                    GL_TEXTURE_2D, 0, 0, 0, 0, mc.displayWidth, mc.displayHeight, 1);
+
+        } else {
+            GL11.glBindTexture(GL_TEXTURE_2D, tex);
+            GL11.glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, mc.displayWidth, mc.displayHeight);
+        }
+        OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+        GL11.glPopMatrix();
+        GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
     }
 
     /**
