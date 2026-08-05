@@ -4,6 +4,7 @@ import cloud.siz.atomic.api.light.AtomicLightApi;
 import cloud.siz.atomic.api.light.AtomicLightSpec;
 import cloud.siz.atomic.api.light.LightPoolPolicy;
 import cloud.siz.atomic.api.light.LightVisibility;
+import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunNodeWorld;
 import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
 import com.modularwarfare.client.model.ModelAttachment;
@@ -17,6 +18,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -24,6 +26,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -158,6 +161,11 @@ public final class FlashlightLightSync {
             AttachmentRenderConfig.Flashlight.ViewTune tune = cfg.firstPerson;
             Vec3d pos = applyPosOffset(fpPose.pos, dir, tune != null ? tune.posOffset : null);
             dir = applyRotOffset(dir, tune != null ? tune.rotOffset : null);
+            if (isBlockedByGeometry(player, pos, partial)) {
+                AtomicLightApi.remove(fpId);
+                AtomicLightApi.remove(tpId);
+                return;
+            }
             upsertSpot(fpId, pos, dir, rgb, cfg, LightVisibility.FIRST_PERSON, LightPoolPolicy.FORCE);
             AtomicLightApi.remove(tpId);
         } else {
@@ -190,8 +198,48 @@ public final class FlashlightLightSync {
         AttachmentRenderConfig.Flashlight.ViewTune tune = cfg.thirdPerson;
         Vec3d pos = applyPosOffset(tpPose.pos, dir, tune != null ? tune.posOffset : null);
         dir = applyRotOffset(dir, tune != null ? tune.rotOffset : null);
+        if (isBlockedByGeometry(player, pos, partial)) {
+            return false;
+        }
         upsertSpot(id, pos, dir, rgb, cfg, visibility, pool);
         return true;
+    }
+
+    /**
+     * Wall-clip gate: ray from flashlight origin to the player's eye (FP screen-center camera /
+     * TP eye — never the third-person camera). Uses {@link ModularWarfare#RAY_CASTING} so the
+     * shared penetrable-block list (tallgrass / double_plant / barrier) is skipped. Any earlier
+     * solid hit cancels the light.
+     */
+    private static boolean isBlockedByGeometry(EntityPlayer player, Vec3d flashPos, float partial) {
+        if (player == null || player.world == null || flashPos == null) {
+            return true;
+        }
+        Vec3d eye = player.getPositionEyes(partial);
+        double eyeDistSq = flashPos.squareDistanceTo(eye);
+        if (eyeDistSq < 1.0E-8D) {
+            return false;
+        }
+        List<RayTraceResult> hits = null;
+        if (ModularWarfare.INSTANCE != null && ModularWarfare.INSTANCE.RAY_CASTING != null) {
+            // maxPenetrate* = 0: first solid (non-list) block stops the ray.
+            hits = ModularWarfare.INSTANCE.RAY_CASTING.rayTraceBlocks(
+                    player.world, flashPos, eye, 0f, 0f, false, true, false);
+        } else {
+            RayTraceResult single = player.world.rayTraceBlocks(flashPos, eye, false, true, false);
+            if (single != null && single.typeOfHit == RayTraceResult.Type.BLOCK) {
+                hits = java.util.Collections.singletonList(single);
+            }
+        }
+        if (hits == null || hits.isEmpty()) {
+            return false;
+        }
+        RayTraceResult hit = hits.get(0);
+        if (hit == null || hit.typeOfHit != RayTraceResult.Type.BLOCK || hit.hitVec == null) {
+            return false;
+        }
+        double hitDistSq = flashPos.squareDistanceTo(hit.hitVec);
+        return hitDistSq + 1.0E-4D < eyeDistSq;
     }
 
     private static Vec3d applyPosOffset(Vec3d origin, Vec3d look, Vector3f offset) {
@@ -271,6 +319,8 @@ public final class FlashlightLightSync {
                         cfg.intensity, cfg.range, cfg.innerDeg, cfg.outerDeg)
                 .withVisibility(visibility)
                 .withPool(pool)
+                .withBeamFactor(cfg.beamFactor)
+                .withNearGeometryCull(cfg.nearGeometryCull)
                 .withOwner(OWNER));
     }
 

@@ -112,10 +112,21 @@ public class AttachmentRenderConfig {
     /** Atomic 射灯；线性 RGB。firstPerson/thirdPerson 为偏移与旋转微调。 */
     public static class Flashlight {
         public float[] color = {1.0f, 0.95f, 0.85f};
+        /** Deferred surface spot intensity (linear). */
         public float intensity = 5.0f;
         public float range = 28.0f;
         public float innerDeg = 10.0f;
         public float outerDeg = 26.0f;
+        /**
+         * Air-beam multiplier only ({@code AtomicLightSpec.withBeamFactor}); does not change surface
+         * lighting. {@code 0} disables beams; {@code 1} matches intensity.
+         */
+        public float beamFactor = 0.2f;
+        /**
+         * Skip near entity casters in this light's shadow fill (Atomic API-001).
+         * Flashlight defaults off — wall clip is handled by MWF LOS ray, not this flag.
+         */
+        public boolean nearGeometryCull = false;
         public ViewTune firstPerson = new ViewTune();
         public ViewTune thirdPerson = new ViewTune();
 

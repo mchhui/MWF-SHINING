@@ -45,12 +45,18 @@ public class DefaultRayCasting extends RayCasting {
     private static long lastShotTime = 0; // 记录上次射击时间
     private static final long RENDER_DURATION = 1; // 渲染持续时间(毫秒)
 
-    // 添加射线穿透方块列表
+    // Shared ray ignore list (tall grass / barrier etc.). Flashlight LOS uses the same list
+    // via {@link #rayTraceBlocks}.
     private static final List<String> PENETRABLE_BLOCKS = Arrays.asList(
         "minecraft:tallgrass",  // 高草丛
         "minecraft:double_plant", // 高草
         "minecraft:barrier"  // 屏障方块
     );
+
+    /** Whether MWF ballistic / flashlight rays skip this registry name. */
+    public static boolean isPenetrableBlock(String registryName) {
+        return registryName != null && PENETRABLE_BLOCKS.contains(registryName);
+    }
 
     private static float blockExplosionResistanceForRayHit(World world, Vec3d rayStart, Vec3d rayEnd,
         RayTraceResult blockHit, BlockPos blockPos, Block block) {
