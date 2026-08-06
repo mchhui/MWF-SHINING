@@ -251,6 +251,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             return;
         }
 
+        if (type == CustomItemRenderType.EQUIPPED_FIRST_PERSON) {
+            AtomicShaderCompat.onFirstPersonItemBegin();
+        }
+
         GunNodeWorld.trackTrailOriginNode(gunType);
         GunNodeWorld.trackFlashlightOriginNode(gunType);
         GunNodeWorld.clearFpCache(player);
@@ -824,11 +828,15 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         ObjModelRenderer.glowTxtureMode=true;
         /**
          * 绘制镜面擦除
-         * */
-        blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
-            controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, controller.getAimTime(), (float)controller.ADS, () -> {
-                if (isRenderHand0) {
-                    if (sightRendering != null) {
+         * First FP blendTransform with skin=true: GPU-skins the whole gun model.
+         * Left/right groups use skin=false and depend on this pass — do not skip on hip-fire
+         * (COMP-016 regression: gating on ADS>0 froze skinned parts / floating optics).
+         * Glass depth write remains ADS-only; after skin compute, rebind fill + arm albedo.
+         */
+        if (sightRendering != null) {
+            blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
+                controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, controller.getAimTime(), (float)controller.ADS, () -> {
+                    if (isRenderHand0 && controller.ADS > 0) {
                         String binding = "gunModel";
                         if (config.attachment.containsKey(sightRendering.type.internalName)) {
                             binding = config.attachment.get(sightRendering.type.internalName).binding;
@@ -837,16 +845,32 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             renderAttachment(config, AttachmentPresetEnum.Sight.typeName,
                                 sightRendering.type.internalName, item, () -> {
                                     writeScopeGlassDepth(sightRendering.type,
-                                        (ModelAttachment)sightRendering.type.model, controller.ADS > 0, worldScale,
+                                        (ModelAttachment)sightRendering.type.model, true, worldScale,
                                         sightRendering.type.sight.modeType.isPIP);
                                 });
                         });
                     }
-                }
-            });
+                });
+        } else if (isRenderHand0) {
+            // No sight: still GPU-skin once; left/right groups use skin=false.
+            blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
+                controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, controller.getAimTime(), (float)controller.ADS, () -> {
+                });
+        }
         /**
          * LEFT HAND GROUP
          * */
+        // After skin compute / inside-gun: bind arm albedo before left-hand mesh (COMP-016).
+        if (isRenderHand0) {
+            if (atomicFill) {
+                AtomicShaderCompat.rebindFillIfActive();
+            }
+            if (gunType.handsTextureType != null) {
+                bindCustomHands(gunType.handsTextureType);
+            } else {
+                bindPlayerSkin();
+            }
+        }
         blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(), (float) controller.SPRINT, "sprint_lefthand", applySprint, false, controller.getAimTime(), (float)controller.ADS, () -> {
             if (isRenderHand0) {
                 /**
@@ -857,9 +881,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 } else {
                     bindPlayerSkin();
                 }
-                if (atomicFill) {
-                    AtomicShaderCompat.rebindFillAndGunPbr();
-                }
                 ObjModelRenderer.glowTxtureMode=false;
                 renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
                 ObjModelRenderer.glowTxtureMode=true;
@@ -869,6 +890,13 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         /**
          * RIGHT HAND GROUP
          * */
+        if (isRenderHand0) {
+            if (gunType.handsTextureType != null) {
+                bindCustomHands(gunType.handsTextureType);
+            } else {
+                bindPlayerSkin();
+            }
+        }
         blendTransform(model,item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(), controller.getSprintTime(),(float)controller.SPRINT, "sprint_righthand", applySprint, false, controller.getAimTime(), (float)controller.ADS, () -> {
             if(isRenderHand0) {
                 /**
@@ -879,9 +907,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     bindCustomHands(gunType.handsTextureType);
                 } else {
                     bindPlayerSkin();
-                }
-                if (atomicFill) {
-                    AtomicShaderCompat.rebindFillAndGunPbr();
                 }
                 ObjModelRenderer.glowTxtureMode=false;
                 renderHandAndArmor(EnumHandSide.RIGHT, player, config, modelPlayer, model);
@@ -1450,7 +1475,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                  * make the real FP renderItem hit shouldSkipLegacyColorDraw (invisible gun).
                  */
                 if (atomicFill && !ScopeUtils.isIndsideGunRendering) {
-                    cloud.siz.atomic.api.render.AtomicGBufferCompat.finishHandDeferredIfActive();
+                    AtomicShaderCompat.finishHandDeferredIfActive();
                     GlStateManager.enableBlend();
                     GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA,
                             SourceFactor.ONE, DestFactor.ZERO);
@@ -3284,7 +3309,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (holder == null || fpHandRootMat == null || !model.initCal) {
             return;
         }
-        if (cloud.siz.atomic.api.render.AtomicGBufferCompat.isShadowDepthActive()) {
+        if (AtomicShaderCompat.isShadowDepthActive()) {
             return;
         }
         LinkedHashSet<String> nodeNames = new LinkedHashSet<>();
@@ -3330,7 +3355,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (holder == null || tpGunRootMv == null) {
             return;
         }
-        if (cloud.siz.atomic.api.render.AtomicGBufferCompat.isShadowDepthActive()) {
+        if (AtomicShaderCompat.isShadowDepthActive()) {
             return;
         }
         Minecraft mc = Minecraft.getMinecraft();
@@ -3643,16 +3668,15 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     }
 
     public void bindPlayerSkin() {
-        bindingTexture = Minecraft.getMinecraft().player.getLocationSkin();
-        Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
-        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
+        // Skin-ready fallback avoids MISSING purple (MWF); Atomic PBR only when pipeline on.
+        bindingTexture = AtomicShaderCompat.resolveReadyPlayerSkin(Minecraft.getMinecraft().player);
+        AtomicShaderCompat.bindFillAlbedo(bindingTexture);
     }
 
     public void bindCustomHands(TextureType handTextureType) {
         if (handTextureType.resourceLocations != null) {
             bindingTexture = handTextureType.resourceLocations.get(0);
         }
-        Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
-        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
+        AtomicShaderCompat.bindFillAlbedo(bindingTexture);
     }
 }

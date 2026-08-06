@@ -50,6 +50,10 @@ public class RenderGrenade extends CustomItemRenderer {
             return;
         }
 
+        if (type == CustomItemRenderType.EQUIPPED_FIRST_PERSON) {
+            AtomicShaderCompat.onFirstPersonItemBegin();
+        }
+
         GrenadeType grenadeType = ((ItemGrenade) item.getItem()).type;
         if (grenadeType == null)
             return;
@@ -137,7 +141,11 @@ public class RenderGrenade extends CustomItemRenderer {
 
 
                     Minecraft mc = Minecraft.getMinecraft();
-                    mc.getTextureManager().bindTexture(Minecraft.getMinecraft().player.getLocationSkin());
+                    if (AtomicShaderCompat.isPipelineEnabled()) {
+                        AtomicShaderCompat.bindReadyPlayerSkin();
+                    } else {
+                        mc.getTextureManager().bindTexture(Minecraft.getMinecraft().player.getLocationSkin());
+                    }
                     Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().<AbstractClientPlayer>getEntityRenderObject(Minecraft.getMinecraft().player);
                     RenderPlayer renderplayer = (RenderPlayer) render;
                     //Render the armor staticModel on the arm

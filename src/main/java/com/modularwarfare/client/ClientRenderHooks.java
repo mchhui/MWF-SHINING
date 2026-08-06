@@ -451,9 +451,10 @@ public class ClientRenderHooks {
                             ClientProxy.scopeUtils.initBlur();  
                         }
                         OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
-                        // OptiFine / scope FBO steal drops Hand MRT drawBuffers — restore fill + gun PBR.
+                        // OptiFine / scope FBO steal drops Hand MRT drawBuffers — restore fill only
+                        // (do not rebind a stale held-item albedo before the item renderer runs).
                         if (AtomicShaderCompat.isGBufferFillActive()) {
-                            AtomicShaderCompat.rebindFillAndGunPbr();
+                            AtomicShaderCompat.rebindFillIfActive();
                         }
                     }
                     GlStateManager.pushMatrix();
@@ -552,24 +553,54 @@ public class ClientRenderHooks {
         }
         
         ScopeUtils.isIndsideGunRendering=true;
-        
-        int tex=ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
-        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
-        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, ScopeUtils.INSIDE_GUN_TEX, 0);
-        GlStateManager.clearColor(0, 0, 0, 0);
-        GL11.glClearColor(0, 0, 0, 0);
-        GlStateManager.colorMask(true, true, true, true);
-        GlStateManager.depthMask(true);
-        GlStateManager.clear (GL11.GL_DEPTH_BUFFER_BIT);
-        copyDepthBuffer();
-        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
-        GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
-        renderHeldItem(stack, hand, partialTicksTime, fov);
-        ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
-        GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, tex, 0);
-        ClientProxy.scopeUtils.blurFramebuffer.framebufferClear();
-        
-        OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());  
+
+        boolean atomicInside = false;
+        if (AtomicShaderCompat.isPipelineEnabled()
+                && cloud.siz.atomic.api.render.AtomicGBufferCompat.beginOffscreenHandDeferred(partialTicksTime)) {
+            atomicInside = true;
+            int captureFbo = cloud.siz.atomic.api.render.AtomicGBufferCompat.getOffscreenHandCaptureFboId();
+            if (captureFbo != 0) {
+                // Blit main depth into offscreen-hand capture FBO (same idea as copyDepthBuffer).
+                Minecraft mc = Minecraft.getMinecraft();
+                GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+                GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, captureFbo);
+                GlStateManager.colorMask(false, false, false, false);
+                GL30.glBlitFramebuffer(0, 0, mc.displayWidth, mc.displayHeight, 0, 0, mc.displayWidth, mc.displayHeight,
+                        GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
+                GlStateManager.colorMask(true, true, true, true);
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, captureFbo);
+            }
+            renderHeldItem(stack, hand, partialTicksTime, fov);
+            cloud.siz.atomic.api.render.AtomicGBufferCompat.finishOffscreenHandDeferred(ScopeUtils.INSIDE_GUN_TEX);
+            OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+            // Drop nested-pass albedo pointer; main FP renderItem will bind skin/gun fresh.
+            // Do not rebindFillAndGunPbr here — that restored the inside-gun gun albedo onto TEX0
+            // before arms, and melee→sighted-gun left arms sampling wrong.
+            AtomicShaderCompat.clearCurrentFillAlbedo();
+            if (AtomicShaderCompat.isGBufferFillActive()) {
+                AtomicShaderCompat.rebindFillIfActive();
+            }
+        }
+
+        if (!atomicInside) {
+            int tex=ClientProxy.scopeUtils.blurFramebuffer.framebufferTexture;
+            ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+            GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, ScopeUtils.INSIDE_GUN_TEX, 0);
+            GlStateManager.clearColor(0, 0, 0, 0);
+            GL11.glClearColor(0, 0, 0, 0);
+            GlStateManager.colorMask(true, true, true, true);
+            GlStateManager.depthMask(true);
+            GlStateManager.clear (GL11.GL_DEPTH_BUFFER_BIT);
+            copyDepthBuffer();
+            ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+            GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
+            renderHeldItem(stack, hand, partialTicksTime, fov);
+            ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
+            GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, tex, 0);
+            ClientProxy.scopeUtils.blurFramebuffer.framebufferClear();
+            OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
+        }
+
         ScopeUtils.isIndsideGunRendering=false;
     }
     

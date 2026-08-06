@@ -65,6 +65,13 @@ public class AttachmentRenderConfig {
         // 后坐力影响瞄准贴图位置的系数
         public float recoilOverlayFactor = 1.0f;
 
+        /**
+         * Atomic secondary RT max edge (px). Larger = sharper mirror. {@code 0} = auto
+         * {@code clamp(min(displayW,displayH), 256, 1024)}. Zoom still uses {@link #fovZoom}
+         * / stage / min-max — this field is resolution only.
+         */
+        public int mirrorRtMaxEdge = 0;
+
         public float[] GetStageFovZoomRange()
         {
             if(stageFovZoomRange!=null)return stageFovZoomRange;

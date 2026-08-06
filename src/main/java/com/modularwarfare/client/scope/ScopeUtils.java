@@ -120,81 +120,112 @@ public class ScopeUtils {
 
     @SubscribeEvent
     public void renderTick(TickEvent.RenderTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) {
+        // Atomic FOV/PIP: request on START so afterMainWorldPass in the same frame can publish.
+        if (event.phase == TickEvent.Phase.START) {
+            maybeRequestAtomicMirrorEarly();
+            return;
+        }
 
-            if (mc.player != null && mc.currentScreen == null) {
-                //If player has gun, update scope
-                if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun && mc.gameSettings.thirdPersonView == 0) {
-                    if (GunType.getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight) != null) {
-                        final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight).getItem();
-                        if (itemAttachment != null) {
-                            if (itemAttachment.type != null) {
-                                if (itemAttachment.type.sight.modeType.isMirror) {
-                                    if(OVERLAY_TEX==-1||(lastWidth!=mc.displayWidth||lastHeight!=mc.displayHeight)) {
-                                        GL11.glPushMatrix();
-                                        if(OVERLAY_TEX!=-1) {
-                                            GL11.glDeleteTextures(OVERLAY_TEX);
-                                        }
-                                        OVERLAY_TEX = GL11.glGenTextures();
-                                        GL11.glBindTexture(GL11.GL_TEXTURE_2D, OVERLAY_TEX);
-                                        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-                                        
-                                        if(INSIDE_GUN_TEX!=-1) {
-                                            GL11.glDeleteTextures(INSIDE_GUN_TEX);
-                                        }
-                                        INSIDE_GUN_TEX = GL11.glGenTextures();
-                                        GL11.glBindTexture(GL11.GL_TEXTURE_2D, INSIDE_GUN_TEX);
-                                        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
-                                        
-                                        if(SCOPE_MASK_TEX!=-1) {
-                                            GL11.glDeleteTextures(SCOPE_MASK_TEX);
-                                        }
-                                        SCOPE_MASK_TEX = GL11.glGenTextures();
-                                        GL11.glBindTexture(GL11.GL_TEXTURE_2D, SCOPE_MASK_TEX);
-                                        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-                                        
-                                        if(SCOPE_LIGHTMAP_TEX!=-1) {
-                                            GL11.glDeleteTextures(SCOPE_LIGHTMAP_TEX);
-                                        }
-                                        SCOPE_LIGHTMAP_TEX = GL11.glGenTextures();
-                                        GL11.glBindTexture(GL11.GL_TEXTURE_2D, SCOPE_LIGHTMAP_TEX);
-                                        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                                        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-                                        
-                                        lastWidth=mc.displayWidth;
-                                        lastHeight=mc.displayHeight;
-                                        GL11.glPopMatrix();
+        if (mc.player != null && mc.currentScreen == null) {
+            //If player has gun, update scope
+            if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) != null && mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun && mc.gameSettings.thirdPersonView == 0) {
+                if (GunType.getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight) != null) {
+                    final ItemAttachment itemAttachment = (ItemAttachment) GunType.getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND), AttachmentPresetEnum.Sight).getItem();
+                    if (itemAttachment != null) {
+                        if (itemAttachment.type != null) {
+                            if (itemAttachment.type.sight.modeType.isMirror) {
+                                if(OVERLAY_TEX==-1||(lastWidth!=mc.displayWidth||lastHeight!=mc.displayHeight)) {
+                                    GL11.glPushMatrix();
+                                    if(OVERLAY_TEX!=-1) {
+                                        GL11.glDeleteTextures(OVERLAY_TEX);
                                     }
+                                    OVERLAY_TEX = GL11.glGenTextures();
+                                    GL11.glBindTexture(GL11.GL_TEXTURE_2D, OVERLAY_TEX);
+                                    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
                                     
-                                    // 统一渲染入口：FOV和PIP模式都使用完整的世界渲染
-                                    // 这样可以确保水体、雾气等后处理效果正常显示
-                                    if (ModConfig.INSTANCE.hud.alwaysRenderPIPWorld
-                                        || RenderParameters.adsSwitch != 0) {
-                                        renderWorld(mc, itemAttachment, event.renderTickTime);
+                                    if(INSIDE_GUN_TEX!=-1) {
+                                        GL11.glDeleteTextures(INSIDE_GUN_TEX);
                                     }
+                                    INSIDE_GUN_TEX = GL11.glGenTextures();
+                                    GL11.glBindTexture(GL11.GL_TEXTURE_2D, INSIDE_GUN_TEX);
+                                    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_CLAMP);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_CLAMP);
+                                    
+                                    if(SCOPE_MASK_TEX!=-1) {
+                                        GL11.glDeleteTextures(SCOPE_MASK_TEX);
+                                    }
+                                    SCOPE_MASK_TEX = GL11.glGenTextures();
+                                    GL11.glBindTexture(GL11.GL_TEXTURE_2D, SCOPE_MASK_TEX);
+                                    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+                                    
+                                    if(SCOPE_LIGHTMAP_TEX!=-1) {
+                                        GL11.glDeleteTextures(SCOPE_LIGHTMAP_TEX);
+                                    }
+                                    SCOPE_LIGHTMAP_TEX = GL11.glGenTextures();
+                                    GL11.glBindTexture(GL11.GL_TEXTURE_2D, SCOPE_LIGHTMAP_TEX);
+                                    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, mc.displayWidth, mc.displayHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+                                    
+                                    lastWidth=mc.displayWidth;
+                                    lastHeight=mc.displayHeight;
+                                    GL11.glPopMatrix();
+                                }
+                                
+                                // 统一渲染入口：FOV和PIP模式都使用完整的世界渲染
+                                // 这样可以确保水体、雾气等后处理效果正常显示
+                                if (ModConfig.INSTANCE.hud.alwaysRenderPIPWorld
+                                    || RenderParameters.adsSwitch != 0) {
+                                    renderWorld(mc, itemAttachment, event.renderTickTime);
+                                } else {
+                                    clearAtomicMirrorState();
                                 }
                             }
                         }
                     }
                 }
             }
-
         }
+    }
+
+    /** Same-frame Atomic secondary request before main world pass. */
+    private void maybeRequestAtomicMirrorEarly() {
+        if (mc.player == null || mc.currentScreen != null || mc.gameSettings.thirdPersonView != 0) {
+            return;
+        }
+        if (!(ModConfig.INSTANCE.hud.alwaysRenderPIPWorld || RenderParameters.adsSwitch != 0)) {
+            return;
+        }
+        if (mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND) == null
+                || !(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun)) {
+            return;
+        }
+        if (GunType.getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                AttachmentPresetEnum.Sight) == null) {
+            return;
+        }
+        final ItemAttachment itemAttachment = (ItemAttachment) GunType
+                .getAttachment(mc.player.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND),
+                        AttachmentPresetEnum.Sight)
+                .getItem();
+        if (itemAttachment == null || itemAttachment.type == null || itemAttachment.type.sight == null
+                || !itemAttachment.type.sight.modeType.isMirror) {
+            return;
+        }
+        tryAtomicSecondaryView(mc, itemAttachment);
     }
     
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -433,7 +464,17 @@ public class ScopeUtils {
             
             GlStateManager.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
             GlStateManager.colorMask(true, true, true, false);
-            GlStateManager.bindTexture(ClientProxy.scopeUtils.MIRROR_TEX);
+            int mirrorTex = ClientProxy.scopeUtils.MIRROR_TEX;
+            if (atomicMirrorActive
+                    && com.modularwarfare.client.compat.AtomicShaderCompat.isPipelineEnabled()
+                    && cloud.siz.atomic.api.render.AtomicSecondaryViewApi.isAvailable()
+                    && cloud.siz.atomic.api.render.AtomicSecondaryViewApi.hasColor()) {
+                int atomicTex = cloud.siz.atomic.api.render.AtomicSecondaryViewApi.getColorTextureId();
+                if (atomicTex != 0) {
+                    mirrorTex = atomicTex;
+                }
+            }
+            GlStateManager.bindTexture(mirrorTex);
             ClientProxy.scopeUtils.drawScaledCustomSizeModalRectFlipY(0, 0, 0, 0, 1, 1, resolution.getScaledWidth(), resolution.getScaledHeight(), 1, 1);  
             GlStateManager.depthMask(true);
             
@@ -715,6 +756,11 @@ public class ScopeUtils {
      * - PIP模式：镜内外FOV不同，需要双Pass渲染
      */
     public void renderWorld(Minecraft mc, ItemAttachment itemAttachment, float partialTick) {
+        // Atomic deferred mirrors: request secondary color; skip legacy second renderWorld.
+        if (tryAtomicSecondaryView(mc, itemAttachment)) {
+            return;
+        }
+
         // PIP模式：降频更新优化
         if (itemAttachment.type.sight.modeType.isPIP) {
             pipFrameCounter++;
@@ -737,6 +783,79 @@ public class ScopeUtils {
             renderWorldForFOV(mc, itemAttachment, partialTick);
         }
     }
+
+    /**
+     * PIP → TRUE_CAMERA；FOV 镜 → REPROJECT_MAIN（主画面 composite 色图贴玻璃，非第二世界）。
+     * Zoom from existing {@link Sight#fovZoom} (+ stage/min-max via {@link #getFov}); only RT
+     * size is accessory-overridable via {@link Sight#mirrorRtMaxEdge}.
+     * @return true when Atomic owns mirror color (legacy {@code MIRROR_TEX} path skipped)
+     */
+    private boolean tryAtomicSecondaryView(Minecraft mc, ItemAttachment itemAttachment) {
+        if (mc == null || itemAttachment == null || itemAttachment.type == null
+                || itemAttachment.type.sight == null
+                || !com.modularwarfare.client.compat.AtomicShaderCompat.isPipelineEnabled()
+                || !cloud.siz.atomic.api.render.AtomicSecondaryViewApi.isAvailable()) {
+            clearAtomicMirrorState();
+            return false;
+        }
+        if (!(itemAttachment.type.model instanceof ModelAttachment)) {
+            clearAtomicMirrorState();
+            return false;
+        }
+        Sight sightCfg = ((ModelAttachment) itemAttachment.type.model).config.sight;
+
+        // Optical zoom for TRUE_CAMERA: baseFov / targetFov (target from getFov / fovZoom*).
+        float targetFov = Math.max(1f, getFov(itemAttachment));
+        float baseFov = Math.max(1f, mc.gameSettings.fovSetting);
+        float zoom = Math.max(1f, baseFov / targetFov);
+        int interval = Math.max(1, ModConfig.INSTANCE.hud.pipUpdateInterval);
+
+        int maxEdge;
+        if (sightCfg.mirrorRtMaxEdge > 0) {
+            maxEdge = Math.max(64, Math.min(2048, sightCfg.mirrorRtMaxEdge));
+        } else {
+            maxEdge = Math.min(1024, Math.max(256, Math.min(mc.displayWidth, mc.displayHeight)));
+        }
+        float aspect = mc.displayHeight > 0
+                ? (float) mc.displayWidth / (float) mc.displayHeight
+                : 16f / 9f;
+        int w;
+        int h;
+        if (aspect >= 1f) {
+            w = maxEdge;
+            h = Math.max(1, Math.round(maxEdge / aspect));
+        } else {
+            h = maxEdge;
+            w = Math.max(1, Math.round(maxEdge * aspect));
+        }
+        w = Math.max(2, w & ~1);
+        h = Math.max(2, h & ~1);
+
+        if (itemAttachment.type.sight.modeType.isPIP) {
+            cloud.siz.atomic.api.render.AtomicSecondaryViewApi.request(
+                    cloud.siz.atomic.api.render.SecondaryViewSpec.trueCamera(zoom, w, h, interval));
+        } else {
+            // FOV mirror: screen preview; main FOV already follows fovZoom via onFovMod.
+            cloud.siz.atomic.api.render.AtomicSecondaryViewApi.request(
+                    cloud.siz.atomic.api.render.SecondaryViewSpec.reprojectMain(zoom, w, h, 1));
+        }
+        atomicMirrorActive = true;
+        return true;
+    }
+
+    /** Drop Atomic secondary ownership so glass falls back to legacy {@code MIRROR_TEX}. */
+    private void clearAtomicMirrorState() {
+        if (!atomicMirrorActive) {
+            return;
+        }
+        atomicMirrorActive = false;
+        if (cloud.siz.atomic.api.render.AtomicSecondaryViewApi.isAvailable()) {
+            cloud.siz.atomic.api.render.AtomicSecondaryViewApi.release();
+        }
+    }
+
+    /** When true, {@link #renderPostScope} should bind Atomic secondary color instead of MIRROR_TEX. */
+    private boolean atomicMirrorActive;
     
     /**
      * FOV模式专用渲染方法

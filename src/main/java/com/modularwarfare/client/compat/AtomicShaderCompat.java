@@ -1,10 +1,12 @@
 package com.modularwarfare.client.compat;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.texture.ITextureObject;
 import net.minecraft.client.renderer.texture.TextureUtil;
+import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.Side;
@@ -75,7 +77,7 @@ public final class AtomicShaderCompat {
     }
 
     public static void rebindFillIfActive() {
-        if (!isAvailable()) {
+        if (!isPipelineEnabled()) {
             return;
         }
         AtomicGBufferCompat.rebindFillIfActive();
@@ -103,24 +105,32 @@ public final class AtomicShaderCompat {
     }
 
     public static void setEmissiveFlat(float amount) {
-        if (!isAvailable() || !isGBufferFillActive() || isShadowDepthActive()) {
+        if (!isPipelineEnabled() || !isGBufferFillActive() || isShadowDepthActive()) {
             return;
         }
         AtomicGBufferCompat.setEmissiveFlat(amount);
     }
 
     public static void setEmissiveMap(int glTexId, boolean tintAlbedo) {
-        if (!isAvailable() || !isGBufferFillActive() || isShadowDepthActive()) {
+        if (!isPipelineEnabled() || !isGBufferFillActive() || isShadowDepthActive()) {
             return;
         }
         AtomicGBufferCompat.setEmissiveMap(glTexId, tintAlbedo);
     }
 
     public static void clearEmissive() {
-        if (!isAvailable()) {
+        if (!isPipelineEnabled()) {
             return;
         }
         AtomicGBufferCompat.clearEmissive();
+    }
+
+    /** FP soft FX window: finish Hand MRT + light. No-op when Atomic off / master off. */
+    public static void finishHandDeferredIfActive() {
+        if (!isPipelineEnabled()) {
+            return;
+        }
+        AtomicGBufferCompat.finishHandDeferredIfActive();
     }
 
     /**
@@ -145,9 +155,10 @@ public final class AtomicShaderCompat {
     }
 
     /**
-     * After morph / FBO steal: restore fill MRT <b>and</b> re-bind the last gun albedo so
-     * {@code EntityPbrTextureCache} re-applies {@code _n/_s} (reapplyLast alone is not enough
-     * when lastAlbedo was overwritten by hand skin / glow probes).
+     * After morph / FBO steal: restore fill MRT and re-bind {@code currentFillAlbedo} (gun / item /
+     * armor / skin — whatever the peer last adopted). Not a gun-only helper despite the name.
+     * Call only when that albedo is still the mesh about to draw; never use this to "fix" arms
+     * after a stale held-item albedo (bind skin via {@link #bindFillAlbedo} instead).
      */
     public static void rebindFillAndGunPbr() {
         if (!isGBufferFillActive() && !isShadowDepthActive()) {
@@ -163,6 +174,67 @@ public final class AtomicShaderCompat {
 
     public static void clearCurrentFillAlbedo() {
         currentFillAlbedo = null;
+    }
+
+    /**
+     * Player skin location that is safe to sample. When the network skin is not registered yet
+     * or resolves to {@link TextureUtil#MISSING_TEXTURE} (purple), fall back to
+     * {@link DefaultPlayerSkin} — enter-world / switch-save FP arms otherwise go purple.
+     */
+    public static ResourceLocation resolveReadyPlayerSkin(AbstractClientPlayer player) {
+        if (player == null) {
+            return DefaultPlayerSkin.getDefaultSkinLegacy();
+        }
+        ResourceLocation loc = player.getLocationSkin();
+        if (loc == null) {
+            return DefaultPlayerSkin.getDefaultSkin(player.getUniqueID());
+        }
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null || mc.getTextureManager() == null) {
+            return DefaultPlayerSkin.getDefaultSkin(player.getUniqueID());
+        }
+        ITextureObject tex = mc.getTextureManager().getTexture(loc);
+        if (tex == null || isMissingTexture(tex)) {
+            return DefaultPlayerSkin.getDefaultSkin(player.getUniqueID());
+        }
+        return loc;
+    }
+
+    private static boolean isMissingTexture(ITextureObject tex) {
+        if (tex == TextureUtil.MISSING_TEXTURE) {
+            return true;
+        }
+        try {
+            return tex.getGlTextureId() == TextureUtil.MISSING_TEXTURE.getGlTextureId();
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
+    /**
+     * Bind a ready player skin (or Steve/Alex default). Atomic PBR fill hooks only when
+     * pipeline master is on; otherwise this is a plain TextureManager bind (MWF purple-skin fix).
+     */
+    public static ResourceLocation bindReadyPlayerSkin() {
+        AbstractClientPlayer player = Minecraft.getMinecraft().player;
+        ResourceLocation skin = resolveReadyPlayerSkin(player);
+        Minecraft.getMinecraft().getTextureManager().bindTexture(skin);
+        if (isPipelineEnabled() && isGBufferFillActive() && !isShadowDepthActive()) {
+            ensurePbrMapsForBoundAlbedo(skin);
+        }
+        return skin;
+    }
+
+    /**
+     * Call at the start of each FP held-item draw to drop stale gun/skin albedo pointers.
+     * No-op when Atomic is absent or the deferred master switch is off.
+     */
+    public static void onFirstPersonItemBegin() {
+        if (!isPipelineEnabled()) {
+            return;
+        }
+        clearCurrentFillAlbedo();
+        clearEmissive();
     }
 
     /**
@@ -226,6 +298,9 @@ public final class AtomicShaderCompat {
     }
 
     public static void endCutoutEmissiveFx() {
+        if (!isPipelineEnabled()) {
+            return;
+        }
         endFlatEmissiveHighlight();
         TextureSamplingRegistry.restoreDefaultTexUnit();
         if (currentFillAlbedo != null) {

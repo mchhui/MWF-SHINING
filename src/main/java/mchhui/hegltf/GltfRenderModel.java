@@ -249,8 +249,15 @@ public class GltfRenderModel {
 
     /** After skin SSBO compute: restore Atomic fill/shadow or OptiFine program (do not leave program 0). */
     private static void restoreProgramAfterSkinCompute() {
-        if (AtomicShaderCompat.isShadowDepthActive() || AtomicShaderCompat.isGBufferFillActive()) {
-            AtomicShaderCompat.rebindFillAndGunPbr();
+        if (AtomicShaderCompat.isShadowDepthActive()) {
+            AtomicShaderCompat.rebindAtomicCaptureIfActive();
+            return;
+        }
+        if (AtomicShaderCompat.isGBufferFillActive()) {
+            // Only restore fill program + MRT. Do NOT rebind currentFillAlbedo here:
+            // updateAnimation often runs before the peer binds skin/gun for this mesh group
+            // (knife→gun left a stale melee albedo / null → arm samples wrong TEX0).
+            AtomicShaderCompat.rebindFillIfActive();
             return;
         }
         if (OptifineHelper.isShadersEnabled()) {

@@ -111,6 +111,10 @@ public class RenderMelee extends CustomItemRenderer {
             return;
         }
 
+        if (type == CustomItemRenderType.EQUIPPED_FIRST_PERSON) {
+            AtomicShaderCompat.onFirstPersonItemBegin();
+        }
+
         MeleeType meleeType = ((ItemMelee) item.getItem()).type;
         if (meleeType == null)
             return;
@@ -274,17 +278,11 @@ public class RenderMelee extends CustomItemRenderer {
                  */
                 ObjModelRenderer.glowTxtureMode = false;
                 bindPlayerSkin();
-                // if (Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                // model.renderPart(RIGHT_SLIM_HAND_PART);
-                // } else {
-                // model.renderPart(RIGHT_HAND_PART);
-                // }
                 blendTransform(model, item, !config.meleeAnimations.containsKey(AnimationMeleeType.SPRINT),
                     controller.getTime(), controller.getSprintTime(), (float)controller.SPRINT,
                     "sprint_righthand", true, true, () -> {
                     ObjModelRenderer.glowTxtureMode = false;
                     bindPlayerSkin();
-                    AtomicShaderCompat.rebindFillAndGunPbr();
                     ClientProxy.gunEnhancedRenderer.renderHandAndArmor(EnumHandSide.RIGHT, player, config, modelPlayer, model);
                     ObjModelRenderer.glowTxtureMode = true;
                 });
@@ -310,17 +308,11 @@ public class RenderMelee extends CustomItemRenderer {
                  */
                 ObjModelRenderer.glowTxtureMode = false;
                 bindPlayerSkin();
-                // if (Minecraft.getMinecraft().player.getSkinType().equals("slim")) {
-                // model.renderPart(LEFT_SLIM_HAND_PART);
-                // } else {
-                // model.renderPart(LEFT_HAND_PART);
-                // }
                 blendTransform(model, item, !config.meleeAnimations.containsKey(AnimationMeleeType.SPRINT),
                     controller.getTime(), controller.getSprintTime(), (float)controller.SPRINT,
                     "sprint_lefthand", true, true, () -> {
                     ObjModelRenderer.glowTxtureMode = false;
                     bindPlayerSkin();
-                    AtomicShaderCompat.rebindFillAndGunPbr();
                     ClientProxy.gunEnhancedRenderer.renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
                     ObjModelRenderer.glowTxtureMode = true;
                 });
@@ -422,9 +414,8 @@ public class RenderMelee extends CustomItemRenderer {
     }
 
     public void bindPlayerSkin() {
-        bindingTexture = Minecraft.getMinecraft().player.getLocationSkin();
-        Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
-        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
+        bindingTexture = AtomicShaderCompat.resolveReadyPlayerSkin(Minecraft.getMinecraft().player);
+        AtomicShaderCompat.bindFillAlbedo(bindingTexture);
     }
 
     public void blendTransform(EnhancedModel model, ItemStack gunStack, boolean basicSprint, float time,

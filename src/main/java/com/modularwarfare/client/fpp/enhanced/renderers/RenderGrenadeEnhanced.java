@@ -85,6 +85,10 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
             return;
         }
 
+        if (type == CustomItemRenderType.EQUIPPED_FIRST_PERSON) {
+            AtomicShaderCompat.onFirstPersonItemBegin();
+        }
+
         GrenadeType grenadeType = ((ItemGrenade)item.getItem()).type;
         if (grenadeType == null)
             return;
@@ -187,7 +191,6 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
              * player left hand
              * */
             bindPlayerSkin();
-            AtomicShaderCompat.rebindFillAndGunPbr();
             ObjModelRenderer.glowTxtureMode=false;
             renderHandAndArmor(EnumHandSide.LEFT, player, config, modelPlayer, model);
             ObjModelRenderer.glowTxtureMode=true;
@@ -200,7 +203,6 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
              * player left hand
              * */
             bindPlayerSkin();
-            AtomicShaderCompat.rebindFillAndGunPbr();
             ObjModelRenderer.glowTxtureMode=false;
             renderHandAndArmor(EnumHandSide.RIGHT, player, config, modelPlayer, model);
             ObjModelRenderer.glowTxtureMode=true;
@@ -423,9 +425,8 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
     }
 
     public void bindPlayerSkin() {
-        bindingTexture = Minecraft.getMinecraft().player.getLocationSkin();
-        Minecraft.getMinecraft().renderEngine.bindTexture(bindingTexture);
-        AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(bindingTexture);
+        bindingTexture = AtomicShaderCompat.resolveReadyPlayerSkin(Minecraft.getMinecraft().player);
+        AtomicShaderCompat.bindFillAlbedo(bindingTexture);
     }
 
     public void bindCustomHands(TextureType handTextureType) {
