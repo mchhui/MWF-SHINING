@@ -52,10 +52,6 @@ public class DataMesh {
                 t.printStackTrace();
             }
         }
-        // Must rebind fill/MRT before every draw — morph / FBO / program 0 otherwise leave
-        // only COLOR0 (albedo×lightmap) and empty normal/material → no sky/custom lights.
-        AtomicShaderCompat.rebindFillAndGunPbr();
-        // Atomic fill: write emissive into material.A with albedo still on TEX0 (no EQUAL fake pass).
         boolean atomicGlow = ObjModelRenderer.glowTxtureMode
                 && AtomicShaderCompat.prepareGlowMapEmissive(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
         this.callVAO();

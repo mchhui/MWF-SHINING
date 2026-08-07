@@ -89,8 +89,6 @@ public class ObjModelRenderer {
     public void render(float scale) {
         float x = OpenGlHelper.lastBrightnessX;
         float y = OpenGlHelper.lastBrightnessY;
-        // Restore fill/MRT before fixed-pipeline VAO (same as DataMesh).
-        AtomicShaderCompat.rebindFillAndGunPbr();
         boolean atomicFill = AtomicShaderCompat.isGBufferFillActive()
                 && !AtomicShaderCompat.isShadowDepthActive();
         boolean atomicGlowMap = glowTxtureMode

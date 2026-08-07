@@ -403,6 +403,7 @@ public class ClientProxy extends CommonProxy {
         long skinTime = System.currentTimeMillis();
         
         preloadSkinTypes.forEach((skin, type) -> {
+            ResourceLocation albedo = null;
             for (int i = 0; i < skin.textures.length; i++) {
                 ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
                         String.format(skin.textures[i].format, type.getAssetDir(), skin.getSkin()));
@@ -410,6 +411,12 @@ public class ClientProxy extends CommonProxy {
                 boolean linear = skin.sampling.equals(SkinType.Sampling.LINEAR);
                 TextureSamplingRegistry.register(resource, linear);
                 TextureSamplingRegistry.applyBoundFilter(linear);
+                if (skin.textures[i] == SkinType.Texture.BASIC) {
+                    albedo = resource;
+                }
+            }
+            if (albedo != null) {
+                com.modularwarfare.client.compat.AtomicShaderCompat.warmStandalonePbrMaps(albedo);
             }
         });
         ModularWarfare.LOGGER.info(String.format("Preloaded %d skin textures (%dms)", preloadSkinTypes.size(), System.currentTimeMillis() - skinTime));

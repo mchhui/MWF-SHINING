@@ -84,6 +84,28 @@ public final class AtomicShaderCompat {
     }
 
     /**
+     * Skin / morph / raw GL20 program steals: Atomic FillCaptureGuard may not see HE-LWJGL3
+     * {@code GL20.glUseProgram}; force the next fill rebind to run.
+     */
+    public static void markFillCaptureDirty() {
+        if (!isPipelineEnabled()) {
+            return;
+        }
+        AtomicGBufferCompat.markFillCaptureDirty();
+    }
+
+    /**
+     * After TextureManager preload of gun/item albedo (+ {@code _n}/{@code _s}): warm Atomic's
+     * decoded PBR cache so first FP draw does not ImageIO/decode on the render thread.
+     */
+    public static void warmStandalonePbrMaps(ResourceLocation albedo) {
+        if (!isAtomicLoaded() || albedo == null) {
+            return;
+        }
+        AtomicGBufferCompat.warmStandalonePbrMaps(albedo);
+    }
+
+    /**
      * After morph during entity-sun / custom shadow fill via {@code renderEntity}:
      * drop compute/skin programs so fixed-pipeline depth writes work.
      */
@@ -138,12 +160,13 @@ public final class AtomicShaderCompat {
      * then bind the same albedo again so Atomic {@code EntityPbrTextureCache.onAlbedoBound}
      * runs with {@code g_buffer_fill} active.
      * <p>
-     * Atomic currently skips {@code onAlbedoBound} (and does not update {@code lastAlbedo})
-     * when the fill program is not bound — common in FP after morph / FBO / {@code glUseProgram(0)}.
-     * TP entity fill usually keeps the program; FP often does not. No new Atomic API required.
+     * Skips work when fill is already bound and this albedo is already the current fill albedo.
      */
     public static void ensurePbrMapsForBoundAlbedo(ResourceLocation albedo) {
         if (albedo == null || !isGBufferFillActive() || isShadowDepthActive()) {
+            return;
+        }
+        if (albedo.equals(currentFillAlbedo) && AtomicGBufferCompat.isFillProgramBound()) {
             return;
         }
         currentFillAlbedo = albedo;
@@ -159,6 +182,9 @@ public final class AtomicShaderCompat {
      * armor / skin — whatever the peer last adopted). Not a gun-only helper despite the name.
      * Call only when that albedo is still the mesh about to draw; never use this to "fix" arms
      * after a stale held-item albedo (bind skin via {@link #bindFillAlbedo} instead).
+     * <p>
+     * Always restores capture when called — HE/MWF may change program via {@code GL20.glUseProgram}
+     * without going through OpenGlHelper; do not skip based on a Java fill-bound flag alone.
      */
     public static void rebindFillAndGunPbr() {
         if (!isGBufferFillActive() && !isShadowDepthActive()) {

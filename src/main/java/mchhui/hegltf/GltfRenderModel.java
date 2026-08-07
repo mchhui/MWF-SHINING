@@ -254,9 +254,7 @@ public class GltfRenderModel {
             return;
         }
         if (AtomicShaderCompat.isGBufferFillActive()) {
-            // Only restore fill program + MRT. Do NOT rebind currentFillAlbedo here:
-            // updateAnimation often runs before the peer binds skin/gun for this mesh group
-            // (knife→gun left a stale melee albedo / null → arm samples wrong TEX0).
+            AtomicShaderCompat.markFillCaptureDirty();
             AtomicShaderCompat.rebindFillIfActive();
             return;
         }
