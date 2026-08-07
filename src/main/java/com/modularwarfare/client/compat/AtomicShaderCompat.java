@@ -60,12 +60,20 @@ public final class AtomicShaderCompat {
     /**
      * When Atomic owns deferred mesh: skip color draws outside fill/shadow
      * (avoids fullbright forward dual-paint). When master is off, never skip.
+     * <p>
+     * Inventory / container entity previews ({@code GuiInventory.drawEntityOnScreen}
+     * etc.) run after the world fill session with no fill active — must not skip
+     * or held MWF guns (and ELM-bound previews' weapons) stay invisible.
      */
     public static boolean shouldSkipLegacyColorDraw() {
         if (!isPipelineEnabled()) {
             return false;
         }
         if (isGBufferFillActive() || isShadowDepthActive()) {
+            return false;
+        }
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc != null && mc.currentScreen != null) {
             return false;
         }
         return true;

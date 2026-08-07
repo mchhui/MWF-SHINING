@@ -204,6 +204,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     public static final int BULLET_MAX_RENDER = 256;
     private static float theata90 = (float) Math.toRadians(90);
     public static final HashSet<String> DEFAULT_EXCEPT = new HashSet<String>();
+    /** Scratch for merging same-MV gun part draws (selector/bullets/ammo). */
+    private static final HashSet<String> GUN_PART_BATCH = new HashSet<String>();
     public static final List<String> defaultHideList = Arrays.asList("ammoModel", "ammoModelPre", "ammoModelPost",
             "leftArmModel", "leftArmLayerModel",
             "leftArmSlimModel",
@@ -928,27 +930,15 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 if (atomicCapture) {
                     AtomicShaderCompat.rebindFillAndGunPbr();
                 }
+                model.beginDrawScope();
+                try {
                 model.renderPartExcept(exceptPartsRendering);
                 if (atomicFill) {
                     AtomicShaderCompat.rebindFillAndGunPbr();
                 }
                 
                 /**
-                 * selecotr
-                 * */
-                WeaponFireMode fireMode = GunType.getFireMode(item);
-                if(fireMode==WeaponFireMode.SEMI) {
-                    model.renderPart("selector_semi");
-                }else if(fireMode==WeaponFireMode.FULL) {
-                    model.renderPart("selector_full");
-                }else if(fireMode==WeaponFireMode.BURST){
-                    model.renderPart("selector_burst");
-                }else if(fireMode==WeaponFireMode.SAFE){
-                    model.renderPart("selector_safe");
-                }
-                
-                /**
-                 * ammo and bullet
+                 * ammo and bullet (dynamic attachments may invalidate draw-scope base MV)
                  * */
                 boolean flagDynamicAmmoRendered=false;
                 ItemStack stackAmmo = new ItemStack(item.getTagCompound().getCompoundTag("ammo"));
@@ -1306,45 +1296,59 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 
                 bindTexture("guns", gunPath);
 //                System.out.println(model.existPart("shellModel_1"));
+                GUN_PART_BATCH.clear();
+                WeaponFireMode fireMode = GunType.getFireMode(item);
+                if (fireMode == WeaponFireMode.SEMI) {
+                    GUN_PART_BATCH.add("selector_semi");
+                } else if (fireMode == WeaponFireMode.FULL) {
+                    GUN_PART_BATCH.add("selector_full");
+                } else if (fireMode == WeaponFireMode.BURST) {
+                    GUN_PART_BATCH.add("selector_burst");
+                } else if (fireMode == WeaponFireMode.SAFE) {
+                    GUN_PART_BATCH.add("selector_safe");
+                }
                 if(defaultBulletFlag.b) {
                     for (int bullet = 0; bullet < currentAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
-                        model.renderPart("bulletModel_" + bullet);
+                        GUN_PART_BATCH.add("bulletModel_" + bullet);
                     }
                     // Pre: original (pre-reload) bullet count
                     int preAmmoCount = orignalAmmo != null && !orignalAmmo.isEmpty()
                             ? ReloadHelper.getBulletOnMag(orignalAmmo, null)
                             : currentAmmoCount;
                     for (int bullet = 0; bullet < preAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
-                        model.renderPart("bulletModelPre_" + bullet);
+                        GUN_PART_BATCH.add("bulletModelPre_" + bullet);
                     }
                     // Post: prognosis (post-reload) bullet count
                     if (prognosisAmmo != null && !prognosisAmmo.isEmpty()) {
                         int postAmmoCount = ReloadHelper.getBulletOnMag(prognosisAmmo, null);
                         for (int bullet = 0; bullet < postAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
-                            model.renderPart("bulletModelPost_" + bullet);
+                            GUN_PART_BATCH.add("bulletModelPost_" + bullet);
                         }
-                        model.renderPart("bulletModelPost");
+                        GUN_PART_BATCH.add("bulletModelPost");
                     }
 //                    ItemStack bulletStack=ItemGun.getUsedBullet(bulletStack, gunType);
                     if(bulletStack!=null&&!bulletStack.isEmpty()) {
                         for (int bullet = 0; bullet < costAmmoCount && bullet < BULLET_MAX_RENDER; bullet++) {
-                            model.renderPart("shellModel_" + bullet);
+                            GUN_PART_BATCH.add("shellModel_" + bullet);
                         }  
                     }
-                    model.renderPart("bulletModel");
-                    model.renderPart("bulletModelPre");
+                    GUN_PART_BATCH.add("bulletModel");
+                    GUN_PART_BATCH.add("bulletModelPre");
                 }
                 
                 if (controller.shouldRenderAmmo() && defaultAmmoFlag) {
-                    model.renderPart("ammoModel");
+                    GUN_PART_BATCH.add("ammoModel");
                 }
                 // Pre/Post: if no dynamic ammo model was rendered for these slots,
                 // fall back to rendering the gun's own bones directly (non-dynamic ammo case)
                 if (controller.shouldRenderAmmo() && defaultAmmoFlags[1]) {
-                    model.renderPart("ammoModelPre");
+                    GUN_PART_BATCH.add("ammoModelPre");
                 }
                 if (controller.shouldRenderAmmo() && defaultAmmoFlags[2]) {
-                    model.renderPart("ammoModelPost");
+                    GUN_PART_BATCH.add("ammoModelPost");
+                }
+                if (!GUN_PART_BATCH.isEmpty()) {
+                    model.renderOnly(GUN_PART_BATCH);
                 }
 
                 
@@ -1576,6 +1580,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     
                     if(config.specialEffect.oldFlashModel) {
                         if (shouldRotateFlash) {
+                            model.invalidateDrawScopeBase();
                             GlStateManager.pushMatrix();
                             Matrix4f flashTransform = model.getGlobalTransform("flashModel");
                             if (flashTransform != null) {
@@ -1589,6 +1594,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             }
                             model.renderPart("flashModel");
                             GlStateManager.popMatrix();
+                            model.invalidateDrawScopeBase();
                         } else {
                             model.renderPart("flashModel");
                         }
@@ -1596,6 +1602,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     if(config.specialEffect.flashModelGroups!=null) {
                         config.specialEffect.flashModelGroups.forEach((group)->{
                             if (shouldRotateFlash) {
+                                model.invalidateDrawScopeBase();
                                 GlStateManager.pushMatrix();
                                 Matrix4f groupTransform = model.getGlobalTransform(group.name);
                                 if (groupTransform != null) {
@@ -1609,6 +1616,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                 }
                                 model.renderPart(group.name);
                                 GlStateManager.popMatrix();
+                                model.invalidateDrawScopeBase();
                             } else {
                                 model.renderPart(group.name);
                             }
@@ -1658,6 +1666,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 updateFpTrailNodeCache(model, new Matrix4f(mat), player);
                 GlStateManager.depthMask(true);
                 GlStateManager.enableLighting();
+                } finally {
+                    model.endDrawScope();
+                }
             }
         });
         
@@ -3193,7 +3204,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         } else {
             DataAnimation.currentStepRanges = null;
         }
-        model.updateAnimation(time, skin);
+        model.updateAnimationBlended(time, skin, basicSprint, sprintTime, alpha, aimTime, adsAlpha, ammoPerParam);
         DataAnimation.currentStepRanges = null;
         runnable.run();
         model.setAnimationCalBlender(null);

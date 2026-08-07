@@ -89,6 +89,7 @@ public class ObjModelRenderer {
     public void render(float scale) {
         float x = OpenGlHelper.lastBrightnessX;
         float y = OpenGlHelper.lastBrightnessY;
+        // Batch / morph paths restore fill; per-draw rebind was a Spark hotspot.
         boolean atomicFill = AtomicShaderCompat.isGBufferFillActive()
                 && !AtomicShaderCompat.isShadowDepthActive();
         boolean atomicGlowMap = glowTxtureMode

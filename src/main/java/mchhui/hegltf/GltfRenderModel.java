@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.joml.*;
@@ -13,26 +14,27 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
-import org.lwjgl.util.vector.Quaternion;
 
 import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.utility.OptifineHelper;
 
 import mchhui.hegltf.DataAnimation.Transform;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 
 /**
  * @author Hueihuea
  */
 public class GltfRenderModel {
     private static final HashSet<String> setObj = new HashSet<String>();
-    private static final FloatBuffer MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
+    /** Scratch for joint matrix = pose * inverseBind (no per-joint alloc). */
+    private static final Matrix4f JOINT_SCRATCH = new Matrix4f();
+    private static final Comparator<DataMesh> COMPARE_DRAW_VAO = new Comparator<DataMesh>() {
+        @Override
+        public int compare(DataMesh a, DataMesh b) {
+            return Integer.compare(a.getDrawVao(), b.getDrawVao());
+        }
+    };
     private static final Comparator<DataMaterial> COMPARATOR_MATE = new Comparator() {
 
         @Override
@@ -54,6 +56,22 @@ public class GltfRenderModel {
 
     protected boolean initedNodeStates = false;
     protected int jointMatsBufferId = -1;
+    /** Packed joint matrices for one glBufferSubData upload. */
+    private FloatBuffer jointMatsUpload;
+    /** Nodes that own at least one mesh (bones-only skipped at draw). */
+    private List<DataNode> meshNodes;
+    private boolean meshNodesBuilt = false;
+    /** Scratch lists reused every render (no per-frame alloc). */
+    private final ArrayList<DataMesh> skinDrawList = new ArrayList<DataMesh>();
+    private final ArrayList<DataNode> rigidNodeList = new ArrayList<DataNode>();
+    private final ArrayList<DataMesh> rigidMeshScratch = new ArrayList<DataMesh>();
+    /** Per-model MV buffers (must not be static — nested models would clobber). */
+    private final FloatBuffer matrixBuffer = BufferUtils.createFloatBuffer(16);
+    private final FloatBuffer baseMvBuffer = BufferUtils.createFloatBuffer(16);
+    private final Matrix4f baseMv = new Matrix4f();
+    private final Matrix4f composedMv = new Matrix4f();
+    private int drawScopeDepth = 0;
+    private boolean baseMvValid = false;
 
     public static class NodeState {
         public Matrix4f mat = new Matrix4f();
@@ -95,6 +113,19 @@ public class GltfRenderModel {
         this.geoModel = geoModel;
     }
 
+    private void ensureMeshNodes() {
+        if (meshNodesBuilt) {
+            return;
+        }
+        meshNodes = new ArrayList<>();
+        for (DataNode node : geoModel.nodes.values()) {
+            if (node.meshes != null && !node.meshes.isEmpty()) {
+                meshNodes.add(node);
+            }
+        }
+        meshNodesBuilt = true;
+    }
+
     public void calculateAllNodePose(float time) {
         if (!initedNodeStates) {
             geoModel.nodes.keySet().forEach((name) -> {
@@ -109,7 +140,8 @@ public class GltfRenderModel {
     
 
     public void calculateNodeAndChildren(DataNode node, Matrix4f parent, float time) {
-        Matrix4f matrix = new Matrix4f();
+        Matrix4f matrix = nodeStates.get(node.name).mat;
+        matrix.identity();
         DataAnimation animation = geoModel.animations.get(node.name);
         if (animation != null) {
             Transform trans = animation.findTransform(time, node.pos, node.size, node.rot);
@@ -130,7 +162,6 @@ public class GltfRenderModel {
             matrix.mulLocal(parent);
         }
         
-        nodeStates.get(node.name).mat = matrix;
         for (String name : node.childlist) {
             calculateNodeAndChildren(geoModel.nodes.get(name), matrix, time);
         }
@@ -140,21 +171,31 @@ public class GltfRenderModel {
         if (geoModel.joints.size() == 0) {
             return;
         }
+        int jointCount = geoModel.joints.size();
         if (jointMatsBufferId == -1) {
             jointMatsBufferId = GL15.glGenBuffers();
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, jointMatsBufferId);
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, geoModel.joints.size() * 64, GL15.GL_DYNAMIC_DRAW);
+            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, jointCount * 64L, GL15.GL_DYNAMIC_DRAW);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
         }
 
-        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, jointMatsBufferId);
-        for (int i = 0; i < geoModel.joints.size(); i++) {
+        int floats = jointCount * 16;
+        if (jointMatsUpload == null || jointMatsUpload.capacity() < floats) {
+            jointMatsUpload = BufferUtils.createFloatBuffer(floats);
+        }
+        jointMatsUpload.clear();
+        for (int i = 0; i < jointCount; i++) {
             Matrix4f inv = geoModel.inverseBindMatrices.get(i);
             Matrix4f pose = nodeStates.get(geoModel.joints.get(i)).mat;
-            Matrix4f result = new Matrix4f(pose);
-            result.mul(inv);
-            GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, i * 64, result.get(MATRIX_BUFFER));
+            JOINT_SCRATCH.set(pose);
+            JOINT_SCRATCH.mul(inv);
+            JOINT_SCRATCH.get(i * 16, jointMatsUpload);
         }
+        jointMatsUpload.limit(floats);
+        jointMatsUpload.position(0);
+
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, jointMatsBufferId);
+        GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0, jointMatsUpload);
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -178,6 +219,39 @@ public class GltfRenderModel {
             skinNodeAndChildren(geoModel.nodes.get(child), sun, moon);
         });
     }
+
+    /** Pose only (nodeStates). Blender must already be set if needed. */
+    public boolean updatePose(float time) {
+        if (!geoModel.loaded) {
+            return false;
+        }
+        calculateAllNodePose(time);
+        return true;
+    }
+
+    /** Upload joints + GPU skin from current nodeStates. */
+    public void skinFromPose() {
+        if (!geoModel.loaded) {
+            return;
+        }
+        if (geoModel.joints.size() == 0) {
+            return;
+        }
+        uploadAllJointTransform();
+        ShaderGltf.useShader();
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING,
+            jointMatsBufferId);
+
+        GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
+        for (Entry<String, DataNode> e : geoModel.rootNodes.entrySet()) {
+            skinNodeAndChildren(e.getValue(), null, null);
+        }
+        GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
+
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
+        restoreProgramAfterSkinCompute();
+    }
     
     public boolean loadAnimation(GltfRenderModel other,boolean skin) {
         if(!other.initedNodeStates) {
@@ -199,50 +273,17 @@ public class GltfRenderModel {
             }
         });
         if (skin) {
-            if (geoModel.joints.size() > 0) {
-                uploadAllJointTransform();
-                ShaderGltf.useShader();
-                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING,
-                    jointMatsBufferId);
-
-                GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
-                for (Entry<String, DataNode> e : geoModel.rootNodes.entrySet()) {
-                    skinNodeAndChildren(e.getValue(), null, null);
-                }
-                GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
-
-                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
-                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
-                restoreProgramAfterSkinCompute();
-            }
-            
+            skinFromPose();
         }
         return true;
     }
 
     public boolean updateAnimation(float time, boolean skin) {
-        // System.out.println(time);
-        if (!geoModel.loaded) {
+        if (!updatePose(time)) {
             return false;
         }
-        calculateAllNodePose(time);
         if (skin) {
-            if (geoModel.joints.size() > 0) {
-                uploadAllJointTransform();
-                ShaderGltf.useShader();
-                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING,
-                    jointMatsBufferId);
-
-                GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
-                for (Entry<String, DataNode> e : geoModel.rootNodes.entrySet()) {
-                    skinNodeAndChildren(e.getValue(), null, null);
-                }
-                GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
-
-                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
-                GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
-                restoreProgramAfterSkinCompute();
-            }
+            skinFromPose();
         }
         return true;
     }
@@ -254,7 +295,12 @@ public class GltfRenderModel {
             return;
         }
         if (AtomicShaderCompat.isGBufferFillActive()) {
+            // ShaderGltf uses GL20.glUseProgram; under HE LWJGL3 the Atomic program tracker
+            // may miss it and FillCaptureGuard would skip rebind → invisible skinned gun + 0x502.
             AtomicShaderCompat.markFillCaptureDirty();
+            // Only restore fill program + MRT. Do NOT rebind currentFillAlbedo here:
+            // updateAnimation often runs before the peer binds skin/gun for this mesh group
+            // (knife→gun left a stale melee albedo / null → arm samples wrong TEX0).
             AtomicShaderCompat.rebindFillIfActive();
             return;
         }
@@ -265,29 +311,168 @@ public class GltfRenderModel {
         }
     }
 
+    private void loadModelView(Matrix4f mat) {
+        matrixBuffer.clear();
+        mat.get(matrixBuffer);
+        matrixBuffer.rewind();
+        GL11.glLoadMatrix(matrixBuffer);
+    }
+
+    private void readBaseModelView() {
+        baseMvBuffer.clear();
+        GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, baseMvBuffer);
+        baseMvBuffer.rewind();
+        baseMv.set(baseMvBuffer);
+        baseMvValid = true;
+    }
+
+    /** Open a multi-draw scope: matrixMode + getFloat + VAO batch once. */
+    public void beginDrawScope() {
+        if (drawScopeDepth++ > 0) {
+            return;
+        }
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+        AtomicShaderCompat.rebindFillAndGunPbr();
+        DataMesh.beginBatch();
+        readBaseModelView();
+    }
+
+    public void endDrawScope() {
+        if (drawScopeDepth <= 0) {
+            return;
+        }
+        if (--drawScopeDepth > 0) {
+            return;
+        }
+        if (baseMvValid) {
+            loadModelView(baseMv);
+        }
+        DataMesh.endBatch();
+        baseMvValid = false;
+    }
+
+    /** Caller changed GL modelview (push/mult/pop); force re-read on next rigid pass. */
+    public void invalidateDrawScopeBase() {
+        baseMvValid = false;
+    }
+
+    private boolean isExcluded(HashSet<String> moon, String name) {
+        if (moon == null || moon.isEmpty()) {
+            return false;
+        }
+        return moon.contains(name);
+    }
+
+    private void collectDrawLists(HashSet<String> sun, HashSet<String> moon) {
+        skinDrawList.clear();
+        rigidNodeList.clear();
+        if (sun != null && !sun.isEmpty()) {
+            for (String name : sun) {
+                if (isExcluded(moon, name)) {
+                    continue;
+                }
+                DataNode node = geoModel.nodes.get(name);
+                if (node == null || node.meshes == null || node.meshes.isEmpty()) {
+                    continue;
+                }
+                collectNodeMeshes(node);
+            }
+        } else {
+            ensureMeshNodes();
+            for (int i = 0, n = meshNodes.size(); i < n; i++) {
+                DataNode node = meshNodes.get(i);
+                if (isExcluded(moon, node.name)) {
+                    continue;
+                }
+                collectNodeMeshes(node);
+            }
+        }
+    }
+
+    private void collectNodeMeshes(DataNode node) {
+        boolean anyRigid = false;
+        for (DataMesh mesh : node.meshes.values()) {
+            if (mesh.skin) {
+                skinDrawList.add(mesh);
+            } else {
+                anyRigid = true;
+            }
+        }
+        if (anyRigid) {
+            rigidNodeList.add(node);
+        }
+    }
+
+    private void drawSkinPass() {
+        if (skinDrawList.isEmpty()) {
+            return;
+        }
+        // Skin needs the scope base MV (not last rigid node matrix).
+        if (baseMvValid) {
+            loadModelView(baseMv);
+        }
+        if (skinDrawList.size() > 1) {
+            skinDrawList.sort(COMPARE_DRAW_VAO);
+        }
+        for (int i = 0, n = skinDrawList.size(); i < n; i++) {
+            skinDrawList.get(i).render();
+        }
+    }
+
+    private void drawRigidPass() {
+        if (rigidNodeList.isEmpty()) {
+            return;
+        }
+        if (!baseMvValid) {
+            readBaseModelView();
+        }
+        for (int i = 0, n = rigidNodeList.size(); i < n; i++) {
+            DataNode node = rigidNodeList.get(i);
+            NodeState state = nodeStates.get(node.name);
+            if (state != null) {
+                composedMv.set(baseMv);
+                composedMv.mul(state.mat);
+                loadModelView(composedMv);
+            } else {
+                loadModelView(baseMv);
+            }
+            rigidMeshScratch.clear();
+            for (DataMesh mesh : node.meshes.values()) {
+                if (!mesh.skin) {
+                    rigidMeshScratch.add(mesh);
+                }
+            }
+            if (rigidMeshScratch.size() > 1) {
+                rigidMeshScratch.sort(COMPARE_DRAW_VAO);
+            }
+            for (int j = 0, m = rigidMeshScratch.size(); j < m; j++) {
+                rigidMeshScratch.get(j).render();
+            }
+        }
+        // Restore base so following skin draws / caller see correct MV.
+        loadModelView(baseMv);
+    }
+
     // 阴阳！哈哈哈 下次试试aplle和pear XD
     public void render(HashSet<String> sun, HashSet<String> moon) {
-        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
         if (!geoModel.loaded) {
             return;
         }
-        // Batch start: restore g_buffer_fill + MRT + gun _n/_s.
-        AtomicShaderCompat.rebindFillAndGunPbr();
-        for (Entry<String, DataNode> e : geoModel.nodes.entrySet()) {
-            if (sun != null && !sun.isEmpty() && !sun.contains(e.getKey())) {
-                continue;
+        boolean ownedScope = false;
+        if (drawScopeDepth == 0) {
+            beginDrawScope();
+            ownedScope = true;
+        } else if (!baseMvValid) {
+            readBaseModelView();
+        }
+        try {
+            collectDrawLists(sun, moon);
+            drawSkinPass();
+            drawRigidPass();
+        } finally {
+            if (ownedScope) {
+                endDrawScope();
             }
-            if (moon != null && !moon.isEmpty() && moon.contains(e.getKey())) {
-                continue;
-            }
-            e.getValue().meshes.values().forEach((mesh) -> {
-                GlStateManager.pushMatrix();
-                if (!mesh.skin) {
-                    GlStateManager.multMatrix(nodeStates.get(e.getValue().name).mat.get(MATRIX_BUFFER));
-                }
-                mesh.render();
-                GlStateManager.popMatrix();
-            });
         }
     }
 

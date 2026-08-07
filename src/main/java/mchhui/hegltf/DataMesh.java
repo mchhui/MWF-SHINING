@@ -43,6 +43,66 @@ public class DataMesh {
     private int ebo = -1;
     private int ssbo = -1;
 
+    /** Batch VAO bind dedupe (GltfRenderModel.render). 0 = unbound; -1 = force next bind. */
+    private static int batchBoundVao = 0;
+    private static boolean batchActive = false;
+    private static boolean batchTouchedSkinDraw = false;
+    private static int batchDepth = 0;
+
+    public static void beginBatch() {
+        if (batchDepth++ > 0) {
+            return;
+        }
+        batchActive = true;
+        batchBoundVao = -1;
+        batchTouchedSkinDraw = false;
+    }
+
+    public static void endBatch() {
+        if (batchDepth <= 0) {
+            return;
+        }
+        if (--batchDepth > 0) {
+            return;
+        }
+        if (batchBoundVao > 0) {
+            GL30.glBindVertexArray(0);
+        }
+        batchBoundVao = 0;
+        batchActive = false;
+        // Only unbind SSBO target if this batch drew skinned VAOs (Spark: endBatch bind was hot).
+        if (batchTouchedSkinDraw) {
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+            batchTouchedSkinDraw = false;
+        }
+    }
+
+    private static void bindBatchVao(int vao) {
+        if (batchActive) {
+            if (batchBoundVao != vao) {
+                GL30.glBindVertexArray(vao);
+                batchBoundVao = vao;
+            }
+        } else {
+            GL30.glBindVertexArray(vao);
+        }
+    }
+
+    private static void unbindBatchVao() {
+        if (batchActive) {
+            return;
+        }
+        GL30.glBindVertexArray(0);
+    }
+
+    /** VAO used at draw time; -1 if not compiled yet. */
+    public int getDrawVao() {
+        if (!this.compiled) {
+            return -1;
+        }
+        return this.skin ? this.ssboVao : this.displayList;
+    }
+
     public void render() {
          if (!this.compiled) {
             try {
@@ -52,6 +112,9 @@ public class DataMesh {
                 t.printStackTrace();
             }
         }
+        // Batch entry (GltfRenderModel.render) / morph restore already rebind fill.
+        // Per-mesh rebind was a Spark hotspot (BindFramebuffer + Method.invoke).
+        // Atomic now short-circuits when fill is already bound; keep glow setup only.
         boolean atomicGlow = ObjModelRenderer.glowTxtureMode
                 && AtomicShaderCompat.prepareGlowMapEmissive(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
         this.callVAO();
@@ -250,14 +313,17 @@ public class DataMesh {
             if (!this.initSkinning) {
                 return;
             }
-            GL30.glBindVertexArray(this.ssboVao);
+            bindBatchVao(this.ssboVao);
+            batchTouchedSkinDraw = true;
             GL11.glDrawElements(this.glDrawingMode, this.elementCount, GL11.GL_UNSIGNED_INT, 0);
-            GL30.glBindVertexArray(0);
-            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+            unbindBatchVao();
+            if (!batchActive) {
+                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+            }
         } else {
-            GL30.glBindVertexArray(this.displayList);
+            bindBatchVao(this.displayList);
             GL11.glDrawArrays(this.glDrawingMode, 0, this.vertexCount);
-            GL30.glBindVertexArray(0);
+            unbindBatchVao();
         }
     }
 

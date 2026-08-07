@@ -48,6 +48,17 @@ public class EnhancedModel implements IMWModel {
     public GltfRenderModel model;
     public boolean initCal = false;
 
+    /** FP pose cache: skip identical calculateAllNodePose within one frame. */
+    private float cachedPoseTime = Float.NaN;
+    private float cachedSprintTime = Float.NaN;
+    private float cachedSprintAlpha = Float.NaN;
+    private float cachedAimTime = Float.NaN;
+    private float cachedAdsAlpha = Float.NaN;
+    private float cachedAmmoPer = Float.NaN;
+    private boolean cachedBasicSprint;
+    private boolean poseCacheValid = false;
+    private boolean skinnedForCachedPose = false;
+
     public EnhancedModel(EnhancedRenderConfig config, BaseType baseType) {
         this.config = config;
         this.baseType = baseType;
@@ -74,10 +85,94 @@ public class EnhancedModel implements IMWModel {
             return;
         }
         model.loadAnimation(other.model,skin);
+        initCal = true;
+        invalidatePoseCache();
+    }
+
+    public void invalidatePoseCache() {
+        poseCacheValid = false;
+        skinnedForCachedPose = false;
+        cachedPoseTime = Float.NaN;
+    }
+
+    /**
+     * Pose + optional GPU skin with FP frame cache.
+     * Same blender params skip calculateAllNodePose within/across frames.
+     * skin=true always re-runs GPU skin (Atomic deferred may not retain SSBO
+     * skin results; skipping caused bind/default pose flicker).
+     * skin=false reuses this frame's skin (left/right hand groups).
+     */
+    public void updateAnimationBlended(float time, boolean skin, boolean basicSprint, float sprintTime,
+            float sprintAlpha, float aimTime, float adsAlpha, float ammoPer) {
+        if (model == null) {
+            return;
+        }
+        // COMP-016: first successful pose must GPU-skin once even if caller passes skin=false.
+        boolean forceSkinFirst = !initCal;
+        boolean samePose = poseCacheValid && initCal
+                && Float.compare(cachedPoseTime, time) == 0
+                && Float.compare(cachedSprintTime, sprintTime) == 0
+                && Float.compare(cachedSprintAlpha, sprintAlpha) == 0
+                && Float.compare(cachedAimTime, aimTime) == 0
+                && Float.compare(cachedAdsAlpha, adsAlpha) == 0
+                && Float.compare(cachedAmmoPer, ammoPer) == 0
+                && cachedBasicSprint == basicSprint;
+        if (!samePose) {
+            initCal = model.updatePose(time);
+            cachedPoseTime = time;
+            cachedSprintTime = sprintTime;
+            cachedSprintAlpha = sprintAlpha;
+            cachedAimTime = aimTime;
+            cachedAdsAlpha = adsAlpha;
+            cachedAmmoPer = ammoPer;
+            cachedBasicSprint = basicSprint;
+            poseCacheValid = initCal;
+            skinnedForCachedPose = false;
+        }
+        if (skin) {
+            // Primary FP pass: always skinFromPose so SSBO matches current joints this frame.
+            model.skinFromPose();
+            skinnedForCachedPose = true;
+            initCal = true;
+        } else if ((forceSkinFirst || !initCal) && !skinnedForCachedPose) {
+            model.skinFromPose();
+            skinnedForCachedPose = true;
+            initCal = true;
+        }
     }
     
     public void updateAnimation(float time,boolean skin) {
-        initCal = model.updateAnimation(time,skin||!initCal);
+        boolean forceSkinFirst = !initCal;
+        invalidatePoseCache();
+        initCal = model.updateAnimation(time,skin||forceSkinFirst);
+        if (initCal) {
+            poseCacheValid = true;
+            cachedPoseTime = time;
+            if (skin || forceSkinFirst) {
+                skinnedForCachedPose = true;
+            }
+        }
+    }
+
+    public void updatePose(float time) {
+        initCal = model.updatePose(time);
+        skinnedForCachedPose = false;
+        if (initCal) {
+            poseCacheValid = true;
+            cachedPoseTime = time;
+        } else {
+            poseCacheValid = false;
+            cachedPoseTime = Float.NaN;
+        }
+    }
+
+    public void skinFromPose() {
+        if (model == null) {
+            return;
+        }
+        model.skinFromPose();
+        skinnedForCachedPose = true;
+        initCal = true;
     }
     
     public Transform findLocalTransform(String name,float time) {
@@ -127,6 +222,31 @@ public class EnhancedModel implements IMWModel {
         return node.unsafeNode;
     }
     
+    public void beginDrawScope() {
+        if (model != null) {
+            model.beginDrawScope();
+        }
+    }
+
+    public void endDrawScope() {
+        if (model != null) {
+            model.endDrawScope();
+        }
+    }
+
+    public void invalidateDrawScopeBase() {
+        if (model != null) {
+            model.invalidateDrawScopeBase();
+        }
+    }
+
+    public void renderOnly(HashSet<String> parts) {
+        if (!initCal || parts == null || parts.isEmpty()) {
+            return;
+        }
+        model.renderOnly(parts);
+    }
+
     @Override
     public void renderPart(String part, float scale) {
         if (!initCal) {
@@ -175,6 +295,8 @@ public class EnhancedModel implements IMWModel {
         if(state==null) {
             return;
         }
+        // External push/mult changes caller MV — invalidate cached base for draw scope.
+        invalidateDrawScopeBase();
         GlStateManager.pushMatrix();
         if (state != null) {
             GlStateManager.multMatrix(state.mat.get(MATRIX_BUFFER));
@@ -182,6 +304,7 @@ public class EnhancedModel implements IMWModel {
         run.run();
 
         GlStateManager.popMatrix();
+        invalidateDrawScopeBase();
     }
 
 }

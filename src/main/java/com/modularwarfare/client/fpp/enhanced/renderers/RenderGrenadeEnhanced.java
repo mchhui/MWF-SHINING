@@ -270,13 +270,13 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
                     }
                 }
             });
-            model.updateAnimation(time, skin);
+            model.updateAnimationBlended(time, skin, basicSprint, sprintTime, alpha, 0f, 0f, 0f);
             runnable.run();
             model.setAnimationCalBlender(null);
             return;
         }
         
-        model.updateAnimation(time, skin);
+        model.updateAnimationBlended(time, skin, basicSprint, sprintTime, alpha, 0f, 0f, 0f);
         runnable.run();
     }
 
