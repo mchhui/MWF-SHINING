@@ -1,11 +1,8 @@
 package com.modularwarfare.client.flashlight;
 
-import cloud.siz.atomic.api.light.AtomicLightApi;
-import cloud.siz.atomic.api.light.AtomicLightSpec;
-import cloud.siz.atomic.api.light.LightPoolPolicy;
-import cloud.siz.atomic.api.light.LightVisibility;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunNodeWorld;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.common.guns.AttachmentPresetEnum;
@@ -31,10 +28,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Flashlight → Atomic dynamic light sync. Soft-depends on Atomic: without the mod,
+ * all entry points no-op (no Atomic class resolution).
+ */
 @SideOnly(Side.CLIENT)
 public final class FlashlightLightSync {
 
-    private static final String OWNER = "mwf:flashlight";
     private static final String ID_FP_PREFIX = "mwf:flashlight:fp:";
     private static final String ID_TP_PREFIX = "mwf:flashlight:tp:";
 
@@ -47,7 +47,10 @@ public final class FlashlightLightSync {
         if (holder == null || world == null) {
             return;
         }
-        if (cloud.siz.atomic.api.render.AtomicGBufferCompat.isShadowDepthActive()) {
+        if (!AtomicShaderCompat.isAtomicLoaded()) {
+            return;
+        }
+        if (AtomicShaderCompat.isShadowDepthActive()) {
             return;
         }
         TP_ARM_POSE.put(holder.getUniqueID(), new GunNodeWorld.NodePose(world, dir));
@@ -63,21 +66,24 @@ public final class FlashlightLightSync {
     }
 
     public static void onPoseCached(EntityLivingBase holder) {
-        if (!(holder instanceof EntityPlayer) || !AtomicLightApi.isAvailable()) {
+        if (!(holder instanceof EntityPlayer) || !AtomicShaderCompat.isAtomicLoaded()) {
             return;
         }
-        if (!cloud.siz.atomic.api.render.AtomicPipelineApi.isPipelineEnabled()) {
+        if (!FlashlightAtomicLightBridge.isLightApiReady()) {
             return;
         }
-        if (cloud.siz.atomic.api.render.AtomicGBufferCompat.isShadowDepthActive()) {
+        if (AtomicShaderCompat.isShadowDepthActive()) {
             return;
         }
         syncPlayer((EntityPlayer) holder);
     }
 
     public static void tick() {
-        if (!AtomicLightApi.isAvailable()
-                || !cloud.siz.atomic.api.render.AtomicPipelineApi.isPipelineEnabled()) {
+        if (!AtomicShaderCompat.isAtomicLoaded()) {
+            clearLocalOnly();
+            return;
+        }
+        if (!FlashlightAtomicLightBridge.isLightApiReady()) {
             clearAll();
             return;
         }
@@ -152,8 +158,8 @@ public final class FlashlightLightSync {
         if (firstPersonCam) {
             GunNodeWorld.NodePose fpPose = GunNodeWorld.firstPersonFlashlight(player, gunType);
             if (fpPose == null || fpPose.pos == null) {
-                AtomicLightApi.remove(fpId);
-                AtomicLightApi.remove(tpId);
+                FlashlightAtomicLightBridge.remove(fpId);
+                FlashlightAtomicLightBridge.remove(tpId);
                 return;
             }
             Vec3d look = player.getLook(partial);
@@ -162,18 +168,17 @@ public final class FlashlightLightSync {
             Vec3d pos = applyPosOffset(fpPose.pos, dir, tune != null ? tune.posOffset : null);
             dir = applyRotOffset(dir, tune != null ? tune.rotOffset : null);
             if (isBlockedByGeometry(player, pos, partial)) {
-                AtomicLightApi.remove(fpId);
-                AtomicLightApi.remove(tpId);
+                FlashlightAtomicLightBridge.remove(fpId);
+                FlashlightAtomicLightBridge.remove(tpId);
                 return;
             }
-            upsertSpot(fpId, pos, dir, rgb, cfg, LightVisibility.FIRST_PERSON, LightPoolPolicy.FORCE);
-            AtomicLightApi.remove(tpId);
+            FlashlightAtomicLightBridge.upsertFpSpot(fpId, pos, dir, rgb, cfg);
+            FlashlightAtomicLightBridge.remove(tpId);
         } else {
-            if (!upsertFromArmPose(player, cfg, partial, tpId, rgb, LightVisibility.THIRD_PERSON,
-                    LightPoolPolicy.DISTANCE)) {
-                AtomicLightApi.remove(tpId);
+            if (!upsertTpArmPose(player, cfg, partial, tpId, rgb, false)) {
+                FlashlightAtomicLightBridge.remove(tpId);
             }
-            AtomicLightApi.remove(fpId);
+            FlashlightAtomicLightBridge.remove(fpId);
         }
     }
 
@@ -181,14 +186,15 @@ public final class FlashlightLightSync {
         UUID uuid = player.getUniqueID();
         float[] rgb = resolveRgb(cfg);
         String tpId = ID_TP_PREFIX + uuid;
-        if (!upsertFromArmPose(player, cfg, partial, tpId, rgb, LightVisibility.ALWAYS, LightPoolPolicy.DISTANCE)) {
-            AtomicLightApi.remove(tpId);
+        if (!upsertTpArmPose(player, cfg, partial, tpId, rgb, true)) {
+            FlashlightAtomicLightBridge.remove(tpId);
         }
-        AtomicLightApi.remove(ID_FP_PREFIX + uuid);
+        FlashlightAtomicLightBridge.remove(ID_FP_PREFIX + uuid);
     }
 
-    private static boolean upsertFromArmPose(EntityPlayer player, AttachmentRenderConfig.Flashlight cfg,
-            float partial, String id, float[] rgb, LightVisibility visibility, LightPoolPolicy pool) {
+    /** @param remote true = ALWAYS visibility; false = THIRD_PERSON */
+    private static boolean upsertTpArmPose(EntityPlayer player, AttachmentRenderConfig.Flashlight cfg,
+            float partial, String id, float[] rgb, boolean remote) {
         GunNodeWorld.NodePose tpPose = getTpArmPose(player);
         if (tpPose == null || tpPose.pos == null) {
             return false;
@@ -201,7 +207,11 @@ public final class FlashlightLightSync {
         if (isBlockedByGeometry(player, pos, partial)) {
             return false;
         }
-        upsertSpot(id, pos, dir, rgb, cfg, visibility, pool);
+        if (remote) {
+            FlashlightAtomicLightBridge.upsertRemoteTpSpot(id, pos, dir, rgb, cfg);
+        } else {
+            FlashlightAtomicLightBridge.upsertLocalTpSpot(id, pos, dir, rgb, cfg);
+        }
         return true;
     }
 
@@ -222,7 +232,6 @@ public final class FlashlightLightSync {
         }
         List<RayTraceResult> hits = null;
         if (ModularWarfare.INSTANCE != null && ModularWarfare.INSTANCE.RAY_CASTING != null) {
-            // maxPenetrate* = 0: first solid (non-list) block stops the ray.
             hits = ModularWarfare.INSTANCE.RAY_CASTING.rayTraceBlocks(
                     player.world, flashPos, eye, 0f, 0f, false, true, false);
         } else {
@@ -304,26 +313,6 @@ public final class FlashlightLightSync {
         return pitched.normalize();
     }
 
-    private static void upsertSpot(String id, Vec3d pos, Vec3d dir, float[] rgb,
-            AttachmentRenderConfig.Flashlight cfg, LightVisibility visibility, LightPoolPolicy pool) {
-        if (pos == null || dir == null || dir.lengthSquared() < 1.0E-12D) {
-            AtomicLightApi.remove(id);
-            return;
-        }
-        Vec3d d = dir.normalize();
-        AtomicLightApi.upsert(AtomicLightSpec.spot(
-                        id,
-                        (float) pos.x, (float) pos.y, (float) pos.z,
-                        (float) d.x, (float) d.y, (float) d.z,
-                        rgb[0], rgb[1], rgb[2],
-                        cfg.intensity, cfg.range, cfg.innerDeg, cfg.outerDeg)
-                .withVisibility(visibility)
-                .withPool(pool)
-                .withBeamFactor(cfg.beamFactor)
-                .withNearGeometryCull(cfg.nearGeometryCull)
-                .withOwner(OWNER));
-    }
-
     private static Vec3d resolveDir(GunNodeWorld.NodePose pose, Vec3d look) {
         if (pose != null && pose.dir != null && pose.dir.lengthSquared() > 1.0E-8D) {
             return pose.dir.normalize();
@@ -357,17 +346,22 @@ public final class FlashlightLightSync {
     }
 
     private static void removePlayer(UUID uuid) {
-        AtomicLightApi.remove(ID_FP_PREFIX + uuid);
-        AtomicLightApi.remove(ID_TP_PREFIX + uuid);
+        FlashlightAtomicLightBridge.remove(ID_FP_PREFIX + uuid);
+        FlashlightAtomicLightBridge.remove(ID_TP_PREFIX + uuid);
+    }
+
+    private static void clearLocalOnly() {
+        ACTIVE_LIGHTS.clear();
+        TP_ARM_POSE.clear();
     }
 
     private static void clearAll() {
-        if (!ACTIVE_LIGHTS.isEmpty() && AtomicLightApi.isAvailable()) {
+        if (!ACTIVE_LIGHTS.isEmpty() && AtomicShaderCompat.isAtomicLoaded()
+                && FlashlightAtomicLightBridge.isLightApiReady()) {
             for (UUID uuid : ACTIVE_LIGHTS) {
                 removePlayer(uuid);
             }
         }
-        ACTIVE_LIGHTS.clear();
-        TP_ARM_POSE.clear();
+        clearLocalOnly();
     }
 }
