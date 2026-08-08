@@ -1,5 +1,6 @@
 package mchhui.hegltf;
 
+import com.modularwarfare.ModConfig;
 import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.compat.TextureSamplingRegistry;
 import com.modularwarfare.client.gui.GuiGunModify;
@@ -20,6 +21,7 @@ import java.util.List;
 public class DataMesh {
     public String material;
     public boolean skin;
+    public boolean proxy;
 
     protected List<Float> geoList = new ArrayList<>();
     protected int geoCount;
@@ -34,8 +36,9 @@ public class DataMesh {
     private boolean compiled = false;
     private boolean compiling = false;
     private boolean initSkinning = false;
+    private boolean uploadQueued = false;
+    private volatile boolean uploadCancelled = false;
 
-    // BUFFER OBJECT
     private int pos_vbo = -1;
     private int tex_vbo = -1;
     private int normal_vbo = -1;
@@ -43,7 +46,6 @@ public class DataMesh {
     private int ebo = -1;
     private int ssbo = -1;
 
-    /** Batch VAO bind dedupe (GltfRenderModel.render). 0 = unbound; -1 = force next bind. */
     private static int batchBoundVao = 0;
     private static boolean batchActive = false;
     private static boolean batchTouchedSkinDraw = false;
@@ -70,7 +72,6 @@ public class DataMesh {
         }
         batchBoundVao = 0;
         batchActive = false;
-        // Only unbind SSBO target if this batch drew skinned VAOs (Spark: endBatch bind was hot).
         if (batchTouchedSkinDraw) {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
             batchTouchedSkinDraw = false;
@@ -95,7 +96,6 @@ public class DataMesh {
         GL30.glBindVertexArray(0);
     }
 
-    /** VAO used at draw time; -1 if not compiled yet. */
     public int getDrawVao() {
         if (!this.compiled) {
             return -1;
@@ -103,20 +103,64 @@ public class DataMesh {
         return this.skin ? this.ssboVao : this.displayList;
     }
 
-    public void render() {
-         if (!this.compiled) {
+    public boolean isCompiled() {
+        return compiled;
+    }
+
+    public void requestUpload(String name, boolean priority, Runnable onComplete) {
+        if (uploadCancelled) {
+            if (onComplete != null) {
+                onComplete.run();
+            }
+            return;
+        }
+        if (compiled || uploadQueued) {
+            if (compiled && onComplete != null) {
+                onComplete.run();
+            }
+            return;
+        }
+        uploadQueued = true;
+        int bytes = estimateCpuBytes();
+        int weight = GltfGpuUploadScheduler.estimateWeight(bytes);
+        GltfGpuUploadScheduler.add("upload:" + name, weight, priority, () -> {
             try {
-                compileVAO(1);
-                return;
+                if (!uploadCancelled && !compiled) {
+                    compileVAOSliced();
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
+            } finally {
+                if (onComplete != null) {
+                    onComplete.run();
+                }
             }
+        });
+    }
+
+    private int estimateCpuBytes() {
+        int n = 0;
+        if (geoBuffer != null) {
+            n += geoBuffer.capacity();
         }
-        // Batch entry (GltfRenderModel.render) / morph restore already rebind fill.
-        // Per-mesh rebind was a Spark hotspot (BindFramebuffer + Method.invoke).
-        // Atomic now short-circuits when fill is already bound; keep glow setup only.
+        if (elementBuffer != null) {
+            n += elementBuffer.capacity() * 4;
+        }
+        if (geoList != null) {
+            n += geoList.size() * 4;
+        }
+        return Math.max(n, 1024);
+    }
+
+    public void render() {
+        if (!this.compiled) {
+            if (!uploadQueued) {
+                requestUpload("onDemand", true, null);
+            }
+            return;
+        }
         boolean atomicGlow = ObjModelRenderer.glowTxtureMode
-                && AtomicShaderCompat.prepareGlowMapEmissive(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
+            && AtomicShaderCompat.prepareGlowMapEmissive(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
         this.callVAO();
         if (atomicGlow) {
             AtomicShaderCompat.clearEmissive();
@@ -124,16 +168,15 @@ public class DataMesh {
             return;
         }
 
-        if(ObjModelRenderer.glowTxtureMode && !AtomicShaderCompat.isGBufferFillActive()
-                && !AtomicShaderCompat.isShadowDepthActive()) {
-            if(!ObjModelRenderer.customItemRenderer.bindTextureGlow(ObjModelRenderer.glowType, ObjModelRenderer.glowPath)) {
+        if (ObjModelRenderer.glowTxtureMode && !AtomicShaderCompat.isGBufferFillActive()
+            && !AtomicShaderCompat.isShadowDepthActive()) {
+            if (!ObjModelRenderer.customItemRenderer.bindTextureGlow(ObjModelRenderer.glowType, ObjModelRenderer.glowPath)) {
                 return;
             }
             float x = OpenGlHelper.lastBrightnessX;
             float y = OpenGlHelper.lastBrightnessY;
-            ObjModelRenderer.glowTxtureMode=false;
+            ObjModelRenderer.glowTxtureMode = false;
             GlStateManager.depthMask(false);
-            //GlStateManager.enableBlend();
             GlStateManager.depthFunc(GL11.GL_EQUAL);
             GlStateManager.disableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
@@ -141,47 +184,57 @@ public class DataMesh {
             GlStateManager.enableLighting();
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, x, y);
             GlStateManager.depthFunc(GL11.GL_LEQUAL);
-            //GlStateManager.disableBlend();
             GlStateManager.depthMask(true);
-            ObjModelRenderer.glowTxtureMode=true;
+            ObjModelRenderer.glowTxtureMode = true;
             ObjModelRenderer.customItemRenderer.bindTexture(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
-            
-            //垃圾bug 迟早把这改装界面扬了
-            if(Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
+
+            if (Minecraft.getMinecraft().currentScreen instanceof GuiGunModify) {
                 GlStateManager.disableLighting();
             }
         }
     }
 
-    private void compileVAO(float scale) {
-        if (this.compiling) {
+    private void compileVAOSliced() {
+        if (this.compiling || this.compiled || this.uploadCancelled) {
             return;
         }
-
+        if (this.unit == 3) {
+            if (this.geoList == null || this.geoList.isEmpty()) {
+                this.compiling = false;
+                this.uploadQueued = false;
+                return;
+            }
+        } else if (this.geoBuffer == null || this.elementBuffer == null) {
+            this.compiling = false;
+            this.uploadQueued = false;
+            return;
+        }
         this.compiling = true;
         this.ssboVao = GL30.glGenVertexArrays();
         this.displayList = GL30.glGenVertexArrays();
 
+        int partSize = 65536;
+        if (ModConfig.INSTANCE != null && ModConfig.INSTANCE.gltf != null) {
+            partSize = Math.max(1024, ModConfig.INSTANCE.gltf.uploadPartSize);
+        }
+
         if (this.unit == 3) {
-            final List<Float> geoList = this.geoList;
-            this.vertexCount = geoList.size() / this.unit;
+            final List<Float> list = this.geoList;
+            this.vertexCount = list.size() / this.unit;
 
             FloatBuffer pos_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 3);
             FloatBuffer tex_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 2);
             FloatBuffer normal_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 3);
 
-//            IntBuffer joint_intBuffer = BufferUtils.createIntBuffer(vertexCount * 4);
-//            FloatBuffer weight_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 4);
-
-            for (int i = 0, size = geoList.size(); i + 8 <= size; i += 8) {
-                pos_floatBuffer.put(geoList.get(i));
-                pos_floatBuffer.put(geoList.get(i + 1));
-                pos_floatBuffer.put(geoList.get(i + 2));
-                tex_floatBuffer.put(geoList.get(i + 3));
-                tex_floatBuffer.put(geoList.get(i + 4));
-                normal_floatBuffer.put(geoList.get(i + 5));
-                normal_floatBuffer.put(geoList.get(i + 6));
-                normal_floatBuffer.put(geoList.get(i + 7));
+            for (int i = 0, size = list.size(); i + 8 <= size; i += 8) {
+                pos_floatBuffer.put(list.get(i));
+                pos_floatBuffer.put(list.get(i + 1));
+                pos_floatBuffer.put(list.get(i + 2));
+                tex_floatBuffer.put(list.get(i + 3));
+                tex_floatBuffer.put(list.get(i + 4));
+                normal_floatBuffer.put(list.get(i + 5));
+                normal_floatBuffer.put(list.get(i + 6));
+                normal_floatBuffer.put(list.get(i + 7));
             }
             pos_floatBuffer.flip();
             tex_floatBuffer.flip();
@@ -215,12 +268,15 @@ public class DataMesh {
             GL11.glDisableClientState(GL11.GL_NORMAL_ARRAY);
             this.compiled = true;
             this.compiling = false;
-
         } else {
             this.vbo = GL15.glGenBuffers();
             this.ebo = GL15.glGenBuffers();
             this.geoBuffer.flip();
             this.elementBuffer.flip();
+
+            int geoBytes = this.geoBuffer.remaining();
+            int eleBytes = this.elementBuffer.remaining() * 4;
+
             GL30.glBindVertexArray(this.displayList);
             GL20.glEnableVertexAttribArray(0);
             GL20.glEnableVertexAttribArray(1);
@@ -229,26 +285,34 @@ public class DataMesh {
             GL20.glEnableVertexAttribArray(4);
             GL20.glEnableVertexAttribArray(5);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.vbo);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, this.geoBuffer, GL15.GL_STATIC_DRAW);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, geoBytes, GL15.GL_STATIC_DRAW);
+            uploadBufferSliced(GL15.GL_ARRAY_BUFFER, this.vbo, this.geoBuffer, partSize);
             int step = 17 * Float.BYTES;
             GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, step, 0);
             GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, step, 3 * Float.BYTES);
             GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, step, 5 * Float.BYTES);
-            // in fact, it is u_int:
             GL20.glVertexAttribPointer(3, 4, GL11.GL_FLOAT, false, step, 8 * Float.BYTES);
             GL20.glVertexAttribPointer(4, 4, GL11.GL_FLOAT, false, step, 12 * Float.BYTES);
-            // in fact, it is u_int:
             GL20.glVertexAttribPointer(5, 1, GL11.GL_FLOAT, false, step, 16 * Float.BYTES);
 
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.ebo);
-            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, this.elementBuffer, GL15.GL_STATIC_DRAW);
+            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, eleBytes, GL15.GL_STATIC_DRAW);
+            ByteBuffer eleBytesBuf = BufferUtils.createByteBuffer(eleBytes);
+            IntBuffer dup = this.elementBuffer.duplicate();
+            while (dup.hasRemaining()) {
+                eleBytesBuf.putInt(dup.get());
+            }
+            eleBytesBuf.flip();
+            uploadBufferSliced(GL15.GL_ELEMENT_ARRAY_BUFFER, this.ebo, eleBytesBuf, partSize);
+
             this.ssbo = GL15.glGenBuffers();
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, this.ssbo);
-            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, this.geoBuffer, GL15.GL_DYNAMIC_COPY);
+            GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, geoBytes, GL15.GL_DYNAMIC_COPY);
+            this.geoBuffer.rewind();
+            uploadBufferSliced(GL43.GL_SHADER_STORAGE_BUFFER, this.ssbo, this.geoBuffer, partSize);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-            
-            GL30.glBindVertexArray(this.ssboVao);
 
+            GL30.glBindVertexArray(this.ssboVao);
             GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
             GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
             GL11.glEnableClientState(GL11.GL_NORMAL_ARRAY);
@@ -257,7 +321,7 @@ public class DataMesh {
             GL11.glVertexPointer(3, GL11.GL_FLOAT, 8 * Float.BYTES, 0);
             GL11.glNormalPointer(GL11.GL_FLOAT, 8 * Float.BYTES, 3 * Float.BYTES);
             GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 8 * Float.BYTES, 6 * Float.BYTES);
-            
+
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.ebo);
 
             GL30.glBindVertexArray(0);
@@ -274,20 +338,49 @@ public class DataMesh {
             this.compiling = false;
         }
 
-        //内存优化
-        if(this.geoList != null) {
+        dropCpuData();
+    }
+
+    private static void uploadBufferSliced(int target, int bufferId, ByteBuffer data, int partSize) {
+        GL15.glBindBuffer(target, bufferId);
+        int pos = data.position();
+        int lim = data.limit();
+        int offset = 0;
+        while (pos < lim) {
+            int chunk = Math.min(partSize, lim - pos);
+            data.position(pos);
+            data.limit(pos + chunk);
+            ByteBuffer slice = data.slice();
+            GL15.glBufferSubData(target, offset, slice);
+            offset += chunk;
+            pos += chunk;
+        }
+        data.position(0);
+        data.limit(lim);
+    }
+
+    public void dropCpuData() {
+        if (this.geoList != null) {
             this.geoList.clear();
             this.geoList = null;
         }
-        if(this.geoBuffer != null) {
-            if(((sun.nio.ch.DirectBuffer)this.geoBuffer).cleaner() != null) {
-                ((sun.nio.ch.DirectBuffer)this.geoBuffer).cleaner().clean();
+        if (this.geoBuffer != null) {
+            try {
+                if (((sun.nio.ch.DirectBuffer) this.geoBuffer).cleaner() != null) {
+                    ((sun.nio.ch.DirectBuffer) this.geoBuffer).cleaner().clean();
+                }
+            } catch (Throwable ignored) {
             }
+            this.geoBuffer = null;
         }
-        if(this.elementBuffer!=null) {
-            if(((sun.nio.ch.DirectBuffer)this.elementBuffer).cleaner() != null) {
-                ((sun.nio.ch.DirectBuffer)this.elementBuffer).cleaner().clean();
+        if (this.elementBuffer != null) {
+            try {
+                if (((sun.nio.ch.DirectBuffer) this.elementBuffer).cleaner() != null) {
+                    ((sun.nio.ch.DirectBuffer) this.elementBuffer).cleaner().clean();
+                }
+            } catch (Throwable ignored) {
             }
+            this.elementBuffer = null;
         }
     }
 
@@ -328,26 +421,49 @@ public class DataMesh {
     }
 
     public void delete() {
-        // It will be auto clean.
-        GL30.glDeleteVertexArrays(this.displayList);
-        GL30.glDeleteVertexArrays(this.ssboVao);
-        if (this.pos_vbo != -1) {
-            GL15.glDeleteBuffers(this.pos_vbo);
+        uploadCancelled = true;
+        try {
+            if (org.lwjgl.opengl.GLContext.getCapabilities() != null) {
+                if (displayList > 0) {
+                    GL30.glDeleteVertexArrays(this.displayList);
+                }
+                if (ssboVao > 0) {
+                    GL30.glDeleteVertexArrays(this.ssboVao);
+                }
+                if (this.pos_vbo != -1) {
+                    GL15.glDeleteBuffers(this.pos_vbo);
+                }
+                if (this.tex_vbo != -1) {
+                    GL15.glDeleteBuffers(this.tex_vbo);
+                }
+                if (this.normal_vbo != -1) {
+                    GL15.glDeleteBuffers(this.normal_vbo);
+                }
+                if (this.vbo != -1) {
+                    GL15.glDeleteBuffers(this.vbo);
+                }
+                if (this.ebo != -1) {
+                    GL15.glDeleteBuffers(this.ebo);
+                }
+                if (this.ssbo != -1) {
+                    GL15.glDeleteBuffers(this.ssbo);
+                }
+            }
+        } catch (Throwable ignored) {
         }
-        if (this.tex_vbo != -1) {
-            GL15.glDeleteBuffers(this.tex_vbo);
-        }
-        if (this.normal_vbo != -1) {
-            GL15.glDeleteBuffers(this.normal_vbo);
-        }
-        if (this.vbo != -1) {
-            GL15.glDeleteBuffers(this.vbo);
-        }
-        if (this.ebo != -1) {
-            GL15.glDeleteBuffers(this.ebo);
-        }
-        if (this.ssbo != -1) {
-            GL15.glDeleteBuffers(this.ssbo);
-        }
+        displayList = -1;
+        ssboVao = -1;
+        pos_vbo = -1;
+        tex_vbo = -1;
+        normal_vbo = -1;
+        vbo = -1;
+        ebo = -1;
+        ssbo = -1;
+        compiled = false;
+        compiling = false;
+        uploadQueued = false;
+        initSkinning = false;
+        dropCpuData();
     }
 }
+

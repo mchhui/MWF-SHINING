@@ -70,7 +70,7 @@ public class ModelCustomArmor extends MWModelBipedBase {
         }
         if(this.config.extra.enhancedArmModel!=null) {
             enhancedArmModel=new EnhancedModel(new EnhancedRenderConfig(this.config.extra.enhancedArmModel, 24), type);
-            enhancedArmModel.updateAnimation(0);
+            // Lazy: do not parse GLTF during content-pack boot (avoids racing early Sound/OpenAL init).
             enhancedArmModel.setAnimationLoadMapper(new NodeAnimationMapper(null) {
                 @Override
                 public void handle(GltfRenderModel model, GltfRenderModel other, String target) {

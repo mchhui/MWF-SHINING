@@ -113,11 +113,36 @@ public class GltfRenderModel {
         this.geoModel = geoModel;
     }
 
+    public void bindGeoModel(GltfDataModel geoModel) {
+        if (this.geoModel == geoModel) {
+            return;
+        }
+        this.geoModel = geoModel;
+        this.initedNodeStates = false;
+        this.nodeStates.clear();
+        this.meshNodesBuilt = false;
+        this.meshNodes = null;
+        if (this.jointMatsBufferId != -1) {
+            GL15.glDeleteBuffers(this.jointMatsBufferId);
+            this.jointMatsBufferId = -1;
+        }
+        this.jointMatsUpload = null;
+    }
+
+    public void invalidateMeshNodes() {
+        meshNodesBuilt = false;
+        meshNodes = null;
+    }
+
     private void ensureMeshNodes() {
         if (meshNodesBuilt) {
             return;
         }
         meshNodes = new ArrayList<>();
+        if (geoModel == null || geoModel.nodes == null) {
+            meshNodesBuilt = true;
+            return;
+        }
         for (DataNode node : geoModel.nodes.values()) {
             if (node.meshes != null && !node.meshes.isEmpty()) {
                 meshNodes.add(node);
@@ -127,6 +152,9 @@ public class GltfRenderModel {
     }
 
     public void calculateAllNodePose(float time) {
+        if (geoModel == null) {
+            return;
+        }
         if (!initedNodeStates) {
             geoModel.nodes.keySet().forEach((name) -> {
                 nodeStates.put(name, new NodeState());
@@ -222,7 +250,7 @@ public class GltfRenderModel {
 
     /** Pose only (nodeStates). Blender must already be set if needed. */
     public boolean updatePose(float time) {
-        if (!geoModel.loaded) {
+        if (geoModel == null || !geoModel.isAnimReady()) {
             return false;
         }
         calculateAllNodePose(time);
@@ -231,7 +259,7 @@ public class GltfRenderModel {
 
     /** Upload joints + GPU skin from current nodeStates. */
     public void skinFromPose() {
-        if (!geoModel.loaded) {
+        if (geoModel == null || !geoModel.isAnimReady()) {
             return;
         }
         if (geoModel.joints.size() == 0) {
@@ -254,6 +282,9 @@ public class GltfRenderModel {
     }
     
     public boolean loadAnimation(GltfRenderModel other,boolean skin) {
+        if (other == null || geoModel == null || other.geoModel == null) {
+            return false;
+        }
         if(!other.initedNodeStates) {
             return false;
         }
@@ -455,7 +486,7 @@ public class GltfRenderModel {
 
     // 阴阳！哈哈哈 下次试试aplle和pear XD
     public void render(HashSet<String> sun, HashSet<String> moon) {
-        if (!geoModel.loaded) {
+        if (geoModel == null || !geoModel.isAnimReady()) {
             return;
         }
         boolean ownedScope = false;

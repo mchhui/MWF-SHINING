@@ -62,6 +62,7 @@ public class CustomItemRendererEnhanced extends CustomItemRenderer{
                     e.printStackTrace();
                 }
             }
+            touchModel(firstPersonModel);
             return (ModelEnhancedGun)firstPersonModel;
         } else {
             String key = playerId != null ? playerId.toString() : "default";
@@ -71,7 +72,9 @@ public class CustomItemRendererEnhanced extends CustomItemRenderer{
                     thirdPersonModels.put(key, newModel);
                 }
             }
-            return (ModelEnhancedGun)thirdPersonModels.get(key);
+            EnhancedModel m = thirdPersonModels.get(key);
+            touchModel(m);
+            return (ModelEnhancedGun)m;
         }
     }
     
@@ -85,6 +88,7 @@ public class CustomItemRendererEnhanced extends CustomItemRenderer{
                     e.printStackTrace();
                 }
             }
+            touchModel(firstPersonModel);
             return (ModelEnhancedGrenade)firstPersonModel;
         } else {
             String key = playerId != null ? playerId.toString() : "default";
@@ -94,17 +98,23 @@ public class CustomItemRendererEnhanced extends CustomItemRenderer{
                     thirdPersonModels.put(key, newModel);
                 }
             }
-            return (ModelEnhancedGrenade)thirdPersonModels.get(key);
+            EnhancedModel m = thirdPersonModels.get(key);
+            touchModel(m);
+            return (ModelEnhancedGrenade)m;
         }
     }
 
-    //需要考虑实际删除模型 释放内存
+    private static void touchModel(EnhancedModel model) {
+        if (model == null) {
+            return;
+        }
+        model.ensureRequested(mchhui.hegltf.GltfLoadPriority.HIGH);
+        mchhui.hegltf.GltfModelManager.get().softPin(model.getModelLocation(), 8000);
+    }
+
     public void resetModels() {
-        // 清空所有缓存的模型
         this.firstPersonModel = null;
         this.thirdPersonModels.clear();
-        
-        // 重置控制器
         AnimationController.resetClientController();
         AnimationController.getOtherControllers().clear();
     }

@@ -3,52 +3,42 @@ package com.modularwarfare.client.fpp.enhanced.models;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.IMWModel;
 import com.modularwarfare.client.fpp.enhanced.configs.EnhancedRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
 import com.modularwarfare.common.type.BaseType;
-import com.modularwarfare.utility.maths.MathUtils;
 
-import de.javagl.jgltf.model.AnimationModel;
-import de.javagl.jgltf.model.GltfModel;
-import de.javagl.jgltf.model.NodeModel;
 import mchhui.hegltf.DataAnimation;
 import mchhui.hegltf.DataAnimation.Transform;
 import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfDataModel;
+import mchhui.hegltf.GltfLoadPriority;
+import mchhui.hegltf.GltfModelHandle;
+import mchhui.hegltf.GltfModelManager;
 import mchhui.hegltf.GltfRenderModel;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationBlender;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationMapper;
 import mchhui.hegltf.GltfRenderModel.NodeState;
-import mchhui.hegltf.ShaderGltf;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.Optional;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
-import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.commons.lang3.tuple.Pair;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Quaternion;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
+
+import de.javagl.jgltf.model.NodeModel;
 
 public class EnhancedModel implements IMWModel {
     private static final FloatBuffer MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
-    private static final HashMap<ResourceLocation, GltfDataModel> modelCache=new HashMap<ResourceLocation, GltfDataModel>();
+
     public EnhancedRenderConfig config;
     public BaseType baseType;
     public GltfRenderModel model;
     public boolean initCal = false;
 
-    /** FP pose cache: skip identical calculateAllNodePose within one frame. */
+    private ResourceLocation boundLocation;
+    private int boundGeneration = -1;
+    private boolean pinned;
+
     private float cachedPoseTime = Float.NaN;
     private float cachedSprintTime = Float.NaN;
     private float cachedSprintAlpha = Float.NaN;
@@ -62,17 +52,10 @@ public class EnhancedModel implements IMWModel {
     public EnhancedModel(EnhancedRenderConfig config, BaseType baseType) {
         this.config = config;
         this.baseType = baseType;
-        if(!modelCache.containsKey(getModelLocation())) {
-            modelCache.put(getModelLocation(), GltfDataModel.load(getModelLocation()));
+        this.model = new GltfRenderModel(null);
+        if (!GltfModelManager.isLazyEnabled()) {
+            ensureRequested(GltfLoadPriority.HIGH);
         }
-        model = new GltfRenderModel(modelCache.get(getModelLocation()));
-    }
-    
-    public static void clearCache() {
-        modelCache.values().forEach((model)->{
-            model.delete();
-        });
-        modelCache.clear();
     }
 
     public ResourceLocation getModelLocation() {
@@ -80,11 +63,82 @@ public class EnhancedModel implements IMWModel {
             "gltf/" + baseType.getAssetDir() + "/" + this.config.modelFileName);
     }
 
-    public void loadAnimation(EnhancedModel other,boolean skin) {
-        if(model==null||other==null||other.model==null) {
+    public void ensureRequested() {
+        ensureRequested(GltfLoadPriority.NORMAL);
+    }
+
+    public void ensureRequested(GltfLoadPriority priority) {
+        ResourceLocation loc = getModelLocation();
+        GltfModelHandle handle = GltfModelManager.get().request(loc, priority);
+        syncFromHandle(handle);
+    }
+
+    public void pin() {
+        ensureRequested(GltfLoadPriority.HIGH);
+        if (!pinned) {
+            GltfModelManager.get().pin(getModelLocation());
+            pinned = true;
+        }
+    }
+
+    public void unpin() {
+        if (pinned) {
+            GltfModelManager.get().unpin(getModelLocation());
+            pinned = false;
+        }
+    }
+
+    private void syncFromHandle(GltfModelHandle handle) {
+        if (handle == null) {
             return;
         }
-        model.loadAnimation(other.model,skin);
+        GltfDataModel data = handle.getDataModel();
+        int gen = handle.getGeneration();
+        if (data == null) {
+            if (model != null && model.geoModel != null) {
+                model.bindGeoModel(null);
+                initCal = false;
+                invalidatePoseCache();
+            }
+            boundGeneration = gen;
+            return;
+        }
+        if (model.geoModel != data || boundGeneration != gen) {
+            if (model.geoModel != data) {
+                model.bindGeoModel(data);
+                initCal = false;
+                invalidatePoseCache();
+            } else {
+                model.invalidateMeshNodes();
+            }
+            boundLocation = handle.location;
+            boundGeneration = gen;
+        }
+    }
+
+    public boolean isAnimReady() {
+        ensureRequested(GltfLoadPriority.HIGH);
+        return model != null && model.geoModel != null && model.geoModel.isAnimReady();
+    }
+
+    public boolean isMeshReady() {
+        return model != null && model.geoModel != null && model.geoModel.isMeshReady();
+    }
+
+    public static void clearCache() {
+        GltfModelManager.get().clearAll();
+    }
+
+    public void loadAnimation(EnhancedModel other, boolean skin) {
+        if (model == null || other == null || other.model == null) {
+            return;
+        }
+        ensureRequested(GltfLoadPriority.HIGH);
+        other.ensureRequested(GltfLoadPriority.HIGH);
+        if (!isAnimReady() || !other.isAnimReady()) {
+            return;
+        }
+        model.loadAnimation(other.model, skin);
         initCal = true;
         invalidatePoseCache();
     }
@@ -95,19 +149,11 @@ public class EnhancedModel implements IMWModel {
         cachedPoseTime = Float.NaN;
     }
 
-    /**
-     * Pose + optional GPU skin with FP frame cache.
-     * Same blender params skip calculateAllNodePose within/across frames.
-     * skin=true always re-runs GPU skin (Atomic deferred may not retain SSBO
-     * skin results; skipping caused bind/default pose flicker).
-     * skin=false reuses this frame's skin (left/right hand groups).
-     */
     public void updateAnimationBlended(float time, boolean skin, boolean basicSprint, float sprintTime,
             float sprintAlpha, float aimTime, float adsAlpha, float ammoPer) {
-        if (model == null) {
+        if (model == null || !isAnimReady()) {
             return;
         }
-        // COMP-016: first successful pose must GPU-skin once even if caller passes skin=false.
         boolean forceSkinFirst = !initCal;
         boolean samePose = poseCacheValid && initCal
                 && Float.compare(cachedPoseTime, time) == 0
@@ -130,7 +176,6 @@ public class EnhancedModel implements IMWModel {
             skinnedForCachedPose = false;
         }
         if (skin) {
-            // Primary FP pass: always skinFromPose so SSBO matches current joints this frame.
             model.skinFromPose();
             skinnedForCachedPose = true;
             initCal = true;
@@ -140,11 +185,14 @@ public class EnhancedModel implements IMWModel {
             initCal = true;
         }
     }
-    
-    public void updateAnimation(float time,boolean skin) {
+
+    public void updateAnimation(float time, boolean skin) {
+        if (!isAnimReady()) {
+            return;
+        }
         boolean forceSkinFirst = !initCal;
         invalidatePoseCache();
-        initCal = model.updateAnimation(time,skin||forceSkinFirst);
+        initCal = model.updateAnimation(time, skin || forceSkinFirst);
         if (initCal) {
             poseCacheValid = true;
             cachedPoseTime = time;
@@ -155,6 +203,9 @@ public class EnhancedModel implements IMWModel {
     }
 
     public void updatePose(float time) {
+        if (!isAnimReady()) {
+            return;
+        }
         initCal = model.updatePose(time);
         skinnedForCachedPose = false;
         if (initCal) {
@@ -167,61 +218,61 @@ public class EnhancedModel implements IMWModel {
     }
 
     public void skinFromPose() {
-        if (model == null) {
+        if (model == null || !isAnimReady()) {
             return;
         }
         model.skinFromPose();
         skinnedForCachedPose = true;
         initCal = true;
     }
-    
-    public Transform findLocalTransform(String name,float time) {
-        if(model==null) {
+
+    public Transform findLocalTransform(String name, float time) {
+        if (model == null || !isAnimReady()) {
             return null;
         }
-        DataNode node=model.geoModel.nodes.get(name);
-        if(node==null) {
+        DataNode node = model.geoModel.nodes.get(name);
+        if (node == null) {
             return null;
         }
-        DataAnimation ani=model.geoModel.animations.get(name);
-        if(ani==null) {
+        DataAnimation ani = model.geoModel.animations.get(name);
+        if (ani == null) {
             return null;
         }
         return model.geoModel.animations.get(name).findTransform(time, node.pos, node.size, node.rot);
     }
-    
+
     public void setAnimationCalBlender(NodeAnimationBlender blender) {
         model.setNodeAnimationCalBlender(blender);
     }
-    
+
     public void setAnimationLoadMapper(NodeAnimationMapper mapper) {
         model.setNodeAnimationLoadMapper(mapper);
     }
-    
-    /**
-     * 兼容旧版 请勿使用
-     * */
+
     @Deprecated
     public void updateAnimation(float time) {
         updateAnimation(time, true);
     }
 
     public boolean existPart(String part) {
+        if (!isAnimReady()) {
+            return false;
+        }
         return model.geoModel.nodes.containsKey(part);
     }
-    
-    /**
-     * 兼容旧版 请勿使用
-     * */
+
     @Deprecated
     public NodeModel getPart(String part) {
-        DataNode node=model.geoModel.nodes.get(part);
-        if(node==null) {
+        if (!isAnimReady()) {
+            return null;
+        }
+        DataNode node = model.geoModel.nodes.get(part);
+        if (node == null) {
             return null;
         }
         return node.unsafeNode;
     }
-    
+
     public void beginDrawScope() {
         if (model != null) {
             model.beginDrawScope();
@@ -241,7 +292,7 @@ public class EnhancedModel implements IMWModel {
     }
 
     public void renderOnly(HashSet<String> parts) {
-        if (!initCal || parts == null || parts.isEmpty()) {
+        if (!initCal || parts == null || parts.isEmpty() || !isAnimReady()) {
             return;
         }
         model.renderOnly(parts);
@@ -249,62 +300,57 @@ public class EnhancedModel implements IMWModel {
 
     @Override
     public void renderPart(String part, float scale) {
-        if (!initCal) {
+        if (!initCal || !isAnimReady()) {
             return;
         }
         model.renderPart(part);
     }
 
     public void renderPart(String part) {
-        if (!initCal) {
+        if (!initCal || !isAnimReady()) {
             return;
         }
         model.renderPart(part);
     }
 
     public void renderPartExcept(HashSet<String> set) {
-        if (!initCal) {
+        if (!initCal || !isAnimReady()) {
             return;
         }
         model.renderExcept(set);
     }
 
     public void renderPart(String[] only) {
-        if (!initCal) {
+        if (!initCal || !isAnimReady()) {
             return;
         }
         model.renderOnly(only);
     }
-    
+
     public Matrix4f getGlobalTransform(String name) {
-        if (!initCal) {
+        if (!initCal || !isAnimReady()) {
             return new Matrix4f();
         }
         NodeState state = model.nodeStates.get(name);
-        if(state==null) {
+        if (state == null) {
             return new Matrix4f();
         }
         return state.mat;
     }
 
     public void applyGlobalTransformToOther(String binding, Runnable run) {
-        if (!initCal) {
+        if (!initCal || !isAnimReady()) {
             return;
         }
         NodeState state = model.nodeStates.get(binding);
-        if(state==null) {
+        if (state == null) {
             return;
         }
-        // External push/mult changes caller MV — invalidate cached base for draw scope.
         invalidateDrawScopeBase();
         GlStateManager.pushMatrix();
-        if (state != null) {
-            GlStateManager.multMatrix(state.mat.get(MATRIX_BUFFER));
-        }
+        GlStateManager.multMatrix(state.mat.get(MATRIX_BUFFER));
         run.run();
-
         GlStateManager.popMatrix();
         invalidateDrawScopeBase();
     }
-
 }

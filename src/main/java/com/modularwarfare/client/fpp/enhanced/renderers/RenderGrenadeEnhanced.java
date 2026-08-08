@@ -98,6 +98,10 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
         }
         if (model == null)
             return;
+        if (!model.isAnimReady() || model.model == null || model.model.geoModel == null
+                || model.model.geoModel.nodes == null) {
+            return;
+        }
         Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(Minecraft.getMinecraft().player);
         RenderPlayer renderplayer = (RenderPlayer)render;
         ModelPlayer modelPlayer = renderplayer.getMainModel();
@@ -310,6 +314,9 @@ public class RenderGrenadeEnhanced extends CustomItemRendererEnhanced {
         }
 
         if (model == null) return;
+        if (!model.isAnimReady() || model.model == null || model.model.geoModel == null) {
+            return;
+        }
 
         GrenadeEnhancedRenderConfig config = (GrenadeEnhancedRenderConfig) model.config;
         

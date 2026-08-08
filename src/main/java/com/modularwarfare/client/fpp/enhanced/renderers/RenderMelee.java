@@ -126,6 +126,15 @@ public class RenderMelee extends CustomItemRenderer {
         float partialTicks = this.timer.renderPartialTicks;
 
         EnhancedModel model = meleeType.enhancedModel;
+        if (model == null) {
+            return;
+        }
+        model.ensureRequested(mchhui.hegltf.GltfLoadPriority.HIGH);
+        mchhui.hegltf.GltfModelManager.get().softPin(model.getModelLocation(), 8000);
+        if (!model.isAnimReady() || model.model == null || model.model.geoModel == null
+                || model.model.geoModel.nodes == null) {
+            return;
+        }
 
         Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager()
                 .getEntityRenderObject(Minecraft.getMinecraft().player);
@@ -250,11 +259,12 @@ public class RenderMelee extends CustomItemRenderer {
                 //镜头动画
                 model.updateAnimation(controller.getTime());
 
-                if(model.model.geoModel.nodes.get("mwf_camera")!=null) {
+                mchhui.hegltf.DataNode mwfCameraNode = model.model.geoModel.nodes.get("mwf_camera");
+                if(mwfCameraNode != null && mwfCameraNode.pos != null) {
                     Matrix4f cameraMat=model.getGlobalTransform("mwf_camera");
                     AxisAngle4d cam_aa=mwf_camera_rot;
                     Vector3f cam_pos=mwf_camera_pos;
-                    Vector3f cam_begin_pos=model.model.geoModel.nodes.get("mwf_camera").pos;
+                    Vector3f cam_begin_pos=mwfCameraNode.pos;
                     cameraMat.getRotation(cam_aa);
                     cameraMat.getTranslation(cam_pos);
                     cam_pos.sub(cam_begin_pos).negate();
@@ -337,7 +347,12 @@ public class RenderMelee extends CustomItemRenderer {
         }
 
         EnhancedModel model = type.enhancedModel;
-        MeleeRenderConfig config = (MeleeRenderConfig)type.enhancedModel.config;
+        if (model == null) {
+            return;
+        }
+        model.ensureRequested(mchhui.hegltf.GltfLoadPriority.HIGH);
+        mchhui.hegltf.GltfModelManager.get().softPin(model.getModelLocation(), 8000);
+        MeleeRenderConfig config = (MeleeRenderConfig)model.config;
         
         HashSet<String> renderSetExpect=new HashSet<>(DEFAULT_EXCEPT);
         config.defaultHidePart.forEach((part)->{

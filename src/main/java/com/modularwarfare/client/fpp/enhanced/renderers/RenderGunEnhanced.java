@@ -269,6 +269,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         
         if (model == null)
             return;
+        if (!model.isAnimReady() || model.model == null || model.model.geoModel == null
+                || model.model.geoModel.nodes == null) {
+            return;
+        }
         
         Render<AbstractClientPlayer> render = Minecraft.getMinecraft().getRenderManager().getEntityRenderObject(Minecraft.getMinecraft().player);
         RenderPlayer renderplayer = (RenderPlayer) render;
@@ -344,11 +348,12 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
          * 如果想保证mwf和blender视角强一致性
          * 请不要使用hip调位置参数 并在blender中镜头对象默认位置设置在原点 然后在您的动画中调整镜头位置
          * */
-        if(model.model.geoModel.nodes.get("mwf_camera")!=null && model == firstPersonModel) {
+        DataNode mwfCameraNode = model.model.geoModel.nodes.get("mwf_camera");
+        if(mwfCameraNode != null && mwfCameraNode.pos != null && model == firstPersonModel) {
             Matrix4f cameraMat=model.getGlobalTransform("mwf_camera");
             AxisAngle4d cam_aa=mwf_camera_rot;
             Vector3f cam_pos=mwf_camera_pos;
-            Vector3f cam_begin_pos=model.model.geoModel.nodes.get("mwf_camera").pos;
+            Vector3f cam_begin_pos=mwfCameraNode.pos;
             cameraMat.getRotation(cam_aa);
             cameraMat.getTranslation(cam_pos);
             cam_pos.sub(cam_begin_pos).negate();
@@ -2125,6 +2130,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             } else {
                 model = getOrCreateModel(gunType, false, player != null ? player.getUniqueID() : null);
             }
+        if (model == null || !model.isAnimReady() || model.model == null || model.model.geoModel == null) {
+            return;
+        }
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
         EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
         if (player != null) {

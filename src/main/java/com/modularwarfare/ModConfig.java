@@ -31,6 +31,7 @@ public class ModConfig {
         this.sprintBlendNodes = new SprintBlendNodes();
         this.gunStats = new GunStats();
         this.customChestGui = new CustomChestGui();
+        this.gltf = new Gltf();
     }
 
     //general
@@ -202,6 +203,21 @@ public class ModConfig {
     public boolean model_optimization = true;
     public boolean debug_hits_message = false;
     public boolean dev_mode = false;
+
+    public Gltf gltf = new Gltf();
+
+    public static class Gltf {
+        public boolean lazyLoad = true;
+        public int cpuWorkers = 2;
+        public int uploadPartSize = 65536;
+        public int uploadPartWeight = 32;
+        public int uploadFrameBudget = 512;
+        public boolean proxyEnabled = true;
+        public boolean prefetchHotbar = false;
+        public int hotbarSoftPinMs = 15000;
+        public int idleUnloadSeconds = 90;
+        public boolean keepAnimAfterUnload = false;
+    }
 
     public String version = ModularWarfare.MOD_VERSION;
 

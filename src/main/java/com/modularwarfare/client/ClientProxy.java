@@ -551,11 +551,18 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void reloadModels(boolean reloadSkins) {
+        // Drop shared GLTF geometry + cancel GPU queue; type.reloadModel only rebuilds metadata.
+        mchhui.hegltf.GltfGpuUploadScheduler.clear();
         EnhancedModel.clearCache();
+        if (gunEnhancedRenderer != null) {
+            gunEnhancedRenderer.resetModels();
+        }
+        if (grenadeEnhancedRenderer != null) {
+            grenadeEnhancedRenderer.resetModels();
+        }
         for (BaseType baseType : ModularWarfare.baseTypes) {
-            if (baseType.hasModel()) {
-                baseType.reloadModel();
-            }
+            // Always rebuild enhanced/basic model wrappers after cache clear (lazy — no sync GLTF parse).
+            baseType.reloadModel();
         }
         if (reloadSkins) {
             forceReload();  

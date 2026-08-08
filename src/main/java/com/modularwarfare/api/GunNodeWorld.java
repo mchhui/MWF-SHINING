@@ -70,6 +70,9 @@ public final class GunNodeWorld {
         if (gunType == null) {
             return;
         }
+        if (gunType.enhancedModel != null) {
+            gunType.enhancedModel.ensureRequested(mchhui.hegltf.GltfLoadPriority.HIGH);
+        }
         String node = trailOriginNodeName(gunType).trim();
         if (!node.isEmpty()) {
             TRAIL_TRACK_NODES.add(node);

@@ -184,6 +184,8 @@ public class GuiGunModify extends GuiScreen {
 		BaseType type = ((BaseItem) this.currentModify.getItem()).baseType;
 		if (((GunType) type).animationType == WeaponAnimationType.ENHANCED) {
 		    AnimationController.getClientController().reset(true);
+		    com.modularwarfare.client.handler.GltfModelLifecycleHandler.prefetch(type,
+		        mchhui.hegltf.GltfLoadPriority.HIGH);
 		}
 		
 		// 重置槽位位置平滑缓存
