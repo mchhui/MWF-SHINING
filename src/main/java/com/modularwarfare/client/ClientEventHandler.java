@@ -289,6 +289,7 @@ public class ClientEventHandler {
         
         TrailOriginResolver.flushPendingTrailsAfterWorld(pt);
         TrailOriginResolver.renderTrailsOnly(pt);
+        TrailOriginResolver.renderTrailDebug(pt);
         LaserDotRenderer.renderLaserDots();
     }
     

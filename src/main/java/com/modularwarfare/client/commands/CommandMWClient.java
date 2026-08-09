@@ -23,7 +23,7 @@ public class CommandMWClient extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/mw-client md5 | /mw-client debugnode <node|off>";
+        return "/mw-client md5 | /mw-client debugnode <on|off|bone>";
     }
 
     @Override
@@ -38,22 +38,56 @@ public class CommandMWClient extends CommandBase {
                 }
                 return;
             }
-            if (args.length >= 2 && "debugnode".equalsIgnoreCase(args[0])) {
-                String sub = args[1];
-                if ("off".equalsIgnoreCase(sub) || "clear".equalsIgnoreCase(sub)) {
-                    RenderGunEnhanced.debugGunNodeName = null;
-                    sender.sendMessage(new TextComponentString("Gun node debug off."));
+            // Unified: debugnode / debugmarkers (alias)
+            if ("debugnode".equalsIgnoreCase(args[0]) || "debugmarkers".equalsIgnoreCase(args[0])) {
+                if (args.length < 2) {
+                    sendDebugStatus(sender);
                     return;
                 }
-                String name = sub.trim();
-                RenderGunEnhanced.debugGunNodeName = name;
-                sender.sendMessage(new TextComponentString("Gun node: " + name));
-                sender.sendMessage(new TextComponentString("Marks that bone in 1P/3P; use off to clear."));
+                String sub = args[1].trim();
+                if ("off".equalsIgnoreCase(sub) || "clear".equalsIgnoreCase(sub) || "false".equalsIgnoreCase(sub)
+                        || "0".equals(sub)) {
+                    RenderGunEnhanced.debugMarkerNodes = false;
+                    RenderGunEnhanced.debugGunNodeName = null;
+                    sender.sendMessage(new TextComponentString(
+                            "Node debug OFF (markers + custom bone + trail rays)."));
+                    return;
+                }
+                if ("on".equalsIgnoreCase(sub) || "markers".equalsIgnoreCase(sub) || "true".equalsIgnoreCase(sub)
+                        || "1".equals(sub)) {
+                    RenderGunEnhanced.debugMarkerNodes = true;
+                    sender.sendMessage(new TextComponentString(
+                            "Node debug ON: flashModel + mwf_scope_point + trail rays."));
+                    if (RenderGunEnhanced.debugGunNodeName != null) {
+                        sender.sendMessage(new TextComponentString(
+                                "Custom bone still set: " + RenderGunEnhanced.debugGunNodeName));
+                    }
+                    return;
+                }
+                RenderGunEnhanced.debugMarkerNodes = true;
+                RenderGunEnhanced.debugGunNodeName = sub;
+                sender.sendMessage(new TextComponentString(
+                        "Node debug ON: markers + trail rays + custom bone \"" + sub + "\"."));
+                sender.sendMessage(new TextComponentString("Use /mw-client debugnode off to clear."));
                 return;
             }
         }
         sender.sendMessage(new TextComponentString("/mw-client md5 - content pack hashes"));
-        sender.sendMessage(new TextComponentString("/mw-client debugnode <name> - gun bone overlay; debugnode off"));
+        sender.sendMessage(new TextComponentString(
+                "/mw-client debugnode <on|off|bone> - markers + trail rays; bone marks that gun node"));
+        sender.sendMessage(new TextComponentString(
+                "  on = flashModel + mwf_scope_point + trail rays (default off)"));
+                sender.sendMessage(new TextComponentString(
+                        "  trail rays: yellow=node forward, red=packet eye→hit, lime=corrected origin→hit"));
+    }
+
+    private static void sendDebugStatus(ICommandSender sender) {
+        sender.sendMessage(new TextComponentString(
+                "Node debug: " + (RenderGunEnhanced.debugMarkerNodes ? "ON" : "OFF")
+                        + (RenderGunEnhanced.debugGunNodeName != null
+                                ? (", bone=" + RenderGunEnhanced.debugGunNodeName)
+                                : "")));
+        sender.sendMessage(new TextComponentString("Usage: /mw-client debugnode <on|off|bone>"));
     }
 
 }

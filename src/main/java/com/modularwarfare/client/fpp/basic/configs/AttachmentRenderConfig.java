@@ -134,6 +134,11 @@ public class AttachmentRenderConfig {
          * Flashlight defaults off — wall clip is handled by MWF LOS ray, not this flag.
          */
         public boolean nearGeometryCull = false;
+        /**
+         * GLTF node on this flashlight attachment used as the light origin.
+         * When missing, GunNodeWorld falls back to the gun {@code flashlightOriginNode}.
+         */
+        public String originNode = "mwf_flashlight_point";
         public ViewTune firstPerson = new ViewTune();
         public ViewTune thirdPerson = new ViewTune();
 

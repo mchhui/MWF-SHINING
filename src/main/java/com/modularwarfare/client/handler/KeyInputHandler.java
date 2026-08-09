@@ -9,17 +9,23 @@ import com.modularwarfare.client.fpp.basic.animations.AnimStateMachine;
 import com.modularwarfare.client.fpp.basic.renderers.RenderGunStatic;
 import com.modularwarfare.client.fpp.enhanced.AnimationType;
 import com.modularwarfare.client.fpp.enhanced.animation.AnimationController;
-import com.modularwarfare.client.fpp.enhanced.configs.GrenadeEnhancedRenderConfig;
-import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.gui.GuiGunModify;
 import com.modularwarfare.client.gui.hud.GunTransformHUD;
 import com.modularwarfare.client.input.KeyEntry;
 import com.modularwarfare.client.input.KeyType;
 import com.modularwarfare.client.laser.LaserRenderManager;
 import com.modularwarfare.client.flashlight.FlashlightRenderManager;
-import com.modularwarfare.common.grenades.GrenadeType;
+import com.modularwarfare.client.model.ModelAttachment;
+import com.modularwarfare.client.model.ModelCustomArmor;
+import com.modularwarfare.common.armor.ArmorType;
+import com.modularwarfare.common.armor.ItemMWArmor;
+import com.modularwarfare.common.armor.ItemSpecialArmor;
+import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
+import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.guns.*;
+import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.network.PacketGunReload;
 import com.modularwarfare.common.network.PacketGunSwitchMode;
 import com.modularwarfare.common.network.PacketGunUnloadAttachment;
@@ -110,34 +116,30 @@ public final class KeyInputHandler {
                     if(ClientProxy.grenadeEnhancedRenderer != null) {
                         ClientProxy.grenadeEnhancedRenderer.resetModels();
                     }
+                    com.modularwarfare.client.fpp.enhanced.renderers.RenderMelee.controller = null;
 
-                    if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGun) {
-                        final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-                        final GunType gunType = ((ItemGun)gunStack.getItem()).type;
+                    ItemStack mainHand = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
+                    if (mainHand.getItem() instanceof ItemGun) {
+                        final GunType gunType = ((ItemGun)mainHand.getItem()).type;
                         for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
-                            ItemStack itemStack = GunType.getAttachment(gunStack, attachment);
-                            if (itemStack != null && itemStack.getItem() != Items.AIR) {
+                            ItemStack itemStack = GunType.getAttachment(mainHand, attachment);
+                            if (itemStack != null && itemStack.getItem() != Items.AIR
+                                    && itemStack.getItem() instanceof ItemAttachment) {
                                 AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-                                if (attachmentType.hasModel()) {
+                                if (attachmentType != null && attachmentType.hasModel()) {
                                     attachmentType.reloadModel();
+                                    forceReloadAttachmentGltf(attachmentType);
                                 }
                             }
                         }
-                        if (gunType.hasModel() && gunType.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                            gunType.enhancedModel.config = ModularWarfare.getRenderConfig(gunType, GunEnhancedRenderConfig.class);
-                        } else if(gunType.hasModel()){
-                            gunType.reloadModel();
-                        }
+                        reloadTypeModel(gunType);
+                    } else if (mainHand.getItem() instanceof ItemGrenade) {
+                        reloadTypeModel(((ItemGrenade)mainHand.getItem()).type);
+                    } else if (mainHand.getItem() instanceof ItemMelee) {
+                        reloadTypeModel(((ItemMelee)mainHand.getItem()).type);
                     }
-                    if (entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND).getItem() instanceof ItemGrenade) {
-                        final ItemStack gunStack = entityPlayer.getItemStackFromSlot(EntityEquipmentSlot.MAINHAND);
-                        final GrenadeType grenadeType = ((ItemGrenade)gunStack.getItem()).type;
-                        if (grenadeType.hasModel() && grenadeType.animationType.equals(WeaponAnimationType.ENHANCED)) {
-                            grenadeType.enhancedModel.config = ModularWarfare.getRenderConfig(grenadeType, GrenadeEnhancedRenderConfig.class);
-                        } else if(grenadeType.hasModel()){
-                            grenadeType.reloadModel();
-                        }
-                    }
+
+                    reloadWornArmorModels(entityPlayer);
 
                     if (entityPlayer.isSneaking()) {
                         ModularWarfare.PROXY.reloadModels(true);
@@ -309,10 +311,69 @@ public final class KeyInputHandler {
         }
     }
 
-    /**
-     * 处理武器变形相关的按键逻辑
-     * @param entityPlayer 玩家实体
-     */
+    private static void reloadTypeModel(com.modularwarfare.common.type.BaseType type) {
+        if (type == null) {
+            return;
+        }
+        type.reloadModel();
+        if (type.enhancedModel != null) {
+            type.enhancedModel.forceReload();
+        }
+    }
+
+    private static void forceReloadAttachmentGltf(AttachmentType attachmentType) {
+        if (attachmentType == null || !(attachmentType.model instanceof ModelAttachment)) {
+            return;
+        }
+        EnhancedModel gltf = ((ModelAttachment) attachmentType.model).enhancedModel;
+        if (gltf != null) {
+            gltf.forceReload();
+        }
+    }
+
+    private static void reloadWornArmorModels(EntityPlayerSP player) {
+        EntityEquipmentSlot[] armorSlots = new EntityEquipmentSlot[] {
+            EntityEquipmentSlot.HEAD, EntityEquipmentSlot.CHEST,
+            EntityEquipmentSlot.LEGS, EntityEquipmentSlot.FEET
+        };
+        for (EntityEquipmentSlot slot : armorSlots) {
+            ItemStack stack = player.getItemStackFromSlot(slot);
+            if (stack != null && !stack.isEmpty() && stack.getItem() instanceof ItemMWArmor) {
+                reloadArmorType(((ItemMWArmor) stack.getItem()).type);
+            }
+        }
+        if (player.hasCapability(CapabilityExtra.CAPABILITY, null)) {
+            IExtraItemHandler extra = player.getCapability(CapabilityExtra.CAPABILITY, null);
+            if (extra != null) {
+                for (int i = 0; i < extra.getSlots(); i++) {
+                    ItemStack stack = extra.getStackInSlot(i);
+                    if (stack != null && !stack.isEmpty() && stack.getItem() instanceof ItemSpecialArmor) {
+                        reloadArmorType(((ItemSpecialArmor) stack.getItem()).type);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void reloadArmorType(ArmorType armorType) {
+        if (armorType == null) {
+            return;
+        }
+        if (armorType.bipedModel instanceof ModelCustomArmor) {
+            EnhancedModel oldArm = ((ModelCustomArmor) armorType.bipedModel).enhancedArmModel;
+            if (oldArm != null) {
+                mchhui.hegltf.GltfModelManager.get().forceUnload(oldArm.getModelLocation());
+            }
+        }
+        armorType.reloadModel();
+        if (armorType.bipedModel instanceof ModelCustomArmor) {
+            EnhancedModel arm = ((ModelCustomArmor) armorType.bipedModel).enhancedArmModel;
+            if (arm != null) {
+                arm.forceReload();
+            }
+        }
+    }
+
     private static void handleGunTransform(EntityPlayerSP entityPlayer) {
         if(entityPlayer == null || entityPlayer.isSpectator()) return;
 

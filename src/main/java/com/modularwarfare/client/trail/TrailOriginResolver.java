@@ -3,15 +3,23 @@ package com.modularwarfare.client.trail;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.GunNodeWorld;
 import com.modularwarfare.client.fpp.enhanced.configs.GunEnhancedRenderConfig;
+import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.InstantBulletTeslaRender;
 import com.modularwarfare.common.guns.GunType;
+import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.utility.vector.Vector3f;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,16 +33,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * spawn 计算起点/终点 → {@code ClientEventHandler} 绘制。
  * <p>
  * 本地开火另走 {@code FireManager.queueClientPredictedTrails} 预测入队，忽略服务端回包重复。
+ * <p>
+ * {@code /mw-client debugnode on} 时绘制：黄线=trailOrigin 节点朝向，红线=包眼位→命中，绿线=纠正后起点→命中。
  */
 @SideOnly(Side.CLIENT)
 public final class TrailOriginResolver {
 
     private static final float THIRD_PERSON_ORIGIN_FORWARD = 2.0F;
+    private static final float LIVE_RAY_LENGTH = 8.0F;
+    private static final long DEBUG_RAY_TTL_MS = 5000L;
+    private static final int MAX_DEBUG_RAYS = 24;
 
     private static int frameCounter = 0;
 
     private static final CopyOnWriteArrayList<PendingTesla> PENDING_TESLA = new CopyOnWriteArrayList<>();
     private static final CopyOnWriteArrayList<PendingGunTrail> PENDING_GUN = new CopyOnWriteArrayList<>();
+    private static final CopyOnWriteArrayList<DebugRay> DEBUG_RAYS = new CopyOnWriteArrayList<>();
 
     private TrailOriginResolver() {}
 
@@ -63,6 +77,131 @@ public final class TrailOriginResolver {
     public static void renderTrailsOnly(float partialTicks) {
         InstantBulletRenderer.RenderAllTrails(partialTicks);
         InstantBulletTeslaRender.RenderAllTeslaTrails(partialTicks);
+    }
+
+    /**
+     * World-space trail debug lines when {@link RenderGunEnhanced#debugMarkerNodes} is on.
+     * Uses the same {@code translate(-camera)} convention as {@link InstantBulletRenderer}.
+     */
+    public static void renderTrailDebug(float partialTicks) {
+        if (!RenderGunEnhanced.debugMarkerNodes) {
+            return;
+        }
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc.world == null || mc.getRenderViewEntity() == null) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        for (DebugRay r : DEBUG_RAYS) {
+            if (now > r.expireMs) {
+                DEBUG_RAYS.remove(r);
+            }
+        }
+
+        Entity camera = mc.getRenderViewEntity();
+        double cx = camera.lastTickPosX + (camera.posX - camera.lastTickPosX) * partialTicks;
+        double cy = camera.lastTickPosY + (camera.posY - camera.lastTickPosY) * partialTicks;
+        double cz = camera.lastTickPosZ + (camera.posZ - camera.lastTickPosZ) * partialTicks;
+
+        boolean prevDepth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean prevTex = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
+        boolean prevLighting = GL11.glIsEnabled(GL11.GL_LIGHTING);
+        GlStateManager.pushMatrix();
+        try {
+            // Same as InstantBulletRenderer: camera rot already in MV; subtract entity pos.
+            GL11.glTranslated(-cx, -cy + 0.1D, -cz);
+            GlStateManager.disableTexture2D();
+            GlStateManager.disableLighting();
+            GlStateManager.disableDepth();
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE,
+                    GlStateManager.DestFactor.ZERO);
+            GlStateManager.glLineWidth(2.5F);
+            GL11.glEnable(GL11.GL_LINE_SMOOTH);
+
+            for (DebugRay r : DEBUG_RAYS) {
+                drawWorldLineAbs(r.ax, r.ay, r.az, r.bx, r.by, r.bz, r.cr, r.cg, r.cb, 1f);
+            }
+
+            drawLiveTrailOriginRay(mc);
+        } catch (Throwable t) {
+            ModularWarfare.LOGGER.warn("Trail debug render failed: {}", t.toString());
+        } finally {
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            GlStateManager.glLineWidth(1.0F);
+            GL11.glColor4f(1f, 1f, 1f, 1f);
+            if (prevLighting) {
+                GlStateManager.enableLighting();
+            }
+            if (prevTex) {
+                GlStateManager.enableTexture2D();
+            }
+            if (prevDepth) {
+                GlStateManager.enableDepth();
+            } else {
+                GlStateManager.disableDepth();
+            }
+            GlStateManager.popMatrix();
+        }
+    }
+
+    private static void drawLiveTrailOriginRay(Minecraft mc) {
+        if (mc.player == null) {
+            return;
+        }
+        ItemStack stack = mc.player.getHeldItemMainhand();
+        if (stack.isEmpty() || !(stack.getItem() instanceof ItemGun)) {
+            return;
+        }
+        GunType gunType = ((ItemGun) stack.getItem()).type;
+        if (gunType == null || gunType.animationType != WeaponAnimationType.ENHANCED) {
+            return;
+        }
+        GunNodeWorld.trackTrailOriginNode(gunType);
+        boolean firstPerson = mc.gameSettings.thirdPersonView == 0;
+        GunNodeWorld.NodeRef ref = GunNodeWorld.resolveTrailOrigin(gunType);
+        GunNodeWorld.NodePose pose = firstPerson ? GunNodeWorld.getFp(mc.player, ref)
+                : GunNodeWorld.getTp(mc.player, ref);
+        if (pose == null || pose.pos == null || pose.dir == null) {
+            return;
+        }
+        Vec3d start = GunNodeWorld.applyTrailWorldOffset(pose.pos, gunType);
+        if (start == null) {
+            start = pose.pos;
+        }
+        Vec3d dir = pose.dir;
+        double len = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+        if (len < 1.0E-8D) {
+            return;
+        }
+        double s = LIVE_RAY_LENGTH / len;
+        Vec3d end = start.add(dir.x * s, dir.y * s, dir.z * s);
+        drawWorldLineAbs(start.x, start.y, start.z, end.x, end.y, end.z, 1f, 0.92f, 0.15f, 1f);
+        if (Math.abs(start.x - pose.pos.x) + Math.abs(start.y - pose.pos.y)
+                + Math.abs(start.z - pose.pos.z) > 1.0E-4D) {
+            drawWorldLineAbs(pose.pos.x, pose.pos.y, pose.pos.z, start.x, start.y, start.z, 0.2f, 0.9f, 1f, 1f);
+        }
+    }
+
+    private static void drawWorldLineAbs(double ax, double ay, double az, double bx, double by, double bz, float r,
+            float g, float b, float a) {
+        GlStateManager.color(r, g, b, a);
+        GL11.glBegin(GL11.GL_LINES);
+        GL11.glVertex3d(ax, ay, az);
+        GL11.glVertex3d(bx, by, bz);
+        GL11.glEnd();
+    }
+
+    private static void recordDebugRay(Vector3f a, Vector3f b, float cr, float cg, float cb) {
+        if (!RenderGunEnhanced.debugMarkerNodes || a == null || b == null) {
+            return;
+        }
+        while (DEBUG_RAYS.size() >= MAX_DEBUG_RAYS) {
+            DEBUG_RAYS.remove(0);
+        }
+        DEBUG_RAYS.add(new DebugRay(a.x, a.y, a.z, b.x, b.y, b.z, cr, cg, cb,
+                System.currentTimeMillis() + DEBUG_RAY_TTL_MS));
     }
 
     public static boolean shouldIgnoreServerTrailForLocalShooter(int shooterEntityId) {
@@ -150,6 +289,25 @@ public final class TrailOriginResolver {
         }
     }
 
+    private static final class DebugRay {
+        final float ax, ay, az, bx, by, bz, cr, cg, cb;
+        final long expireMs;
+
+        DebugRay(float ax, float ay, float az, float bx, float by, float bz, float cr, float cg, float cb,
+                long expireMs) {
+            this.ax = ax;
+            this.ay = ay;
+            this.az = az;
+            this.bx = bx;
+            this.by = by;
+            this.bz = bz;
+            this.cr = cr;
+            this.cg = cg;
+            this.cb = cb;
+            this.expireMs = expireMs;
+        }
+    }
+
     private abstract static class PendingTrailBase {
         final int shooterEntityId;
         final double posX, posY, posZ;
@@ -190,12 +348,14 @@ public final class TrailOriginResolver {
         }
 
         void spawn() {
-            Vector3f origin = new Vector3f((float) posX, (float) posY, (float) posZ);
+            Vector3f packetOrigin = new Vector3f((float) posX, (float) posY, (float) posZ);
             GunType gunType = resolveGunType(gunTypeName);
-            origin = resolveOrigin(shooterEntityId, gunType, origin);
+            Vector3f origin = resolveOrigin(shooterEntityId, gunType, new Vector3f(packetOrigin));
             origin = applyThirdPersonOriginForward(shooterEntityId, gunType, origin, targetX - posX, targetY - posY,
                     targetZ - posZ);
             Vector3f target = new Vector3f((float) targetX, (float) targetY, (float) targetZ);
+            recordDebugRay(packetOrigin, target, 1f, 0.2f, 0.2f);
+            recordDebugRay(new Vector3f(origin), target, 0.25f, 1f, 0.3f);
             InstantBulletTeslaRender.AddTeslaTrail(
                     new InstantBulletTeslaRender.TeslaTrail(origin, target, bulletSpeed, gunType));
         }
@@ -229,11 +389,16 @@ public final class TrailOriginResolver {
                 return;
             }
             GunType type = ModularWarfare.gunTypes.get(gunType).type;
-            Vector3f hit = new Vector3f((float) (posX + dirX * range), (float) (posY + dirY * range),
+            Vector3f packetOrigin = new Vector3f((float) posX, (float) posY, (float) posZ);
+            Vector3f packetHit = new Vector3f((float) (posX + dirX * range), (float) (posY + dirY * range),
                     (float) (posZ + dirZ * range));
-            Vector3f origin = new Vector3f((float) posX, (float) posY, (float) posZ);
-            origin = resolveOrigin(shooterEntityId, type, origin);
+            Vector3f origin = resolveOrigin(shooterEntityId, type, new Vector3f(packetOrigin));
             origin = applyThirdPersonOriginForward(shooterEntityId, type, origin, dirX, dirY, dirZ);
+            // Keep aim direction/range after origin correction (do not keep eye-based hit).
+            Vector3f hit = new Vector3f(origin.x + (float) (dirX * range), origin.y + (float) (dirY * range),
+                    origin.z + (float) (dirZ * range));
+            recordDebugRay(packetOrigin, packetHit, 1f, 0.2f, 0.2f);
+            recordDebugRay(new Vector3f(origin), hit, 0.25f, 1f, 0.3f);
             InstantBulletRenderer.AddTrail(
                     new InstantBulletRenderer.InstantShotTrail(type, model, tex, glow, origin, hit, bulletSpeed));
         }

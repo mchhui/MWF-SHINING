@@ -136,27 +136,27 @@ public final class FlashlightLightSync {
         }
 
         AttachmentRenderConfig.Flashlight cfg = resolveCfg(flashAtt);
-        GunNodeWorld.trackFlashlightOriginNode(gunType);
+        GunNodeWorld.trackFlashlightOriginNode(stack, gunType);
         float partial = mc.getRenderPartialTicks();
         boolean isLocal = mc.player.getUniqueID().equals(id);
 
         if (isLocal) {
-            syncLocal(player, gunType, cfg, partial, mc.gameSettings.thirdPersonView == 0);
+            syncLocal(player, stack, gunType, cfg, partial, mc.gameSettings.thirdPersonView == 0);
         } else {
-            syncRemote(player, cfg, partial);
+            syncRemote(player, stack, gunType, cfg, partial);
         }
         return true;
     }
 
-    private static void syncLocal(EntityPlayer player, GunType gunType, AttachmentRenderConfig.Flashlight cfg,
-            float partial, boolean firstPersonCam) {
+    private static void syncLocal(EntityPlayer player, ItemStack gunStack, GunType gunType,
+            AttachmentRenderConfig.Flashlight cfg, float partial, boolean firstPersonCam) {
         UUID uuid = player.getUniqueID();
         String fpId = ID_FP_PREFIX + uuid;
         String tpId = ID_TP_PREFIX + uuid;
         float[] rgb = resolveRgb(cfg);
 
         if (firstPersonCam) {
-            GunNodeWorld.NodePose fpPose = GunNodeWorld.firstPersonFlashlight(player, gunType);
+            GunNodeWorld.NodePose fpPose = GunNodeWorld.firstPersonFlashlight(player, gunStack, gunType);
             if (fpPose == null || fpPose.pos == null) {
                 FlashlightAtomicLightBridge.remove(fpId);
                 FlashlightAtomicLightBridge.remove(tpId);
@@ -175,27 +175,31 @@ public final class FlashlightLightSync {
             FlashlightAtomicLightBridge.upsertFpSpot(fpId, pos, dir, rgb, cfg);
             FlashlightAtomicLightBridge.remove(tpId);
         } else {
-            if (!upsertTpArmPose(player, cfg, partial, tpId, rgb, false)) {
+            if (!upsertTpArmPose(player, gunStack, gunType, cfg, partial, tpId, rgb, false)) {
                 FlashlightAtomicLightBridge.remove(tpId);
             }
             FlashlightAtomicLightBridge.remove(fpId);
         }
     }
 
-    private static void syncRemote(EntityPlayer player, AttachmentRenderConfig.Flashlight cfg, float partial) {
+    private static void syncRemote(EntityPlayer player, ItemStack gunStack, GunType gunType,
+            AttachmentRenderConfig.Flashlight cfg, float partial) {
         UUID uuid = player.getUniqueID();
         float[] rgb = resolveRgb(cfg);
         String tpId = ID_TP_PREFIX + uuid;
-        if (!upsertTpArmPose(player, cfg, partial, tpId, rgb, true)) {
+        if (!upsertTpArmPose(player, gunStack, gunType, cfg, partial, tpId, rgb, true)) {
             FlashlightAtomicLightBridge.remove(tpId);
         }
         FlashlightAtomicLightBridge.remove(ID_FP_PREFIX + uuid);
     }
 
     /** @param remote true = ALWAYS visibility; false = THIRD_PERSON */
-    private static boolean upsertTpArmPose(EntityPlayer player, AttachmentRenderConfig.Flashlight cfg,
-            float partial, String id, float[] rgb, boolean remote) {
-        GunNodeWorld.NodePose tpPose = getTpArmPose(player);
+    private static boolean upsertTpArmPose(EntityPlayer player, ItemStack gunStack, GunType gunType,
+            AttachmentRenderConfig.Flashlight cfg, float partial, String id, float[] rgb, boolean remote) {
+        GunNodeWorld.NodePose tpPose = GunNodeWorld.thirdPersonFlashlight(player, gunStack, gunType);
+        if (tpPose == null || tpPose.pos == null) {
+            tpPose = getTpArmPose(player);
+        }
         if (tpPose == null || tpPose.pos == null) {
             return false;
         }
@@ -252,22 +256,7 @@ public final class FlashlightLightSync {
     }
 
     private static Vec3d applyPosOffset(Vec3d origin, Vec3d look, Vector3f offset) {
-        if (origin == null) {
-            return Vec3d.ZERO;
-        }
-        if (offset == null || (offset.x == 0f && offset.y == 0f && offset.z == 0f)) {
-            return origin;
-        }
-        Vec3d forward = look != null && look.lengthSquared() > 1.0E-12D ? look.normalize() : new Vec3d(0, 0, 1);
-        Vec3d worldUp = new Vec3d(0, 1, 0);
-        Vec3d right = forward.crossProduct(worldUp);
-        if (right.lengthSquared() < 1.0E-12D) {
-            right = new Vec3d(1, 0, 0);
-        } else {
-            right = right.normalize();
-        }
-        Vec3d up = right.crossProduct(forward).normalize();
-        return origin.add(right.scale(offset.x)).add(up.scale(offset.y)).add(forward.scale(offset.z));
+        return GunNodeWorld.applyLocalOffsetYawSafe(origin, look, offset);
     }
 
     private static Vec3d applyRotOffset(Vec3d dir, Vector3f rotDeg) {
@@ -279,11 +268,22 @@ public final class FlashlightLightSync {
             return forward;
         }
         Vec3d worldUp = new Vec3d(0, 1, 0);
-        Vec3d right = forward.crossProduct(worldUp);
-        if (right.lengthSquared() < 1.0E-12D) {
-            right = new Vec3d(1, 0, 0);
+        Vec3d right;
+        if (Math.abs(forward.y) > 0.999D) {
+            Vec3d altUp = Math.abs(forward.x) < 0.9D ? new Vec3d(1, 0, 0) : new Vec3d(0, 0, 1);
+            right = forward.crossProduct(altUp);
+            if (right.lengthSquared() < 1.0E-12D) {
+                right = new Vec3d(1, 0, 0);
+            } else {
+                right = right.normalize();
+            }
         } else {
-            right = right.normalize();
+            right = forward.crossProduct(worldUp);
+            if (right.lengthSquared() < 1.0E-12D) {
+                right = new Vec3d(1, 0, 0);
+            } else {
+                right = right.normalize();
+            }
         }
         Vec3d up = right.crossProduct(forward).normalize();
 

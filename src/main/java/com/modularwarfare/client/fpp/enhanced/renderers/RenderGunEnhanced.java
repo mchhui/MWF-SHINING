@@ -57,6 +57,7 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelPlayer;
+import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
@@ -133,11 +134,23 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     public static boolean debug = false;
     public static boolean debug1 = false;
 
-    /** GLTF node name for {@code /mw-client debugnode}; null disables. */
+    /**
+     * Optional custom gun bone for {@code /mw-client debugnode &lt;name&gt;}.
+     * Cleared by {@code debugnode off}.
+     */
     public static volatile String debugGunNodeName = null;
+
+    /**
+     * Master gun-node debug ({@code /mw-client debugnode on|off|&lt;name&gt;}):
+     * flashModel + sight {@code mwf_scope_point} crosses, trail-origin ray overlay.
+     * Default off.
+     */
+    public static volatile boolean debugMarkerNodes = false;
 
     private static final FloatBuffer DEBUG_MAT_BUF = BufferUtils.createFloatBuffer(16);
     private static final FloatBuffer DEBUG_MV_BUF = BufferUtils.createFloatBuffer(16);
+    /** Cached {@code ActiveRenderInfo.MODELVIEW} (private in 1.12). */
+    private static FloatBuffer activeRenderInfoModelview;
     private static long debugParticleLastMs = 0L;
 
     private ShortBuffer pixelBuffer = null;
@@ -175,10 +188,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
     private boolean renderingMagazine = true;
 
-    /**
-     * Mirror sight soft draw deferred until after opaque attachments + {@code finishHandDeferred}.
-     * Must re-apply gun binding transform — otherwise overlayModel floats in world space.
-     */
+    /** Deferred mirror-sight draw (after {@code finishHandDeferred}). */
     private AttachmentType pendingScopeType;
     private ModelAttachment pendingScopeModel;
     private boolean pendingScopeAiming;
@@ -258,7 +268,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         }
 
         GunNodeWorld.trackTrailOriginNode(gunType);
-        GunNodeWorld.trackFlashlightOriginNode(gunType);
+        GunNodeWorld.trackFlashlightOriginNode(item, gunType);
         GunNodeWorld.clearFpCache(player);
         clearPendingScope();
 
@@ -343,13 +353,26 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         mat.rotate(config.global.globalRotate.x/180*3.14f, new Vector3f(1, 0, 0));
         mat.rotate(config.global.globalRotate.z/180*3.14f, new Vector3f(0, 0, 1));
         
+        boolean scopePointAdsMode = false;
+        ItemStack sightForScopeNode = GunType.getAttachment(item, AttachmentPresetEnum.Sight);
+        if (sightForScopeNode != null && sightForScopeNode.getItem() instanceof ItemAttachment) {
+            AttachmentType st = ((ItemAttachment) sightForScopeNode.getItem()).type;
+            if (st != null && st.model instanceof ModelAttachment) {
+                ModelAttachment sma = (ModelAttachment) st.model;
+                if (sma.isGltf() && sma.existPart(ModelAttachment.NODE_SCOPE_POINT)) {
+                    scopePointAdsMode = true;
+                }
+            }
+        }
+
         /**
          * camera
          * 如果想保证mwf和blender视角强一致性
          * 请不要使用hip调位置参数 并在blender中镜头对象默认位置设置在原点 然后在您的动画中调整镜头位置
-         * */
+         * With mwf_scope_point: alignment uses the final node target only (no live camera).
+         */
         DataNode mwfCameraNode = model.model.geoModel.nodes.get("mwf_camera");
-        if(mwfCameraNode != null && mwfCameraNode.pos != null && model == firstPersonModel) {
+        if (!scopePointAdsMode && mwfCameraNode != null && mwfCameraNode.pos != null && model == firstPersonModel) {
             Matrix4f cameraMat=model.getGlobalTransform("mwf_camera");
             AxisAngle4d cam_aa=mwf_camera_rot;
             Vector3f cam_pos=mwf_camera_pos;
@@ -368,11 +391,39 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
          * aim_point pivot
          * 若模型含 mwf_recoil_point 骨骼，则所有程序动画（移动/后坐力等）的旋转中心
          * 从相机原点改为该骨骼的模型空间坐标，位置受动画（含 AIM）驱动
+         * With mwf_scope_point: sample pivot + node at final AIM (adsAlpha=1) before sandwich.
          */
         Vector3f aim_point_pivot = new Vector3f();
         boolean hasAimPoint = model.model.geoModel.nodes.get("mwf_recoil_point") != null && model == firstPersonModel;
-        if (hasAimPoint) {
+        Vector3f scopePointGun = null;
+        if (scopePointAdsMode) {
+            float scopeAmmoPer = 0f;
+            try {
+                if (item.getTagCompound() != null && ItemGun.hasAmmoLoaded(item)) {
+                    ItemStack ammoStack = new ItemStack(item.getTagCompound().getCompoundTag("ammo"));
+                    if (ammoStack.getTagCompound() != null && ammoStack.getItem() instanceof ItemAmmo) {
+                        ItemAmmo itemAmmo = (ItemAmmo) ammoStack.getItem();
+                        Integer mag = ammoStack.getTagCompound().hasKey("magcount")
+                                ? ammoStack.getTagCompound().getInteger("magcount") : null;
+                        scopeAmmoPer = ReloadHelper.getBulletOnMag(ammoStack, mag)
+                                / (float) itemAmmo.type.ammoCapacity;
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+            model.updateAnimationBlended(controller.getTime(), false,
+                    !config.animations.containsKey(AnimationType.SPRINT), controller.getSprintTime(),
+                    (float) controller.SPRINT, controller.getAimTime(), 1f, scopeAmmoPer);
+            if (hasAimPoint) {
+                model.getGlobalTransform("mwf_recoil_point").getTranslation(aim_point_pivot);
+            }
+            scopePointGun = resolveAttachmentNodeGunSpace(model, config, item, AttachmentPresetEnum.Sight,
+                    ModelAttachment.NODE_SCOPE_POINT);
+            model.invalidatePoseCache();
+        } else if (hasAimPoint) {
             model.getGlobalTransform("mwf_recoil_point").getTranslation(aim_point_pivot);
+        }
+        if (hasAimPoint) {
             mat.translate(aim_point_pivot);
         }
 
@@ -461,43 +512,99 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
          */
         
         Vector3f customHipRotation = new Vector3f(config.aim.rotateHipPosition.x, config.aim.rotateHipPosition.y, config.aim.rotateHipPosition.z);
-        Vector3f customHipTranslate = new Vector3f(config.aim.translateHipPosition.x, (config.aim.translateHipPosition.y), (config.aim.translateHipPosition.z));
-        
-        Vector3f customAimRotation = new Vector3f((config.aim.rotateAimPosition.x *  (float)controller.ADS), (config.aim.rotateAimPosition.y *  (float)controller.ADS), (config.aim.rotateAimPosition.z *  (float)controller.ADS));
-        Vector3f customAimTranslate = new Vector3f((config.aim.translateAimPosition.x *  (float)controller.ADS), (config.aim.translateAimPosition.y *  (float)controller.ADS), (config.aim.translateAimPosition.z *  (float)controller.ADS));
-        
-        mat.rotate(toRadians(customHipRotation.x + customSprintRotation.x+customAimRotation.x), new Vector3f(1f,0f,0f));
-        mat.rotate(toRadians(customHipRotation.y + customSprintRotation.y+customAimRotation.y), new Vector3f(0f,1f,0f));
-        mat.rotate(toRadians(customHipRotation.z + customSprintRotation.z+customAimRotation.z), new Vector3f(0f,0f,1f));
-        mat.translate(new Vector3f(customHipTranslate.x + customSprintTranslate.x+customAimTranslate.x, customHipTranslate.y + customSprintTranslate.y+customAimTranslate.y, customHipTranslate.z + customSprintTranslate.z+customAimTranslate.z));
+        Vector3f customHipTranslate = new Vector3f(config.aim.translateHipPosition.x, config.aim.translateHipPosition.y, config.aim.translateHipPosition.z);
+        float ads = (float) controller.ADS;
+        final boolean scopePointAds = scopePointGun != null;
 
-        float renderInsideGunOffset=5;
-        
-        /**
-         * ATTACHMENT AIM
-         * */
-        ItemAttachment sight = null;
-        if(GunType.getAttachment(item, AttachmentPresetEnum.Sight)!=null) {
-            sight = (ItemAttachment) GunType.getAttachment(item, AttachmentPresetEnum.Sight).getItem();
-            Attachment sightConfig=config.attachment.get(sight.type.internalName);
-            if(sightConfig!=null) {
-                //System.out.println("test");
-                float ads=(float) controller.ADS;
-                Vector3f aimPosOffset = new Vector3f(sightConfig.sightAimPosOffset.x, sightConfig.sightAimPosOffset.y, sightConfig.sightAimPosOffset.z);
-                Vector3f aimRotOffset = new Vector3f(sightConfig.sightAimRotOffset.x, sightConfig.sightAimRotOffset.y, sightConfig.sightAimRotOffset.z);
-                
-                ItemStack handguardStack = GunType.getAttachment(item, AttachmentPresetEnum.Handguard);
-                if (handguardStack != null && handguardStack.getItem() instanceof ItemAttachment) {
-                    String handguardName = ((ItemAttachment) handguardStack.getItem()).type.internalName;
-                    applyHandguardInfluenceToAim(config, sightConfig, handguardName, aimPosOffset, aimRotOffset);
-                }
-                
-                mat.translate(new Vector3f(aimPosOffset.x, aimPosOffset.y, aimPosOffset.z).mul(ads));
-                mat.rotate(ads * aimRotOffset.y * 3.14f / 180, new Vector3f(0, 1, 0));
-                mat.rotate(ads * aimRotOffset.x * 3.14f / 180, new Vector3f(1, 0, 0));
-                mat.rotate(ads * aimRotOffset.z * 3.14f / 180, new Vector3f(0, 0, 1));
-                renderInsideGunOffset=sightConfig.renderInsideGunOffset;
+        // Scope node: gun translateAim/rotateAim off. Hip fades with ads (rot+pos).
+        Vector3f customAimRotation = scopePointAdsMode ? new Vector3f(0f, 0f, 0f)
+                : new Vector3f((config.aim.rotateAimPosition.x * ads),
+                        (config.aim.rotateAimPosition.y * ads),
+                        (config.aim.rotateAimPosition.z * ads));
+        Vector3f customAimTranslate = scopePointAdsMode ? new Vector3f(0f, 0f, 0f)
+                : new Vector3f((config.aim.translateAimPosition.x * ads),
+                        (config.aim.translateAimPosition.y * ads),
+                        (config.aim.translateAimPosition.z * ads));
+
+        float hipFade = scopePointAdsMode ? (1f - ads) : 1f;
+        Vector3f hipRotApply = new Vector3f(customHipRotation).mul(hipFade);
+        Vector3f hipPosApply = new Vector3f(customHipTranslate).mul(hipFade);
+
+        // Linear scope path: measure P with full hip, apply faded hip, then T((1-ads)*sp0 - spNow).
+        Vector3f scopeAlignP = null;
+        Vector3f scopeSp0 = null;
+        if (scopePointAds && ads > 1e-6f) {
+            float px = scopePointGun.x;
+            float py = scopePointGun.y;
+            float pz = scopePointGun.z;
+            if (hasAimPoint) {
+                px -= aim_point_pivot.x;
+                py -= aim_point_pivot.y;
+                pz -= aim_point_pivot.z;
             }
+            scopeAlignP = new Vector3f(px, py, pz);
+            Matrix4f matFullHip = new Matrix4f(mat);
+            applyHipRotTrans(matFullHip, customHipRotation, customHipTranslate);
+            matFullHip.rotate(toRadians(customSprintRotation.x + customAimRotation.x), new Vector3f(1f, 0f, 0f));
+            matFullHip.rotate(toRadians(customSprintRotation.y + customAimRotation.y), new Vector3f(0f, 1f, 0f));
+            matFullHip.rotate(toRadians(customSprintRotation.z + customAimRotation.z), new Vector3f(0f, 0f, 1f));
+            matFullHip.translate(customSprintTranslate.x + customAimTranslate.x,
+                    customSprintTranslate.y + customAimTranslate.y,
+                    customSprintTranslate.z + customAimTranslate.z);
+            scopeSp0 = new Vector3f();
+            matFullHip.transformPosition(px, py, pz, scopeSp0);
+        }
+
+        mat.rotate(toRadians(hipRotApply.x + customSprintRotation.x + customAimRotation.x), new Vector3f(1f, 0f, 0f));
+        mat.rotate(toRadians(hipRotApply.y + customSprintRotation.y + customAimRotation.y), new Vector3f(0f, 1f, 0f));
+        mat.rotate(toRadians(hipRotApply.z + customSprintRotation.z + customAimRotation.z), new Vector3f(0f, 0f, 1f));
+        mat.translate(new Vector3f(hipPosApply.x + customSprintTranslate.x + customAimTranslate.x,
+                hipPosApply.y + customSprintTranslate.y + customAimTranslate.y,
+                hipPosApply.z + customSprintTranslate.z + customAimTranslate.z));
+
+        float renderInsideGunOffset = 5;
+
+        ItemStack sightStack = GunType.getAttachment(item, AttachmentPresetEnum.Sight);
+        ItemAttachment sight = null;
+        Vector3f aimPosOffset = new Vector3f(0f, 0f, 0f);
+        Vector3f aimRotOffset = new Vector3f(0f, 0f, 0f);
+        if (sightStack != null && sightStack.getItem() instanceof ItemAttachment) {
+            sight = (ItemAttachment) sightStack.getItem();
+            Attachment sightConfig = config.attachment != null ? config.attachment.get(sight.type.internalName) : null;
+
+            if (sightConfig != null) {
+                aimPosOffset.set(sightConfig.sightAimPosOffset.x, sightConfig.sightAimPosOffset.y,
+                        sightConfig.sightAimPosOffset.z);
+                aimRotOffset.set(sightConfig.sightAimRotOffset.x, sightConfig.sightAimRotOffset.y,
+                        sightConfig.sightAimRotOffset.z);
+                if (!scopePointAdsMode) {
+                    ItemStack handguardStack = GunType.getAttachment(item, AttachmentPresetEnum.Handguard);
+                    if (handguardStack != null && handguardStack.getItem() instanceof ItemAttachment) {
+                        String handguardName = ((ItemAttachment) handguardStack.getItem()).type.internalName;
+                        applyHandguardInfluenceToAim(config, sightConfig, handguardName, aimPosOffset, aimRotOffset);
+                    }
+                }
+                renderInsideGunOffset = sightConfig.renderInsideGunOffset;
+            }
+        }
+
+        if (scopeAlignP != null && scopeSp0 != null) {
+            Vector3f spNow = new Vector3f();
+            new Matrix4f(mat).transformPosition(scopeAlignP.x, scopeAlignP.y, scopeAlignP.z, spNow);
+            float tx = scopeSp0.x * (1f - ads) - spNow.x;
+            float ty = scopeSp0.y * (1f - ads) - spNow.y;
+            float tz = scopeSp0.z * (1f - ads) - spNow.z;
+            Matrix4f corr = new Matrix4f().translation(tx, ty, tz);
+            corr.mul(mat);
+            mat.set(corr);
+        }
+
+        if (ads > 1e-6f && (aimPosOffset.x != 0f || aimPosOffset.y != 0f || aimPosOffset.z != 0f
+                || aimRotOffset.x != 0f || aimRotOffset.y != 0f || aimRotOffset.z != 0f)) {
+            mat.translate(new Vector3f(aimPosOffset.x, aimPosOffset.y, aimPosOffset.z).mul(ads));
+            mat.rotate(ads * aimRotOffset.y * 3.14f / 180, new Vector3f(0, 1, 0));
+            mat.rotate(ads * aimRotOffset.x * 3.14f / 180, new Vector3f(1, 0, 0));
+            mat.rotate(ads * aimRotOffset.z * 3.14f / 180, new Vector3f(0, 0, 1));
         }
         
         /**
@@ -833,13 +940,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
         boolean glowMode=ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode=true;
-        /**
-         * 绘制镜面擦除
-         * First FP blendTransform with skin=true: GPU-skins the whole gun model.
-         * Left/right groups use skin=false and depend on this pass — do not skip on hip-fire
-         * (COMP-016 regression: gating on ADS>0 froze skinned parts / floating optics).
-         * Glass depth write remains ADS-only; after skin compute, rebind fill + arm albedo.
-         */
+        /** First FP pass: GPU-skin (skin=true); ADS-only glass depth. */
         if (sightRendering != null) {
             blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
                 controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, controller.getAimTime(), (float)controller.ADS, () -> {
@@ -853,21 +954,17 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                 sightRendering.type.internalName, item, () -> {
                                     writeScopeGlassDepth(sightRendering.type,
                                         (ModelAttachment)sightRendering.type.model, true, worldScale,
-                                        sightRendering.type.sight.modeType.isPIP);
+                                        false);
                                 });
                         });
                     }
                 });
         } else if (isRenderHand0) {
-            // No sight: still GPU-skin once; left/right groups use skin=false.
             blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
                 controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, controller.getAimTime(), (float)controller.ADS, () -> {
                 });
         }
-        /**
-         * LEFT HAND GROUP
-         * */
-        // After skin compute / inside-gun: bind arm albedo before left-hand mesh (COMP-016).
+        /** LEFT HAND GROUP */
         if (isRenderHand0) {
             if (atomicFill) {
                 AtomicShaderCompat.rebindFillIfActive();
@@ -1408,9 +1505,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                                     attachmentModel.renderAttachment(worldScale);
                                     ObjModelRenderer.glowTxtureMode=false;
                                     if(attachment==AttachmentPresetEnum.Sight) {
-                                        // Mirror sight parts (Atomic Hand fill):
-                                        // - overlayModel: hip-fire only → fill (开镜消失)
-                                        // - overlaySolidModel / scopeModel: ADS only → after finishHand (skip fill)
                                         if (!ScopeUtils.isIndsideGunRendering
                                                 && attachmentType.sight.modeType.isMirror) {
                                             final boolean aiming = controller.ADS > 0;
@@ -1478,11 +1572,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     }
                 }
                 
-                /**
-                 * Soft FX + scope: finish Hand MRT + lighting first (vanilla SrcA on COLOR0).
-                 * Never during renderInsideGun (blur FBO) — that would light an empty hand RT and
-                 * make the real FP renderItem hit shouldSkipLegacyColorDraw (invisible gun).
-                 */
                 if (atomicFill && !ScopeUtils.isIndsideGunRendering) {
                     AtomicShaderCompat.finishHandDeferredIfActive();
                     GlStateManager.enableBlend();
@@ -1499,7 +1588,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     final String scopeTexDir = pendingScopeTexDir;
                     final String scopeTexPath = pendingScopeTexPath;
                     clearPendingScope();
-                    // ADS only: overlaySolid (color filter) + overlay fade + scopeModel — never Hand fill.
                     model.applyGlobalTransformToOther(scopeBinding, () -> {
                         if (scopeTexDir != null && scopeTexPath != null) {
                             bindTexture(scopeTexDir, scopeTexPath);
@@ -1515,19 +1603,16 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 /**
                  *  flashmodel panelModel
                  *  */
-                // After finishHand, isGBufferFillActive is false — use legacy blend paths.
                 final boolean handFillSoft = AtomicShaderCompat.isGBufferFillActive();
                 if (handFillSoft) {
                     AtomicShaderCompat.rebindFillAndGunPbr();
                 }
-                // Shadow mid-fill: opaque + attachments already drawn; skip FX / translucent.
                 if (atomicShadowOnly) {
                     return;
                 }
                 GlStateManager.depthMask(false);
                 GlStateManager.disableLighting();
                 if (handFillSoft) {
-                    // Cutout + emissive: no SrcA blend into Hand MRT (black fringes).
                     AtomicShaderCompat.beginCutoutEmissiveFx();
                 } else {
                     GlStateManager.enableBlend();
@@ -1553,18 +1638,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     }
                     
                     GlStateManager.pushMatrix();
-                    ItemStack itemStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
-                    if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                        AttachmentType attachmentType = ((ItemAttachment)itemStack.getItem()).type;
-                        if (config.attachment.containsKey(attachmentType.internalName)) {
-                            if (config.attachment.get(attachmentType.internalName).flashModelOffset != null) {
-                                GlStateManager.translate(
-                                    config.attachment.get(attachmentType.internalName).flashModelOffset.x,
-                                    config.attachment.get(attachmentType.internalName).flashModelOffset.y,
-                                    config.attachment.get(attachmentType.internalName).flashModelOffset.z);
-                            }
-                        }
-                    }
+                    applyFlashModelRootOffset(model, config, item);
                     
                     boolean shouldRotateFlashTemp = config.specialEffect.rotateFlashModel;
                     ItemStack barrelStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
@@ -1668,7 +1742,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
                 ObjModelRenderer.glowTxtureMode=true;
                 OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
-                updateFpTrailNodeCache(model, new Matrix4f(mat), player);
+                updateFpNodeWorldCache(model, config, item, gunType, player);
                 GlStateManager.depthMask(true);
                 GlStateManager.enableLighting();
                 } finally {
@@ -1712,19 +1786,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                         GlStateManager.rotate((float)Math.toDegrees(aa.angle), -(float)aa.x, -(float)aa.y,
                             -(float)aa.z);
                         GlStateManager.rotate(90, 0, 1, 0);
-                        //flashModelOffset for Post Smoke
-                        ItemStack itemStack = GunType.getAttachment(item, AttachmentPresetEnum.Barrel);
-                        if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                            AttachmentType attachmentType = ((ItemAttachment)itemStack.getItem()).type;
-                            if (config.attachment.containsKey(attachmentType.internalName)) {
-                                if (config.attachment.get(attachmentType.internalName).flashModelOffset != null) {
-                                    GlStateManager.translate(
-                                        config.attachment.get(attachmentType.internalName).flashModelOffset.x,
-                                        config.attachment.get(attachmentType.internalName).flashModelOffset.y,
-                                        config.attachment.get(attachmentType.internalName).flashModelOffset.z);
-                                }
-                            }
-                        }
+                        applyFlashModelRootOffset(model, config, item);
                         drawPostSmoke();
                     });
                 });
@@ -2250,9 +2312,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         }
 
         if (player != null && renderType == RenderType.PLAYER && !atomicShadowOnly) {
+            GunNodeWorld.clearTpCache(player);
             GunNodeWorld.trackTrailOriginNode(gunType);
-            GunNodeWorld.trackFlashlightOriginNode(gunType);
-            cacheTpFlashlightArmPose(player, readCurrentGlModelview());
+            GunNodeWorld.trackFlashlightOriginNode(demoStack, gunType);
         }
 
         /**
@@ -2468,7 +2530,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                             ClientProxy.gunEnhancedRenderer.bindTexture("attachments", attachmentsPath);
                         }
                         ClientProxy.gunEnhancedRenderer.renderAttachment(config, attachment.typeName,
-                                attachmentType.internalName, () -> {
+                                attachmentType.internalName, demoStack, () -> {
                                     attachmentModel.renderAttachment(worldScale);
                                     if (attachment == AttachmentPresetEnum.Sight) {
                                         ObjModelRenderer.glowTxtureMode = false;
@@ -2500,6 +2562,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     });
                 }
             }
+        }
+
+        if (player != null && renderType == RenderType.PLAYER && !atomicShadowOnly) {
+            ClientProxy.gunEnhancedRenderer.updateTpNodeWorldCache(model, config, demoStack, gunType, player);
         }
 
         ObjModelRenderer.glowTxtureMode = glowTxtureMode;
@@ -2536,18 +2602,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType().showFlashModel()
                 && player != null && !player.isInWater()) {
             GlStateManager.pushMatrix();
-            ItemStack itemStack = GunType.getAttachment(demoStack, AttachmentPresetEnum.Barrel);
-            if (itemStack != null && itemStack.getItem() != Items.AIR) {
-                AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-                if (config.attachment.containsKey(attachmentType.internalName)) {
-                    if (config.attachment.get(attachmentType.internalName).flashModelOffset != null) {
-                        GlStateManager.translate(
-                                config.attachment.get(attachmentType.internalName).flashModelOffset.x,
-                                config.attachment.get(attachmentType.internalName).flashModelOffset.y,
-                                config.attachment.get(attachmentType.internalName).flashModelOffset.z);
-                    }
-                }
-            }
+            applyFlashModelRootOffset(model, config, demoStack);
             
             boolean shouldRotateFlashTemp = config.specialEffect.rotateFlashModel;
             ItemStack barrelStack = GunType.getAttachment(demoStack, AttachmentPresetEnum.Barrel);
@@ -2641,6 +2696,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         }
     }
 
+    /** Write scope glass into depth; {@code mask} also writes color. */
     @SideOnly(Side.CLIENT)
     public void writeScopeGlassDepth(AttachmentType attachmentType, ModelAttachment modelAttachment, boolean isAiming,
             float worldScale, boolean mask) {
@@ -2813,10 +2869,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     }
 
     /**
-     * Hip-fire {@code overlayModel} into Hand fill (deferred). Not used for ADS.
-     * Caller must already be under the sight attachment transform with fill active.
-     * Slight polygon offset avoids z-fight with coplanar {@code attachmentModel}.
-     */
+    /** Hip-fire {@code overlayModel} into Hand fill. */
     @SideOnly(Side.CLIENT)
     private void drawSightOverlayModelIntoFill(AttachmentType attachmentType, ModelAttachment modelAttachment,
             float worldScale) {
@@ -2829,7 +2882,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             ResourceLocation black = new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png");
             AtomicShaderCompat.ensurePbrMapsForBoundAlbedo(black);
         }
-        // Pull forward vs attachmentModel (same fill depth, near-coplanar optics).
         GlStateManager.enablePolygonOffset();
         GlStateManager.doPolygonOffset(-1.0F, -1.0F);
         modelAttachment.renderOverlay(worldScale);
@@ -2837,7 +2889,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         AtomicShaderCompat.rebindFillAndGunPbr();
     }
 
-    /** Vanilla hip-fire branch: {@code overlayModel} only (no solid / scope). */
     @SideOnly(Side.CLIENT)
     private void renderScopeOverlayHipfire(AttachmentType attachmentType, ModelAttachment modelAttachment,
             float worldScale) {
@@ -2850,18 +2901,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GL11.glPopMatrix();
     }
 
-    /**
-     * ADS only, after Hand fill is finished — each part once:
-     * <ol>
-     * <li>{@code overlaySolidModel} — attachment albedo color filter → OVERLAY_TEX</li>
-     * <li>{@code overlayModel} — fades with adsSwitch (开镜消失)</li>
-     * <li>clear depth + recopy (original) then {@code scopeModel}</li>
-     * </ol>
-     * Original FP anti-z-fight: {@code zNear=1e-5}, {@code depthRange[0,0.6]}, strict order,
-     * and a depth clear between overlay pair and scopeModel. After Atomic fill, attachment
-     * depth was written by g_buffer_fill; fixed-pipeline overlays must polygon-offset or they
-     * flicker against that depth when optics are coplanar.
-     */
+    /** ADS: overlaySolid → overlay → scopeModel (depth clear between overlay and scope). */
     @SideOnly(Side.CLIENT)
     private void renderScopeGlassAiming(AttachmentType attachmentType, ModelAttachment modelAttachment,
             float worldScale) {
@@ -2870,7 +2910,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             Shaders.useProgram(Shaders.ProgramNone);
         }
 
-        // Same FP depth window as ClientRenderHooks (not reversed-Z; compressed range + tiny near).
         GL11.glDepthRange(ModConfig.INSTANCE.hud.handDepthRangeMin, ModConfig.INSTANCE.hud.handDepthRangeMax);
         GlStateManager.depthFunc(GL11.GL_LEQUAL);
 
@@ -2899,7 +2938,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
         GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT);
 
-        // Phase A: solid then overlay share one depth buffer (order fixed). Offset vs fill depth.
+        if (ObjModelRenderer.glowType != null && ObjModelRenderer.glowPath != null) {
+            bindTexture(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
+        }
         GlStateManager.enablePolygonOffset();
         GlStateManager.doPolygonOffset(-1.0F, -1.0F);
         GlStateManager.enableBlend();
@@ -2917,8 +2958,9 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.color(1.0f, 1.0f, 1.0f, alpha);
         if (attachmentType.sight.usedDefaultOverlayModelTexture) {
             renderEngine.bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/black.png"));
+        } else if (ObjModelRenderer.glowType != null && ObjModelRenderer.glowPath != null) {
+            bindTexture(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
         }
-        // Decal-style: test against solid/attachment, do not rewrite depth (stops solid↔overlay fight).
         GlStateManager.doPolygonOffset(-1.5F, -1.5F);
         GlStateManager.depthMask(false);
         GlStateManager.colorMask(true, true, true, true);
@@ -2927,7 +2969,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.disablePolygonOffset();
         GlStateManager.disableBlend();
 
-        // Phase B (original): fresh depth from main, then scopeModel alone — no fight with overlays.
         ClientProxy.scopeUtils.blurFramebuffer.bindFramebuffer(false);
         GL30.glFramebufferTexture2D(OpenGlHelper.GL_FRAMEBUFFER, OpenGlHelper.GL_COLOR_ATTACHMENT0,
                 GL_TEXTURE_2D, tex, 0);
@@ -3230,7 +3271,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         return new Matrix4f().set(DEBUG_MV_BUF);
     }
 
-    /** 第一人称：手掌根 × 节点全局矩阵 → 近似世界坐标。 */
+    /**
+     * First-person: hand-root × node → world. Kept for callers; uses yaw-safe basis
+     * (projection sampling prefers {@link #sampleMvPoseFirstPerson}).
+     */
     @SideOnly(Side.CLIENT)
     public static Vec3d fpNodeWorld(Matrix4f fpHandRootMat, Matrix4f nodeGlobalMat, Entity viewEntity,
             float partialTicks) {
@@ -3252,28 +3296,117 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         combined.transformPosition(0f, 0f, 0f, p);
         Vector3f d = new Vector3f();
         combined.transformDirection(1f, 0f, 0f, d);
+        return handSpaceToWorld(p, d, (EntityLivingBase) viewEntity, partialTicks);
+    }
+
+    /** FP hand-space (after loadIdentity + hand mat) → world with yaw-safe camera basis. */
+    @SideOnly(Side.CLIENT)
+    private static GunNodeWorld.NodePose handSpaceToWorld(Vector3f p, Vector3f d, EntityLivingBase living,
+            float partialTicks) {
         final double scale = sizeFactor / 10.0;
-        EntityLivingBase living = (EntityLivingBase) viewEntity;
         Vec3d eye = living.getPositionEyes(partialTicks);
-        Vec3d forward = living.getLook(partialTicks);
-        if (forward.lengthSquared() < 1.0E-12D) {
-            return new GunNodeWorld.NodePose(eye, new Vec3d(0, 0, 1));
-        }
-        forward = forward.normalize();
-        Vec3d worldUp = new Vec3d(0.0D, 1.0D, 0.0D);
-        Vec3d right = forward.crossProduct(worldUp);
-        if (right.lengthSquared() < 1.0E-12D) {
-            right = new Vec3d(1.0D, 0.0D, 0.0D);
-        } else {
-            right = right.normalize();
-        }
-        Vec3d up = right.crossProduct(forward).normalize();
+        Vec3d[] basis = GunNodeWorld.yawSafeCameraBasis(living, partialTicks, false);
+        Vec3d right = basis[0];
+        Vec3d up = basis[1];
+        Vec3d forward = basis[2];
         Vec3d world = eye.add(right.scale(p.x * scale)).add(up.scale(p.y * scale)).subtract(forward.scale(p.z * scale));
         Vec3d worldDir = right.scale(d.x).add(up.scale(d.y)).subtract(forward.scale(d.z));
         if (worldDir.lengthSquared() < 1.0E-12D) {
             worldDir = forward;
         } else {
             worldDir = worldDir.normalize();
+        }
+        return new GunNodeWorld.NodePose(world, worldDir);
+    }
+
+    /** Sample pose from the live GL modelview (call inside the render-stack node depth). */
+    @SideOnly(Side.CLIENT)
+    private static GunNodeWorld.NodePose sampleMvPoseFirstPerson(EntityLivingBase viewEntity, float partialTicks) {
+        Matrix4f mv = readCurrentGlModelview();
+        Vector3f p = new Vector3f();
+        mv.transformPosition(0f, 0f, 0f, p);
+        Vector3f d = new Vector3f();
+        mv.transformDirection(1f, 0f, 0f, d);
+        return handSpaceToWorld(p, d, viewEntity, partialTicks);
+    }
+
+    /**
+     * TP: current MV is {@code View * (world - viewerPos)}. Undo camera via
+     * {@code ActiveRenderInfo.MODELVIEW}, then add {@link RenderManager#viewerPosX}.
+     */
+    @SideOnly(Side.CLIENT)
+    private static GunNodeWorld.NodePose sampleMvPoseThirdPerson(Entity viewEnt, float partialTicks) {
+        Matrix4f mv = readCurrentGlModelview();
+        Vector3f pEye = new Vector3f();
+        mv.transformPosition(0f, 0f, 0f, pEye);
+        Vector3f dEye = new Vector3f();
+        mv.transformDirection(1f, 0f, 0f, dEye);
+
+        FloatBuffer viewBuf = getActiveRenderInfoModelview();
+        if (viewBuf == null) {
+            return sampleMvPoseThirdPersonFallback(viewEnt, partialTicks, pEye, dEye);
+        }
+        viewBuf.rewind();
+        Matrix4f view = new Matrix4f().set(viewBuf);
+        viewBuf.rewind();
+        Matrix4f viewInv = new Matrix4f(view);
+        float det = viewInv.determinant();
+        if (!Float.isFinite(det) || Math.abs(det) < 1.0E-12F) {
+            return sampleMvPoseThirdPersonFallback(viewEnt, partialTicks, pEye, dEye);
+        }
+        viewInv.invert();
+
+        Vector3f pRel = new Vector3f();
+        viewInv.transformPosition(pEye, pRel);
+        Vector3f dRel = new Vector3f();
+        viewInv.transformDirection(dEye, dRel);
+
+        RenderManager rm = Minecraft.getMinecraft().getRenderManager();
+        Vec3d world = new Vec3d(pRel.x + rm.viewerPosX, pRel.y + rm.viewerPosY, pRel.z + rm.viewerPosZ);
+        Vec3d worldDir = new Vec3d(dRel.x, dRel.y, dRel.z);
+        if (worldDir.lengthSquared() < 1.0E-12D) {
+            if (viewEnt instanceof EntityLivingBase) {
+                boolean invertFwd = Minecraft.getMinecraft().gameSettings.thirdPersonView == 2;
+                worldDir = GunNodeWorld.yawSafeCameraBasis((EntityLivingBase) viewEnt, partialTicks, invertFwd)[2];
+            } else {
+                worldDir = new Vec3d(0, 0, 1);
+            }
+        } else {
+            worldDir = worldDir.normalize();
+        }
+        return new GunNodeWorld.NodePose(world, worldDir);
+    }
+
+    @SideOnly(Side.CLIENT)
+    private static FloatBuffer getActiveRenderInfoModelview() {
+        if (activeRenderInfoModelview == null) {
+            try {
+                activeRenderInfoModelview = ReflectionHelper.getPrivateValue(ActiveRenderInfo.class, null,
+                        "MODELVIEW", "field_178812_b");
+            } catch (Throwable t) {
+                ModularWarfare.LOGGER.warn("ActiveRenderInfo.MODELVIEW reflection failed: {}", t.toString());
+            }
+        }
+        return activeRenderInfoModelview;
+    }
+
+    @SideOnly(Side.CLIENT)
+    private static GunNodeWorld.NodePose sampleMvPoseThirdPersonFallback(Entity viewEnt, float partialTicks,
+            Vector3f pEye, Vector3f dEye) {
+        RenderManager rm = Minecraft.getMinecraft().getRenderManager();
+        Vec3d world = new Vec3d(pEye.x + rm.viewerPosX, pEye.y + rm.viewerPosY, pEye.z + rm.viewerPosZ);
+        boolean invertFwd = Minecraft.getMinecraft().gameSettings.thirdPersonView == 2;
+        Vec3d worldDir;
+        if (viewEnt instanceof EntityLivingBase) {
+            Vec3d[] basis = GunNodeWorld.yawSafeCameraBasis((EntityLivingBase) viewEnt, partialTicks, invertFwd);
+            worldDir = basis[0].scale(dEye.x).add(basis[1].scale(dEye.y)).add(basis[2].scale(-dEye.z));
+            if (worldDir.lengthSquared() < 1.0E-12D) {
+                worldDir = basis[2];
+            } else {
+                worldDir = worldDir.normalize();
+            }
+        } else {
+            worldDir = new Vec3d(0, 0, 1);
         }
         return new GunNodeWorld.NodePose(world, worldDir);
     }
@@ -3324,21 +3457,17 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         return false;
     }
 
-    private void updateFpTrailNodeCache(ModelEnhancedGun model, Matrix4f fpHandRootMat, EntityLivingBase holder) {
-        if (holder == null || fpHandRootMat == null || !model.initCal) {
+    @SideOnly(Side.CLIENT)
+    private void updateFpNodeWorldCache(ModelEnhancedGun model, GunEnhancedRenderConfig config, ItemStack gunStack,
+            GunType gunType, EntityLivingBase holder) {
+        if (holder == null || gunStack == null || !model.initCal) {
             return;
         }
         if (AtomicShaderCompat.isShadowDepthActive()) {
             return;
         }
-        LinkedHashSet<String> nodeNames = new LinkedHashSet<>();
-        String debugRaw = debugGunNodeName;
-        if (debugRaw != null && !debugRaw.trim().isEmpty()) {
-            nodeNames.add(debugRaw.trim());
-        }
-        nodeNames.addAll(GunNodeWorld.trackedTrailNodes());
-        nodeNames.addAll(GunNodeWorld.trackedFlashlightNodes());
-        if (nodeNames.isEmpty()) {
+        LinkedHashSet<GunNodeWorld.NodeRef> refs = collectTrackedNodeRefs(gunStack, gunType, true);
+        if (refs.isEmpty()) {
             return;
         }
         Minecraft mc = Minecraft.getMinecraft();
@@ -3347,88 +3476,195 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (!(viewEnt instanceof EntityLivingBase)) {
             return;
         }
-        final Matrix4f fpMat = new Matrix4f(fpHandRootMat);
-        final String debugTrimmed = debugRaw == null ? null : debugRaw.trim();
-        for (String trimmed : nodeNames) {
-            final String bindKey = gunNodeBindKey(model, trimmed);
-            if (bindKey == null) {
-                continue;
-            }
-            final boolean debugThis = debugTrimmed != null && trimmed.equals(debugTrimmed);
-            final boolean fallbackGunModel = "gunModel".equals(bindKey) && !gunDebugInputMatchesAnyNode(model, trimmed);
-            model.applyGlobalTransformToOther(bindKey, () -> {
-                GunNodeWorld.NodePose pose = fpNodePose(fpMat, model.getGlobalTransform(bindKey), viewEnt, pt);
-                if (pose != null) {
-                    GunNodeWorld.putFpCache(holder, trimmed, pose.pos, pose.dir);
-                }
-                if (debugThis) {
-                    drawGunNodeDebugOverlay(model, trimmed, bindKey, fallbackGunModel, pose != null ? pose.pos : null);
-                }
-            });
+        for (GunNodeWorld.NodeRef ref : refs) {
+            sampleNodeRefToCache(model, config, gunStack, holder, ref, true, (EntityLivingBase) viewEnt, pt);
         }
         com.modularwarfare.client.flashlight.FlashlightLightSync.onPoseCached(holder);
     }
 
     @SideOnly(Side.CLIENT)
-    private void cacheTpFlashlightArmPose(EntityLivingBase holder, Matrix4f tpGunRootMv) {
-        if (holder == null || tpGunRootMv == null) {
+    void updateTpNodeWorldCache(ModelEnhancedGun model, GunEnhancedRenderConfig config, ItemStack gunStack,
+            GunType gunType, EntityLivingBase holder) {
+        if (holder == null || gunStack == null || model == null || !model.initCal) {
             return;
         }
         if (AtomicShaderCompat.isShadowDepthActive()) {
             return;
         }
+        LinkedHashSet<GunNodeWorld.NodeRef> refs = collectTrackedNodeRefs(gunStack, gunType, false);
+        if (refs.isEmpty()) {
+            return;
+        }
         Minecraft mc = Minecraft.getMinecraft();
         Entity viewEnt = mc.getRenderViewEntity() != null ? mc.getRenderViewEntity() : holder;
         float pt = mc.getRenderPartialTicks();
-        Vec3d camPos = net.minecraft.client.renderer.ActiveRenderInfo.projectViewFromEntity(viewEnt, pt);
-        Vec3d camForward = viewEnt.getLook(pt);
-        if (mc.gameSettings.thirdPersonView == 2) {
-            camForward = camForward.scale(-1.0D);
+        for (GunNodeWorld.NodeRef ref : refs) {
+            sampleNodeRefToCache(model, config, gunStack, holder, ref, false, viewEnt, pt);
         }
-        if (camForward.lengthSquared() < 1.0E-12D) {
-            camForward = new Vec3d(0, 0, 1);
+        GunNodeWorld.NodeRef flashRef = GunNodeWorld.resolveFlashlightOrigin(gunStack, gunType);
+        GunNodeWorld.NodePose flashPose = GunNodeWorld.getTp(holder, flashRef);
+        if (flashPose != null) {
+            com.modularwarfare.client.flashlight.FlashlightLightSync.putTpArmPose(holder, flashPose.pos, flashPose.dir);
         } else {
-            camForward = camForward.normalize();
+            com.modularwarfare.client.flashlight.FlashlightLightSync.onPoseCached(holder);
         }
-        Vec3d worldUp = new Vec3d(0.0D, 1.0D, 0.0D);
-        Vec3d camRight;
-        if (Math.abs(camForward.y) > 0.999D) {
-            float yaw = viewEnt.rotationYaw * 0.017453292F;
-            Vec3d horizFwd = new Vec3d(-MathHelper.sin(yaw), 0.0D, MathHelper.cos(yaw));
-            camRight = horizFwd.crossProduct(worldUp);
-            if (camRight.lengthSquared() < 1.0E-12D) {
-                camRight = new Vec3d(1.0D, 0.0D, 0.0D);
-            } else {
-                camRight = camRight.normalize();
-            }
-        } else {
-            camRight = camForward.crossProduct(worldUp);
-            if (camRight.lengthSquared() < 1.0E-12D) {
-                camRight = new Vec3d(1.0D, 0.0D, 0.0D);
-            } else {
-                camRight = camRight.normalize();
-            }
-        }
-        Vec3d camUp = camRight.crossProduct(camForward);
-        if (camUp.lengthSquared() < 1.0E-12D) {
-            camUp = worldUp;
-        } else {
-            camUp = camUp.normalize();
-        }
+    }
 
-        Vector3f p = new Vector3f();
-        tpGunRootMv.transformPosition(0f, 0f, 0f, p);
-        Vector3f d = new Vector3f();
-        tpGunRootMv.transformDirection(1f, 0f, 0f, d);
-        Vec3d world = camPos.add(camRight.scale(p.x)).add(camUp.scale(p.y)).add(camForward.scale(-p.z));
-        Vec3d worldDir = camRight.scale(d.x).add(camUp.scale(d.y)).add(camForward.scale(-d.z));
-        if (worldDir.lengthSquared() < 1.0E-12D) {
-            Vec3d look = holder.getLook(pt);
-            worldDir = look.lengthSquared() > 1.0E-12D ? look.normalize() : camForward;
-        } else {
-            worldDir = worldDir.normalize();
+    @SideOnly(Side.CLIENT)
+    private LinkedHashSet<GunNodeWorld.NodeRef> collectTrackedNodeRefs(ItemStack gunStack, GunType gunType,
+            boolean includeDebug) {
+        LinkedHashSet<GunNodeWorld.NodeRef> refs = new LinkedHashSet<>();
+        if (includeDebug) {
+            String debugRaw = debugGunNodeName;
+            if (debugRaw != null && !debugRaw.trim().isEmpty()) {
+                GunNodeWorld.NodeRef d = GunNodeWorld.NodeRef.ofGun(debugRaw.trim());
+                if (d != null) {
+                    refs.add(d);
+                }
+            }
         }
-        com.modularwarfare.client.flashlight.FlashlightLightSync.putTpArmPose(holder, world, worldDir);
+        if (debugMarkerNodes) {
+            GunNodeWorld.NodeRef flashModel = GunNodeWorld.NodeRef.ofGun("flashModel");
+            if (flashModel != null) {
+                refs.add(flashModel);
+            }
+            GunNodeWorld.NodeRef scopePoint = GunNodeWorld.NodeRef.ofAttachment(AttachmentPresetEnum.Sight,
+                    ModelAttachment.NODE_SCOPE_POINT);
+            if (scopePoint != null) {
+                refs.add(scopePoint);
+            }
+            GunNodeWorld.NodeRef trailOrigin = GunNodeWorld.resolveTrailOrigin(gunType);
+            if (trailOrigin != null) {
+                refs.add(trailOrigin);
+            }
+        }
+        refs.addAll(GunNodeWorld.trackedTrailRefs());
+        GunNodeWorld.trackFlashlightOriginNode(gunStack, gunType);
+        refs.addAll(GunNodeWorld.trackedFlashlightRefs());
+        GunNodeWorld.NodeRef flashRef = GunNodeWorld.resolveFlashlightOrigin(gunStack, gunType);
+        if (flashRef != null) {
+            refs.add(flashRef);
+        }
+        GunNodeWorld.NodeRef trailRef = GunNodeWorld.resolveTrailOrigin(gunType);
+        if (trailRef != null) {
+            refs.add(trailRef);
+        }
+        return refs;
+    }
+
+    @SideOnly(Side.CLIENT)
+    private static boolean isDefaultMarkerRef(@Nullable GunNodeWorld.NodeRef ref) {
+        if (ref == null || ref.nodeName == null) {
+            return false;
+        }
+        if (ref.isGun() && "flashModel".equals(ref.nodeName)) {
+            return true;
+        }
+        return ref.slot == AttachmentPresetEnum.Sight
+                && ModelAttachment.NODE_SCOPE_POINT.equals(ref.nodeName);
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void sampleNodeRefToCache(ModelEnhancedGun model, GunEnhancedRenderConfig config, ItemStack gunStack,
+            EntityLivingBase holder, GunNodeWorld.NodeRef ref, boolean firstPerson, Entity viewEnt, float pt) {
+        if (ref == null || model == null || holder == null) {
+            return;
+        }
+        final String debugTrimmed = debugGunNodeName == null ? null : debugGunNodeName.trim();
+        final boolean debugThis = debugTrimmed != null && !debugTrimmed.isEmpty() && ref.isGun()
+                && debugTrimmed.equals(ref.nodeName);
+        final boolean markerThis = debugMarkerNodes
+                && (isDefaultMarkerRef(ref) || GunNodeWorld.trackedTrailRefs().contains(ref));
+        Runnable sample = () -> {
+            GunNodeWorld.NodePose pose = null;
+            try {
+                if (firstPerson) {
+                    if (!(viewEnt instanceof EntityLivingBase)) {
+                        return;
+                    }
+                    pose = sampleMvPoseFirstPerson((EntityLivingBase) viewEnt, pt);
+                    if (pose != null && pose.pos != null) {
+                        GunNodeWorld.putFpCache(holder, ref, pose.pos, pose.dir);
+                    }
+                } else {
+                    if (viewEnt == null) {
+                        return;
+                    }
+                    pose = sampleMvPoseThirdPerson(viewEnt, pt);
+                    if (pose != null && pose.pos != null) {
+                        GunNodeWorld.putTpCache(holder, ref, pose.pos, pose.dir);
+                    }
+                }
+                if (debugThis && ref.isGun()) {
+                    String bindKey = gunNodeBindKey(model, ref.nodeName);
+                    boolean fallbackGunModel = bindKey != null && "gunModel".equals(bindKey)
+                            && !gunDebugInputMatchesAnyNode(model, ref.nodeName);
+                    drawGunNodeDebugOverlay(model, ref.nodeName, bindKey != null ? bindKey : ref.nodeName,
+                            fallbackGunModel, pose != null ? pose.pos : null);
+                }
+                if (markerThis) {
+                    drawMarkerNodeCross(ref);
+                }
+            } catch (Throwable t) {
+                ModularWarfare.LOGGER.warn("Gun node sample/debug failed for {}: {}", ref, t.toString());
+            }
+        };
+        pushNodeRefRenderStack(model, config, gunStack, ref, sample, markerThis);
+    }
+
+    /** Walk the same GL stack used to draw the gun/attachment node, then run {@code sample}. */
+    @SideOnly(Side.CLIENT)
+    private void pushNodeRefRenderStack(ModelEnhancedGun model, GunEnhancedRenderConfig config, ItemStack gunStack,
+            GunNodeWorld.NodeRef ref, Runnable sample, boolean strictNode) {
+        if (model == null || config == null || gunStack == null || ref == null || sample == null) {
+            return;
+        }
+        if (ref.isGun()) {
+            if (ref.nodeName == null || ref.nodeName.isEmpty()) {
+                return;
+            }
+            if (strictNode && !gunDebugInputMatchesAnyNode(model, ref.nodeName)) {
+                return;
+            }
+            String bindKey = gunNodeBindKey(model, ref.nodeName);
+            if (bindKey == null) {
+                return;
+            }
+            if (strictNode && !bindKey.equals(ref.nodeName) && !bindKey.equalsIgnoreCase(ref.nodeName)) {
+                return;
+            }
+            model.applyGlobalTransformToOther(bindKey, sample);
+            return;
+        }
+        if (ref.slot == null || ref.nodeName == null || ref.nodeName.isEmpty()) {
+            return;
+        }
+        ItemStack attStack = GunType.getAttachment(gunStack, ref.slot);
+        if (attStack == null || attStack.isEmpty() || !(attStack.getItem() instanceof ItemAttachment)) {
+            return;
+        }
+        AttachmentType attType = ((ItemAttachment) attStack.getItem()).type;
+        if (attType == null || !(attType.model instanceof ModelAttachment)) {
+            return;
+        }
+        ModelAttachment attModel = (ModelAttachment) attType.model;
+        if (attModel == null || !attModel.isGltf() || !attModel.existPart(ref.nodeName)) {
+            return;
+        }
+        String binding = "gunModel";
+        if (config.attachment != null && attType.internalName != null
+                && config.attachment.containsKey(attType.internalName)
+                && config.attachment.get(attType.internalName) != null
+                && config.attachment.get(attType.internalName).binding != null
+                && !config.attachment.get(attType.internalName).binding.isEmpty()) {
+            binding = config.attachment.get(attType.internalName).binding;
+        }
+        final String bindingFinal = binding;
+        model.applyGlobalTransformToOther(bindingFinal, () -> {
+            renderAttachment(config, ref.slot.typeName, attType.internalName, gunStack, () -> {
+                attModel.applyGlobalTransformToOther(ref.nodeName, sample);
+            });
+        });
     }
 
     /** Three decimals; near-zero prints as {@code 0.000} (no minus) to avoid -0.000 flicker. */
@@ -3440,6 +3676,105 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             return "0.000";
         }
         return String.format("%.3f", v);
+    }
+
+    /** Debug cross at modelview origin (immediate-mode). Sight=cyan, else orange. */
+    @SideOnly(Side.CLIENT)
+    private void drawMarkerNodeCross(@Nullable GunNodeWorld.NodeRef ref) {
+        if (ref == null || AtomicShaderCompat.isShadowDepthActive()
+                || AtomicShaderCompat.isGBufferFillActive()) {
+            return;
+        }
+        final boolean scope = ref.slot == AttachmentPresetEnum.Sight;
+        final float cr = scope ? 0.2f : 1.0f;
+        final float cg = scope ? 0.95f : 0.55f;
+        final float cb = scope ? 1.0f : 0.15f;
+
+        boolean prevDepth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean prevCull = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        boolean prevLighting = GL11.glIsEnabled(GL11.GL_LIGHTING);
+        boolean prevTex = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
+        boolean shaders = OptifineHelper.isShadersEnabled();
+        int prevProgram = 0;
+        try {
+            if (shaders) {
+                prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+                Shaders.useProgram(Shaders.ProgramNone);
+            }
+            GlStateManager.disableDepth();
+            GlStateManager.disableCull();
+            GlStateManager.disableLighting();
+            GlStateManager.disableTexture2D();
+            GlStateManager.enableBlend();
+            GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE,
+                    DestFactor.ZERO);
+            GlStateManager.glLineWidth(2.8F);
+            GL11.glEnable(GL11.GL_LINE_SMOOTH);
+
+            float axis = 0.18f;
+            GlStateManager.color(1f, 0.2f, 0.2f, 1f);
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex3f(-axis, 0f, 0f);
+            GL11.glVertex3f(axis, 0f, 0f);
+            GL11.glEnd();
+            GlStateManager.color(0.2f, 1f, 0.2f, 1f);
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex3f(0f, -axis, 0f);
+            GL11.glVertex3f(0f, axis, 0f);
+            GL11.glEnd();
+            GlStateManager.color(0.25f, 0.55f, 1f, 1f);
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex3f(0f, 0f, -axis);
+            GL11.glVertex3f(0f, 0f, axis);
+            GL11.glEnd();
+
+            GlStateManager.pushMatrix();
+            applyBillboardFacingCameraFromCurrentModelview();
+            float arm = 0.28f;
+            GlStateManager.color(cr, cg, cb, 1f);
+            GL11.glBegin(GL11.GL_LINES);
+            GL11.glVertex3f(-arm, 0f, 0f);
+            GL11.glVertex3f(arm, 0f, 0f);
+            GL11.glVertex3f(0f, -arm, 0f);
+            GL11.glVertex3f(0f, arm, 0f);
+            GL11.glEnd();
+            float rad = 0.08f;
+            GL11.glBegin(GL11.GL_LINE_LOOP);
+            for (int i = 0; i < 24; i++) {
+                float ang = (float) (i / 24.0 * Math.PI * 2);
+                GL11.glVertex3f((float) Math.cos(ang) * rad, (float) Math.sin(ang) * rad, 0f);
+            }
+            GL11.glEnd();
+            GlStateManager.popMatrix();
+
+            GL11.glDisable(GL11.GL_LINE_SMOOTH);
+            GlStateManager.glLineWidth(1.0F);
+        } catch (Throwable t) {
+            ModularWarfare.LOGGER.warn("drawMarkerNodeCross failed: {}", t.toString());
+        } finally {
+            if (shaders) {
+                try {
+                    GL20.glUseProgram(prevProgram);
+                } catch (Throwable ignored) {
+                }
+            }
+            GL11.glColor4f(1f, 1f, 1f, 1f);
+            color(1f, 1f, 1f, 1f);
+            if (prevTex) {
+                GlStateManager.enableTexture2D();
+            } else {
+                GlStateManager.disableTexture2D();
+            }
+            if (prevLighting) {
+                GlStateManager.enableLighting();
+            }
+            if (prevCull) {
+                GlStateManager.enableCull();
+            }
+            if (prevDepth) {
+                GlStateManager.enableDepth();
+            }
+        }
     }
 
     private void drawGunNodeDebugOverlay(ModelEnhancedGun model, String userInputRaw, String bindKey,
@@ -3652,6 +3987,143 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.color(r, g, b, a);
     }
     
+    /**
+     * Attachment GLTF marker node → gun model space (binding × attachment transforms × node).
+     */
+    @Nullable
+    private Vector3f resolveAttachmentNodeGunSpace(ModelEnhancedGun gunModel, GunEnhancedRenderConfig config,
+            ItemStack gunStack, AttachmentPresetEnum slot, String nodeName) {
+        if (gunModel == null || config == null || gunStack == null || slot == null || nodeName == null) {
+            return null;
+        }
+        ItemStack attStack = GunType.getAttachment(gunStack, slot);
+        if (attStack == null || !(attStack.getItem() instanceof ItemAttachment)) {
+            return null;
+        }
+        AttachmentType attType = ((ItemAttachment) attStack.getItem()).type;
+        if (attType == null || !(attType.model instanceof ModelAttachment)) {
+            return null;
+        }
+        ModelAttachment attModel = (ModelAttachment) attType.model;
+        if (!attModel.isGltf() || !attModel.existPart(nodeName)) {
+            return null;
+        }
+        String binding = "gunModel";
+        if (config.attachment.containsKey(attType.internalName)) {
+            binding = config.attachment.get(attType.internalName).binding;
+        }
+        Matrix4f mat = new Matrix4f(gunModel.getGlobalTransform(binding));
+        String handguardName = null;
+        ItemStack hg = GunType.getAttachment(gunStack, AttachmentPresetEnum.Handguard);
+        if (hg != null && hg.getItem() instanceof ItemAttachment) {
+            handguardName = ((ItemAttachment) hg.getItem()).type.internalName;
+        }
+        if (config.attachmentGroup.containsKey(slot.typeName)) {
+            mulConfigTransform(mat, config.attachmentGroup.get(slot.typeName));
+            if (handguardName != null) {
+                GunEnhancedRenderConfig.HandguardInfluence hi = config.attachmentGroup.get(slot.typeName).handguardInfluence
+                        .get(handguardName);
+                if (hi != null) {
+                    mulConfigTransform(mat, hi);
+                }
+            }
+        }
+        if (config.attachment.containsKey(attType.internalName)) {
+            mulConfigTransform(mat, config.attachment.get(attType.internalName));
+            if (handguardName != null) {
+                GunEnhancedRenderConfig.HandguardInfluence hi = config.attachment.get(attType.internalName).handguardInfluence
+                        .get(handguardName);
+                if (hi != null) {
+                    mulConfigTransform(mat, hi);
+                }
+            }
+        }
+        mat.mul(attModel.getGlobalTransform(nodeName));
+        Vector3f out = new Vector3f();
+        mat.getTranslation(out);
+        return out;
+    }
+
+    /** Same order as {@link #applyTransform}: translate → scale → rotate Y/X/Z (degrees). */
+    private void mulConfigTransform(Matrix4f mat, EnhancedRenderConfig.Transform transform) {
+        if (mat == null || transform == null) {
+            return;
+        }
+        mat.translate(transform.translate.x, transform.translate.y, transform.translate.z);
+        mat.scale(transform.scale.x, transform.scale.y, transform.scale.z);
+        float deg = (float) (Math.PI / 180.0);
+        mat.rotate(transform.rotate.y * deg, 0f, 1f, 0f);
+        mat.rotate(transform.rotate.x * deg, 1f, 0f, 0f);
+        mat.rotate(transform.rotate.z * deg, 0f, 0f, 1f);
+    }
+
+    /** Hip pose on {@code mat}: rotate X/Y/Z (degrees) then translate — same as FP aim block. */
+    private static void applyHipRotTrans(Matrix4f mat, Vector3f rotDeg, Vector3f pos) {
+        if (mat == null) {
+            return;
+        }
+        if (rotDeg != null) {
+            mat.rotate(toRadians(rotDeg.x), new Vector3f(1f, 0f, 0f));
+            mat.rotate(toRadians(rotDeg.y), new Vector3f(0f, 1f, 0f));
+            mat.rotate(toRadians(rotDeg.z), new Vector3f(0f, 0f, 1f));
+        }
+        if (pos != null) {
+            mat.translate(pos.x, pos.y, pos.z);
+        }
+    }
+
+    /**
+     * Root translate for muzzle flash / post-smoke: {@code flashModelOffset + (mwf_flash_point - flashRef)}.
+     */
+    private void applyFlashModelRootOffset(ModelEnhancedGun model, GunEnhancedRenderConfig config, ItemStack gunStack) {
+        Vector3f offset = resolveFlashRootOffset(model, config, gunStack);
+        if (offset != null && (offset.x != 0f || offset.y != 0f || offset.z != 0f)) {
+            GlStateManager.translate(offset.x, offset.y, offset.z);
+        }
+    }
+
+    @Nullable
+    private Vector3f resolveFlashRootOffset(ModelEnhancedGun model, GunEnhancedRenderConfig config, ItemStack gunStack) {
+        if (config == null || gunStack == null) {
+            return null;
+        }
+        Vector3f offset = new Vector3f(0f, 0f, 0f);
+        ItemStack barrelStack = GunType.getAttachment(gunStack, AttachmentPresetEnum.Barrel);
+        if (barrelStack != null && barrelStack.getItem() instanceof ItemAttachment) {
+            AttachmentType barrelType = ((ItemAttachment) barrelStack.getItem()).type;
+            if (barrelType != null && config.attachment.containsKey(barrelType.internalName)) {
+                org.lwjgl.util.vector.Vector3f cfgOff = config.attachment.get(barrelType.internalName).flashModelOffset;
+                if (cfgOff != null) {
+                    offset.add(cfgOff.x, cfgOff.y, cfgOff.z);
+                }
+            }
+        }
+        Vector3f flashPoint = resolveAttachmentNodeGunSpace(model, config, gunStack, AttachmentPresetEnum.Barrel,
+                ModelAttachment.NODE_FLASH_POINT);
+        if (flashPoint != null) {
+            Vector3f ref = resolveFlashReferencePos(model, config);
+            offset.add(flashPoint.x - ref.x, flashPoint.y - ref.y, flashPoint.z - ref.z);
+        }
+        return offset;
+    }
+
+    private Vector3f resolveFlashReferencePos(ModelEnhancedGun model, GunEnhancedRenderConfig config) {
+        Vector3f p = new Vector3f();
+        if (model != null && model.existPart("flashModel")) {
+            model.getGlobalTransform("flashModel").getTranslation(p);
+            return p;
+        }
+        if (config != null && config.specialEffect != null && config.specialEffect.flashModelGroups != null
+                && !config.specialEffect.flashModelGroups.isEmpty()) {
+            String name = config.specialEffect.flashModelGroups.get(0).name;
+            if (model != null && name != null && model.existPart(name)) {
+                model.getGlobalTransform(name).getTranslation(p);
+                return p;
+            }
+        }
+        return p;
+    }
+
     private void applyHandguardInfluenceToAim(GunEnhancedRenderConfig config, GunEnhancedRenderConfig.Attachment sightConfig,
                                                String handguardName, Vector3f aimPosOffset, Vector3f aimRotOffset) {
         // 配件组级别影响

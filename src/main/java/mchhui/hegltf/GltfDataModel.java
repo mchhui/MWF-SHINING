@@ -102,9 +102,18 @@ public class GltfDataModel {
             gltfDataModel.applyPendingFullMeshes(false);
             gltfDataModel.phase = GltfLoadPhase.FULL_READY;
         } catch (Throwable e) {
-            ModularWarfare.LOGGER.warn("Something is wrong when loading:" + loc + " " + gltfDataModel.lastPos);
-            e.printStackTrace();
             gltfDataModel.phase = GltfLoadPhase.FAILED;
+            if (GltfModelManager.markLoadFailLogged(loc)) {
+                boolean missing = e instanceof java.io.FileNotFoundException
+                    || (e.getCause() instanceof java.io.FileNotFoundException);
+                if (missing) {
+                    ModularWarfare.LOGGER.warn("[GltfLazy] Missing model (logged once): {}", loc);
+                } else {
+                    ModularWarfare.LOGGER.warn("[GltfLazy] Failed sync load (logged once): {} @{}", loc,
+                        gltfDataModel.lastPos);
+                    e.printStackTrace();
+                }
+            }
         }
         return gltfDataModel;
     }
@@ -156,11 +165,20 @@ public class GltfDataModel {
             }
             GltfModelManager.devLog("[GltfLazy] MeshCPU done {} ({}ms total)", loc, System.currentTimeMillis() - t0);
         } catch (Throwable e) {
-            ModularWarfare.LOGGER.warn("[GltfLazy] Failed loading:" + loc + " " + gltfDataModel.lastPos);
-            e.printStackTrace();
             handle.setDataModel(gltfDataModel);
             handle.setPhase(GltfLoadPhase.FAILED);
             gltfDataModel.phase = GltfLoadPhase.FAILED;
+            if (GltfModelManager.markLoadFailLogged(loc)) {
+                boolean missing = e instanceof java.io.FileNotFoundException
+                    || (e.getCause() instanceof java.io.FileNotFoundException);
+                if (missing) {
+                    ModularWarfare.LOGGER.warn("[GltfLazy] Missing model (logged once): {}", loc);
+                } else {
+                    ModularWarfare.LOGGER.warn("[GltfLazy] Failed loading (logged once): {} @{}", loc,
+                        gltfDataModel.lastPos);
+                    e.printStackTrace();
+                }
+            }
         } finally {
             handle.setLoadQueued(false);
         }

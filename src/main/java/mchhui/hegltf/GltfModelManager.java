@@ -3,6 +3,7 @@ package mchhui.hegltf;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.modularwarfare.ModConfig;
@@ -14,6 +15,8 @@ public final class GltfModelManager {
     private static final GltfModelManager INSTANCE = new GltfModelManager();
 
     private final ConcurrentHashMap<ResourceLocation, GltfModelHandle> handles = new ConcurrentHashMap<>();
+    /** Locations whose load failure was already logged (avoid spam). Cleared in {@link #clearAll()}. */
+    private static final Set<ResourceLocation> LOGGED_LOAD_FAIL = ConcurrentHashMap.newKeySet();
 
     private GltfModelManager() {
     }
@@ -45,8 +48,9 @@ public final class GltfModelManager {
         handle.touch();
 
         if (!isLazyEnabled()) {
-            if (handle.getDataModel() == null || handle.getPhase() == GltfLoadPhase.EMPTY
-                || handle.getPhase() == GltfLoadPhase.FAILED) {
+            // Sticky FAILED: do not retry every frame (spam + CPU). clearAll() resets.
+            if (handle.getPhase() != GltfLoadPhase.FAILED
+                && (handle.getDataModel() == null || handle.getPhase() == GltfLoadPhase.EMPTY)) {
                 loadSync(handle);
             }
             return handle;
@@ -60,7 +64,11 @@ public final class GltfModelManager {
 
     private static boolean needsLoad(GltfModelHandle handle) {
         GltfLoadPhase phase = handle.getPhase();
-        if (phase == GltfLoadPhase.EMPTY || phase == GltfLoadPhase.FAILED) {
+        // Sticky failure — stop endless re-queue / log spam until clearAll().
+        if (phase == GltfLoadPhase.FAILED) {
+            return false;
+        }
+        if (phase == GltfLoadPhase.EMPTY) {
             return true;
         }
         if (phase == GltfLoadPhase.ANIM_READY) {
@@ -83,8 +91,7 @@ public final class GltfModelManager {
             if (handle.isLoadQueued()) {
                 return;
             }
-            if (!needsLoad(handle) && handle.getPhase() != GltfLoadPhase.EMPTY
-                && handle.getPhase() != GltfLoadPhase.FAILED) {
+            if (!needsLoad(handle)) {
                 return;
             }
             handle.setLoadQueued(true);
@@ -92,6 +99,32 @@ public final class GltfModelManager {
         }
         final boolean high = handle.isPriorityHigh();
         GltfCpuScheduler.submit(() -> GltfDataModel.loadAsync(handle, high));
+    }
+
+    /** @return true if this is the first failure log for {@code loc} this session/cache. */
+    public static boolean markLoadFailLogged(ResourceLocation loc) {
+        return loc != null && LOGGED_LOAD_FAIL.add(loc);
+    }
+
+    /** Drop sticky FAILED handles so a newly added resource can be requested again (e.g. F3+T). */
+    public void clearFailedLoads() {
+        Iterator<Map.Entry<ResourceLocation, GltfModelHandle>> it = handles.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<ResourceLocation, GltfModelHandle> e = it.next();
+            GltfModelHandle h = e.getValue();
+            if (h.getPhase() != GltfLoadPhase.FAILED) {
+                continue;
+            }
+            GltfDataModel model = h.getDataModel();
+            if (model != null) {
+                model.delete();
+            }
+            h.setDataModel(null);
+            h.setPhase(GltfLoadPhase.EMPTY);
+            h.setLoadQueued(false);
+            it.remove();
+            LOGGED_LOAD_FAIL.remove(e.getKey());
+        }
     }
 
     private void loadSync(GltfModelHandle handle) {
@@ -168,6 +201,29 @@ public final class GltfModelManager {
         }
     }
 
+    public void forceUnload(ResourceLocation loc) {
+        if (loc == null) {
+            return;
+        }
+        GltfModelHandle handle = handles.get(loc);
+        if (handle == null) {
+            LOGGED_LOAD_FAIL.remove(loc);
+            return;
+        }
+        synchronized (handle) {
+            GltfDataModel model = handle.getDataModel();
+            handle.setDataModel(null);
+            handle.setPhase(GltfLoadPhase.EMPTY);
+            handle.setLoadQueued(false);
+            handles.remove(loc, handle);
+            LOGGED_LOAD_FAIL.remove(loc);
+            if (model != null) {
+                GltfGpuUploadScheduler.add("forceUnload:" + loc, 8, true, model::delete);
+            }
+        }
+        devLog("[GltfLazy] Force unloaded model: {}", loc);
+    }
+
     public void unload(GltfModelHandle handle, boolean force) {
         if (handle == null) {
             return;
@@ -219,6 +275,7 @@ public final class GltfModelManager {
             h.setLoadQueued(false);
         }
         handles.clear();
+        LOGGED_LOAD_FAIL.clear();
         devLog("[GltfLazy] Cleared all cached GLTF models");
     }
 
@@ -238,6 +295,7 @@ public final class GltfModelManager {
             h.setLoadQueued(false);
         }
         handles.clear();
+        LOGGED_LOAD_FAIL.clear();
     }
 
     public int cachedCount() {

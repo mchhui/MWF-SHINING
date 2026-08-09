@@ -73,6 +73,18 @@ public class EnhancedModel implements IMWModel {
         syncFromHandle(handle);
     }
 
+    public void forceReload() {
+        ResourceLocation loc = getModelLocation();
+        GltfModelManager.get().forceUnload(loc);
+        if (model != null) {
+            model.bindGeoModel(null);
+        }
+        initCal = false;
+        invalidatePoseCache();
+        pinned = false;
+        ensureRequested(GltfLoadPriority.HIGH);
+    }
+
     public void pin() {
         ensureRequested(GltfLoadPriority.HIGH);
         if (!pinned) {
