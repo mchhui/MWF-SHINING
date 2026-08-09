@@ -320,6 +320,7 @@ public class ClientRenderHooks {
 
     @SubscribeEvent
     void onRenderHeldItem(RenderSpecificHandEvent event) {
+        AtomicShaderCompat.onFirstPersonItemBegin();
         event.setCanceled(renderHeldItem(event.getItemStack(), event.getHand(), event.getPartialTicks(),getFOVModifier(event.getPartialTicks())));
     }
     
