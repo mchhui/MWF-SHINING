@@ -4,6 +4,7 @@ import java.util.HashSet;
 
 import com.modularwarfare.ModConfig;
 import com.modularwarfare.ModularWarfare;
+import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.client.fpp.enhanced.models.EnhancedModel;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.model.ModelCustomArmor;
@@ -21,10 +22,6 @@ import com.modularwarfare.common.grenades.ItemGrenade;
 import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.type.BaseType;
-import siz.addon.modularprops.common.custom.CustomBlockType;
-import siz.addon.modularprops.common.custom.CustomItemType;
-import siz.addon.modularprops.common.custom.ItemBlockCustom;
-import siz.addon.modularprops.common.custom.ItemCustom;
 
 import mchhui.hegltf.GltfCpuScheduler;
 import mchhui.hegltf.GltfGpuUploadScheduler;
@@ -33,6 +30,7 @@ import mchhui.hegltf.GltfModelManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
@@ -41,12 +39,20 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import net.minecraftforge.fml.relauncher.Side;
 
+import java.lang.reflect.Field;
+
 @Mod.EventBusSubscriber(modid = ModularWarfare.MOD_ID, value = Side.CLIENT)
 public class GltfModelLifecycleHandler {
 
     private static final HashSet<ResourceLocation> pinnedThisTick = new HashSet<>();
     private static final HashSet<ResourceLocation> pinnedLastTick = new HashSet<>();
     private static int logTicker;
+
+    private static Class<?> modularPropsItemCustomClass;
+    private static Class<?> modularPropsItemBlockCustomClass;
+    private static Field modularPropsItemCustomTypeField;
+    private static Field modularPropsItemBlockCustomTypeField;
+    private static boolean modularPropsClassesResolved;
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -210,16 +216,47 @@ public class GltfModelLifecycleHandler {
             if (type != null && type.enhancedModel != null) {
                 return type.enhancedModel;
             }
-        } else if (stack.getItem() instanceof ItemCustom) {
-            CustomItemType type = ((ItemCustom) stack.getItem()).type;
-            if (type != null && type.enhancedModel != null) {
-                return type.enhancedModel;
+        } else {
+            return modelFromModularProps(stack.getItem());
+        }
+        return null;
+    }
+
+    private static void resolveModularPropsClasses() {
+        if (modularPropsClassesResolved) {
+            return;
+        }
+        modularPropsClassesResolved = true;
+        try {
+            modularPropsItemCustomClass = Class.forName("siz.addon.modularprops.common.custom.ItemCustom");
+            modularPropsItemCustomTypeField = modularPropsItemCustomClass.getField("type");
+        } catch (ReflectiveOperationException ignored) {
+        }
+        try {
+            modularPropsItemBlockCustomClass = Class.forName("siz.addon.modularprops.common.custom.ItemBlockCustom");
+            modularPropsItemBlockCustomTypeField = modularPropsItemBlockCustomClass.getField("type");
+        } catch (ReflectiveOperationException ignored) {
+        }
+    }
+
+    private static EnhancedModel modelFromModularProps(Item item) {
+        if (item == null || !ClientProxy.modularPropsLoaded) {
+            return null;
+        }
+        resolveModularPropsClasses();
+        try {
+            Object typeObj = null;
+            if (modularPropsItemCustomClass != null && modularPropsItemCustomTypeField != null
+                && modularPropsItemCustomClass.isInstance(item)) {
+                typeObj = modularPropsItemCustomTypeField.get(item);
+            } else if (modularPropsItemBlockCustomClass != null && modularPropsItemBlockCustomTypeField != null
+                && modularPropsItemBlockCustomClass.isInstance(item)) {
+                typeObj = modularPropsItemBlockCustomTypeField.get(item);
             }
-        } else if (stack.getItem() instanceof ItemBlockCustom) {
-            CustomBlockType type = ((ItemBlockCustom) stack.getItem()).type;
-            if (type != null && type.enhancedModel != null) {
-                return type.enhancedModel;
+            if (typeObj instanceof BaseType) {
+                return ((BaseType) typeObj).enhancedModel;
             }
+        } catch (ReflectiveOperationException ignored) {
         }
         return null;
     }
