@@ -217,6 +217,8 @@ public class ModConfig {
         public int hotbarSoftPinMs = 15000;
         public int idleUnloadSeconds = 90;
         public boolean keepAnimAfterUnload = false;
+        public boolean skinAnimOpt = false;
+        public boolean renderSchedulingOpt = false;
     }
 
     public String version = ModularWarfare.MOD_VERSION;

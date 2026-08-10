@@ -415,9 +415,7 @@ public class ClientProxy extends CommonProxy {
                     albedo = resource;
                 }
             }
-            // Atomic keeps a separate decoded _n/_s cache; warm it here so first FP draw
-            // does not hitch (TextureManager preload alone is not enough).
-            if (albedo != null) {
+            if (albedo != null && mchhui.hegltf.GltfFeatureFlags.renderSchedulingOpt()) {
                 com.modularwarfare.client.compat.AtomicShaderCompat.warmStandalonePbrMaps(albedo);
             }
         });

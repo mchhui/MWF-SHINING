@@ -110,6 +110,10 @@ public final class KeyInputHandler {
                     ModularWarfare.loadConfig();
                     ScriptHost.INSTANCE.reset();
 
+                    // Drop sticky FAILED loads so F9 can revive attachments that failed once
+                    // (transient GL/IO). clearAll is Shift+F9 only.
+                    mchhui.hegltf.GltfModelManager.get().clearFailedLoads();
+
                     if(ClientProxy.gunEnhancedRenderer != null) {
                         ClientProxy.gunEnhancedRenderer.resetModels();
                     }

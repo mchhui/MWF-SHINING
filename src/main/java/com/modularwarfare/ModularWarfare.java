@@ -373,7 +373,7 @@ public class ModularWarfare {
                         if (typeFile.getName().endsWith(".json")) {
                             String text = "";
                             try {
-                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
+                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(typeFile), StandardCharsets.UTF_8));
                                 String temp;
                                 while ((temp = bufferedReader.readLine()) != null) {
                                     text += temp;

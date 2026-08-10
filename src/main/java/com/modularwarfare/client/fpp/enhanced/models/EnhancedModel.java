@@ -9,6 +9,7 @@ import mchhui.hegltf.DataAnimation;
 import mchhui.hegltf.DataAnimation.Transform;
 import mchhui.hegltf.DataNode;
 import mchhui.hegltf.GltfDataModel;
+import mchhui.hegltf.GltfFeatureFlags;
 import mchhui.hegltf.GltfLoadPriority;
 import mchhui.hegltf.GltfModelHandle;
 import mchhui.hegltf.GltfModelManager;
@@ -167,7 +168,7 @@ public class EnhancedModel implements IMWModel {
             return;
         }
         boolean forceSkinFirst = !initCal;
-        boolean samePose = poseCacheValid && initCal
+        boolean samePose = GltfFeatureFlags.skinAnimOpt() && poseCacheValid && initCal
                 && Float.compare(cachedPoseTime, time) == 0
                 && Float.compare(cachedSprintTime, sprintTime) == 0
                 && Float.compare(cachedSprintAlpha, sprintAlpha) == 0

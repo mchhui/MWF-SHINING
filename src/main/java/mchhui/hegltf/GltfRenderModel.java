@@ -326,12 +326,9 @@ public class GltfRenderModel {
             return;
         }
         if (AtomicShaderCompat.isGBufferFillActive()) {
-            // ShaderGltf uses GL20.glUseProgram; under HE LWJGL3 the Atomic program tracker
-            // may miss it and FillCaptureGuard would skip rebind → invisible skinned gun + 0x502.
-            AtomicShaderCompat.markFillCaptureDirty();
-            // Only restore fill program + MRT. Do NOT rebind currentFillAlbedo here:
-            // updateAnimation often runs before the peer binds skin/gun for this mesh group
-            // (knife→gun left a stale melee albedo / null → arm samples wrong TEX0).
+            if (GltfFeatureFlags.renderSchedulingOpt()) {
+                AtomicShaderCompat.markFillCaptureDirty();
+            }
             AtomicShaderCompat.rebindFillIfActive();
             return;
         }
@@ -357,8 +354,12 @@ public class GltfRenderModel {
         baseMvValid = true;
     }
 
-    /** Open a multi-draw scope: matrixMode + getFloat + VAO batch once. */
     public void beginDrawScope() {
+        if (!GltfFeatureFlags.skinAnimOpt()) {
+            GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+            AtomicShaderCompat.rebindFillAndGunPbr();
+            return;
+        }
         if (drawScopeDepth++ > 0) {
             return;
         }
@@ -369,6 +370,9 @@ public class GltfRenderModel {
     }
 
     public void endDrawScope() {
+        if (!GltfFeatureFlags.skinAnimOpt()) {
+            return;
+        }
         if (drawScopeDepth <= 0) {
             return;
         }
@@ -489,6 +493,10 @@ public class GltfRenderModel {
         if (geoModel == null || !geoModel.isAnimReady()) {
             return;
         }
+        if (!GltfFeatureFlags.skinAnimOpt()) {
+            renderLegacy(sun, moon);
+            return;
+        }
         boolean ownedScope = false;
         if (drawScopeDepth == 0) {
             beginDrawScope();
@@ -503,6 +511,38 @@ public class GltfRenderModel {
         } finally {
             if (ownedScope) {
                 endDrawScope();
+            }
+        }
+    }
+
+    private void renderLegacy(HashSet<String> sun, HashSet<String> moon) {
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+        AtomicShaderCompat.rebindFillAndGunPbr();
+        for (Entry<String, DataNode> e : geoModel.nodes.entrySet()) {
+            if (sun != null && !sun.isEmpty() && !sun.contains(e.getKey())) {
+                continue;
+            }
+            if (moon != null && !moon.isEmpty() && moon.contains(e.getKey())) {
+                continue;
+            }
+            DataNode node = e.getValue();
+            if (node == null || node.meshes == null || node.meshes.isEmpty()) {
+                continue;
+            }
+            NodeState state = nodeStates.get(node.name);
+            for (DataMesh mesh : node.meshes.values()) {
+                if (mesh == null) {
+                    continue;
+                }
+                GlStateManager.pushMatrix();
+                if (!mesh.skin && state != null && state.mat != null) {
+                    matrixBuffer.clear();
+                    state.mat.get(matrixBuffer);
+                    matrixBuffer.rewind();
+                    GlStateManager.multMatrix(matrixBuffer);
+                }
+                mesh.render();
+                GlStateManager.popMatrix();
             }
         }
     }

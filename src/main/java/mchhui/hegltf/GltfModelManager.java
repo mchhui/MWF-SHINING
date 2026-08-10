@@ -48,9 +48,17 @@ public final class GltfModelManager {
         handle.touch();
 
         if (!isLazyEnabled()) {
-            // Sticky FAILED: do not retry every frame (spam + CPU). clearAll() resets.
-            if (handle.getPhase() != GltfLoadPhase.FAILED
-                && (handle.getDataModel() == null || handle.getPhase() == GltfLoadPhase.EMPTY)) {
+            if (handle.getPhase() == GltfLoadPhase.FAILED) {
+                GltfDataModel failed = handle.getDataModel();
+                if (failed != null) {
+                    failed.delete();
+                }
+                handle.setDataModel(null);
+                handle.setPhase(GltfLoadPhase.EMPTY);
+                handle.setLoadQueued(false);
+                LOGGED_LOAD_FAIL.remove(loc);
+            }
+            if (handle.getDataModel() == null || handle.getPhase() == GltfLoadPhase.EMPTY) {
                 loadSync(handle);
             }
             return handle;

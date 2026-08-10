@@ -154,10 +154,26 @@ public class DataMesh {
 
     public void render() {
         if (!this.compiled) {
-            if (!uploadQueued) {
-                requestUpload("onDemand", true, null);
+            if (!GltfModelManager.isLazyEnabled()) {
+                try {
+                    if (!uploadCancelled) {
+                        compileVAOSliced();
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+                if (!this.compiled) {
+                    return;
+                }
+            } else {
+                if (!uploadQueued) {
+                    requestUpload("onDemand", true, null);
+                }
+                return;
             }
-            return;
+        }
+        if (!GltfFeatureFlags.renderSchedulingOpt()) {
+            AtomicShaderCompat.rebindFillAndGunPbr();
         }
         boolean atomicGlow = ObjModelRenderer.glowTxtureMode
             && AtomicShaderCompat.prepareGlowMapEmissive(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);

@@ -174,7 +174,8 @@ public final class AtomicShaderCompat {
         if (albedo == null || !isGBufferFillActive() || isShadowDepthActive()) {
             return;
         }
-        if (albedo.equals(currentFillAlbedo) && AtomicGBufferCompat.isFillProgramBound()) {
+        if (mchhui.hegltf.GltfFeatureFlags.renderSchedulingOpt()
+                && albedo.equals(currentFillAlbedo) && AtomicGBufferCompat.isFillProgramBound()) {
             return;
         }
         currentFillAlbedo = albedo;
