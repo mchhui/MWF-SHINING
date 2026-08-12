@@ -84,10 +84,45 @@ public final class AtomicShaderCompat {
         return isShadowDepthActive();
     }
 
+    /**
+     * Bind vanilla lightmap on TEX1 and restamp {@code gl_MultiTexCoord1}.
+     * <p>
+     * Must run <b>before</b> the final TEX0 albedo bind. {@code enableLightmap} can steal TEX0
+     * when GlStateManager active-texture is desynced — callers must bind gun/skin albedo after.
+     * Do not call this after {@link #rebindFillAndGunPbr} returns.
+     */
+    public static void ensureFillLightmapState() {
+        if (!isGBufferFillActive() || isShadowDepthActive()) {
+            return;
+        }
+        // Sync GM ↔ GL before enableLightmap so the lightmap atlas cannot land on TEX0.
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc != null && mc.entityRenderer != null) {
+            try {
+                mc.entityRenderer.enableLightmap();
+            } catch (Throwable ignored) {
+            }
+        }
+        OpenGlHelper.setLightmapTextureCoords(
+                OpenGlHelper.lightmapTexUnit,
+                OpenGlHelper.lastBrightnessX,
+                OpenGlHelper.lastBrightnessY);
+        // Keep TEX0 UV matrix identity (lightmap scale belongs on TEX1 only).
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.matrixMode(GL11.GL_TEXTURE);
+        GlStateManager.loadIdentity();
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
+    }
+
     public static void rebindFillIfActive() {
         if (!isPipelineEnabled()) {
             return;
         }
+        // Capture rebind only — lightmap+albedo ordering is owned by rebindFillAndGunPbr /
+        // HandDeferredPass (enableLightmap must not run after TEX0 albedo is set).
         AtomicGBufferCompat.rebindFillIfActive();
     }
 
@@ -205,6 +240,11 @@ public final class AtomicShaderCompat {
             markFillCaptureDirty();
         }
         rebindAtomicCaptureIfActive();
+        // After PBR unit hops: bind lightmap on TEX1 + stamp MultiTexCoord1, then TEX0 albedo.
+        // Never enableLightmap after the albedo bind below.
+        if (isGBufferFillActive()) {
+            ensureFillLightmapState();
+        }
         TextureSamplingRegistry.restoreDefaultTexUnit();
         if (currentFillAlbedo != null && isGBufferFillActive() && !isShadowDepthActive()) {
             Minecraft.getMinecraft().getTextureManager().bindTexture(currentFillAlbedo);

@@ -54,26 +54,37 @@ public final class TextureSamplingRegistry {
 
     /**
      * Bind albedo on TEX0 (without TextureManager mixin re-entry) and restore registered filter.
+     * <p>
+     * Unregistered locations (vanilla player skin, default Steve/Alex, etc.) always get
+     * {@code NEAREST}. Gun skins may register {@code LINEAR}; that filter is sticky on the GL
+     * texture object — if a prior active-texture desync applied it to the player skin id,
+     * arms stay blurry until we force NEAREST here on every skin bind/rebind.
      */
     public static void restoreAlbedoSampling(ResourceLocation albedo) {
         if (albedo == null) {
-            OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
+            GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
             return;
         }
-        OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
         ITextureObject tex = Minecraft.getMinecraft().getTextureManager().getTexture(albedo);
         if (tex != null) {
             GlStateManager.bindTexture(tex.getGlTextureId());
-            Boolean linear = LINEAR.get(albedo);
-            if (linear != null) {
-                applyBoundFilter(linear);
-            }
+            applyBoundFilter(Boolean.TRUE.equals(LINEAR.get(albedo)));
         }
     }
 
     /** Force TEX0 active so later vanilla/Atomic binds do not hit TEX2–TEX5. */
     public static void restoreDefaultTexUnit() {
-        OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+    }
+
+    /**
+     * Vanilla entity/player skins: pixel art, never linear. Call after any path that may have
+     * left {@code GL_LINEAR} on the skin texture object.
+     */
+    public static void forceNearestOnBoundTex0() {
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        applyBoundFilter(false);
     }
 
     /**

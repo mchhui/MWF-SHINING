@@ -78,6 +78,17 @@ public class DataMesh {
         }
     }
 
+    /**
+     * Unbind any batched mesh VAO so subsequent client-state scrub (lightmap TEXCOORD)
+     * cannot permanently mutate mesh UV enables. Next {@link #bindBatchVao} will rebind.
+     */
+    public static void unbindForClientStateScrub() {
+        if (batchBoundVao > 0 || !batchActive) {
+            GL30.glBindVertexArray(0);
+        }
+        batchBoundVao = -1;
+    }
+
     private static void bindBatchVao(int vao) {
         if (batchActive) {
             if (batchBoundVao != vao) {
@@ -176,6 +187,8 @@ public class DataMesh {
         // Scheduling opt used to skip this; non-skinned guns then missed g_buffer_fill /
         // lightmap writes (no colored-field) while skinned guns were rescued by skinFromPose.
         if (AtomicShaderCompat.isGBufferFillActive() || AtomicShaderCompat.isShadowDepthActive()) {
+            // rebindFillAndGunPbr stamps lightmap then binds gun albedo last — do not call
+            // ensureFillLightmapState/enableLightmap after this or TEX0 becomes the lightmap atlas.
             AtomicShaderCompat.rebindFillAndGunPbr();
         } else if (!GltfFeatureFlags.renderSchedulingOpt()) {
             AtomicShaderCompat.rebindFillAndGunPbr();
@@ -241,11 +254,12 @@ public class DataMesh {
 
         if (this.unit == 3) {
             final List<Float> list = this.geoList;
-            this.vertexCount = list.size() / this.unit;
+            // unit==3 is a rigid-mesh type tag; each vertex is 8 floats (pos3+uv2+n3).
+            this.vertexCount = list.size() / 8;
 
-            FloatBuffer pos_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 3);
-            FloatBuffer tex_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 2);
-            FloatBuffer normal_floatBuffer = BufferUtils.createFloatBuffer(vertexCount * 3);
+            FloatBuffer pos_floatBuffer = BufferUtils.createFloatBuffer(Math.max(vertexCount, 1) * 3);
+            FloatBuffer tex_floatBuffer = BufferUtils.createFloatBuffer(Math.max(vertexCount, 1) * 2);
+            FloatBuffer normal_floatBuffer = BufferUtils.createFloatBuffer(Math.max(vertexCount, 1) * 3);
 
             for (int i = 0, size = list.size(); i + 8 <= size; i += 8) {
                 pos_floatBuffer.put(list.get(i));
@@ -261,6 +275,9 @@ public class DataMesh {
             tex_floatBuffer.flip();
             normal_floatBuffer.flip();
 
+            // TexCoordPointer is per client-active unit. Must be TEX0 — if lightmap unit is
+            // active, mesh UVs are baked into MultiTexCoord1 and fill MRT3 block light dies.
+            OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
             GL30.glBindVertexArray(this.displayList);
             GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
             GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
@@ -333,6 +350,7 @@ public class DataMesh {
             uploadBufferSliced(GL43.GL_SHADER_STORAGE_BUFFER, this.ssbo, this.geoBuffer, partSize);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
 
+            OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
             GL30.glBindVertexArray(this.ssboVao);
             GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
             GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
@@ -429,6 +447,7 @@ public class DataMesh {
             }
             bindBatchVao(this.ssboVao);
             batchTouchedSkinDraw = true;
+            restampLightmapCoordsAfterVao();
             GL11.glDrawElements(this.glDrawingMode, this.elementCount, GL11.GL_UNSIGNED_INT, 0);
             unbindBatchVao();
             if (!batchActive) {
@@ -436,9 +455,22 @@ public class DataMesh {
             }
         } else {
             bindBatchVao(this.displayList);
+            // Rigid VAOs do not supply MultiTexCoord1 — restamp brightness after bind (no
+            // enableLightmap / no DisableClientState — those break TEX0 albedo).
+            restampLightmapCoordsAfterVao();
             GL11.glDrawArrays(this.glDrawingMode, 0, this.vertexCount);
             unbindBatchVao();
         }
+    }
+
+    private static void restampLightmapCoordsAfterVao() {
+        if (!AtomicShaderCompat.isGBufferFillActive() || AtomicShaderCompat.isShadowDepthActive()) {
+            return;
+        }
+        OpenGlHelper.setLightmapTextureCoords(
+                OpenGlHelper.lightmapTexUnit,
+                OpenGlHelper.lastBrightnessX,
+                OpenGlHelper.lastBrightnessY);
     }
 
     public void delete() {
