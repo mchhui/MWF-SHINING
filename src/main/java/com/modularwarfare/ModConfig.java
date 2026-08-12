@@ -67,6 +67,12 @@ public class ModConfig {
         public boolean gunSmokeCorrectForIterationT=false;
         public boolean gunFlashEffect=true;
         public int shellEffectCapacity=64;
+        public Float aimBodySettleSeconds = 0.5f;
+        /**
+         * Under ShoulderSurfing aim: if yellow-ray vs camera yaw/pitch exceeds this
+         * (degrees), also turn the body toward the yellow ray. Null → 20.
+         */
+        public Float aimShoulderBodyCorrectDegrees = 20f;
     }
 
     //shots

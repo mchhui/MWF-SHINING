@@ -23,6 +23,7 @@ import com.modularwarfare.client.compat.AtomicShaderCompat;
 import com.modularwarfare.client.flashlight.FlashlightRenderManager;
 import com.modularwarfare.client.model.ModelCustomArmor;
 import com.modularwarfare.client.scope.ScopeUtils;
+import com.modularwarfare.client.view.ShoulderAimCorrect;
 import com.modularwarfare.common.armor.ArmorType;
 import com.modularwarfare.common.armor.ItemMWArmor;
 import com.modularwarfare.common.armor.ItemSpecialArmor;
@@ -72,6 +73,7 @@ import org.lwjgl.util.glu.Project;
 
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.UUID;
 
 @SideOnly(Side.CLIENT)
 public class ClientRenderHooks {
@@ -95,6 +97,19 @@ public class ClientRenderHooks {
     public static final ResourceLocation grenade_smoke = new ResourceLocation("modularwarfare", "textures/particles/smoke.png");
     public static final ResourceLocation grenade_smoke_model = null;
 
+    private static final HashMap<UUID, SmoothAimPose> aimSmooth = new HashMap<UUID, SmoothAimPose>();
+    private static final HashMap<UUID, float[]> aimPitchBackup = new HashMap<UUID, float[]>();
+    private static long aimBodyLastNs;
+    private static float aimBodyFrameDt = 1f / 60f;
+    private static long aimSmoothRenderStamp;
+
+    private static final class SmoothAimPose {
+        float lookYaw;
+        float lookPitch;
+        float bodyYaw;
+        boolean init;
+        long steppedStamp;
+    }
 
     public ClientRenderHooks() {
         mc = Minecraft.getMinecraft();
@@ -139,6 +154,18 @@ public class ClientRenderHooks {
     void renderTick(TickEvent.RenderTickEvent event) {
         switch (event.phase) {
             case START: {
+                long now = System.nanoTime();
+                if (aimBodyLastNs != 0L) {
+                    float dt = (now - aimBodyLastNs) * 1.0e-9f;
+                    if (dt < 0.001f) {
+                        dt = 0.001f;
+                    } else if (dt > 0.05f) {
+                        dt = 0.05f;
+                    }
+                    aimBodyFrameDt = dt;
+                }
+                aimBodyLastNs = now;
+                aimSmoothRenderStamp++;
                 RenderParameters.smoothing = event.renderTickTime;
                 SetPartialTick(event.renderTickTime);
                 if(!Minecraft.getMinecraft().getFramebuffer().isStencilEnabled()) {
@@ -180,14 +207,136 @@ public class ClientRenderHooks {
             }
         }
     }
-    
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    void onRender(RenderPlayerEvent.Pre event) {
-        boolean aim = isThirdPersonAiming(event.getEntityPlayer().getUniqueID());
-        if (!aim) {
+
+    @SubscribeEvent
+    void onClientTickAimBody(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
             return;
         }
-        event.getEntityPlayer().renderYawOffset=interpolateRotation(event.getEntityPlayer().renderYawOffset,event.getEntityPlayer().rotationYaw,0.1f);
+        if (mc.world == null) {
+            return;
+        }
+        for (EntityPlayer player : mc.world.playerEntities) {
+            UUID id = player.getUniqueID();
+            if (!isThirdPersonAiming(id)) {
+                aimSmooth.remove(id);
+                aimPitchBackup.remove(id);
+                continue;
+            }
+            SmoothAimPose state = aimSmooth.get(id);
+            if (state == null || !state.init) {
+                stepAimPose(player, 1f, 1f / 20f);
+                state = aimSmooth.get(id);
+            }
+            if (state == null) {
+                continue;
+            }
+            player.prevRenderYawOffset = state.bodyYaw;
+            player.renderYawOffset = state.bodyYaw;
+            player.prevRotationYawHead = state.lookYaw;
+            player.rotationYawHead = state.lookYaw;
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    void onRender(RenderPlayerEvent.Pre event) {
+        EntityPlayer player = event.getEntityPlayer();
+        UUID id = player.getUniqueID();
+        if (!isThirdPersonAiming(id)) {
+            aimSmooth.remove(id);
+            return;
+        }
+        float partialTicks = event.getPartialRenderTick();
+        ShoulderAimCorrect.AimLook smoothed = stepAimPose(player, partialTicks, aimBodyFrameDt);
+        player.prevRenderYawOffset = smoothed.bodyYaw;
+        player.renderYawOffset = smoothed.bodyYaw;
+        // Head (+ ModelBiped BOW arms) follow eased look; pitch restored in Post.
+        aimPitchBackup.put(id, new float[] { player.prevRotationPitch, player.rotationPitch });
+        player.prevRotationPitch = smoothed.lookPitch;
+        player.rotationPitch = smoothed.lookPitch;
+        player.prevRotationYawHead = smoothed.lookYaw;
+        player.rotationYawHead = smoothed.lookYaw;
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    void onRenderAimPoseRestore(RenderPlayerEvent.Post event) {
+        UUID id = event.getEntityPlayer().getUniqueID();
+        float[] backup = aimPitchBackup.remove(id);
+        if (backup == null) {
+            return;
+        }
+        EntityPlayer player = event.getEntityPlayer();
+        player.prevRotationPitch = backup[0];
+        player.rotationPitch = backup[1];
+    }
+
+    /**
+     * Eased look for ELM aim-bone SET (same state as vanilla TP aim pose).
+     */
+    public static ShoulderAimCorrect.AimLook getAimLook(EntityPlayer player, float partialTicks) {
+        UUID id = player.getUniqueID();
+        SmoothAimPose state = aimSmooth.get(id);
+        if (state != null && state.init && state.steppedStamp == aimSmoothRenderStamp) {
+            return new ShoulderAimCorrect.AimLook(state.lookYaw, state.lookPitch, state.bodyYaw, true);
+        }
+        return stepAimPose(player, partialTicks, aimBodyFrameDt);
+    }
+
+    /**
+     * Ease-out toward instant target: {@code aimBodySettleSeconds} ≈ time to close ~95%
+     * (fast then slow). {@code 0} snaps.
+     */
+    private static ShoulderAimCorrect.AimLook stepAimPose(EntityPlayer player, float partialTicks, float dtSeconds) {
+        ShoulderAimCorrect.AimLook target = ShoulderAimCorrect.resolve(player, partialTicks);
+        UUID id = player.getUniqueID();
+        SmoothAimPose state = aimSmooth.get(id);
+        if (state == null) {
+            state = new SmoothAimPose();
+            aimSmooth.put(id, state);
+        }
+        float settle = aimBodySettleSeconds();
+        if (!state.init || settle <= 1e-4f) {
+            state.lookYaw = target.lookYaw;
+            state.lookPitch = target.lookPitch;
+            state.bodyYaw = target.bodyYaw;
+            state.init = true;
+            state.steppedStamp = aimSmoothRenderStamp;
+            return new ShoulderAimCorrect.AimLook(state.lookYaw, state.lookPitch, state.bodyYaw,
+                target.bodyFollowsLook);
+        }
+        float dt = dtSeconds;
+        if (dt < 0.001f) {
+            dt = 0.001f;
+        } else if (dt > 0.05f) {
+            dt = 0.05f;
+        }
+        // alpha = 1 - exp(-3*dt/settle) → ~95% of remaining gap closed after `settle` seconds.
+        float alpha = 1f - (float) Math.exp(-3.0 * dt / settle);
+        if (alpha < 0f) {
+            alpha = 0f;
+        } else if (alpha > 1f) {
+            alpha = 1f;
+        }
+        state.lookYaw = state.lookYaw + MathHelper.wrapDegrees(target.lookYaw - state.lookYaw) * alpha;
+        state.bodyYaw = state.bodyYaw + MathHelper.wrapDegrees(target.bodyYaw - state.bodyYaw) * alpha;
+        float pitchDelta = target.lookPitch - state.lookPitch;
+        state.lookPitch = state.lookPitch + pitchDelta * alpha;
+        if (state.lookPitch < -90f) {
+            state.lookPitch = -90f;
+        } else if (state.lookPitch > 90f) {
+            state.lookPitch = 90f;
+        }
+        state.steppedStamp = aimSmoothRenderStamp;
+        return new ShoulderAimCorrect.AimLook(state.lookYaw, state.lookPitch, state.bodyYaw,
+            target.bodyFollowsLook);
+    }
+
+    private static float aimBodySettleSeconds() {
+        if (ModConfig.INSTANCE != null && ModConfig.INSTANCE.client != null
+            && ModConfig.INSTANCE.client.aimBodySettleSeconds != null) {
+            return ModConfig.INSTANCE.client.aimBodySettleSeconds.floatValue();
+        }
+        return 0.5f;
     }
 
     @SubscribeEvent
@@ -878,23 +1027,49 @@ public class ClientRenderHooks {
         if (AnimationUtils.isAiming.containsKey(playerId)) {
             return true;
         }
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc.player != null && mc.player.getUniqueID().equals(playerId)) {
-            ItemStack held = mc.player.getHeldItemMainhand();
-            if (held.getItem() instanceof ItemGun) {
-                ItemGun gun = (ItemGun) held.getItem();
-                if (GunType.getAttachment(held, AttachmentPresetEnum.Laser) != null && gun.getLaserEnabled(held)) {
-                    return true;
-                }
-                if (GunType.getAttachment(held, AttachmentPresetEnum.Flashlight) != null && gun.getFlashlightEnabled(held)) {
-                    return true;
-                }
-            }
+        EntityPlayer player = resolveClientPlayer(playerId);
+        if (player != null && isLaserOrFlashlightEnabledOnHeldGun(player.getHeldItemMainhand())) {
+            return true;
         }
         if (LaserRenderManager.getInstance().getLaserState(playerId)) {
             return true;
         }
         return FlashlightRenderManager.getInstance().getFlashlightState(playerId);
+    }
+
+    /** Local or world-tracked player by UUID (client thread). */
+    private static EntityPlayer resolveClientPlayer(java.util.UUID playerId) {
+        Minecraft mc = Minecraft.getMinecraft();
+        if (mc == null) {
+            return null;
+        }
+        if (mc.player != null && mc.player.getUniqueID().equals(playerId)) {
+            return mc.player;
+        }
+        if (mc.world != null) {
+            for (EntityPlayer p : mc.world.playerEntities) {
+                if (p != null && playerId.equals(p.getUniqueID())) {
+                    return p;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Gun NBT laser/flashlight flags when the matching attachment is present. */
+    private static boolean isLaserOrFlashlightEnabledOnHeldGun(ItemStack held) {
+        if (held == null || held.isEmpty() || !(held.getItem() instanceof ItemGun)) {
+            return false;
+        }
+        ItemGun gun = (ItemGun) held.getItem();
+        if (GunType.getAttachment(held, AttachmentPresetEnum.Laser) != null && gun.getLaserEnabled(held)) {
+            return true;
+        }
+        if (GunType.getAttachment(held, AttachmentPresetEnum.Flashlight) != null
+                && gun.getFlashlightEnabled(held)) {
+            return true;
+        }
+        return false;
     }
 
 }

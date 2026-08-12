@@ -407,13 +407,22 @@ public final class AtomicShaderCompat {
 
     /**
      * Resolve {@code skins/<type>/<file>_glow.png} GL id without leaving it on TEX0.
-     * Does <b>not</b> eager-load missing glows (avoids SimpleTexture side effects / filter leaks).
+     * Loads the texture on first use when the resource exists (preload may have skipped GLOW).
      */
     public static int resolveGlowGlTextureId(String type, String fileName) {
         ResourceLocation loc = new ResourceLocation(com.modularwarfare.ModularWarfare.MOD_ID,
                 String.format("skins/%s/%s_glow.png", type, fileName));
         Minecraft mc = Minecraft.getMinecraft();
         ITextureObject tex = mc.getTextureManager().getTexture(loc);
+        if (tex == null || tex == TextureUtil.MISSING_TEXTURE) {
+            try {
+                mc.getResourceManager().getResource(loc);
+                mc.getTextureManager().bindTexture(loc);
+                tex = mc.getTextureManager().getTexture(loc);
+            } catch (Throwable t) {
+                return 0;
+            }
+        }
         if (tex == null || tex == TextureUtil.MISSING_TEXTURE) {
             return 0;
         }

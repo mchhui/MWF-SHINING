@@ -38,7 +38,7 @@ public class FlashlightRenderManager {
         }
     }
 
-    /** 本地玩家以物品 NBT 为准；他人以同步 map 为准。 */
+    /** 本地玩家以物品 NBT 为准；他人优先持枪 NBT（装备同步），再回退同步 map。 */
     public boolean isFlashlightOnFor(UUID playerId) {
         EntityPlayerSP local = Minecraft.getMinecraft().player;
         if (local != null && local.getUniqueID().equals(playerId)) {
@@ -47,6 +47,18 @@ public class FlashlightRenderManager {
                 return ((ItemGun) held.getItem()).getFlashlightEnabled(held);
             }
             return false;
+        }
+        net.minecraft.client.Minecraft mc = Minecraft.getMinecraft();
+        if (mc.world != null) {
+            for (net.minecraft.entity.player.EntityPlayer p : mc.world.playerEntities) {
+                if (p != null && playerId.equals(p.getUniqueID())) {
+                    ItemStack held = p.getHeldItemMainhand();
+                    if (held.getItem() instanceof ItemGun) {
+                        return ((ItemGun) held.getItem()).getFlashlightEnabled(held);
+                    }
+                    break;
+                }
+            }
         }
         return getFlashlightState(playerId);
     }

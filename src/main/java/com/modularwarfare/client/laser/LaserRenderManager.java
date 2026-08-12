@@ -106,4 +106,28 @@ public class LaserRenderManager {
             setLaserState(playerId, laserEnabled);
         }
     }
+
+    /** 本地玩家以物品 NBT 为准；他人优先持枪 NBT，再回退同步 map。 */
+    public boolean isLaserOnFor(UUID playerId) {
+        EntityPlayerSP player = Minecraft.getMinecraft().player;
+        if (player != null && player.getUniqueID().equals(playerId)) {
+            ItemStack held = player.getHeldItemMainhand();
+            if (held.getItem() instanceof ItemGun) {
+                return ((ItemGun) held.getItem()).getLaserEnabled(held);
+            }
+            return false;
+        }
+        if (Minecraft.getMinecraft().world != null) {
+            for (net.minecraft.entity.player.EntityPlayer p : Minecraft.getMinecraft().world.playerEntities) {
+                if (p != null && playerId.equals(p.getUniqueID())) {
+                    ItemStack held = p.getHeldItemMainhand();
+                    if (held.getItem() instanceof ItemGun) {
+                        return ((ItemGun) held.getItem()).getLaserEnabled(held);
+                    }
+                    break;
+                }
+            }
+        }
+        return getLaserState(playerId);
+    }
 }

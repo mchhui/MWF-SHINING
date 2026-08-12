@@ -75,7 +75,7 @@ public class PacketAreaAttack extends PacketBase {
 								playerEntity.getHeldItemMainhand(), null);
 					}
 					
-					if (subject instanceof EntityLivingBase && hitAnimationName != null && !hitAnimationName.isEmpty() && !hitAnimationName.equals("none")) {
+					if (ModularWarfare.aniPlayer != null && subject instanceof EntityLivingBase && hitAnimationName != null && !hitAnimationName.isEmpty() && !hitAnimationName.equals("none")) {
 						ModularWarfare.aniPlayer.playAni(subject.getUniqueID(), hitAnimationName, 1);
 					}
 				}

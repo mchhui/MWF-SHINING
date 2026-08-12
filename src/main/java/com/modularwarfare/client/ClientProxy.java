@@ -415,8 +415,18 @@ public class ClientProxy extends CommonProxy {
                     albedo = resource;
                 }
             }
-            if (albedo != null && mchhui.hegltf.GltfFeatureFlags.renderSchedulingOpt()) {
+            if (albedo != null && com.modularwarfare.client.compat.AtomicShaderCompat.isAtomicLoaded()) {
+                // PBR warm must not depend on renderSchedulingOpt (default false) — otherwise
+                // first gun draw hitches on EntityPbrTextureCache ImageIO/decode.
                 com.modularwarfare.client.compat.AtomicShaderCompat.warmStandalonePbrMaps(albedo);
+                ResourceLocation glow = new ResourceLocation(ModularWarfare.MOD_ID,
+                        String.format("skins/%s/%s_glow.png", type.getAssetDir(), skin.getSkin()));
+                try {
+                    // Only bind when the resource exists — binding missing skins caches MISSING_TEXTURE.
+                    Minecraft.getMinecraft().getResourceManager().getResource(glow);
+                    Minecraft.getMinecraft().getTextureManager().bindTexture(glow);
+                } catch (Throwable ignored) {
+                }
             }
         });
         ModularWarfare.LOGGER.info(String.format("Preloaded %d skin textures (%dms)", preloadSkinTypes.size(), System.currentTimeMillis() - skinTime));
