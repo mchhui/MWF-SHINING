@@ -263,6 +263,12 @@ public class GltfRenderModel {
             return;
         }
         if (geoModel.joints.size() == 0) {
+            // Non-skinned meshes skip compute, but must still restore Atomic fill/shadow capture
+            // the same way skinned guns do — otherwise FillCaptureGuard may leave a stolen
+            // program and held lighting / colored-field sampling diverges from skinned guns.
+            if (AtomicShaderCompat.isGBufferFillActive() || AtomicShaderCompat.isShadowDepthActive()) {
+                restoreProgramAfterSkinCompute();
+            }
             return;
         }
         uploadAllJointTransform();
@@ -270,15 +276,19 @@ public class GltfRenderModel {
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING,
             jointMatsBufferId);
 
+        // Must use try/finally: if skinNode throws, RASTERIZER_DISCARD left enabled makes
+        // every later mesh (HE WorldObject in the same ENTITIES pass) draw nothing.
         GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
-        for (Entry<String, DataNode> e : geoModel.rootNodes.entrySet()) {
-            skinNodeAndChildren(e.getValue(), null, null);
+        try {
+            for (Entry<String, DataNode> e : geoModel.rootNodes.entrySet()) {
+                skinNodeAndChildren(e.getValue(), null, null);
+            }
+        } finally {
+            GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
+            GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
+            restoreProgramAfterSkinCompute();
         }
-        GL11.glDisable(GL30.GL_RASTERIZER_DISCARD);
-
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING, 0);
-        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, 0);
-        restoreProgramAfterSkinCompute();
     }
     
     public boolean loadAnimation(GltfRenderModel other,boolean skin) {
@@ -326,9 +336,8 @@ public class GltfRenderModel {
             return;
         }
         if (AtomicShaderCompat.isGBufferFillActive()) {
-            if (GltfFeatureFlags.renderSchedulingOpt()) {
-                AtomicShaderCompat.markFillCaptureDirty();
-            }
+            // Always dirty — FillCaptureGuard may still think fill is clean after raw GL20 steals.
+            AtomicShaderCompat.markFillCaptureDirty();
             AtomicShaderCompat.rebindFillIfActive();
             return;
         }

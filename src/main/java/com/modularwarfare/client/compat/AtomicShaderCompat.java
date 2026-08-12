@@ -199,6 +199,11 @@ public final class AtomicShaderCompat {
         if (!isGBufferFillActive() && !isShadowDepthActive()) {
             return;
         }
+        // Always dirty: peers may steal program via raw GL20 without FillCaptureGuard noticing.
+        // Skinned guns already mark dirty in skinFromPose; non-skinned must match that path.
+        if (isGBufferFillActive()) {
+            markFillCaptureDirty();
+        }
         rebindAtomicCaptureIfActive();
         TextureSamplingRegistry.restoreDefaultTexUnit();
         if (currentFillAlbedo != null && isGBufferFillActive() && !isShadowDepthActive()) {

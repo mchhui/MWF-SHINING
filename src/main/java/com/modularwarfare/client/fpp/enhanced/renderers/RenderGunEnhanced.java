@@ -2694,6 +2694,16 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (bindingTexture != null) {
             TextureSamplingRegistry.restoreAlbedoSampling(bindingTexture);
         }
+        // TP skinned guns leave gun albedo / emissive / discard residue that breaks HE WorldObject
+        // draws later in the same ENTITIES ExternalDraw pass — scrub before returning.
+        if (atomicFill) {
+            AtomicShaderCompat.clearEmissive();
+            AtomicShaderCompat.clearCurrentFillAlbedo();
+            AtomicShaderCompat.markFillCaptureDirty();
+            AtomicShaderCompat.rebindFillIfActive();
+            org.lwjgl.opengl.GL11.glDisable(org.lwjgl.opengl.GL30.GL_RASTERIZER_DISCARD);
+            org.lwjgl.opengl.GL30.glBindVertexArray(0);
+        }
     }
 
     /** Write scope glass into depth; {@code mask} also writes color. */

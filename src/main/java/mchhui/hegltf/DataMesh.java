@@ -172,7 +172,12 @@ public class DataMesh {
                 return;
             }
         }
-        if (!GltfFeatureFlags.renderSchedulingOpt()) {
+        // Keep fill/shadow capture in sync for skinned and non-skinned meshes alike.
+        // Scheduling opt used to skip this; non-skinned guns then missed g_buffer_fill /
+        // lightmap writes (no colored-field) while skinned guns were rescued by skinFromPose.
+        if (AtomicShaderCompat.isGBufferFillActive() || AtomicShaderCompat.isShadowDepthActive()) {
+            AtomicShaderCompat.rebindFillAndGunPbr();
+        } else if (!GltfFeatureFlags.renderSchedulingOpt()) {
             AtomicShaderCompat.rebindFillAndGunPbr();
         }
         boolean atomicGlow = ObjModelRenderer.glowTxtureMode
