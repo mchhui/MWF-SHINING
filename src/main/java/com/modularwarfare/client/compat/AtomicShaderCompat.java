@@ -28,7 +28,13 @@ public final class AtomicShaderCompat {
 
     private static ResourceLocation currentFillAlbedo;
 
+    private static final java.util.HashMap<String, Integer> GLOW_GL_ID_CACHE = new java.util.HashMap<>();
+
     private AtomicShaderCompat() {
+    }
+
+    public static void clearGlowMapCache() {
+        GLOW_GL_ID_CACHE.clear();
     }
 
     public static boolean isAtomicLoaded() {
@@ -407,9 +413,17 @@ public final class AtomicShaderCompat {
 
     /**
      * Resolve {@code skins/<type>/<file>_glow.png} GL id without leaving it on TEX0.
-     * Loads the texture on first use when the resource exists (preload may have skipped GLOW).
+     * Returns {@code 0} if absent.
      */
     public static int resolveGlowGlTextureId(String type, String fileName) {
+        if (type == null || fileName == null) {
+            return 0;
+        }
+        String cacheKey = type + "/" + fileName;
+        Integer cached = GLOW_GL_ID_CACHE.get(cacheKey);
+        if (cached != null) {
+            return cached.intValue();
+        }
         ResourceLocation loc = new ResourceLocation(com.modularwarfare.ModularWarfare.MOD_ID,
                 String.format("skins/%s/%s_glow.png", type, fileName));
         Minecraft mc = Minecraft.getMinecraft();
@@ -420,17 +434,21 @@ public final class AtomicShaderCompat {
                 mc.getTextureManager().bindTexture(loc);
                 tex = mc.getTextureManager().getTexture(loc);
             } catch (Throwable t) {
+                GLOW_GL_ID_CACHE.put(cacheKey, Integer.valueOf(0));
                 return 0;
             }
         }
         if (tex == null || tex == TextureUtil.MISSING_TEXTURE) {
+            GLOW_GL_ID_CACHE.put(cacheKey, Integer.valueOf(0));
             return 0;
         }
         try {
             if (tex.getGlTextureId() == TextureUtil.MISSING_TEXTURE.getGlTextureId()) {
+                GLOW_GL_ID_CACHE.put(cacheKey, Integer.valueOf(0));
                 return 0;
             }
         } catch (Throwable t) {
+            GLOW_GL_ID_CACHE.put(cacheKey, Integer.valueOf(0));
             return 0;
         }
         int prevActive = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
@@ -442,8 +460,11 @@ public final class AtomicShaderCompat {
             GlStateManager.setActiveTexture(GL13.GL_TEXTURE5);
             prevTex5 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
             GlStateManager.bindTexture(tex.getGlTextureId());
-            return tex.getGlTextureId();
+            int id = tex.getGlTextureId();
+            GLOW_GL_ID_CACHE.put(cacheKey, Integer.valueOf(id));
+            return id;
         } catch (Throwable t) {
+            GLOW_GL_ID_CACHE.put(cacheKey, Integer.valueOf(0));
             return 0;
         } finally {
             try {

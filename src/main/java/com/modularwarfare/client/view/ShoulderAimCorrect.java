@@ -28,12 +28,20 @@ import java.util.List;
  * Screen crosshair stays on the camera ray (red). Player model should look along the
  * yellow ray: eyes → camera-ray hit. This is NOT fire/trail ballistic correction
  * ({@code GunKickManager} keeps its own path).
+ * <p>
+ * While riding, the lower body stays on the mount yaw; look / upper-body twist is
+ * clamped so the model does not fully disconnect.
  */
 @SideOnly(Side.CLIENT)
 public final class ShoulderAimCorrect {
 
     private static final double RAY_RANGE = 128.0D;
     private static final float DEFAULT_BODY_CORRECT_DEG = 20f;
+    /**
+     * Match MrCrayfish Vehicle {@code EntityVehicle.applyYawToEntity} (±120).
+     * A tighter value here makes the model turn less than the camera FOV.
+     */
+    private static final float DEFAULT_RIDE_UPPER_MAX_DEG = 120f;
 
     private ShoulderAimCorrect() {}
 
@@ -41,15 +49,29 @@ public final class ShoulderAimCorrect {
         /** Yaw/pitch the head / aim-bone should face (yellow ray). */
         public final float lookYaw;
         public final float lookPitch;
-        /** Body yaw target: yellow when correction is large, else camera yaw (green). */
+        /**
+         * Lower-body yaw written to {@code renderYawOffset}.
+         * On foot: yellow or camera. Riding: mount yaw (legs stay with the vehicle).
+         */
         public final float bodyYaw;
         public final boolean bodyFollowsLook;
+        /**
+         * Upper-body yaw twist relative to {@link #bodyYaw} (degrees), for vanilla
+         * {@code ModelBiped.bipedBody}. Zero when not riding / no twist needed.
+         */
+        public final float upperBodyTwistDeg;
 
         public AimLook(float lookYaw, float lookPitch, float bodyYaw, boolean bodyFollowsLook) {
+            this(lookYaw, lookPitch, bodyYaw, bodyFollowsLook, 0f);
+        }
+
+        public AimLook(float lookYaw, float lookPitch, float bodyYaw, boolean bodyFollowsLook,
+                float upperBodyTwistDeg) {
             this.lookYaw = lookYaw;
             this.lookPitch = lookPitch;
             this.bodyYaw = bodyYaw;
             this.bodyFollowsLook = bodyFollowsLook;
+            this.upperBodyTwistDeg = upperBodyTwistDeg;
         }
     }
 
@@ -66,16 +88,16 @@ public final class ShoulderAimCorrect {
         } else {
             camYaw = lerp(player.prevRotationYawHead, player.rotationYawHead, partialTicks);
             camPitch = lerp(player.prevRotationPitch, player.rotationPitch, partialTicks);
-            return new AimLook(camYaw, camPitch, camYaw, true);
+            return applyRideClamp(player, partialTicks, camYaw, camPitch, camYaw, true);
         }
 
         if (!isShoulderSurfingActive()) {
-            return new AimLook(camYaw, camPitch, camYaw, true);
+            return applyRideClamp(player, partialTicks, camYaw, camPitch, camYaw, true);
         }
 
         Vec3d hit = crosshairHit(partialTicks);
         if (hit == null) {
-            return new AimLook(camYaw, camPitch, camYaw, true);
+            return applyRideClamp(player, partialTicks, camYaw, camPitch, camYaw, true);
         }
         Vec3d eye = player.getPositionEyes(partialTicks);
         double dx = hit.x - eye.x;
@@ -83,7 +105,7 @@ public final class ShoulderAimCorrect {
         double dz = hit.z - eye.z;
         double horiz = Math.sqrt(dx * dx + dz * dz);
         if (horiz < 1.0E-6D && Math.abs(dy) < 1.0E-6D) {
-            return new AimLook(camYaw, camPitch, camYaw, true);
+            return applyRideClamp(player, partialTicks, camYaw, camPitch, camYaw, true);
         }
 
         float lookPitch = (float) -Math.toDegrees(Math.atan2(dy, Math.max(horiz, 1.0E-6D)));
@@ -94,7 +116,27 @@ public final class ShoulderAimCorrect {
         float correctDeg = bodyCorrectDegrees();
         boolean bodyFollows = yawDelta >= correctDeg || pitchDelta >= correctDeg;
         float bodyYaw = bodyFollows ? lookYaw : camYaw;
-        return new AimLook(lookYaw, lookPitch, bodyYaw, bodyFollows);
+        return applyRideClamp(player, partialTicks, lookYaw, lookPitch, bodyYaw, bodyFollows);
+    }
+
+    /**
+     * Riding: lock lower body to seat/mount facing; clamp look + upper twist to the same limit.
+     * Prefer the passenger {@code renderYawOffset} already written by the mount (Vehicle uses
+     * {@code getModifiedRotationYaw()+seatYawOffset}) so our cap shares the same zero point as
+     * the camera clamp (±120 on Vehicle).
+     */
+    private static AimLook applyRideClamp(EntityPlayer player, float partialTicks,
+            float lookYaw, float lookPitch, float bodyYaw, boolean bodyFollows) {
+        Entity mount = player.getRidingEntity();
+        if (mount == null) {
+            return new AimLook(lookYaw, lookPitch, bodyYaw, bodyFollows, 0f);
+        }
+        float mountYaw = lerp(player.prevRenderYawOffset, player.renderYawOffset, partialTicks);
+        float maxTwist = rideUpperBodyMaxDegrees();
+        float twist = MathHelper.clamp(MathHelper.wrapDegrees(lookYaw - mountYaw), -maxTwist, maxTwist);
+        float clampedLookYaw = mountYaw + twist;
+        // Legs / ELM root stay on seat facing — do not swing the whole body toward movement or aim.
+        return new AimLook(clampedLookYaw, lookPitch, mountYaw, false, twist);
     }
 
     public static boolean isShoulderSurfingActive() {
@@ -114,6 +156,14 @@ public final class ShoulderAimCorrect {
             return ModConfig.INSTANCE.client.aimShoulderBodyCorrectDegrees.floatValue();
         }
         return DEFAULT_BODY_CORRECT_DEG;
+    }
+
+    private static float rideUpperBodyMaxDegrees() {
+        if (ModConfig.INSTANCE != null && ModConfig.INSTANCE.client != null
+            && ModConfig.INSTANCE.client.aimRideUpperBodyMaxDegrees != null) {
+            return ModConfig.INSTANCE.client.aimRideUpperBodyMaxDegrees.floatValue();
+        }
+        return DEFAULT_RIDE_UPPER_MAX_DEG;
     }
 
     private static float lerp(float prev, float next, float pt) {

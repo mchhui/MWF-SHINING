@@ -1889,6 +1889,11 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (bindingTexture != null) {
             com.modularwarfare.client.compat.TextureSamplingRegistry.restoreAlbedoSampling(bindingTexture);
         }
+        // Lightmap setup can leave a 1/256 scale on TEX0 when GlStateManager desyncs; clear it
+        // so the next frame's world glTF (vehicles) does not sample with a poisoned UV matrix.
+        GlStateManager.matrixMode(GL11.GL_TEXTURE);
+        GlStateManager.loadIdentity();
+        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
 
         if (type == CustomItemRenderType.EQUIPPED_FIRST_PERSON
                 && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0) {

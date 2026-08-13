@@ -47,6 +47,7 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.model.ModelBiped;
 import net.minecraft.client.model.ModelBiped.ArmPose;
 import net.minecraft.client.model.ModelPlayer;
+import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderPlayer;
@@ -107,6 +108,7 @@ public class ClientRenderHooks {
         float lookYaw;
         float lookPitch;
         float bodyYaw;
+        float upperBodyTwistDeg;
         boolean init;
         long steppedStamp;
     }
@@ -256,18 +258,138 @@ public class ClientRenderHooks {
         player.rotationPitch = smoothed.lookPitch;
         player.prevRotationYawHead = smoothed.lookYaw;
         player.rotationYawHead = smoothed.lookYaw;
+        // Non-ELM torso twist is applied in MixinModelBiped after setRotationAngles
+        // (Pre is overwritten by vanilla angles every frame).
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     void onRenderAimPoseRestore(RenderPlayerEvent.Post event) {
         UUID id = event.getEntityPlayer().getUniqueID();
         float[] backup = aimPitchBackup.remove(id);
-        if (backup == null) {
+        if (backup != null) {
+            EntityPlayer player = event.getEntityPlayer();
+            player.prevRotationPitch = backup[0];
+            player.rotationPitch = backup[1];
+        }
+    }
+
+    /**
+     * Non-ELM ride aim: upper body turns as one unit toward look.
+     * <p>
+     * Arms are siblings of {@code bipedBody} (own shoulder pivots). Orbit those pivots
+     * around the body by {@code twist}, and set arm yaw to {@code twist + BOW local}.
+     * (Pivot orbit alone does not apply body yaw to arm facing — ModelRenderer has no parent matrix.)
+     * <p>
+     * Earlier ~2× spin was orbit + Vehicle handlebar entity-local angles; this runs
+     * <b>after</b> Vehicle {@code applyPlayerModel} / BOW restore so both stay in sync.
+     */
+    public static void applyRideUpperBodyTwist(ModelBiped biped, Entity entityIn) {
+        if (biped == null || !(entityIn instanceof EntityPlayer)) {
             return;
         }
-        EntityPlayer player = event.getEntityPlayer();
-        player.prevRotationPitch = backup[0];
-        player.rotationPitch = backup[1];
+        EntityPlayer player = (EntityPlayer) entityIn;
+        if (!player.isRiding() || !isThirdPersonAiming(player.getUniqueID())) {
+            return;
+        }
+        // ELM uses body_mwf_blender bone SET (forward yaw); skip ModelBiped orbit path.
+        if (isClientElmPlayer(player.getUniqueID())) {
+            return;
+        }
+        SmoothAimPose state = aimSmooth.get(player.getUniqueID());
+        if (state == null || !state.init) {
+            return;
+        }
+        float twistRad = state.upperBodyTwistDeg * ((float) Math.PI / 180f);
+        float headPitch = biped.bipedHead.rotateAngleX;
+
+        float armYRight = biped.bipedRightArm.rotationPointY;
+        float armYLeft = biped.bipedLeftArm.rotationPointY;
+        if (armYRight < 1.0F || armYRight > 4.0F) {
+            armYRight = 2.0F;
+        }
+        if (armYLeft < 1.0F || armYLeft > 4.0F) {
+            armYLeft = 2.0F;
+        }
+        biped.bipedRightArm.offsetX = 0F;
+        biped.bipedRightArm.offsetY = 0F;
+        biped.bipedRightArm.offsetZ = 0F;
+        biped.bipedLeftArm.offsetX = 0F;
+        biped.bipedLeftArm.offsetY = 0F;
+        biped.bipedLeftArm.offsetZ = 0F;
+        biped.bipedRightArm.setRotationPoint(-5.0F, armYRight, 0.0F);
+        biped.bipedLeftArm.setRotationPoint(5.0F, armYLeft, 0.0F);
+
+        biped.bipedBody.rotateAngleY = twistRad;
+        biped.bipedHead.rotateAngleY = twistRad;
+        biped.bipedHeadwear.rotateAngleY = twistRad;
+
+        // Orbit opposite to body yaw — shoulders track the torso from the other side.
+        orbitPivotAroundBodyY(biped.bipedRightArm, biped.bipedBody, -twistRad);
+        orbitPivotAroundBodyY(biped.bipedLeftArm, biped.bipedBody, -twistRad);
+
+        // Facing = twist + BOW local (pivot orbit only moves the shoulder, not the facing).
+        biped.bipedRightArm.rotateAngleY = twistRad - 0.1F;
+        biped.bipedLeftArm.rotateAngleY = twistRad + 0.1F + 0.4F;
+        biped.bipedRightArm.rotateAngleX = -((float) Math.PI / 2F) + headPitch;
+        biped.bipedLeftArm.rotateAngleX = -((float) Math.PI / 2F) + headPitch;
+        biped.bipedRightArm.rotateAngleZ = 0F;
+        biped.bipedLeftArm.rotateAngleZ = 0F;
+
+        if (biped instanceof ModelPlayer) {
+            ModelPlayer mp = (ModelPlayer) biped;
+            mp.bipedBodyWear.rotateAngleY = biped.bipedBody.rotateAngleY;
+            mp.bipedRightArmwear.rotateAngleX = biped.bipedRightArm.rotateAngleX;
+            mp.bipedRightArmwear.rotateAngleY = biped.bipedRightArm.rotateAngleY;
+            mp.bipedRightArmwear.rotateAngleZ = 0F;
+            mp.bipedLeftArmwear.rotateAngleX = biped.bipedLeftArm.rotateAngleX;
+            mp.bipedLeftArmwear.rotateAngleY = biped.bipedLeftArm.rotateAngleY;
+            mp.bipedLeftArmwear.rotateAngleZ = 0F;
+            mp.bipedRightArmwear.offsetX = 0F;
+            mp.bipedRightArmwear.offsetY = 0F;
+            mp.bipedRightArmwear.offsetZ = 0F;
+            mp.bipedLeftArmwear.offsetX = 0F;
+            mp.bipedLeftArmwear.offsetY = 0F;
+            mp.bipedLeftArmwear.offsetZ = 0F;
+            mp.bipedRightArmwear.setRotationPoint(-5.0F, armYRight, 0.0F);
+            mp.bipedLeftArmwear.setRotationPoint(5.0F, armYLeft, 0.0F);
+            orbitPivotAroundBodyY(mp.bipedRightArmwear, biped.bipedBody, -twistRad);
+            orbitPivotAroundBodyY(mp.bipedLeftArmwear, biped.bipedBody, -twistRad);
+        }
+    }
+
+    /** Move a sibling part's pivot as if parented under {@code body} for a Y twist. */
+    private static void orbitPivotAroundBodyY(ModelRenderer part, ModelRenderer body, float yaw) {
+        float cos = MathHelper.cos(yaw);
+        float sin = MathHelper.sin(yaw);
+        float dx = part.rotationPointX - body.rotationPointX;
+        float dy = part.rotationPointY - body.rotationPointY;
+        float dz = part.rotationPointZ - body.rotationPointZ;
+        part.rotationPointX = body.rotationPointX + dx * cos - dz * sin;
+        part.rotationPointY = body.rotationPointY + dy;
+        part.rotationPointZ = body.rotationPointZ + dx * sin + dz * cos;
+    }
+
+    private static boolean isClientElmPlayer(UUID id) {
+        if (id == null) {
+            return false;
+        }
+        try {
+            return mchhui.he.api.ClientELMAPI.isELM(id);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * After Vehicle handlebar {@code applyPlayerModel} when not using FakePlayerModel
+     * (FakePlayerModel applies twist itself after its trailing BOW restore).
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onSetupAnglesRideAim(com.mrcrayfish.obfuscate.client.event.ModelPlayerEvent.SetupAngles.Post event) {
+        if (event.getModelPlayer().getClass().getName().contains("FakePlayerModel")) {
+            return;
+        }
+        applyRideUpperBodyTwist(event.getModelPlayer(), event.getEntityPlayer());
     }
 
     /**
@@ -277,7 +399,8 @@ public class ClientRenderHooks {
         UUID id = player.getUniqueID();
         SmoothAimPose state = aimSmooth.get(id);
         if (state != null && state.init && state.steppedStamp == aimSmoothRenderStamp) {
-            return new ShoulderAimCorrect.AimLook(state.lookYaw, state.lookPitch, state.bodyYaw, true);
+            return new ShoulderAimCorrect.AimLook(state.lookYaw, state.lookPitch, state.bodyYaw, true,
+                state.upperBodyTwistDeg);
         }
         return stepAimPose(player, partialTicks, aimBodyFrameDt);
     }
@@ -299,10 +422,11 @@ public class ClientRenderHooks {
             state.lookYaw = target.lookYaw;
             state.lookPitch = target.lookPitch;
             state.bodyYaw = target.bodyYaw;
+            state.upperBodyTwistDeg = MathHelper.wrapDegrees(state.lookYaw - state.bodyYaw);
             state.init = true;
             state.steppedStamp = aimSmoothRenderStamp;
             return new ShoulderAimCorrect.AimLook(state.lookYaw, state.lookPitch, state.bodyYaw,
-                target.bodyFollowsLook);
+                target.bodyFollowsLook, state.upperBodyTwistDeg);
         }
         float dt = dtSeconds;
         if (dt < 0.001f) {
@@ -319,6 +443,8 @@ public class ClientRenderHooks {
         }
         state.lookYaw = state.lookYaw + MathHelper.wrapDegrees(target.lookYaw - state.lookYaw) * alpha;
         state.bodyYaw = state.bodyYaw + MathHelper.wrapDegrees(target.bodyYaw - state.bodyYaw) * alpha;
+        // Always derive twist from look−body so head/arms/torso stay locked while easing.
+        state.upperBodyTwistDeg = MathHelper.wrapDegrees(state.lookYaw - state.bodyYaw);
         float pitchDelta = target.lookPitch - state.lookPitch;
         state.lookPitch = state.lookPitch + pitchDelta * alpha;
         if (state.lookPitch < -90f) {
@@ -328,7 +454,7 @@ public class ClientRenderHooks {
         }
         state.steppedStamp = aimSmoothRenderStamp;
         return new ShoulderAimCorrect.AimLook(state.lookYaw, state.lookPitch, state.bodyYaw,
-            target.bodyFollowsLook);
+            target.bodyFollowsLook, state.upperBodyTwistDeg);
     }
 
     private static float aimBodySettleSeconds() {

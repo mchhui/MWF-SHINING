@@ -401,7 +401,8 @@ public class ClientProxy extends CommonProxy {
         long totalTime = System.currentTimeMillis();
         int skinCount = 0;
         long skinTime = System.currentTimeMillis();
-        
+        com.modularwarfare.client.compat.AtomicShaderCompat.clearGlowMapCache();
+
         preloadSkinTypes.forEach((skin, type) -> {
             ResourceLocation albedo = null;
             for (int i = 0; i < skin.textures.length; i++) {
