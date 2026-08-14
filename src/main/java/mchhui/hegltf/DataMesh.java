@@ -78,10 +78,7 @@ public class DataMesh {
         }
     }
 
-    /**
-     * Unbind any batched mesh VAO so subsequent client-state scrub (lightmap TEXCOORD)
-     * cannot permanently mutate mesh UV enables. Next {@link #bindBatchVao} will rebind.
-     */
+    /** Unbind batched VAO before client-state scrub. */
     public static void unbindForClientStateScrub() {
         if (batchBoundVao > 0 || !batchActive) {
             GL30.glBindVertexArray(0);
@@ -183,12 +180,7 @@ public class DataMesh {
                 return;
             }
         }
-        // Keep fill/shadow capture in sync for skinned and non-skinned meshes alike.
-        // Scheduling opt used to skip this; non-skinned guns then missed g_buffer_fill /
-        // lightmap writes (no colored-field) while skinned guns were rescued by skinFromPose.
         if (AtomicShaderCompat.isGBufferFillActive() || AtomicShaderCompat.isShadowDepthActive()) {
-            // rebindFillAndGunPbr stamps lightmap then binds gun albedo last — do not call
-            // ensureFillLightmapState/enableLightmap after this or TEX0 becomes the lightmap atlas.
             AtomicShaderCompat.rebindFillAndGunPbr();
         } else if (!GltfFeatureFlags.renderSchedulingOpt()) {
             AtomicShaderCompat.rebindFillAndGunPbr();
@@ -275,8 +267,6 @@ public class DataMesh {
             tex_floatBuffer.flip();
             normal_floatBuffer.flip();
 
-            // TexCoordPointer is per client-active unit. Must be TEX0 — if lightmap unit is
-            // active, mesh UVs are baked into MultiTexCoord1 and fill MRT3 block light dies.
             OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
             GL30.glBindVertexArray(this.displayList);
             GL11.glEnableClientState(GL11.GL_VERTEX_ARRAY);
@@ -455,8 +445,6 @@ public class DataMesh {
             }
         } else {
             bindBatchVao(this.displayList);
-            // Rigid VAOs do not supply MultiTexCoord1 — restamp brightness after bind (no
-            // enableLightmap / no DisableClientState — those break TEX0 albedo).
             restampLightmapCoordsAfterVao();
             GL11.glDrawArrays(this.glDrawingMode, 0, this.vertexCount);
             unbindBatchVao();

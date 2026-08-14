@@ -12,13 +12,8 @@ import org.lwjgl.opengl.GL11;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Remembers MWF skin/effect sampling (NEAREST vs LINEAR) and re-applies it after Atomic
- * PBR hot-swap / multi-tex-unit binds, which can leave the wrong filter on the albedo
- * or leave a non-TEX0 unit active (leaking into fire / particles).
- * <p>
- * {@code glTexParameteri} is sticky on the GL texture object — never call
- * {@link #applyBoundFilter} unless that albedo is currently bound on TEX0. After MWF draws,
- * call {@link #restoreVanillaBlocksAtlasSampling()} so the blocks atlas is not left LINEAR.
+ * Remembers NEAREST vs LINEAR per albedo and re-applies after Atomic PBR binds.
+ * {@code glTexParameteri} is sticky — call {@link #applyBoundFilter} only when albedo is on TEX0.
  */
 @SideOnly(Side.CLIENT)
 public final class TextureSamplingRegistry {
@@ -52,14 +47,7 @@ public final class TextureSamplingRegistry {
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, filter);
     }
 
-    /**
-     * Bind albedo on TEX0 (without TextureManager mixin re-entry) and restore registered filter.
-     * <p>
-     * Unregistered locations (vanilla player skin, default Steve/Alex, etc.) always get
-     * {@code NEAREST}. Gun skins may register {@code LINEAR}; that filter is sticky on the GL
-     * texture object — if a prior active-texture desync applied it to the player skin id,
-     * arms stay blurry until we force NEAREST here on every skin bind/rebind.
-     */
+    /** Bind albedo on TEX0 and restore registered filter. Unregistered locations use NEAREST. */
     public static void restoreAlbedoSampling(ResourceLocation albedo) {
         if (albedo == null) {
             GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
@@ -87,12 +75,7 @@ public final class TextureSamplingRegistry {
         applyBoundFilter(false);
     }
 
-    /**
-     * Reset vanilla blocks-atlas filter/mipmap after MWF LINEAR skins or multi-unit binds may
-     * have sticky-{@code glTexParameteri}'d the atlas (blurry/black fire, seamed water).
-     * Uses sprite mode ({@code setBlurMipmap(false,false)}) — safe for fire overlays; Atomic
-     * restores world mip settings again before water.
-     */
+    /** Reset blocks atlas filter/mipmap after MWF skin binds. */
     public static void restoreVanillaBlocksAtlasSampling() {
         restoreDefaultTexUnit();
         Minecraft mc = Minecraft.getMinecraft();

@@ -63,14 +63,7 @@ public final class AtomicShaderCompat {
         return isPipelineEnabled() && AtomicGBufferCompat.isPipelineTakingOverExternalMeshes();
     }
 
-    /**
-     * When Atomic owns deferred mesh: skip color draws outside fill/shadow
-     * (avoids fullbright forward dual-paint). When master is off, never skip.
-     * <p>
-     * Inventory / container entity previews ({@code GuiInventory.drawEntityOnScreen}
-     * etc.) run after the world fill session with no fill active — must not skip
-     * or held MWF guns (and ELM-bound previews' weapons) stay invisible.
-     */
+    /** Skip forward color when Atomic owns deferred mesh (except open GUIs). */
     public static boolean shouldSkipLegacyColorDraw() {
         if (!isPipelineEnabled()) {
             return false;
@@ -90,18 +83,11 @@ public final class AtomicShaderCompat {
         return isShadowDepthActive();
     }
 
-    /**
-     * Bind vanilla lightmap on TEX1 and restamp {@code gl_MultiTexCoord1}.
-     * <p>
-     * Must run <b>before</b> the final TEX0 albedo bind. {@code enableLightmap} can steal TEX0
-     * when GlStateManager active-texture is desynced — callers must bind gun/skin albedo after.
-     * Do not call this after {@link #rebindFillAndGunPbr} returns.
-     */
+    /** TEX1 lightmap + MultiTexCoord1; call before final TEX0 albedo bind. */
     public static void ensureFillLightmapState() {
         if (!isGBufferFillActive() || isShadowDepthActive()) {
             return;
         }
-        // Sync GM ↔ GL before enableLightmap so the lightmap atlas cannot land on TEX0.
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
         OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
         Minecraft mc = Minecraft.getMinecraft();
@@ -115,7 +101,6 @@ public final class AtomicShaderCompat {
                 OpenGlHelper.lightmapTexUnit,
                 OpenGlHelper.lastBrightnessX,
                 OpenGlHelper.lastBrightnessY);
-        // Keep TEX0 UV matrix identity (lightmap scale belongs on TEX1 only).
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
         OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
         GlStateManager.matrixMode(GL11.GL_TEXTURE);
@@ -127,15 +112,10 @@ public final class AtomicShaderCompat {
         if (!isPipelineEnabled()) {
             return;
         }
-        // Capture rebind only — lightmap+albedo ordering is owned by rebindFillAndGunPbr /
-        // HandDeferredPass (enableLightmap must not run after TEX0 albedo is set).
         AtomicGBufferCompat.rebindFillIfActive();
     }
 
-    /**
-     * Skin / morph / raw GL20 program steals: Atomic FillCaptureGuard may not see HE-LWJGL3
-     * {@code GL20.glUseProgram}; force the next fill rebind to run.
-     */
+    /** Force next fill rebind after raw {@code GL20.glUseProgram} changes. */
     public static void markFillCaptureDirty() {
         if (!isPipelineEnabled()) {
             return;
@@ -143,10 +123,7 @@ public final class AtomicShaderCompat {
         AtomicGBufferCompat.markFillCaptureDirty();
     }
 
-    /**
-     * After TextureManager preload of gun/item albedo (+ {@code _n}/{@code _s}): warm Atomic's
-     * decoded PBR cache so first FP draw does not ImageIO/decode on the render thread.
-     */
+    /** Warm decoded PBR cache for an albedo location. */
     public static void warmStandalonePbrMaps(ResourceLocation albedo) {
         if (!isAtomicLoaded() || albedo == null) {
             return;
@@ -221,33 +198,22 @@ public final class AtomicShaderCompat {
         }
         currentFillAlbedo = albedo;
         rebindFillIfActive();
-        // EntityPbrTextureCache.uploadRgba may leave TEX0 unbound (bindTexture(0));
-        // re-bind albedo with fill program active so _n/_s hot-swap runs, then restore filter.
         Minecraft.getMinecraft().getTextureManager().bindTexture(albedo);
         TextureSamplingRegistry.restoreAlbedoSampling(albedo);
     }
 
     /**
-     * After morph / FBO steal: restore fill MRT and re-bind {@code currentFillAlbedo} (gun / item /
-     * armor / skin — whatever the peer last adopted). Not a gun-only helper despite the name.
-     * Call only when that albedo is still the mesh about to draw; never use this to "fix" arms
-     * after a stale held-item albedo (bind skin via {@link #bindFillAlbedo} instead).
-     * <p>
-     * Always restores capture when called — HE/MWF may change program via {@code GL20.glUseProgram}
-     * without going through OpenGlHelper; do not skip based on a Java fill-bound flag alone.
+     * Restore fill MRT and re-bind {@code currentFillAlbedo}.
+     * Call only when that albedo matches the mesh about to draw.
      */
     public static void rebindFillAndGunPbr() {
         if (!isGBufferFillActive() && !isShadowDepthActive()) {
             return;
         }
-        // Always dirty: peers may steal program via raw GL20 without FillCaptureGuard noticing.
-        // Skinned guns already mark dirty in skinFromPose; non-skinned must match that path.
         if (isGBufferFillActive()) {
             markFillCaptureDirty();
         }
         rebindAtomicCaptureIfActive();
-        // After PBR unit hops: bind lightmap on TEX1 + stamp MultiTexCoord1, then TEX0 albedo.
-        // Never enableLightmap after the albedo bind below.
         if (isGBufferFillActive()) {
             ensureFillLightmapState();
         }
@@ -262,11 +228,7 @@ public final class AtomicShaderCompat {
         currentFillAlbedo = null;
     }
 
-    /**
-     * Player skin location that is safe to sample. When the network skin is not registered yet
-     * or resolves to {@link TextureUtil#MISSING_TEXTURE} (purple), fall back to
-     * {@link DefaultPlayerSkin} — enter-world / switch-save FP arms otherwise go purple.
-     */
+    /** Prefer registered player skin; else default Steve/Alex. */
     public static ResourceLocation resolveReadyPlayerSkin(AbstractClientPlayer player) {
         if (player == null) {
             return DefaultPlayerSkin.getDefaultSkinLegacy();
@@ -297,10 +259,7 @@ public final class AtomicShaderCompat {
         }
     }
 
-    /**
-     * Bind a ready player skin (or Steve/Alex default). Atomic PBR fill hooks only when
-     * pipeline master is on; otherwise this is a plain TextureManager bind (MWF purple-skin fix).
-     */
+    /** Bind ready player skin; PBR fill hooks when pipeline is active. */
     public static ResourceLocation bindReadyPlayerSkin() {
         AbstractClientPlayer player = Minecraft.getMinecraft().player;
         ResourceLocation skin = resolveReadyPlayerSkin(player);
@@ -341,13 +300,8 @@ public final class AtomicShaderCompat {
     }
 
     /**
-     * Start opaque mesh capture while Atomic Hand/Entity fill is active: disable soft blend
-     * (SrcA into MRT → black fringes) and restore fill + last albedo PBR maps.
-     * Soft translucent layers must use {@code finishHandDeferredIfActive} (FP) or
-     * {@code AtomicExternalDrawEvent.EntityForwardOverlay} after composite — not this path.
-     * <p>
-     * Call {@link #bindFillAlbedo} / {@link #ensurePbrMapsForBoundAlbedo} for the mesh about to
-     * draw <b>before</b> this, or {@link #rebindFillAndGunPbr} will restore a stale item albedo.
+     * Start opaque fill capture: disable blend, restore fill + albedo PBR.
+     * Bind mesh albedo before calling.
      */
     public static void beginOpaqueFillCapture() {
         if (!isGBufferFillActive() || isShadowDepthActive()) {
@@ -369,10 +323,7 @@ public final class AtomicShaderCompat {
         rebindFillAndGunPbr();
     }
 
-    /**
-     * Soft alpha FX (muzzle flash / smoke) must not {@code enableBlend} into Hand/Entity MRT:
-     * SrcA blend fades RGB into clear(0) → black fringes. Use replace + alpha discard instead.
-     */
+    /** Soft FX on fill: replace + alpha test (no SrcA blend into MRT). */
     public static void beginCutoutEmissiveFx() {
         if (!isGBufferFillActive() || isShadowDepthActive()) {
             return;
@@ -394,10 +345,7 @@ public final class AtomicShaderCompat {
         }
     }
 
-    /**
-     * If Atomic fill is active and a glow map exists, bind emissive on TEX4 and return true
-     * (caller draws albedo once, then {@link #clearEmissive()}). Otherwise return false for legacy pass.
-     */
+    /** Bind glow map on TEX4 during fill; {@code false} → use legacy glow path. */
     public static boolean prepareGlowMapEmissive(String type, String fileName) {
         if (!isGBufferFillActive() || isShadowDepthActive() || type == null || fileName == null) {
             return false;

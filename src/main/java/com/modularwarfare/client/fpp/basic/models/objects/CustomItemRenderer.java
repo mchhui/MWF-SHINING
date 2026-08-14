@@ -72,7 +72,7 @@ public class CustomItemRenderer {
         if (cachedBadSkins.contains(type + "_" + fileName + "_glow")) {
             return false;
         }
-        // Glow is not a PBR albedo — skip Atomic PBR rebind (would steal TEX0).
+        // Glow: skip Atomic PBR rebind.
         bindTexture(type, fileName + "_glow", true, false, false);
         return true;
     }

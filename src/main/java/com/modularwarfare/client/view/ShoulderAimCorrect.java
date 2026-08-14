@@ -135,7 +135,6 @@ public final class ShoulderAimCorrect {
         float maxTwist = rideUpperBodyMaxDegrees();
         float twist = MathHelper.clamp(MathHelper.wrapDegrees(lookYaw - mountYaw), -maxTwist, maxTwist);
         float clampedLookYaw = mountYaw + twist;
-        // Legs / ELM root stay on seat facing — do not swing the whole body toward movement or aim.
         return new AimLook(clampedLookYaw, lookPitch, mountYaw, false, twist);
     }
 

@@ -14,7 +14,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Apply ride upper-body yaw after vanilla {@code setRotationAngles}.
- * {@code RenderPlayerEvent.Pre} runs too early and is overwritten here every frame.
  */
 @SideOnly(Side.CLIENT)
 @Mixin(ModelBiped.class)

@@ -417,8 +417,6 @@ public class ClientProxy extends CommonProxy {
                 }
             }
             if (albedo != null && com.modularwarfare.client.compat.AtomicShaderCompat.isAtomicLoaded()) {
-                // PBR warm must not depend on renderSchedulingOpt (default false) — otherwise
-                // first gun draw hitches on EntityPbrTextureCache ImageIO/decode.
                 com.modularwarfare.client.compat.AtomicShaderCompat.warmStandalonePbrMaps(albedo);
                 ResourceLocation glow = new ResourceLocation(ModularWarfare.MOD_ID,
                         String.format("skins/%s/%s_glow.png", type.getAssetDir(), skin.getSkin()));

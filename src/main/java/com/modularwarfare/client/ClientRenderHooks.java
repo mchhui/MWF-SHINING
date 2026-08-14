@@ -258,8 +258,6 @@ public class ClientRenderHooks {
         player.rotationPitch = smoothed.lookPitch;
         player.prevRotationYawHead = smoothed.lookYaw;
         player.rotationYawHead = smoothed.lookYaw;
-        // Non-ELM torso twist is applied in MixinModelBiped after setRotationAngles
-        // (Pre is overwritten by vanilla angles every frame).
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -727,8 +725,6 @@ public class ClientRenderHooks {
                             ClientProxy.scopeUtils.initBlur();  
                         }
                         OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
-                        // OptiFine / scope FBO steal drops Hand MRT drawBuffers — restore fill only
-                        // (do not rebind a stale held-item albedo before the item renderer runs).
                         if (AtomicShaderCompat.isGBufferFillActive()) {
                             AtomicShaderCompat.rebindFillIfActive();
                         }
@@ -849,9 +845,6 @@ public class ClientRenderHooks {
             renderHeldItem(stack, hand, partialTicksTime, fov);
             cloud.siz.atomic.api.render.AtomicGBufferCompat.finishOffscreenHandDeferred(ScopeUtils.INSIDE_GUN_TEX);
             OpenGlHelper.glBindFramebuffer(OpenGlHelper.GL_FRAMEBUFFER, OptifineHelper.getDrawFrameBuffer());
-            // Drop nested-pass albedo pointer; main FP renderItem will bind skin/gun fresh.
-            // Do not rebindFillAndGunPbr here — that restored the inside-gun gun albedo onto TEX0
-            // before arms, and melee→sighted-gun left arms sampling wrong.
             AtomicShaderCompat.clearCurrentFillAlbedo();
             if (AtomicShaderCompat.isGBufferFillActive()) {
                 AtomicShaderCompat.rebindFillIfActive();
