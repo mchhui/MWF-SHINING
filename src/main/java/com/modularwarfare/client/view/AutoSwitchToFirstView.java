@@ -56,6 +56,12 @@ public class AutoSwitchToFirstView {
                 }
                 if (aimlock) {
                     Minecraft.getMinecraft().gameSettings.thirdPersonView = 0;
+                    if (ClientProxy.shoulderSurfingLoaded) {
+                        try {
+                            ShoulderInstance.getInstance().setShoulderSurfing(false);
+                        } catch (Throwable ignored) {
+                        }
+                    }
                 }   
             }else {
                 if (aimlock) {

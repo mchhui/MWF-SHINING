@@ -225,6 +225,10 @@ public class ClientRenderHooks {
                 aimPitchBackup.remove(id);
                 continue;
             }
+            if (player == mc.player && mc.gameSettings.thirdPersonView == 0) {
+                aimSmooth.remove(id);
+                continue;
+            }
             SmoothAimPose state = aimSmooth.get(id);
             if (state == null || !state.init) {
                 stepAimPose(player, 1f, 1f / 20f);

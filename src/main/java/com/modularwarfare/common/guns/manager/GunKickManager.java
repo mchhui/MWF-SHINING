@@ -6,10 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.modularwarfare.client.ClientProxy;
 import com.modularwarfare.common.guns.ItemBullet;
 import com.modularwarfare.common.guns.ItemGun;
@@ -21,15 +17,12 @@ import com.modularwarfare.utility.raycast.obb.OBBPlayerManager;
 import com.modularwarfare.utility.raycast.obb.OBBPlayerManager.OBBDebugObject;
 import com.modularwarfare.utility.vector.Matrix4f;
 import com.modularwarfare.utility.vector.Vector3f;
-import com.teamderpy.shouldersurfing.client.ShoulderHelper;
 import com.teamderpy.shouldersurfing.client.ShoulderInstance;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EntitySelectors;
-import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.Side;
@@ -149,18 +142,15 @@ public class GunKickManager {
     
                 if (ClientProxy.shoulderSurfingLoaded) {
                     if (ShoulderInstance.getInstance().doShoulderSurfing()) {
-                        Vec3d eye = entity.getPositionEyes(ClientProxy.renderHooks.partialTicks);
-                        double posX = eye.x;
-                        double posY = eye.y;
-                        double posZ = eye.z;
                         RayTraceResult r = getMouseOver(ClientProxy.renderHooks.partialTicks);
-                        posX = r.hitVec.x - posX;
-                        posY = r.hitVec.y - posY;
-                        posZ = r.hitVec.z - posZ;
-                        pitch = (float)-Math.toDegrees(Math.atan(posY / Math.sqrt(posX * posX + posZ * posZ)));
-                        yaw = (float)Math.toDegrees(Math.acos((posX * 0 + posZ * 1) / Math.sqrt(posX * posX + posZ * posZ)));
-                        if (posX > 0) {
-                            yaw = -yaw;
+                        if (r != null && r.hitVec != null) {
+                            Vec3d eye = entity.getPositionEyes(ClientProxy.renderHooks.partialTicks);
+                            double posX = r.hitVec.x - eye.x;
+                            double posY = r.hitVec.y - eye.y;
+                            double posZ = r.hitVec.z - eye.z;
+                            double horiz = Math.sqrt(posX * posX + posZ * posZ);
+                            pitch = (float) -Math.toDegrees(Math.atan2(posY, Math.max(horiz, 1.0E-6D)));
+                            yaw = (float) Math.toDegrees(Math.atan2(-posX, posZ));
                         }
                     }
                 }
@@ -198,54 +188,10 @@ public class GunKickManager {
     private static RayTraceResult getMouseOver(float partialTicks) {
         Minecraft mc = Minecraft.getMinecraft();
         Entity entity = mc.getRenderViewEntity();
-        RayTraceResult objectMouseOver = null;
-        if (entity != null)
-            if (mc.world != null) {
-                objectMouseOver = entity.rayTrace(128.0D, partialTicks);
-                Vec3d vec3d = ShoulderHelper.shoulderSurfingLook(entity, partialTicks, 128).cameraPos();
-                double d1 = 128.0D;
-                if (objectMouseOver != null)
-                    d1 = objectMouseOver.hitVec.distanceTo(vec3d);
-                Vec3d vec3d1 = entity.getLook(1.0F);
-                Vec3d vec3d2 = vec3d.add(vec3d1.x * d1, vec3d1.y * d1, vec3d1.z * d1);
-                Entity pointedEntity = null;
-                Vec3d vec3d3 = null;
-                float f = 1.0F;
-                List<Entity> list = mc.world.getEntitiesInAABBexcluding(entity, entity.getEntityBoundingBox().expand(vec3d1.x * d1, vec3d1.y * d1, vec3d1.z * d1).grow(1.0D, 1.0D, 1.0D), Predicates.and(EntitySelectors.NOT_SPECTATING, new Predicate<Entity>() {
-                    public boolean apply(@Nullable Entity p_apply_1_) {
-                        return (p_apply_1_ != null && p_apply_1_.canBeCollidedWith());
-                    }
-                }));
-                double d2 = d1;
-                for (int j = 0; j < list.size(); j++) {
-                    Entity entity1 = list.get(j);
-                    AxisAlignedBB axisalignedbb = entity1.getEntityBoundingBox().grow(entity1.getCollisionBorderSize());
-                    RayTraceResult raytraceresult = axisalignedbb.calculateIntercept(vec3d, vec3d2);
-                    if (axisalignedbb.contains(vec3d)) {
-                        if (d2 >= 0.0D) {
-                            pointedEntity = entity1;
-                            vec3d3 = (raytraceresult == null) ? vec3d : raytraceresult.hitVec;
-                            d2 = 0.0D;
-                        }
-                    } else if (raytraceresult != null) {
-                        double d3 = vec3d.distanceTo(raytraceresult.hitVec);
-                        if (d3 < d2 || d2 == 0.0D)
-                            if (entity1.getLowestRidingEntity() == entity.getLowestRidingEntity() && !entity1.canRiderInteract()) {
-                                if (d2 == 0.0D) {
-                                    pointedEntity = entity1;
-                                    vec3d3 = raytraceresult.hitVec;
-                                }
-                            } else {
-                                pointedEntity = entity1;
-                                vec3d3 = raytraceresult.hitVec;
-                                d2 = d3;
-                            }
-                    }
-                }
-                if (pointedEntity != null && (d2 < d1 || objectMouseOver == null))
-                    objectMouseOver = new RayTraceResult(pointedEntity, vec3d3);
-            }
-        return objectMouseOver;
+        if (entity == null || mc.world == null) {
+            return null;
+        }
+        return RayUtil.shoulderCrosshairPick(entity, partialTicks, 128.0D);
     }
 
 }

@@ -56,7 +56,6 @@ import com.modularwarfare.utility.bukkit.BukkitEvents;
 import com.modularwarfare.utility.raycast.DefaultRayCasting;
 import com.modularwarfare.utility.raycast.RayCasting;
 import com.modularwarfare.utility.script.ScriptHost;
-import com.mrcrayfish.vehicle.client.HeldVehicleEvents;
 
 import mchhui.modularmovements.ModularMovements;
 import moe.komi.mwprotect.IZip;
@@ -481,14 +480,17 @@ public class ModularWarfare {
     private void checkModCompat() {
         if (Loader.isModLoaded("obfuscate")) {
             isLoadedObfuscate = true;
-            Field f;
+        }
+        // Soft dependency: tell Vehicle not to double-patch player layers when MWF FakeRenderPlayer already added LayerHeldVehicle.
+        if (isLoadedObfuscate && Loader.isModLoaded("vehicle")
+                && FMLCommonHandler.instance().getSide().isClient()) {
             try {
-                f = HeldVehicleEvents.class.getDeclaredField("setupExtraLayers");
+                Class<?> heldEvents = Class.forName("com.mrcrayfish.vehicle.client.HeldVehicleEvents");
+                Field f = heldEvents.getDeclaredField("setupExtraLayers");
                 f.setAccessible(true);
                 f.set(null, Boolean.TRUE);
-            } catch (NoSuchFieldException | SecurityException | NoClassDefFoundError | IllegalArgumentException | IllegalAccessException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (Throwable t) {
+                ModularWarfare.LOGGER.warn("[MWF] Could not mark HeldVehicleEvents.setupExtraLayers", t);
             }
         }
     }

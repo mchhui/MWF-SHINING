@@ -39,6 +39,7 @@ import mchhui.modularmovements.tactical.client.ClientListener;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -425,17 +426,15 @@ public final class ClientTickHandler {
         Minecraft mc = FMLClientHandler.instance().getClient();
 
         if (mc.getRenderViewEntity() != null) {
-            if (mc.getRenderViewEntity().getRotationYawHead() > mc.getRenderViewEntity().prevRotationYaw) {
-                GUN_ROT_X += (mc.getRenderViewEntity().getRotationYawHead() - mc.getRenderViewEntity().prevRotationYaw) / 1.5;
-            } else if (mc.getRenderViewEntity().getRotationYawHead() < mc.getRenderViewEntity().prevRotationYaw) {
-                GUN_ROT_X -= (mc.getRenderViewEntity().prevRotationYaw - mc.getRenderViewEntity().getRotationYawHead()) / 1.5;
+            Entity view = mc.getRenderViewEntity();
+            float yawDelta = net.minecraft.util.math.MathHelper.wrapDegrees(view.rotationYaw - view.prevRotationYaw);
+            GUN_ROT_X += yawDelta / 1.5F;
+            if (view.rotationPitch > prevPitch) {
+                GUN_ROT_Y += (view.rotationPitch - prevPitch) / 5;
+            } else if (view.rotationPitch < prevPitch) {
+                GUN_ROT_Y -= (prevPitch - view.rotationPitch) / 5;
             }
-            if (mc.getRenderViewEntity().rotationPitch > prevPitch) {
-                GUN_ROT_Y += (mc.getRenderViewEntity().rotationPitch - prevPitch) / 5;
-            } else if (mc.getRenderViewEntity().rotationPitch < prevPitch) {
-                GUN_ROT_Y -= (prevPitch - mc.getRenderViewEntity().rotationPitch) / 5;
-            }
-            prevPitch = mc.getRenderViewEntity().rotationPitch;
+            prevPitch = view.rotationPitch;
         }
 
         GUN_ROT_X *= .2F;

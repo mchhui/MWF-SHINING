@@ -331,6 +331,37 @@ public class DefaultRayCasting extends RayCasting {
                             }
                         }
                     }
+                } else if (!ent.isDead) {
+                    // Any non-living entity that an external bridge already registered into EntityOBBManager
+                    OBBModelObject obbModelObject = EntityOBBManager.getEntityOBB(ent.getUniqueID());
+                    if (obbModelObject != null && !obbModelObject.boxes.isEmpty()) {
+                        OBBModelBox finalBox = null;
+                        List<OBBModelBox> boxes = obbModelObject.calculateIntercept(ray);
+                        if (!boxes.isEmpty()) {
+                            double t = Double.MAX_VALUE;
+                            RayCastResult temp;
+                            Vector3f startVector = new Vector3f(origin);
+                            for (OBBModelBox obb : boxes) {
+                                temp = OBBModelBox.testCollisionOBBAndRay(obb, startVector, rayVec);
+                                if (temp.t < t) {
+                                    t = temp.t;
+                                    finalBox = obb;
+                                }
+                            }
+                            if (OBBPlayerManager.debug) {
+                                OBBPlayerManager.lines.add(new OBBDebugObject(new Vector3f(origin.x + rayVec.x * t, origin.y + rayVec.y * t, origin.z + rayVec.z * t)));
+                            }
+                            if (finalBox != null && t != Double.MAX_VALUE) {
+                                Vec3d hitPoint = new Vec3d(
+                                    origin.x + rayVec.x * t,
+                                    origin.y + rayVec.y * t,
+                                    origin.z + rayVec.z * t
+                                );
+                                RayTraceResult intercept2 = new RayTraceResult(ent, hitPoint);
+                                allHits.add(new OBBHit(ent, finalBox.copy(), intercept2, intercept2.hitVec.distanceTo(origin), 0, 0));
+                            }
+                        }
+                    }
                 }
             }
         }

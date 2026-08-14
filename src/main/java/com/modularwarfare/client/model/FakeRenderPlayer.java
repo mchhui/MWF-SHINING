@@ -9,7 +9,6 @@ import com.modularwarfare.client.model.layers.RenderLayerHeldMelee;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGrenade;
 import com.modularwarfare.client.model.layers.ResetHiddenModelLayer;
 import com.mrcrayfish.obfuscate.client.event.ModelPlayerEvent;
-import com.mrcrayfish.vehicle.client.render.layer.LayerHeldVehicle;
 
 import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.entity.AbstractClientPlayer;
@@ -22,6 +21,7 @@ import net.minecraft.client.renderer.entity.layers.LayerCustomHead;
 import net.minecraft.client.renderer.entity.layers.LayerHeldItem;
 import net.minecraft.client.renderer.entity.layers.LayerRenderer;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -66,8 +66,17 @@ public class FakeRenderPlayer extends RenderPlayer {
         this.addLayer(new RenderLayerHeldGun(this));
         this.addLayer(new RenderLayerHeldMelee(this));
         this.addLayer(new RenderLayerHeldGrenade(this));
-        if(ModularWarfare.isLoadedObfuscate) {
-            this.addLayer(new LayerHeldVehicle());   
+        // Soft dependency: held-vehicle layer only when Vehicle mod is present (Obfuscate alone is not enough).
+        if (ModularWarfare.isLoadedObfuscate && Loader.isModLoaded("vehicle")) {
+            try {
+                Class<?> layerClass = Class.forName("com.mrcrayfish.vehicle.client.render.layer.LayerHeldVehicle");
+                Object layer = layerClass.getConstructor().newInstance();
+                @SuppressWarnings("unchecked")
+                LayerRenderer<AbstractClientPlayer> typed = (LayerRenderer<AbstractClientPlayer>) layer;
+                this.addLayer(typed);
+            } catch (Throwable t) {
+                ModularWarfare.LOGGER.warn("[MWF] LayerHeldVehicle unavailable; skipping held-vehicle render layer", t);
+            }
         }
         // 触发事件，允许附属mod添加layer
         com.modularwarfare.api.AddRenderLayerEvent event = new com.modularwarfare.api.AddRenderLayerEvent(this);
