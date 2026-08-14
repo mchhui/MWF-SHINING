@@ -101,7 +101,6 @@ public class FakePlayerModelForObfuscateCompat extends ModelPlayer {
             }
         }
         this.setupRotationAngles();
-        // After Vehicle handlebars + BOW restore: ride aim upper-body twist (authoritative).
         ClientRenderHooks.applyRideUpperBodyTwist(this, entityIn);
     }
 

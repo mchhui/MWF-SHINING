@@ -22,7 +22,6 @@ public class MixinModelBiped {
     @Inject(method = "setRotationAngles", at = @At("RETURN"))
     private void mwf$applyRideUpperBodyTwist(float limbSwing, float limbSwingAmount, float ageInTicks,
             float netHeadYaw, float headPitch, float scaleFactor, Entity entityIn, CallbackInfo ci) {
-        // ModelPlayer is finished in FakePlayerModel / SetupAngles.Post (after Vehicle handlebars).
         if ((Object) this instanceof net.minecraft.client.model.ModelPlayer) {
             return;
         }

@@ -68,17 +68,9 @@ public class ModConfig {
         public boolean gunFlashEffect=true;
         public int shellEffectCapacity=64;
         public Float aimBodySettleSeconds = 0.5f;
-        /**
-         * Under ShoulderSurfing aim: if yellow-ray vs camera yaw/pitch exceeds this
-         * (degrees), also turn the body toward the yellow ray. Null → 20.
-         */
+        /** SS aim: body turns toward yellow ray when yaw/pitch delta exceeds this (deg). Null → 20. */
         public Float aimShoulderBodyCorrectDegrees = 20f;
-        /**
-         * When riding (vehicle etc.): max absolute yaw the upper body / aim may twist
-         * relative to seat facing (degrees). Should match the mount camera clamp
-         * (MrCrayfish Vehicle uses ±120). Legs / ELM root stay on the seat.
-         * Null → 120.
-         */
+        /** Ride: max |upper-body twist| vs seat yaw (deg). Null → 120. */
         public Float aimRideUpperBodyMaxDegrees = 120f;
     }
 

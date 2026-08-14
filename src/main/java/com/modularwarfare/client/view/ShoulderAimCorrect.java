@@ -23,42 +23,26 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import java.util.List;
 
 /**
- * Visual aim-pose correction under ShoulderSurfing (model only).
- * <p>
- * Screen crosshair stays on the camera ray (red). Player model should look along the
- * yellow ray: eyes → camera-ray hit. This is NOT fire/trail ballistic correction
- * ({@code GunKickManager} keeps its own path).
- * <p>
- * While riding, the lower body stays on the mount yaw; look / upper-body twist is
- * clamped so the model does not fully disconnect.
+ * ShoulderSurfing visual aim pose (model facing along yellow ray; not fire/trail).
  */
 @SideOnly(Side.CLIENT)
 public final class ShoulderAimCorrect {
 
     private static final double RAY_RANGE = 128.0D;
     private static final float DEFAULT_BODY_CORRECT_DEG = 20f;
-    /**
-     * Match MrCrayfish Vehicle {@code EntityVehicle.applyYawToEntity} (±120).
-     * A tighter value here makes the model turn less than the camera FOV.
-     */
+    /** Default ride upper-body yaw clamp (degrees). */
     private static final float DEFAULT_RIDE_UPPER_MAX_DEG = 120f;
 
     private ShoulderAimCorrect() {}
 
     public static final class AimLook {
-        /** Yaw/pitch the head / aim-bone should face (yellow ray). */
+        /** Head / aim-bone yaw & pitch. */
         public final float lookYaw;
         public final float lookPitch;
-        /**
-         * Lower-body yaw written to {@code renderYawOffset}.
-         * On foot: yellow or camera. Riding: mount yaw (legs stay with the vehicle).
-         */
+        /** {@code renderYawOffset}; ride = seat facing. */
         public final float bodyYaw;
         public final boolean bodyFollowsLook;
-        /**
-         * Upper-body yaw twist relative to {@link #bodyYaw} (degrees), for vanilla
-         * {@code ModelBiped.bipedBody}. Zero when not riding / no twist needed.
-         */
+        /** Upper-body yaw relative to {@link #bodyYaw} (degrees); 0 when not riding. */
         public final float upperBodyTwistDeg;
 
         public AimLook(float lookYaw, float lookPitch, float bodyYaw, boolean bodyFollowsLook) {
@@ -75,10 +59,7 @@ public final class ShoulderAimCorrect {
         }
     }
 
-    /**
-     * Resolve visual look for local SS aim, or plain camera follow otherwise.
-     * Remote players: camera/head yaw only (no SS parallax).
-     */
+    /** Local SS aim look, or camera follow; remotes use head yaw only. */
     public static AimLook resolve(EntityPlayer player, float partialTicks) {
         float camYaw;
         float camPitch;
@@ -119,12 +100,7 @@ public final class ShoulderAimCorrect {
         return applyRideClamp(player, partialTicks, lookYaw, lookPitch, bodyYaw, bodyFollows);
     }
 
-    /**
-     * Riding: lock lower body to seat/mount facing; clamp look + upper twist to the same limit.
-     * Prefer the passenger {@code renderYawOffset} already written by the mount (Vehicle uses
-     * {@code getModifiedRotationYaw()+seatYawOffset}) so our cap shares the same zero point as
-     * the camera clamp (±120 on Vehicle).
-     */
+    /** Ride: bodyYaw = seat; look/twist clamped to {@link #rideUpperBodyMaxDegrees()}. */
     private static AimLook applyRideClamp(EntityPlayer player, float partialTicks,
             float lookYaw, float lookPitch, float bodyYaw, boolean bodyFollows) {
         Entity mount = player.getRidingEntity();
@@ -169,10 +145,7 @@ public final class ShoulderAimCorrect {
         return prev + (next - prev) * pt;
     }
 
-    /**
-     * Hit point under the screen crosshair while ShoulderSurfing.
-     * Same idea as {@code GunKickManager.getMouseOver}, kept separate so fire logic is untouched.
-     */
+    /** Crosshair world hit under ShoulderSurfing. */
     @Nullable
     private static Vec3d crosshairHit(float partialTicks) {
         Minecraft mc = Minecraft.getMinecraft();

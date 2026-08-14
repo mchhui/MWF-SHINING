@@ -843,11 +843,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.pushMatrix();
         GlStateManager.multMatrix(floatBuffer);
         
-        // Atomic Hand/Entity fill: one unified pass (do not split on OptiFine hand0/hand1).
+        // Atomic Hand/Entity fill: single pass.
         final boolean atomicFill = AtomicShaderCompat.isGBufferFillActive();
         final boolean atomicShadowOnly = AtomicShaderCompat.shouldDrawShadowDepthOnly();
         final boolean atomicCapture = atomicFill || atomicShadowOnly;
-        // Hand fill does NOT suppress blend (entity does). SrcA→clear(0) blackens soft alpha.
         if (atomicFill) {
             GlStateManager.disableBlend();
         } else {
@@ -1772,7 +1771,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
          * 但是出于现状考虑 暂时设在isRenderHand0渲染
          * 需要处理深度遮蔽 可以延迟渲染
          * 就像镜面渲染一样 MC的手部半透明一坨大便 只好延迟到hud渲染
-         * Atomic Hand MRT: soft smoke/eject uses SrcA — after finishHandDeferred fill is off.
         */
         if (isRenderHand0 && !atomicShadowOnly && !AtomicShaderCompat.isGBufferFillActive()) {
             if (config.specialEffect.postSmokeGroups != null) {
@@ -1884,13 +1882,12 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         GlStateManager.tryBlendFuncSeparate(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA, SourceFactor.ONE, DestFactor.ZERO);
         GlStateManager.disableBlend();
 
-        // Restore TEX0 so post-hand fire / particles do not inherit TEX2–TEX5 or dirty filters.
+        // Restore TEX0 active + filter after multi-unit binds.
         com.modularwarfare.client.compat.TextureSamplingRegistry.restoreDefaultTexUnit();
         if (bindingTexture != null) {
             com.modularwarfare.client.compat.TextureSamplingRegistry.restoreAlbedoSampling(bindingTexture);
         }
-        // Lightmap setup can leave a 1/256 scale on TEX0 when GlStateManager desyncs; clear it
-        // so the next frame's world glTF (vehicles) does not sample with a poisoned UV matrix.
+        // Reset TEX0 texture matrix after lightmap.
         GlStateManager.matrixMode(GL11.GL_TEXTURE);
         GlStateManager.loadIdentity();
         GlStateManager.matrixMode(GL11.GL_MODELVIEW);
@@ -4174,7 +4171,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     }
 
     public void bindPlayerSkin() {
-        // Skin-ready fallback avoids MISSING purple (MWF); Atomic PBR only when pipeline on.
         bindingTexture = AtomicShaderCompat.resolveReadyPlayerSkin(Minecraft.getMinecraft().player);
         AtomicShaderCompat.bindFillAlbedo(bindingTexture);
     }

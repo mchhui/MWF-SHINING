@@ -252,7 +252,6 @@ public class ClientRenderHooks {
         ShoulderAimCorrect.AimLook smoothed = stepAimPose(player, partialTicks, aimBodyFrameDt);
         player.prevRenderYawOffset = smoothed.bodyYaw;
         player.renderYawOffset = smoothed.bodyYaw;
-        // Head (+ ModelBiped BOW arms) follow eased look; pitch restored in Post.
         aimPitchBackup.put(id, new float[] { player.prevRotationPitch, player.rotationPitch });
         player.prevRotationPitch = smoothed.lookPitch;
         player.rotationPitch = smoothed.lookPitch;
@@ -271,16 +270,7 @@ public class ClientRenderHooks {
         }
     }
 
-    /**
-     * Non-ELM ride aim: upper body turns as one unit toward look.
-     * <p>
-     * Arms are siblings of {@code bipedBody} (own shoulder pivots). Orbit those pivots
-     * around the body by {@code twist}, and set arm yaw to {@code twist + BOW local}.
-     * (Pivot orbit alone does not apply body yaw to arm facing — ModelRenderer has no parent matrix.)
-     * <p>
-     * Earlier ~2× spin was orbit + Vehicle handlebar entity-local angles; this runs
-     * <b>after</b> Vehicle {@code applyPlayerModel} / BOW restore so both stay in sync.
-     */
+    /** Non-ELM ride aim: torso + arms follow look twist (call after Vehicle handlebars). */
     public static void applyRideUpperBodyTwist(ModelBiped biped, Entity entityIn) {
         if (biped == null || !(entityIn instanceof EntityPlayer)) {
             return;
@@ -289,7 +279,6 @@ public class ClientRenderHooks {
         if (!player.isRiding() || !isThirdPersonAiming(player.getUniqueID())) {
             return;
         }
-        // ELM uses body_mwf_blender bone SET (forward yaw); skip ModelBiped orbit path.
         if (isClientElmPlayer(player.getUniqueID())) {
             return;
         }
@@ -321,11 +310,9 @@ public class ClientRenderHooks {
         biped.bipedHead.rotateAngleY = twistRad;
         biped.bipedHeadwear.rotateAngleY = twistRad;
 
-        // Orbit opposite to body yaw — shoulders track the torso from the other side.
         orbitPivotAroundBodyY(biped.bipedRightArm, biped.bipedBody, -twistRad);
         orbitPivotAroundBodyY(biped.bipedLeftArm, biped.bipedBody, -twistRad);
 
-        // Facing = twist + BOW local (pivot orbit only moves the shoulder, not the facing).
         biped.bipedRightArm.rotateAngleY = twistRad - 0.1F;
         biped.bipedLeftArm.rotateAngleY = twistRad + 0.1F + 0.4F;
         biped.bipedRightArm.rotateAngleX = -((float) Math.PI / 2F) + headPitch;
@@ -355,7 +342,7 @@ public class ClientRenderHooks {
         }
     }
 
-    /** Move a sibling part's pivot as if parented under {@code body} for a Y twist. */
+    /** Orbit a sibling ModelRenderer pivot around {@code body} on Y. */
     private static void orbitPivotAroundBodyY(ModelRenderer part, ModelRenderer body, float yaw) {
         float cos = MathHelper.cos(yaw);
         float sin = MathHelper.sin(yaw);
@@ -378,10 +365,7 @@ public class ClientRenderHooks {
         }
     }
 
-    /**
-     * After Vehicle handlebar {@code applyPlayerModel} when not using FakePlayerModel
-     * (FakePlayerModel applies twist itself after its trailing BOW restore).
-     */
+    /** Ride twist for ModelPlayer after Obfuscate SetupAngles (skips FakePlayerModel). */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onSetupAnglesRideAim(com.mrcrayfish.obfuscate.client.event.ModelPlayerEvent.SetupAngles.Post event) {
         if (event.getModelPlayer().getClass().getName().contains("FakePlayerModel")) {
@@ -390,9 +374,7 @@ public class ClientRenderHooks {
         applyRideUpperBodyTwist(event.getModelPlayer(), event.getEntityPlayer());
     }
 
-    /**
-     * Eased look for ELM aim-bone SET (same state as vanilla TP aim pose).
-     */
+    /** Current eased aim look (ELM bone SET / TP pose). */
     public static ShoulderAimCorrect.AimLook getAimLook(EntityPlayer player, float partialTicks) {
         UUID id = player.getUniqueID();
         SmoothAimPose state = aimSmooth.get(id);
@@ -404,8 +386,7 @@ public class ClientRenderHooks {
     }
 
     /**
-     * Ease-out toward instant target: {@code aimBodySettleSeconds} ≈ time to close ~95%
-     * (fast then slow). {@code 0} snaps.
+     * Ease look/body toward target; settle ≈ {@code aimBodySettleSeconds}, {@code 0} = snap.
      */
     private static ShoulderAimCorrect.AimLook stepAimPose(EntityPlayer player, float partialTicks, float dtSeconds) {
         ShoulderAimCorrect.AimLook target = ShoulderAimCorrect.resolve(player, partialTicks);
@@ -432,7 +413,6 @@ public class ClientRenderHooks {
         } else if (dt > 0.05f) {
             dt = 0.05f;
         }
-        // alpha = 1 - exp(-3*dt/settle) → ~95% of remaining gap closed after `settle` seconds.
         float alpha = 1f - (float) Math.exp(-3.0 * dt / settle);
         if (alpha < 0f) {
             alpha = 0f;
@@ -441,7 +421,6 @@ public class ClientRenderHooks {
         }
         state.lookYaw = state.lookYaw + MathHelper.wrapDegrees(target.lookYaw - state.lookYaw) * alpha;
         state.bodyYaw = state.bodyYaw + MathHelper.wrapDegrees(target.bodyYaw - state.bodyYaw) * alpha;
-        // Always derive twist from look−body so head/arms/torso stay locked while easing.
         state.upperBodyTwistDeg = MathHelper.wrapDegrees(state.lookYaw - state.bodyYaw);
         float pitchDelta = target.lookPitch - state.lookPitch;
         state.lookPitch = state.lookPitch + pitchDelta * alpha;
