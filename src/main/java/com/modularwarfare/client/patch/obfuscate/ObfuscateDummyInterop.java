@@ -14,4 +14,8 @@ public class ObfuscateDummyInterop implements ObfuscateCompatInterop {
     @Override
     public void setFixed() {
     }
+
+    @Override
+    public void applyFix() {
+    }
 }

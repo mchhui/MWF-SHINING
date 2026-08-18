@@ -42,6 +42,7 @@ import com.modularwarfare.client.patch.customnpc.CustomNPCListener;
 import com.modularwarfare.client.patch.galacticraft.GCCompatInterop;
 import com.modularwarfare.client.patch.galacticraft.GCDummyInterop;
 import com.modularwarfare.client.patch.obfuscate.ObfuscateCompatInterop;
+import com.modularwarfare.client.patch.obfuscate.ObfuscateDummyInterop;
 import com.modularwarfare.client.renderers.RenderCustomFire;
 import com.modularwarfare.client.renderers.RenderItemLoot;
 import com.modularwarfare.client.renderers.RenderProjectile;
@@ -275,7 +276,22 @@ public class ClientProxy extends CommonProxy {
                 e.printStackTrace();
                 ClientProxy.galacticraftInterop = new GCDummyInterop();
             }
-        } if (dsSurroundLoaded) {
+        } else {
+            ClientProxy.galacticraftInterop = new GCDummyInterop();
+        }
+        if (ModularWarfare.isLoadedObfuscate) {
+            try {
+                ClientProxy.obfuscateInterop = Class.forName("com.modularwarfare.client.patch.obfuscate.ObfuscateInteropImpl").asSubclass(ObfuscateCompatInterop.class).newInstance();
+                ModularWarfare.LOGGER.info("Obfuscate has been detected! Will attempt to patch.");
+                ClientProxy.obfuscateInterop.applyFix();
+            } catch (Exception e) {
+                e.printStackTrace();
+                ClientProxy.obfuscateInterop = new ObfuscateDummyInterop();
+            }
+        } else {
+            ClientProxy.obfuscateInterop = new ObfuscateDummyInterop();
+        }
+        if (dsSurroundLoaded) {
             try {
                 Class<?> modInfoClass = Class.forName("org.orecruncher.dsurround.ModInfo");
                 java.lang.reflect.Field field = modInfoClass.getDeclaredField("IS_DISTANCE_VERSION");
@@ -293,8 +309,6 @@ public class ClientProxy extends CommonProxy {
             } catch (Exception e) {
                 ModularWarfare.LOGGER.warn("Error checking Dynamic Surroundings version - remote gun sounds may not work properly: " + e.getMessage());
             }
-        } else {
-            ClientProxy.galacticraftInterop = new GCDummyInterop();
         }
     }
 
@@ -399,70 +413,98 @@ public class ClientProxy extends CommonProxy {
 
     public void loadTextures() {
         long totalTime = System.currentTimeMillis();
-        int skinCount = 0;
-        long skinTime = System.currentTimeMillis();
         com.modularwarfare.client.compat.AtomicShaderCompat.clearGlowMapCache();
 
-        preloadSkinTypes.forEach((skin, type) -> {
+        // Skins: lazy placeholder + async upload (same path as effects/masks).
+        long skinTime = System.currentTimeMillis();
+        int lazySkin = 0;
+        for (java.util.Map.Entry<SkinType, BaseType> entry : preloadSkinTypes.entrySet()) {
+            SkinType skin = entry.getKey();
+            BaseType type = entry.getValue();
+            if (skin == null || type == null || skin.textures == null) {
+                continue;
+            }
+            boolean linear = skin.sampling.equals(SkinType.Sampling.LINEAR);
             ResourceLocation albedo = null;
             for (int i = 0; i < skin.textures.length; i++) {
                 ResourceLocation resource = new ResourceLocation(ModularWarfare.MOD_ID,
                         String.format(skin.textures[i].format, type.getAssetDir(), skin.getSkin()));
-                Minecraft.getMinecraft().getTextureManager().bindTexture(resource);
-                boolean linear = skin.sampling.equals(SkinType.Sampling.LINEAR);
-                TextureSamplingRegistry.register(resource, linear);
-                TextureSamplingRegistry.applyBoundFilter(linear);
+                registerLazyTexture(resource, linear);
+                lazySkin++;
                 if (skin.textures[i] == SkinType.Texture.BASIC) {
                     albedo = resource;
                 }
             }
             if (albedo != null && com.modularwarfare.client.compat.AtomicShaderCompat.isAtomicLoaded()) {
-                com.modularwarfare.client.compat.AtomicShaderCompat.warmStandalonePbrMaps(albedo);
+                // Glow: register lazy only when the file exists (avoid MISSING cache).
                 ResourceLocation glow = new ResourceLocation(ModularWarfare.MOD_ID,
                         String.format("skins/%s/%s_glow.png", type.getAssetDir(), skin.getSkin()));
                 try {
-                    // Only bind when the resource exists — binding missing skins caches MISSING_TEXTURE.
                     Minecraft.getMinecraft().getResourceManager().getResource(glow);
-                    Minecraft.getMinecraft().getTextureManager().bindTexture(glow);
+                    registerLazyTexture(glow, linear);
+                    lazySkin++;
                 } catch (Throwable ignored) {
                 }
             }
-        });
-        ModularWarfare.LOGGER.info(String.format("Preloaded %d skin textures (%dms)", preloadSkinTypes.size(), System.currentTimeMillis() - skinTime));
+        }
+        ModularWarfare.LOGGER.info(String.format("Registered %d skin textures as lazy (%dms)", lazySkin,
+                System.currentTimeMillis() - skinTime));
 
+        // Effects / flash / trail / overlay / hands: register lazy placeholders (no full decode at startup).
         long textureTime = System.currentTimeMillis();
-        int textureCount = 0;
-        preloadTextureTypes.forEach((type) -> {
-            type.resourceLocations.forEach((loc)->{
-                Minecraft.getMinecraft().getTextureManager().bindTexture(loc);
-                boolean linear = type.sampling.equals(SkinType.Sampling.LINEAR);
-                TextureSamplingRegistry.register(loc, linear);
-                TextureSamplingRegistry.applyBoundFilter(linear);
-            });
-        });
-        ModularWarfare.LOGGER.info(String.format("Preloaded %d effect textures (%dms)", preloadTextureTypes.size(), System.currentTimeMillis() - textureTime));
+        int lazyEffect = 0;
+        for (com.modularwarfare.common.textures.TextureType type : preloadTextureTypes) {
+            if (type == null || type.resourceLocations == null) {
+                continue;
+            }
+            boolean linear = type.sampling.equals(SkinType.Sampling.LINEAR);
+            for (ResourceLocation loc : type.resourceLocations) {
+                registerLazyTexture(loc, linear);
+                lazyEffect++;
+            }
+        }
+        ModularWarfare.LOGGER.info(String.format("Registered %d effect textures as lazy (%dms)", lazyEffect,
+                System.currentTimeMillis() - textureTime));
 
         long maskTime = System.currentTimeMillis();
-        preloadMaskResource.forEach((ResourceLocation) -> {
-            Minecraft.getMinecraft().getTextureManager().bindTexture(ResourceLocation);
-            // 对于 mask 纹理,根据配置决定采样方式
-            // 遍历所有 attachment 类型找到对应的配置
+        int lazyMask = 0;
+        for (ResourceLocation loc : preloadMaskResource) {
             boolean useLinearSampling = false;
             for (ItemAttachment attachment : ModularWarfare.attachmentTypes.values()) {
                 if (attachment.type.attachmentType == AttachmentPresetEnum.Sight) {
-                    AttachmentRenderConfig config = ModularWarfare.getRenderConfig(attachment.type, AttachmentRenderConfig.class);
-                    if (config != null && config.sight != null && 
-                        ResourceLocation.toString().contains(config.sight.maskTexture)) {
+                    AttachmentRenderConfig config =
+                            ModularWarfare.getRenderConfig(attachment.type, AttachmentRenderConfig.class);
+                    if (config != null && config.sight != null
+                            && loc.toString().contains(config.sight.maskTexture)) {
                         useLinearSampling = config.sight.maskLinearSampling;
                         break;
                     }
                 }
             }
-            TextureSamplingRegistry.register(ResourceLocation, useLinearSampling);
-            TextureSamplingRegistry.applyBoundFilter(useLinearSampling);
-        });
-        ModularWarfare.LOGGER.info(String.format("Preloaded %d mask textures (%dms)", preloadMaskResource.size(), System.currentTimeMillis() - maskTime));
-        ModularWarfare.LOGGER.info(String.format("All textures are ready (total: %dms)", System.currentTimeMillis() - totalTime));
+            registerLazyTexture(loc, useLinearSampling);
+            lazyMask++;
+        }
+        ModularWarfare.LOGGER.info(String.format("Registered %d mask textures as lazy (%dms)", lazyMask,
+                System.currentTimeMillis() - maskTime));
+        ModularWarfare.LOGGER.info(String.format("Texture setup done (total: %dms)", System.currentTimeMillis() - totalTime));
+    }
+
+    private void registerLazyTexture(ResourceLocation loc, boolean linear) {
+        if (loc == null) {
+            return;
+        }
+        net.minecraft.client.renderer.texture.ITextureObject existing =
+                Minecraft.getMinecraft().getTextureManager().getTexture(loc);
+        if (existing instanceof com.modularwarfare.client.texture.LazyLoadTexture) {
+            TextureSamplingRegistry.register(loc, linear);
+            return;
+        }
+        try {
+            Minecraft.getMinecraft().getTextureManager().loadTexture(loc,
+                    new com.modularwarfare.client.texture.LazyLoadTexture(loc, linear));
+        } catch (Throwable t) {
+            ModularWarfare.LOGGER.warn("Failed to register lazy texture " + loc + ": " + t.getMessage());
+        }
     }
 
     @SubscribeEvent

@@ -20,7 +20,6 @@ import com.modularwarfare.common.guns.ItemGun;
 import com.modularwarfare.common.guns.WeaponAnimationType;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
-import com.mrcrayfish.obfuscate.client.event.ModelPlayerEvent;
 
 import mchhui.hegltf.GltfRenderModel;
 import mchhui.hegltf.GltfRenderModel.NodeAnimationMapper;

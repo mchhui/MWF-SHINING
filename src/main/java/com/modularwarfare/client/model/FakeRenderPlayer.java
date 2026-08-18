@@ -8,7 +8,6 @@ import com.modularwarfare.client.model.layers.RenderLayerHeldGun;
 import com.modularwarfare.client.model.layers.RenderLayerHeldMelee;
 import com.modularwarfare.client.model.layers.RenderLayerHeldGrenade;
 import com.modularwarfare.client.model.layers.ResetHiddenModelLayer;
-import com.mrcrayfish.obfuscate.client.event.ModelPlayerEvent;
 
 import mchhui.modularmovements.tactical.client.ClientListener;
 import net.minecraft.client.entity.AbstractClientPlayer;

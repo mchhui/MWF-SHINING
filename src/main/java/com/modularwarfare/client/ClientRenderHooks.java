@@ -369,15 +369,6 @@ public class ClientRenderHooks {
         }
     }
 
-    /** Ride twist for ModelPlayer after Obfuscate SetupAngles (skips FakePlayerModel). */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onSetupAnglesRideAim(com.mrcrayfish.obfuscate.client.event.ModelPlayerEvent.SetupAngles.Post event) {
-        if (event.getModelPlayer().getClass().getName().contains("FakePlayerModel")) {
-            return;
-        }
-        applyRideUpperBodyTwist(event.getModelPlayer(), event.getEntityPlayer());
-    }
-
     /** Current eased aim look (ELM bone SET / TP pose). */
     public static ShoulderAimCorrect.AimLook getAimLook(EntityPlayer player, float partialTicks) {
         UUID id = player.getUniqueID();

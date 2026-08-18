@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +31,6 @@ import net.minecraft.util.ResourceLocation;
 
 public class GltfDataModel {
     private static final GltfModelReader READER = new GltfModelReader();
-
-    private static final Comparator<DataKeyframe> COMPARATOR_ANI = new Comparator() {
-        @Override
-        public int compare(Object o1, Object o2) {
-            return ((DataKeyframe) o1).time > ((DataKeyframe) o2).time ? 1 : -1;
-        }
-    };
 
     private String lastPos = "unkown";
 
@@ -298,9 +290,7 @@ public class GltfDataModel {
             });
         });
         animations.values().forEach((ani) -> {
-            ani.posChannel.sort(COMPARATOR_ANI);
-            ani.rotChannel.sort(COMPARATOR_ANI);
-            ani.sizeChannel.sort(COMPARATOR_ANI);
+            ani.sortAndCompact();
         });
 
         lastPos = "skin";

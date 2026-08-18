@@ -6,4 +6,6 @@ public interface ObfuscateCompatInterop {
     boolean isFixApplied();
 
     void setFixed();
+
+    void applyFix();
 }
