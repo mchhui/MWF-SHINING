@@ -17,6 +17,18 @@ public class SAConfig {
 	public static int cl_sortPassesPerTick;
 	public static boolean cl_enableLightCache;
 	public static boolean cl_enableInstancedParticles;
+	public static boolean cl_asyncParticleTick;
+	public static int cl_asyncParticleTickMinCount;
+	public static int cl_particleSortMode;
+	public static int cl_particleSortLimit;
+	public static boolean cl_asyncParticlePack;
+	public static int cl_asyncParticlePackMinCount;
+	public static int cl_collisionParticleLimit;
+	public static boolean cl_enableParticleFrustumCull;
+
+	public static final int SORT_NONE = 0;
+	public static final int SORT_PARTIAL = 1;
+	public static final int SORT_FULL = 2;
 	/**
 	 * CATEGORIES
 	 */
@@ -47,6 +59,14 @@ public class SAConfig {
 		cl_sortPassesPerTick = config.getInt("ParticleDepthSortPasses", CLIENTSIDE, 0, 0, 20, "Deprecated: depth sorting is now done per texture bucket at render time. Leave at 0.");
 		cl_enableLightCache = config.getBoolean("EnableParticleLightCache", CLIENTSIDE, true, "Cache block light lookups for ALPHA_SHADED particles (same block shares one query per frame). Clientside.");
 		cl_enableInstancedParticles = config.getBoolean("EnableInstancedParticleRendering", CLIENTSIDE, true, "Use GPU instanced draw for camera-facing particles (requires GL_ARB_draw_instanced). Clientside.");
+		cl_asyncParticleTick = config.getBoolean("EnableAsyncParticleTick", CLIENTSIDE, true, "Tick independent SAFX particles on worker threads (MadParticle-style). Stick/collision/streak stay on the client thread.");
+		cl_asyncParticleTickMinCount = config.getInt("AsyncParticleTickMinCount", CLIENTSIDE, 64, 8, 4096, "Minimum live particles before async tick is used.");
+		cl_particleSortMode = config.getInt("ParticleSortMode", CLIENTSIDE, 1, 0, 2, "Depth sort: 0=NONE, 1=PARTIAL (default, sort buckets up to ParticleSortLimit), 2=FULL.");
+		cl_particleSortLimit = config.getInt("ParticleSortLimit", CLIENTSIDE, 2048, 64, 100000, "PARTIAL: skip depth sort when a bucket has more particles than this.");
+		cl_asyncParticlePack = config.getBoolean("EnableAsyncParticlePack", CLIENTSIDE, true, "Fill instanced particle buffers on worker threads.");
+		cl_asyncParticlePackMinCount = config.getInt("AsyncParticlePackMinCount", CLIENTSIDE, 512, 64, 65536, "Minimum particles in a bucket before async pack is used.");
+		cl_collisionParticleLimit = config.getInt("CollisionParticleLimit", CLIENTSIDE, 64, 0, 65536, "Max live particles that run block-hit raytraces. 0=unlimited. Oldest over the cap keep rendering but skip collision.");
+		cl_enableParticleFrustumCull = config.getBoolean("EnableParticleFrustumCull", CLIENTSIDE, true, "Skip packing/uploading particles whose world AABB is outside the camera frustum (HE-style vanilla Frustum). Clientside.");
 		
 		if(config.hasChanged()) {
 			config.save();

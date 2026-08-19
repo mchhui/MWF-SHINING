@@ -25,6 +25,11 @@ public interface ISAParticle {
 	public default boolean doNotSort() {
 		return false;
 	}
+
+	/** True when {@code updateTick} may run off the client thread (no world / entity queries). */
+	public default boolean canAsyncTick() {
+		return false;
+	}
 	
 	public double getDepth();
 	

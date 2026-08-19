@@ -176,6 +176,16 @@ public class ParticleList<E> implements Iterable<E>{
 		return size;
 	}
 
+	public void collectInto(java.util.Collection<? super E> out) {
+		ParticleListElement<E> elem = this.first;
+		while (elem != null) {
+			if (elem.e != null) {
+				out.add(elem.e);
+			}
+			elem = elem.next;
+		}
+	}
+
 	@Override
 	public ParticleListIterator<E> iterator() {
 		return new ParticleListIterator<E>(this);

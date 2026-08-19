@@ -56,10 +56,14 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 	
 //	private long timediff = 0;
 	
-	Entity entity; //parent entity (if attached to an entity)
+	Entity entity;
 	public boolean attachToHead = false;
 	public Vec3d entityOffset = null;
-	SAParticle parent; //parent particle (if attached to a particle)
+	SAParticle parent;
+	private boolean followWorldPos;
+	private double followX;
+	private double followY;
+	private double followZ;
 	Vec3d surfaceNormal = null;
 	int inheritedBlockHitChainBudget = -1;
 	
@@ -85,6 +89,21 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 	public SAParticleSystem(Entity entity, SAParticleSystemType type) {
 		this(entity.world, type, entity.posX,entity.posY,entity.posZ,0,0,0);
 		this.entity = entity;
+	}
+
+	public void setWorldFollow(double x, double y, double z) {
+		this.followWorldPos = true;
+		this.entity = null;
+		this.followX = x;
+		this.followY = y;
+		this.followZ = z;
+		this.setPosition(x, y, z);
+		this.prevPosX = x;
+		this.prevPosY = y;
+		this.prevPosZ = z;
+		this.motionX = 0.0D;
+		this.motionY = 0.0D;
+		this.motionZ = 0.0D;
 	}
 		
 
@@ -234,6 +253,13 @@ public class SAParticleSystem extends Particle implements ISAParticle {
 			this.motionY = entity.motionY;
 			this.motionZ = entity.motionZ;
 			
+		} else if (this.followWorldPos) {
+			this.posX = this.followX;
+			this.posY = this.followY;
+			this.posZ = this.followZ;
+			this.motionX = 0.0D;
+			this.motionY = 0.0D;
+			this.motionZ = 0.0D;
 		} else if (this.parent != null) {
 			this.posX=parent.posX() + type.offset.x;
 			this.posY=parent.posY() + type.offset.y;

@@ -46,6 +46,10 @@ public class ObjModelRenderer {
      */
     private int displayList;
 
+    private static int fillLightmapVbo = -1;
+    private static FloatBuffer fillLightmapScratch;
+    private static int fillLightmapScratchVerts;
+
     public ObjModelRenderer(ObjModel parent, ModelObject modelForRender) {
         this.model = modelForRender;
         this.parent = parent;
@@ -112,9 +116,9 @@ public class ObjModelRenderer {
 
             if (this.rotateAngleX == 0.0F && this.rotateAngleY == 0.0F && this.rotateAngleZ == 0.0F) {
                 if(ModConfig.INSTANCE.model_optimization) {
-                    callVAO();
+                    drawCompiledMesh(true);
                 } else {
-                    GlStateManager.callList(this.displayList);
+                    drawCompiledMesh(false);
                 }
                 if (this.childModels != null) {
                     for (ObjModelRenderer childModel : this.childModels) {
@@ -144,9 +148,9 @@ public class ObjModelRenderer {
                         -this.rotationPointZ * scale);
 
                 if(ModConfig.INSTANCE.model_optimization) {
-                    callVAO();
+                    drawCompiledMesh(true);
                 } else {
-                    GlStateManager.callList(this.displayList);
+                    drawCompiledMesh(false);
                 }
 
                 if (this.childModels != null) {
@@ -223,9 +227,9 @@ public class ObjModelRenderer {
                     -this.rotationPointZ * scale);
 
             if(ModConfig.INSTANCE.model_optimization) {
-                callVAO();
+                drawCompiledMesh(true);
             } else {
-                GlStateManager.callList(this.displayList);
+                drawCompiledMesh(false);
             }
 
             if (this.childModels != null) {
@@ -344,9 +348,58 @@ public class ObjModelRenderer {
         this.compiled = true;
     }
 
-    private void callVAO() {
-        GL30.glBindVertexArray(displayList);
-        GL11.glDrawArrays(model.glDrawingMode, 0, vertexCount);
-        GL30.glBindVertexArray(0);
+    private void drawCompiledMesh(boolean useVao) {
+        boolean atomicFill = AtomicShaderCompat.isGBufferFillActive()
+                && !AtomicShaderCompat.isShadowDepthActive();
+        if (atomicFill) {
+            AtomicShaderCompat.ensureFillLightmapState();
+        }
+        if (useVao) {
+            GL30.glBindVertexArray(displayList);
+        }
+        if (atomicFill && vertexCount > 0) {
+            attachFillLightmapClientArray(vertexCount);
+        }
+        if (useVao) {
+            GL11.glDrawArrays(model.glDrawingMode, 0, vertexCount);
+        } else {
+            GlStateManager.callList(this.displayList);
+        }
+        if (atomicFill && vertexCount > 0) {
+            detachFillLightmapClientArray();
+        }
+        if (useVao) {
+            GL30.glBindVertexArray(0);
+        }
+    }
+
+    private static void attachFillLightmapClientArray(int verts) {
+        float lmU = OpenGlHelper.lastBrightnessX;
+        float lmV = OpenGlHelper.lastBrightnessY;
+        if (fillLightmapScratch == null || fillLightmapScratchVerts < verts) {
+            fillLightmapScratchVerts = Math.max(verts, 64);
+            fillLightmapScratch = BufferUtils.createFloatBuffer(fillLightmapScratchVerts * 2);
+        }
+        fillLightmapScratch.clear();
+        for (int i = 0; i < verts; i++) {
+            fillLightmapScratch.put(lmU).put(lmV);
+        }
+        fillLightmapScratch.flip();
+        if (fillLightmapVbo <= 0) {
+            fillLightmapVbo = GL15.glGenBuffers();
+        }
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GL11.glEnableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, fillLightmapVbo);
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fillLightmapScratch, GL15.GL_DYNAMIC_DRAW);
+        GL11.glTexCoordPointer(2, GL11.GL_FLOAT, 0, 0);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
+    }
+
+    private static void detachFillLightmapClientArray() {
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.lightmapTexUnit);
+        GL11.glDisableClientState(GL11.GL_TEXTURE_COORD_ARRAY);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+        OpenGlHelper.setClientActiveTexture(OpenGlHelper.defaultTexUnit);
     }
 }

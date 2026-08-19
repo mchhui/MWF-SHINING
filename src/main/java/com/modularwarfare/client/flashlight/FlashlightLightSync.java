@@ -356,11 +356,9 @@ public final class FlashlightLightSync {
     }
 
     private static void clearAll() {
-        if (!ACTIVE_LIGHTS.isEmpty() && AtomicShaderCompat.isAtomicLoaded()
-                && FlashlightAtomicLightBridge.isLightApiReady()) {
-            for (UUID uuid : ACTIVE_LIGHTS) {
-                removePlayer(uuid);
-            }
+        if (AtomicShaderCompat.isAtomicLoaded() && FlashlightAtomicLightBridge.canTalkToApi()) {
+            FlashlightAtomicLightBridge.removeByPrefix(ID_FP_PREFIX);
+            FlashlightAtomicLightBridge.removeByPrefix(ID_TP_PREFIX);
         }
         clearLocalOnly();
     }

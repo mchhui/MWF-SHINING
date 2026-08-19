@@ -21,12 +21,26 @@ final class FlashlightAtomicLightBridge {
 
     private FlashlightAtomicLightBridge() {}
 
+    static boolean canTalkToApi() {
+        return AtomicLightApi.isAvailable();
+    }
+
     static boolean isLightApiReady() {
-        return AtomicShaderCompat.isPipelineEnabled() && AtomicLightApi.isAvailable();
+        return AtomicShaderCompat.isPipelineEnabled() && canTalkToApi();
     }
 
     static void remove(String id) {
+        if (!canTalkToApi()) {
+            return;
+        }
         AtomicLightApi.remove(id);
+    }
+
+    static void removeByPrefix(String prefix) {
+        if (!canTalkToApi() || prefix == null || prefix.isEmpty()) {
+            return;
+        }
+        AtomicLightApi.removeByPrefix(prefix);
     }
 
     static void upsertFpSpot(String id, Vec3d pos, Vec3d dir, float[] rgb,

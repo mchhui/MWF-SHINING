@@ -1,6 +1,5 @@
 package safx.client.particle;
 
-import java.awt.Color;
 import java.nio.FloatBuffer;
 import java.util.List;
 import org.lwjgl.opengl.GL11;
@@ -27,9 +26,10 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 //import safx.client.models.projectiles.ModelRocket;
 import safx.client.particle.SAParticleSystemType.AlphaEntry;
 import safx.client.particle.SAParticleSystemType.ColorEntry;
+import safx.client.render.SAFrustumCache;
 import safx.client.render.SARenderHelper;
 import safx.client.render.SARenderHelper.RenderType;
-import safx.client.render.particle.SAInstancedParticleShader;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 //import safx.client.render.item.RenderItemBase;
 import safx.debug.Keybinds;
 import safx.SAConfig;
@@ -46,7 +46,20 @@ import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 @SideOnly(Side.CLIENT)
 public class SAParticle extends Particle implements ISAParticle {
 	
-	 protected static final VertexFormat VERTEX_FORMAT = (new VertexFormat()).addElement(DefaultVertexFormats.POSITION_3F).addElement(DefaultVertexFormats.TEX_2F).addElement(DefaultVertexFormats.COLOR_4UB).addElement(DefaultVertexFormats.TEX_2S).addElement(DefaultVertexFormats.NORMAL_3B).addElement(DefaultVertexFormats.PADDING_1B);
+	public static final VertexFormat VERTEX_FORMAT = (new VertexFormat()).addElement(DefaultVertexFormats.POSITION_3F).addElement(DefaultVertexFormats.TEX_2F).addElement(DefaultVertexFormats.COLOR_4UB).addElement(DefaultVertexFormats.TEX_2S).addElement(DefaultVertexFormats.NORMAL_3B).addElement(DefaultVertexFormats.PADDING_1B);
+	private static final ColorEntry WHITE_COLOR = new ColorEntry(1.0f, 1.0f, 1.0f, 0.0f);
+	private static boolean packForwardLit;
+	private static final int FULLBRIGHT_LIGHT = (240 << 16) | 240;
+
+	SAParticleArray bucketList;
+	int bucketSlot = -1;
+	SAParticleManager.RenderBucket bucketOwner;
+	int packedLightCache = FULLBRIGHT_LIGHT;
+	boolean blockHitActive;
+	int lightBlockX = Integer.MIN_VALUE;
+	int lightBlockY;
+	int lightBlockZ;
+	private final float[] instanceScratch = new float[20];
 	   
 	
 //	public double posX;
@@ -148,6 +161,7 @@ public class SAParticle extends Particle implements ISAParticle {
 			} else {
 				this.remainingBlockHitChainBudget = Math.max(0, type.blockHitChainBudget);
 			}
+			this.blockHitActive = type.blockHitAffect;
 			
 //			if (type.randomRotation) {
 //				angle = rand.nextInt(4);
@@ -274,7 +288,7 @@ public class SAParticle extends Particle implements ISAParticle {
 		Vec3d start = new Vec3d(this.posX, this.posY, this.posZ);
 		Vec3d next = start.add(this.motionX, this.motionY, this.motionZ);
 		boolean handledBlockHit = false;
-		if (type.blockHitAffect) {
+		if (this.blockHitActive) {
 			handledBlockHit = handleBlockCollision(start, next);
 			if (this.isExpired) {
 				return;
@@ -414,20 +428,17 @@ public class SAParticle extends Particle implements ISAParticle {
 		return true;
 	}
 
-	public boolean packInstanced(FloatBuffer buffer, float partialTickTime) {
-		if (!this.canUseInstancedRender()) {
-			return false;
-		}
-		if (buffer.remaining() < SAInstancedParticleShader.INSTANCE_FLOATS) {
-			return false;
-		}
+	public void packInstanced(float[] dest, int base, float partialTickTime) {
 		float progress = ((float) this.particleAge + partialTickTime) / (float) this.particleMaxAge;
 		this.preRenderStep(progress);
 		int currentFrame;
 		if (this.type.hasVariations) {
 			currentFrame = this.variationFrame;
 		} else {
-			currentFrame = ((int) ((float) this.type.frames * (progress * this.animationSpeed))) % this.type.frames;
+			int frames = this.type.frames;
+			currentFrame = frames > 0
+					? ((int) ((float) frames * (progress * this.animationSpeed))) % frames
+					: 0;
 		}
 		float scale = this.sizePrev + (this.size - this.sizePrev) * partialTickTime;
 		float fscale = 0.1F * scale;
@@ -453,7 +464,9 @@ public class SAParticle extends Particle implements ISAParticle {
 		} else if (this.type.groundAligned) {
 			renderMode = 1.0f;
 		}
-		float aspect = (float) this.type.rows / (float) this.type.columns;
+		int columns = this.type.columns;
+		int rows = this.type.rows;
+		float aspect = (float) rows / (float) columns;
 		float fscaleX = fscale;
 		float fscaleY = fscale;
 		if (aspect > 1.0f) {
@@ -461,24 +474,51 @@ public class SAParticle extends Particle implements ISAParticle {
 		} else {
 			fscaleX = fscale * aspect;
 		}
-		int col = currentFrame % this.type.columns;
-		int row = currentFrame / this.type.columns;
-		float cellU = 1.0f / this.type.columns;
-		float cellV = 1.0f / this.type.rows;
-		float u0 = col * cellU;
-		float u1 = (col + 1) * cellU;
-		float v0 = row * cellV;
-		float v1 = (row + 1) * cellV;
-		int packedLight = this.getBrightnessForRender(partialTickTime);
-		float lmU = packedLight >> 16 & 65535;
-		float lmV = packedLight & 65535;
-		float angleRad = (float) ((this.angle + partialTickTime * this.angleRate) * MathUtil.D2R);
-		buffer.put(fPosX).put(fPosY).put(fPosZ).put(renderMode);
-		buffer.put(fscaleX).put(fscaleY).put(u0).put(u1);
-		buffer.put(v0).put(v1).put(this.particleRed).put(this.particleGreen);
-		buffer.put(this.particleBlue).put(this.particleAlpha).put(lmU).put(lmV);
-		buffer.put(nx).put(ny).put(nz).put(angleRad);
-		return true;
+		int col = currentFrame % columns;
+		int row = currentFrame / columns;
+		float cellU = 1.0f / columns;
+		float cellV = 1.0f / rows;
+		int packedLight = this.packedLightCache;
+		dest[base] = fPosX;
+		dest[base + 1] = fPosY;
+		dest[base + 2] = fPosZ;
+		dest[base + 3] = renderMode;
+		dest[base + 4] = fscaleX;
+		dest[base + 5] = fscaleY;
+		dest[base + 6] = col * cellU;
+		dest[base + 7] = (col + 1) * cellU;
+		dest[base + 8] = row * cellV;
+		dest[base + 9] = (row + 1) * cellV;
+		dest[base + 10] = this.particleRed;
+		dest[base + 11] = this.particleGreen;
+		dest[base + 12] = this.particleBlue;
+		dest[base + 13] = this.particleAlpha;
+		dest[base + 14] = packedLight >> 16 & 65535;
+		dest[base + 15] = packedLight & 65535;
+		dest[base + 16] = nx;
+		dest[base + 17] = ny;
+		dest[base + 18] = nz;
+		dest[base + 19] = (this.angle + partialTickTime * this.angleRate) * 0.017453292f;
+	}
+
+	public void packInstanced(FloatBuffer dest, float partialTickTime) {
+		this.packInstanced(this.instanceScratch, 0, partialTickTime);
+		dest.put(this.instanceScratch);
+	}
+
+	public boolean isInCameraFrustum(float partialTickTime) {
+		if (this.itemAttached) {
+			return true;
+		}
+		double x = this.prevPosX + (this.posX - this.prevPosX) * (double) partialTickTime;
+		double y = this.prevPosY + (this.posY - this.prevPosY) * (double) partialTickTime;
+		double z = this.prevPosZ + (this.posZ - this.prevPosZ) * (double) partialTickTime;
+		float scale = this.sizePrev + (this.size - this.sizePrev) * partialTickTime;
+		double r = 0.1D * (double) scale * 1.75D;
+		if (r < 0.05D) {
+			r = 0.05D;
+		}
+		return SAFrustumCache.isBoxInFrustum(x - r, y - r, z - r, x + r, y + r, z + r);
 	}
 
 	private void putQuadVertex(int vertex, double x, double y, double z) {
@@ -564,7 +604,7 @@ public class SAParticle extends Particle implements ISAParticle {
 		ColorEntry c1 = null;
 		ColorEntry c2 = null;
     	if (type.colorEntries.size()==0) {
-    		c1 =new ColorEntry(1.0f,1.0f,1.0f,0);
+    		c1 = WHITE_COLOR;
     		c2 = c1;
     	}else if (type.colorEntries.size() == 1) {
     		c1 = type.colorEntries.get(0);
@@ -580,21 +620,16 @@ public class SAParticle extends Particle implements ISAParticle {
 				}
 			}
     	}
-		float p = (progress-c1.time) / (c2.time-c1.time);		
+		float p = (c1.time != c2.time) ? (progress-c1.time) / (c2.time-c1.time) : 0.0f;
 		if (c1 != c2) {
-			
-			//RGB to HSB
-			float[] hsb1 = Color.RGBtoHSB((int)(c1.r*255), (int)(c1.g*255), (int)(c1.b*255), null);
-			float[] hsb2 = Color.RGBtoHSB((int)(c2.r*255), (int)(c2.g*255), (int)(c2.b*255), null);	
-			//HSB to RGB;
-			Color color = new Color(Color.HSBtoRGB(hsb1[0]*(1f-p) + hsb2[0]*p, hsb1[1]*(1f-p) + hsb2[1]*p, hsb1[2]*(1f-p) + hsb2[2]*p));
-			this.particleRed = (float)color.getRed() / 255.0f;
-			this.particleGreen = (float)color.getGreen() / 255.0f;
-			this.particleBlue = (float)color.getBlue() / 255.0f;
+			float ip = 1.0f - p;
+			this.particleRed = c1.r * ip + c2.r * p;
+			this.particleGreen = c1.g * ip + c2.g * p;
+			this.particleBlue = c1.b * ip + c2.b * p;
 		}else {
-			this.particleRed = (float)c1.r;
-			this.particleGreen = (float)c1.g;
-			this.particleBlue = (float)c1.b;
+			this.particleRed = c1.r;
+			this.particleGreen = c1.g;
+			this.particleBlue = c1.b;
 		}
 		
 //		if (p > 0.99f)
@@ -637,19 +672,59 @@ public class SAParticle extends Particle implements ISAParticle {
         
     }
     
+    public static void setPackForwardLit(boolean forwardLit) {
+    	packForwardLit = forwardLit;
+    }
+
+    void attachToBucket(SAParticleArray list, SAParticleManager.RenderBucket bucket) {
+    	this.detachFromBucket();
+    	this.bucketList = list;
+    	this.bucketOwner = bucket;
+    	list.add(this);
+    }
+
+    void detachFromBucket() {
+    	if (this.bucketList == null || this.bucketSlot < 0) {
+    		return;
+    	}
+    	this.bucketList.swapRemove(this.bucketSlot);
+    	this.bucketList = null;
+    	this.bucketSlot = -1;
+    	SAParticleManager.RenderBucket owner = this.bucketOwner;
+    	this.bucketOwner = null;
+    	if (owner != null && owner.isEmpty()) {
+    		owner.instancedEligible = true;
+    	}
+    }
+
+    void refreshPackedLightIfMoved() {
+    	if (this.type != null
+    			&& (this.type.renderType == RenderType.ADDITIVE
+    			|| this.type.renderType == RenderType.NO_Z_TEST_ADDITIVE)) {
+    		this.packedLightCache = FULLBRIGHT_LIGHT;
+    		return;
+    	}
+    	int bx = MathHelper.floor(this.posX);
+    	int by = MathHelper.floor(this.posY);
+    	int bz = MathHelper.floor(this.posZ);
+    	if (bx == this.lightBlockX && by == this.lightBlockY && bz == this.lightBlockZ) {
+    		return;
+    	}
+    	this.lightBlockX = bx;
+    	this.lightBlockY = by;
+    	this.lightBlockZ = bz;
+    	this.packedLightCache = LightCache.getPackedLight(this.world, this.posX, this.posY, this.posZ);
+    }
+
     @Override
     public int getBrightnessForRender(float partialTicks) {
-    	if (this.type != null && this.type.renderType == RenderType.ALPHA_SHADED) {
-    		if (SAConfig.cl_enableLightCache) {
-    			double x = this.prevPosX + (this.posX - this.prevPosX) * (double) partialTicks;
-    			double y = this.prevPosY + (this.posY - this.prevPosY) * (double) partialTicks;
-    			double z = this.prevPosZ + (this.posZ - this.prevPosZ) * (double) partialTicks;
-    			return LightCache.getPackedLight(this.world, x, y, z);
+    	if (this.type != null) {
+    		boolean shaded = this.type.renderType == RenderType.ALPHA_SHADED;
+    		if (shaded || packForwardLit) {
+    			return this.packedLightCache;
     		}
-    		return super.getBrightnessForRender(partialTicks);
     	}
-    	// ALPHA / SOLID / NO_Z_TEST：顶点满亮无环境压暗；ADDITIVE / NO_Z_TEST_ADDITIVE 同顶点满亮 + 全局高亮（见 SARenderHelper）
-    	return (240 << 16) | 240;
+    	return FULLBRIGHT_LIGHT;
     }
 	
 	protected void enableBlendMode() {
@@ -823,6 +898,20 @@ public class SAParticle extends Particle implements ISAParticle {
 	}
 
 	@Override
+	public boolean canAsyncTick() {
+		if (this.type == null || this.itemAttached || this.type.streak) {
+			return false;
+		}
+		if (this.type.particlesStickToSystem || this.type.particlesMoveWithSystem) {
+			return false;
+		}
+		if (this.blockHitActive) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
 	public void doRender(BufferBuilder buffer, Entity playerIn, float partialTickTime, float rotX, float rotZ,
 			float rotYZ, float rotXY, float rotXZ) {
 		this.renderParticle(buffer, playerIn, partialTickTime, rotX, rotZ, rotYZ, rotXY, rotXZ);
@@ -878,6 +967,10 @@ public class SAParticle extends Particle implements ISAParticle {
         	return new Vec3d(0,0,0);
         }
     }
+
+	void disableBlockHit() {
+		this.blockHitActive = false;
+	}
 
 	@Override
 	public void setItemAttached() {
@@ -954,16 +1047,16 @@ public class SAParticle extends Particle implements ISAParticle {
 	}
 	
 	protected boolean shouldUseSurfaceWallAlign(Vec3d normal, String mode) {
-		String alignMode = mode == null ? "AUTO" : mode;
-		switch (alignMode.toUpperCase()) {
-		case "WALL":
-			return true;
-		case "GROUND":
-			return false;
-		case "AUTO":
-		default:
+		if (mode == null || mode.equals("AUTO")) {
 			return Math.abs(normal.y) < 0.5;
 		}
+		if (mode.equals("WALL")) {
+			return true;
+		}
+		if (mode.equals("GROUND")) {
+			return false;
+		}
+		return Math.abs(normal.y) < 0.5;
 	}
 	
 }

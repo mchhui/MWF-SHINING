@@ -1,7 +1,6 @@
 package safx.client.render.particle;
 
 import java.nio.FloatBuffer;
-import java.util.List;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ARBDrawInstanced;
@@ -20,8 +19,11 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import com.modularwarfare.client.compat.AtomicShaderCompat;
 import safx.SAConfig;
 import safx.client.particle.SAParticle;
+import safx.client.particle.SAParticleArray;
+import safx.client.particle.SAParticleParallelTick;
 import safx.client.render.SARenderHelper;
 import safx.client.render.SARenderHelper.RenderType;
 
@@ -31,9 +33,9 @@ import safx.client.render.SARenderHelper.RenderType;
 @SideOnly(Side.CLIENT)
 public final class SAInstancedParticleRenderer {
 
-	private static final int MAX_INSTANCES_PER_BATCH = 8192;
+	private static final int MAX_INSTANCES_PER_BATCH = 131072;
+	private static final int INITIAL_INSTANCES = 8192;
 
-	/** Matches CPU writeQuad vertex order: v0..v3. */
 	private static final float[] QUAD_CORNERS = {
 			-1.0f, -1.0f,
 			-1.0f,  1.0f,
@@ -43,17 +45,23 @@ public final class SAInstancedParticleRenderer {
 
 	private static SAInstancedParticleRenderer instance;
 	private final SAInstancedParticleShader shader = new SAInstancedParticleShader();
-	private final FloatBuffer instanceBuffer = BufferUtils.createFloatBuffer(MAX_INSTANCES_PER_BATCH * SAInstancedParticleShader.INSTANCE_FLOATS);
+	private FloatBuffer instanceBuffer = BufferUtils.createFloatBuffer(INITIAL_INSTANCES * SAInstancedParticleShader.INSTANCE_FLOATS);
+	private float[] packScratch = new float[INITIAL_INSTANCES * SAInstancedParticleShader.INSTANCE_FLOATS];
+	private SAParticle[] visibleScratch = new SAParticle[INITIAL_INSTANCES];
 	private final FloatBuffer mvpBuffer = BufferUtils.createFloatBuffer(16);
 	private final FloatBuffer projectionScratch = BufferUtils.createFloatBuffer(16);
 	private final FloatBuffer modelViewScratch = BufferUtils.createFloatBuffer(16);
 	private final float[] projectionMatrix = new float[16];
 	private final float[] modelViewMatrix = new float[16];
-	private int instanceVbo = -1;
+	private final int[] instanceVbos = new int[] { -1, -1 };
+	private final int[] instanceCapacityBytes = new int[] { 0, 0 };
+	private int instanceVboSlot;
 	private int quadVbo = -1;
-	private int instanceCapacity = 0;
+	private boolean mvpUploaded;
+	private boolean forwardLightsBound;
 	private boolean instancingSupported;
 	private boolean supportChecked = false;
+	private int frameRestoreProgram = -1;
 
 	public static SAInstancedParticleRenderer get() {
 		if (instance == null) {
@@ -77,54 +85,86 @@ public final class SAInstancedParticleRenderer {
 		return instancingSupported && shader.ensureReady();
 	}
 
-	public int renderInstanced(List<SAParticle> particles, ResourceLocation texture, RenderType renderType,
+	public void beginFrame() {
+		this.mvpUploaded = false;
+		this.forwardLightsBound = false;
+		this.frameRestoreProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+	}
+
+	public void endFrame() {
+		if (this.frameRestoreProgram >= 0) {
+			GL20.glUseProgram(this.frameRestoreProgram);
+			this.frameRestoreProgram = -1;
+		}
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		for (int i = 0; i < 6; i++) {
+			ARBInstancedArrays.glVertexAttribDivisorARB(i, 0);
+			GL20.glDisableVertexAttribArray(i);
+		}
+	}
+
+	public int renderInstanced(SAParticleArray particles, ResourceLocation texture, RenderType renderType,
 			float partialTicks, float rotX, float rotZ, float rotYZ, float rotXY, float rotXZ) {
-		if (particles.isEmpty()) {
+		int count = particles.size();
+		if (count <= 0) {
 			return 0;
 		}
-		Minecraft mc = Minecraft.getMinecraft();
-		TextureManager textureManager = mc.getTextureManager();
-		textureManager.bindTexture(texture);
-		ITextureObject particleTex = textureManager.getTexture(texture);
-		if (particleTex == null) {
-			return 0;
-		}
-		this.uploadMvp();
+		this.ensureMvp();
 		this.ensureQuadVbo();
-		int prevProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-		boolean useLightmap = renderType == RenderType.ALPHA_SHADED;
-		int totalPacked = 0;
-		int index = 0;
-		try {
-			SARenderHelper.enableBlendMode(renderType);
-			shader.bindUniforms(rotX, rotZ, rotYZ, rotXY, rotXZ, mvpBuffer, 0, useLightmap);
-			this.bindDrawTextures(mc, particleTex.getGlTextureId(), useLightmap);
-			while (index < particles.size()) {
-				instanceBuffer.clear();
-				int packed = 0;
-				while (index < particles.size() && packed < MAX_INSTANCES_PER_BATCH) {
-					if (instanceBuffer.remaining() < SAInstancedParticleShader.INSTANCE_FLOATS) {
-						break;
-					}
-					SAParticle particle = particles.get(index++);
-					if (particle.canUseInstancedRender() && particle.packInstanced(instanceBuffer, partialTicks)) {
-						packed++;
-					}
-				}
-				if (packed == 0) {
-					break;
-				}
-				instanceBuffer.flip();
-				this.ensureInstanceVbo(packed);
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVbo);
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceBuffer, GL15.GL_STREAM_DRAW);
-				this.bindVertexAttributes();
-				ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, 4, packed);
-				totalPacked += packed;
+		boolean cull = SAConfig.cl_enableParticleFrustumCull;
+		boolean additive = renderType == RenderType.ADDITIVE || renderType == RenderType.NO_Z_TEST_ADDITIVE;
+		boolean useAtomicLighting = !additive && AtomicShaderCompat.isForwardLightingActive();
+		boolean useLightmap = renderType == RenderType.ALPHA_SHADED && !useAtomicLighting;
+		SAParticle[] data = particles.data();
+		this.ensureVisibleScratch(count);
+		int visible = 0;
+		for (int i = 0; i < count; i++) {
+			SAParticle particle = data[i];
+			if (particle == null) {
+				continue;
 			}
-			SARenderHelper.disableBlendMode(renderType);
+			if (cull && !particle.isInCameraFrustum(partialTicks)) {
+				continue;
+			}
+			this.visibleScratch[visible++] = particle;
+		}
+		if (visible <= 0) {
+			return 0;
+		}
+		int totalPacked = 0;
+		boolean drawSetup = false;
+		Minecraft mc = Minecraft.getMinecraft();
+		SAParticle.setPackForwardLit(useAtomicLighting);
+		try {
+			int offset = 0;
+			while (offset < visible) {
+				int batch = Math.min(visible - offset, MAX_INSTANCES_PER_BATCH);
+				this.ensurePackScratch(batch * SAInstancedParticleShader.INSTANCE_FLOATS);
+				this.ensureUploadBuffer(batch * SAInstancedParticleShader.INSTANCE_FLOATS);
+				SAParticleParallelTick.packInstanced(this.visibleScratch, offset, batch, this.packScratch,
+						partialTicks);
+				if (!drawSetup) {
+					drawSetup = this.beginDraw(mc, texture, renderType, rotX, rotZ, rotYZ, rotXY, rotXZ,
+							useLightmap, useAtomicLighting);
+					if (!drawSetup) {
+						return 0;
+					}
+				}
+				this.instanceBuffer.clear();
+				this.instanceBuffer.put(this.packScratch, 0, batch * SAInstancedParticleShader.INSTANCE_FLOATS);
+				this.instanceBuffer.flip();
+				this.flushBatch(batch);
+				totalPacked += batch;
+				offset += batch;
+			}
+			if (drawSetup) {
+				SARenderHelper.disableBlendMode(renderType);
+			}
 		} finally {
-			GL20.glUseProgram(prevProgram);
+			SAParticle.setPackForwardLit(false);
+			for (int i = 0; i < visible; i++) {
+				this.visibleScratch[i] = null;
+			}
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 			for (int i = 0; i < 6; i++) {
 				ARBInstancedArrays.glVertexAttribDivisorARB(i, 0);
@@ -132,6 +172,60 @@ public final class SAInstancedParticleRenderer {
 			}
 		}
 		return totalPacked;
+	}
+
+	private boolean beginDraw(Minecraft mc, ResourceLocation texture, RenderType renderType,
+			float rotX, float rotZ, float rotYZ, float rotXY, float rotXZ,
+			boolean useLightmap, boolean useAtomicLighting) {
+		TextureManager textureManager = mc.getTextureManager();
+		textureManager.bindTexture(texture);
+		ITextureObject particleTex = textureManager.getTexture(texture);
+		if (particleTex == null) {
+			return false;
+		}
+		SARenderHelper.enableBlendMode(renderType);
+		this.modelViewScratch.position(0).limit(16);
+		this.mvpBuffer.position(0).limit(16);
+		shader.bindUniforms(rotX, rotZ, rotYZ, rotXY, rotXZ, mvpBuffer, this.modelViewScratch, 0,
+				useLightmap, useAtomicLighting);
+		if (useAtomicLighting && !this.forwardLightsBound) {
+			AtomicShaderCompat.applyForwardLighting(shader.getProgram());
+			this.forwardLightsBound = true;
+		}
+		this.bindDrawTextures(mc, particleTex.getGlTextureId(), useLightmap);
+		return true;
+	}
+
+	private void flushBatch(int packed) {
+		this.uploadInstanceBuffer(packed);
+		this.bindVertexAttributes();
+		ARBDrawInstanced.glDrawArraysInstancedARB(GL11.GL_QUADS, 0, 4, packed);
+	}
+
+	private void ensureVisibleScratch(int count) {
+		if (this.visibleScratch.length < count) {
+			this.visibleScratch = new SAParticle[nextPow2(count)];
+		}
+	}
+
+	private void ensurePackScratch(int floats) {
+		if (this.packScratch.length < floats) {
+			this.packScratch = new float[nextPow2(floats)];
+		}
+	}
+
+	private void ensureUploadBuffer(int floats) {
+		if (this.instanceBuffer.capacity() < floats) {
+			this.instanceBuffer = BufferUtils.createFloatBuffer(nextPow2(floats));
+		}
+	}
+
+	private void ensureMvp() {
+		if (this.mvpUploaded) {
+			return;
+		}
+		this.uploadMvp();
+		this.mvpUploaded = true;
 	}
 
 	private void ensureQuadVbo() {
@@ -147,38 +241,41 @@ public final class SAInstancedParticleRenderer {
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 	}
 
-	private void ensureInstanceVbo(int instanceCount) {
-		int bytes = Math.max(instanceCount, 256) * SAInstancedParticleShader.INSTANCE_BYTES;
-		if (instanceVbo <= 0) {
-			instanceVbo = GL15.glGenBuffers();
-			instanceCapacity = bytes;
-			return;
+	private void uploadInstanceBuffer(int instanceCount) {
+		int neededBytes = instanceCount * SAInstancedParticleShader.INSTANCE_BYTES;
+		this.instanceVboSlot ^= 1;
+		if (this.instanceVbos[this.instanceVboSlot] <= 0) {
+			this.instanceVbos[this.instanceVboSlot] = GL15.glGenBuffers();
+			this.instanceCapacityBytes[this.instanceVboSlot] = 0;
 		}
-		if (bytes > instanceCapacity) {
-			instanceCapacity = bytes;
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.instanceVbos[this.instanceVboSlot]);
+		if (neededBytes > this.instanceCapacityBytes[this.instanceVboSlot]) {
+			this.instanceCapacityBytes[this.instanceVboSlot] = Math.max(nextPow2(neededBytes),
+					INITIAL_INSTANCES * SAInstancedParticleShader.INSTANCE_BYTES);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) this.instanceCapacityBytes[this.instanceVboSlot],
+					GL15.GL_STREAM_DRAW);
 		}
+		GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0L, this.instanceBuffer);
+	}
+
+	private static int nextPow2(int value) {
+		int n = 1;
+		while (n < value) {
+			n <<= 1;
+			if (n <= 0) {
+				return value;
+			}
+		}
+		return n;
 	}
 
 	private void bindDrawTextures(Minecraft mc, int particleTexId, boolean useLightmap) {
 		GL13.glActiveTexture(OpenGlHelper.defaultTexUnit);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, particleTexId);
-		if (!useLightmap) {
-			return;
-		}
-		// Atomic WorldLast: force-enable lightmap so ALPHA_SHADED samples Atomic brightness,
-		// not a stale / unbound unit left by the previous deferred pass.
-		mc.entityRenderer.enableLightmap();
-		GL13.glActiveTexture(OpenGlHelper.lightmapTexUnit);
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		int lightmapTexId = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-		if (lightmapTexId <= 0) {
+		if (useLightmap) {
 			mc.entityRenderer.enableLightmap();
-			lightmapTexId = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+			GL13.glActiveTexture(OpenGlHelper.defaultTexUnit);
 		}
-		if (lightmapTexId > 0) {
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightmapTexId);
-		}
-		GL13.glActiveTexture(OpenGlHelper.defaultTexUnit);
 	}
 
 	private void bindVertexAttributes() {
@@ -187,7 +284,7 @@ public final class SAInstancedParticleRenderer {
 		GL20.glEnableVertexAttribArray(5);
 		GL20.glVertexAttribPointer(5, 2, GL11.GL_FLOAT, false, 0, 0L);
 		ARBInstancedArrays.glVertexAttribDivisorARB(5, 0);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.instanceVbo);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, this.instanceVbos[this.instanceVboSlot]);
 		GL20.glEnableVertexAttribArray(0);
 		GL20.glVertexAttribPointer(0, 4, GL11.GL_FLOAT, false, stride, 0L);
 		ARBInstancedArrays.glVertexAttribDivisorARB(0, 1);
@@ -217,6 +314,7 @@ public final class SAInstancedParticleRenderer {
 		this.mvpBuffer.clear();
 		this.multiplyMat4ColMajor(this.projectionMatrix, this.modelViewMatrix, this.mvpBuffer);
 		this.mvpBuffer.position(0).limit(16);
+		this.modelViewScratch.position(0).limit(16);
 	}
 
 	private void multiplyMat4ColMajor(float[] projection, float[] modelView, FloatBuffer out) {
@@ -233,9 +331,12 @@ public final class SAInstancedParticleRenderer {
 
 	public void dispose() {
 		shader.dispose();
-		if (instanceVbo > 0) {
-			GL15.glDeleteBuffers(instanceVbo);
-			instanceVbo = -1;
+		for (int i = 0; i < this.instanceVbos.length; i++) {
+			if (this.instanceVbos[i] > 0) {
+				GL15.glDeleteBuffers(this.instanceVbos[i]);
+				this.instanceVbos[i] = -1;
+			}
+			this.instanceCapacityBytes[i] = 0;
 		}
 		if (quadVbo > 0) {
 			GL15.glDeleteBuffers(quadVbo);

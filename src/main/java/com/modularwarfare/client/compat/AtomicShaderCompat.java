@@ -15,6 +15,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 
+import cloud.siz.atomic.api.render.AtomicForwardLightingApi;
 import cloud.siz.atomic.api.render.AtomicGBufferCompat;
 
 /**
@@ -29,6 +30,8 @@ public final class AtomicShaderCompat {
     private static ResourceLocation currentFillAlbedo;
 
     private static final java.util.HashMap<String, Integer> GLOW_GL_ID_CACHE = new java.util.HashMap<>();
+    private static boolean atomicLoadedResolved;
+    private static boolean atomicLoaded;
 
     private AtomicShaderCompat() {
     }
@@ -38,7 +41,11 @@ public final class AtomicShaderCompat {
     }
 
     public static boolean isAtomicLoaded() {
-        return Loader.isModLoaded(MODID);
+        if (!atomicLoadedResolved) {
+            atomicLoaded = Loader.isModLoaded(MODID);
+            atomicLoadedResolved = true;
+        }
+        return atomicLoaded;
     }
 
     public static boolean isAvailable() {
@@ -113,6 +120,23 @@ public final class AtomicShaderCompat {
             return;
         }
         AtomicGBufferCompat.rebindFillIfActive();
+    }
+
+    /**
+     * Upload ParticleForward-equivalent sky + custom lights onto a bound peer program.
+     * {@code false} when Atomic is absent / master off — keep vanilla lightmap.
+     */
+    public static boolean applyForwardLighting(int programId) {
+        if (!isForwardLightingActive() || programId <= 0) {
+            return false;
+        }
+        AtomicForwardLightingApi.applyToBoundProgram(programId);
+        return true;
+    }
+
+    /** True when peers should bind Atomic sky + custom-light uniforms instead of vanilla lightmap. */
+    public static boolean isForwardLightingActive() {
+        return isPipelineEnabled() && AtomicForwardLightingApi.isActive();
     }
 
     /** Force next fill rebind after raw {@code GL20.glUseProgram} changes. */

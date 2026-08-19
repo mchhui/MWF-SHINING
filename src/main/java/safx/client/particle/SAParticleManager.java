@@ -1,10 +1,9 @@
 package safx.client.particle;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 
 import org.lwjgl.opengl.GL11;
 
@@ -16,11 +15,13 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import safx.SAConfig;
 import safx.client.particle.list.ParticleList;
-import safx.client.particle.list.ParticleList.ParticleListIterator;
 import safx.client.render.particle.SAInstancedParticleRenderer;
+import safx.client.render.SAFrustumCache;
 import safx.client.render.SARenderHelper;
 import safx.client.render.SARenderHelper.RenderType;
+import safx.util.LightCache;
 
 public class SAParticleManager {
 	
@@ -34,11 +35,9 @@ public class SAParticleManager {
 	protected ComparatorParticleDepth compare = new ComparatorParticleDepth();
 
 	private final HashMap<Long, RenderBucket> bucketMap = new HashMap<>(32);
-	private final ArrayList<RenderBucket> bucketPool = new ArrayList<>(32);
 	private final ArrayList<RenderBucket> bucketRenderOrder = new ArrayList<>(32);
-	private int nextBucketIndex = 0;
-	private final ArrayList<SAParticle> instancedScratch = new ArrayList<>(1024);
 	private final SAInstancedParticleRenderer instancedRenderer = SAInstancedParticleRenderer.get();
+	private final ArrayDeque<SAParticle> collisionActive = new ArrayDeque<SAParticle>();
 	private boolean useInstancedRendering;
 	
 	public void addEffect(ISAParticle effect) {
@@ -52,7 +51,20 @@ public class SAParticleManager {
 				} else {
 					list.add(effect);
 				}
+				if (effect instanceof SAParticle) {
+					SAParticle particle = (SAParticle) effect;
+					this.insertIntoBucket(particle, effect.doNotSort());
+					this.registerCollisionParticle(particle);
+				}
 			}
+		}
+	}
+
+	public void detachParticle(ISAParticle effect) {
+		if (effect instanceof SAParticle) {
+			SAParticle particle = (SAParticle) effect;
+			this.unregisterCollisionParticle(particle);
+			particle.detachFromBucket();
 		}
 	}
 	
@@ -60,6 +72,8 @@ public class SAParticleManager {
 		if(Minecraft.getMinecraft().isGamePaused()) return;
 		
 		Entity viewEnt = Minecraft.getMinecraft().getRenderViewEntity();
+		LightCache.beginFrame();
+		this.trimCollisionParticles();
 		
 		Iterator<SAParticleSystem> sysit = list_systems.iterator();
 		while(sysit.hasNext()) {
@@ -69,24 +83,37 @@ public class SAParticleManager {
 				sysit.remove();
 			}
 		}
-		
-		ParticleListIterator<ISAParticle> it = list.iterator();
-		while(it.hasNext()) {
-			ISAParticle p = it.next();
-			p.updateTick();
-			if(p.shouldRemove()) {
-				it.remove();
-			} else if(viewEnt != null) {
-				p.setDepth(this.distanceToPlane(viewEnt, p.getPosX(), p.getPosY(), p.getPosZ()));
-			}
+
+		boolean writeDepth = SAConfig.cl_particleSortMode != SAConfig.SORT_NONE;
+		SAParticleParallelTick.tickList(this.list, viewEnt, writeDepth, this);
+		SAParticleParallelTick.tickList(this.list_nosort, viewEnt, false, this);
+	}
+
+	private void registerCollisionParticle(SAParticle particle) {
+		if (particle == null || particle.type == null || !particle.type.blockHitAffect) {
+			return;
 		}
-		
-		Iterator<ISAParticle> it2 = list_nosort.iterator();
-		while(it2.hasNext()) {
-			ISAParticle p = it2.next();
-			p.updateTick();
-			if(p.shouldRemove()) {
-				it2.remove();
+		particle.blockHitActive = true;
+		this.collisionActive.addLast(particle);
+		this.trimCollisionParticles();
+	}
+
+	private void unregisterCollisionParticle(SAParticle particle) {
+		if (particle == null) {
+			return;
+		}
+		this.collisionActive.remove(particle);
+	}
+
+	private void trimCollisionParticles() {
+		int limit = SAConfig.cl_collisionParticleLimit;
+		if (limit <= 0) {
+			return;
+		}
+		while (this.collisionActive.size() > limit) {
+			SAParticle oldest = this.collisionActive.pollFirst();
+			if (oldest != null && !oldest.shouldRemove()) {
+				oldest.disableBlockHit();
 			}
 		}
 	}
@@ -106,49 +133,43 @@ public class SAParticleManager {
         interpPosY = playerIn.lastTickPosY + (playerIn.posY - playerIn.lastTickPosY) * (double)partialTicks;
         interpPosZ = playerIn.lastTickPosZ + (playerIn.posZ - playerIn.lastTickPosZ) * (double)partialTicks;
 
+        SAFrustumCache.ensureUpdated(partialTicks);
+        this.useInstancedRendering = this.instancedRenderer.isAvailable();
+        if (this.useInstancedRendering) {
+        	this.instancedRenderer.beginFrame();
+        }
         GlStateManager.disableCull();
         GlStateManager.depthMask(false);
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         mc.entityRenderer.enableLightmap();
 
-        this.useInstancedRendering = this.instancedRenderer.isAvailable();
-        this.beginBucketPass();
-        this.collectParticles(this.list, true);
-        this.collectParticles(this.list_nosort, false);
         this.renderBuckets(tessellator, bufferbuilder, mc, playerIn, partialTicks, f1, f5, f2, f3, f4);
+        if (this.useInstancedRendering) {
+        	this.instancedRenderer.endFrame();
+        }
 
         mc.entityRenderer.disableLightmap();
         GlStateManager.depthMask(true);
     }
 
-	private void beginBucketPass() {
-		for (RenderBucket bucket : bucketPool) {
-			bucket.clear();
+	private void insertIntoBucket(SAParticle particle, boolean fixedOrder) {
+		SAParticleSystemType type = particle.type;
+		if (type == null || type.texture == null) {
+			return;
 		}
-		bucketMap.clear();
-		bucketRenderOrder.clear();
-		nextBucketIndex = 0;
-	}
-
-	private void collectParticles(ParticleList<ISAParticle> particles, boolean sortByDepth) {
-		ParticleListIterator<ISAParticle> it = particles.iterator();
-		while (it.hasNext()) {
-			ISAParticle particle = it.next();
-			if (!(particle instanceof SAParticle)) {
-				continue;
-			}
-			SAParticle sp = (SAParticle) particle;
-			SAParticleSystemType type = sp.type;
-			if (type == null) {
-				continue;
-			}
-			RenderBucket bucket = this.acquireBucket(type.texture, type.renderType);
-			if (sortByDepth) {
-				bucket.sortable.add(particle);
-			} else {
-				bucket.fixedOrder.add(particle);
-			}
+		RenderBucket bucket = this.acquireBucket(type.texture, type.renderType);
+		if (!particle.canUseInstancedRender()) {
+			bucket.instancedEligible = false;
 		}
+		if (type.surfaceAligned) {
+			bucket.surfaceDecal = true;
+		}
+		if (fixedOrder) {
+			particle.attachToBucket(bucket.fixedOrder, bucket);
+		} else {
+			particle.attachToBucket(bucket.sortable, bucket);
+		}
+		particle.refreshPackedLightIfMoved();
 	}
 
 	private RenderBucket acquireBucket(ResourceLocation texture, RenderType renderType) {
@@ -157,15 +178,7 @@ public class SAParticleManager {
 		if (bucket != null) {
 			return bucket;
 		}
-		if (nextBucketIndex < bucketPool.size()) {
-			bucket = bucketPool.get(nextBucketIndex++);
-		} else {
-			bucket = new RenderBucket(texture, renderType);
-			bucketPool.add(bucket);
-			nextBucketIndex++;
-		}
-		bucket.texture = texture;
-		bucket.renderType = renderType;
+		bucket = new RenderBucket(texture, renderType);
 		bucketMap.put(key, bucket);
 		bucketRenderOrder.add(bucket);
 		return bucket;
@@ -175,64 +188,74 @@ public class SAParticleManager {
 		return ((long) System.identityHashCode(texture) << 32) | (renderType.ordinal() & 0xFFFFFFFFL);
 	}
 
-	private void renderBuckets(Tessellator tessellator, BufferBuilder bufferbuilder, Minecraft mc,
-			Entity playerIn, float partialTicks, float f1, float f5, float f2, float f3, float f4) {
-		for (int i = 0; i < bucketRenderOrder.size(); i++) {
-			RenderBucket bucket = bucketRenderOrder.get(i);
-			if (bucket.isEmpty()) {
-				continue;
-			}
-			if (!bucket.sortable.isEmpty()) {
-				Collections.sort(bucket.sortable, compare);
-			}
-			if (this.useInstancedRendering && this.canInstancEntireBucket(bucket)) {
-				this.instancedScratch.clear();
-				this.collectInstancedParticles(bucket.sortable);
-				this.collectInstancedParticles(bucket.fixedOrder);
-				this.instancedRenderer.renderInstanced(this.instancedScratch, bucket.texture, bucket.renderType,
-						partialTicks, f1, f5, f2, f3, f4);
-			} else {
-				mc.getTextureManager().bindTexture(bucket.texture);
-				SARenderHelper.enableBlendMode(bucket.renderType);
-				bufferbuilder.begin(GL11.GL_QUADS, SAParticle.VERTEX_FORMAT);
-				this.renderParticleList(bucket.sortable, bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
-				this.renderParticleList(bucket.fixedOrder, bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
-				tessellator.draw();
-				SARenderHelper.disableBlendMode(bucket.renderType);
-			}
-		}
-	}
-
-	private boolean canInstancEntireBucket(RenderBucket bucket) {
-		if (!this.listAllInstancable(bucket.sortable)) {
+	private boolean shouldSortBucket(RenderBucket bucket) {
+		RenderType type = bucket.renderType;
+		if (type == RenderType.ADDITIVE || type == RenderType.NO_Z_TEST_ADDITIVE) {
 			return false;
 		}
-		if (!this.listAllInstancable(bucket.fixedOrder)) {
+		int mode = SAConfig.cl_particleSortMode;
+		if (mode == SAConfig.SORT_NONE) {
 			return false;
 		}
-		return !bucket.isEmpty();
-	}
-
-	private boolean listAllInstancable(List<ISAParticle> particles) {
-		for (int i = 0, size = particles.size(); i < size; i++) {
-			ISAParticle particle = particles.get(i);
-			if (!(particle instanceof SAParticle) || !((SAParticle) particle).canUseInstancedRender()) {
-				return false;
-			}
+		int n = bucket.sortable.size();
+		if (n < 2) {
+			return false;
+		}
+		if (mode == SAConfig.SORT_PARTIAL && n > SAConfig.cl_particleSortLimit) {
+			return false;
 		}
 		return true;
 	}
 
-	private void collectInstancedParticles(List<ISAParticle> source) {
-		for (int i = 0, size = source.size(); i < size; i++) {
-			this.instancedScratch.add((SAParticle) source.get(i));
+	private void renderBuckets(Tessellator tessellator, BufferBuilder bufferbuilder, Minecraft mc,
+			Entity playerIn, float partialTicks, float f1, float f5, float f2, float f3, float f4) {
+		for (int pass = 0; pass < 2; pass++) {
+			boolean surfacePass = pass == 0;
+			for (int i = 0; i < bucketRenderOrder.size(); i++) {
+				RenderBucket bucket = bucketRenderOrder.get(i);
+				if (bucket.surfaceDecal != surfacePass || bucket.isEmpty()) {
+					continue;
+				}
+				this.renderBucket(tessellator, bufferbuilder, mc, playerIn, partialTicks, f1, f5, f2, f3, f4, bucket);
+			}
 		}
 	}
 
-	private void renderParticleList(List<ISAParticle> particles, BufferBuilder bufferbuilder, Entity playerIn,
+	private void renderBucket(Tessellator tessellator, BufferBuilder bufferbuilder, Minecraft mc, Entity playerIn,
+			float partialTicks, float f1, float f5, float f2, float f3, float f4, RenderBucket bucket) {
+		if (this.shouldSortBucket(bucket)) {
+			bucket.sortable.sort(compare);
+		}
+		if (this.useInstancedRendering && bucket.instancedEligible) {
+			if (!bucket.sortable.isEmpty()) {
+				this.instancedRenderer.renderInstanced(bucket.sortable, bucket.texture, bucket.renderType,
+						partialTicks, f1, f5, f2, f3, f4);
+			}
+			if (!bucket.fixedOrder.isEmpty()) {
+				this.instancedRenderer.renderInstanced(bucket.fixedOrder, bucket.texture, bucket.renderType,
+						partialTicks, f1, f5, f2, f3, f4);
+			}
+		} else {
+			mc.getTextureManager().bindTexture(bucket.texture);
+			SARenderHelper.enableBlendMode(bucket.renderType);
+			bufferbuilder.begin(GL11.GL_QUADS, SAParticle.VERTEX_FORMAT);
+			this.renderParticleArray(bucket.sortable, bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
+			this.renderParticleArray(bucket.fixedOrder, bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
+			tessellator.draw();
+			SARenderHelper.disableBlendMode(bucket.renderType);
+		}
+	}
+
+	private void renderParticleArray(SAParticleArray particles, BufferBuilder bufferbuilder, Entity playerIn,
 			float partialTicks, float f1, float f5, float f2, float f3, float f4) {
+		SAParticle[] data = particles.data();
 		for (int i = 0, size = particles.size(); i < size; i++) {
-			particles.get(i).doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
+			SAParticle particle = data[i];
+			if (SAConfig.cl_enableParticleFrustumCull
+					&& !particle.isInCameraFrustum(partialTicks)) {
+				continue;
+			}
+			data[i].doRender(bufferbuilder, playerIn, partialTicks, f1, f5, f2, f3, f4);
 		}
 	}
 
@@ -253,20 +276,17 @@ public class SAParticleManager {
 		return dx * dx + dy * dy + dz * dz;
 	}
 
-	private static final class RenderBucket {
+	static final class RenderBucket {
 		ResourceLocation texture;
 		RenderType renderType;
-		final ArrayList<ISAParticle> sortable = new ArrayList<>();
-		final ArrayList<ISAParticle> fixedOrder = new ArrayList<>();
+		final SAParticleArray sortable = new SAParticleArray();
+		final SAParticleArray fixedOrder = new SAParticleArray();
+		boolean instancedEligible = true;
+		boolean surfaceDecal = false;
 
 		RenderBucket(ResourceLocation texture, RenderType renderType) {
 			this.texture = texture;
 			this.renderType = renderType;
-		}
-
-		void clear() {
-			sortable.clear();
-			fixedOrder.clear();
 		}
 
 		boolean isEmpty() {
@@ -274,10 +294,10 @@ public class SAParticleManager {
 		}
 	}
 	
-	public static class ComparatorParticleDepth implements java.util.Comparator<ISAParticle> {
+	public static class ComparatorParticleDepth implements java.util.Comparator<SAParticle> {
 
 		@Override
-		public int compare(ISAParticle p1, ISAParticle p2) {
+		public int compare(SAParticle p1, SAParticle p2) {
 			if(p1.doNotSort() && p2.doNotSort()) {
 				return 0;
 			}

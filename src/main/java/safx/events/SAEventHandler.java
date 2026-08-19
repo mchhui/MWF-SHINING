@@ -15,11 +15,13 @@ import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelBiped.ArmPose;
 import net.minecraft.client.model.ModelPlayer;
+import net.minecraft.client.renderer.EntityRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
@@ -82,7 +84,6 @@ import safx.SAPackets;
 import safx.SagerFX;
 
 import safx.client.ClientProxy;
-import safx.util.LightCache;
 
 import safx.client.render.GLStateSnapshot;
 import safx.client.render.entities.projectiles.DeathEffectEntityRenderer;
@@ -145,18 +146,15 @@ public class SAEventHandler {
 		// RenderType split (see SARenderHelper):
 		//   ADDITIVE / NO_Z_TEST_ADDITIVE → fullbright lightmap 240 (highlight)
 		//   ALPHA_SHADED → block+sky lightmap (Atomic brightness)
-		//   ALPHA / SOLID / NO_Z_TEST → albedo only after sanitize
-//		GLStateSnapshot states = new GLStateSnapshot();
-		//System.out.println("***********BEFORE**********");
-		//states.printDebug();
-		LightCache.beginFrame();
-		if (com.modularwarfare.client.compat.AtomicShaderCompat.isAtomicLoaded()) {
-			Minecraft.getMinecraft().entityRenderer.enableLightmap();
+		//   ALPHA / SOLID / NO_Z_TEST → Atomic forward lighting when pipeline on
+		Minecraft mc = Minecraft.getMinecraft();
+		if (com.modularwarfare.client.compat.AtomicShaderCompat.isPipelineEnabled()) {
+			ensureCameraForForwardLighting(mc, event.getPartialTicks());
+			mc.entityRenderer.enableLightmap();
+		} else if (com.modularwarfare.client.compat.AtomicShaderCompat.isAtomicLoaded()) {
+			mc.entityRenderer.enableLightmap();
 		}
-		ClientProxy.get().particleManager.renderParticles(Minecraft.getMinecraft().getRenderViewEntity(), event.getPartialTicks());
-//		states.restore();
-		//System.out.println("<<<<<<<<<<<AFTER>>>>>>>>>>>>");
-		//new GLStateSnapshot().printDebug();
+		ClientProxy.get().particleManager.renderParticles(mc.getRenderViewEntity(), event.getPartialTicks());
 		GlStateManager.disableBlend();
 		GlStateManager.blendFunc(SourceFactor.ONE, DestFactor.ZERO);
 		GlStateManager.enableDepth();
@@ -164,6 +162,30 @@ public class SAEventHandler {
 		GlStateManager.enableCull();
 		GlStateManager.disableLighting();
 		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 0, 240f);
+	}
+
+	@SideOnly(Side.CLIENT)
+	private static void ensureCameraForForwardLighting(Minecraft mc, float partialTicks) {
+		if (mc == null || mc.entityRenderer == null) {
+			return;
+		}
+		try {
+			Method setup = EntityRenderer.class.getDeclaredMethod("setupCameraTransform", float.class, int.class);
+			setup.setAccessible(true);
+			setup.invoke(mc.entityRenderer, Float.valueOf(partialTicks), Integer.valueOf(0));
+		} catch (Throwable ignored) {
+			try {
+				Method setup = EntityRenderer.class.getDeclaredMethod("func_78479_a", float.class, int.class);
+				setup.setAccessible(true);
+				setup.invoke(mc.entityRenderer, Float.valueOf(partialTicks), Integer.valueOf(0));
+			} catch (Throwable ignored2) {
+			}
+		}
+		Entity view = mc.getRenderViewEntity();
+		if (view != null) {
+			net.minecraft.client.renderer.ActiveRenderInfo.updateRenderInfo(view,
+					mc.gameSettings.thirdPersonView == 2);
+		}
 	}
 	
 	
