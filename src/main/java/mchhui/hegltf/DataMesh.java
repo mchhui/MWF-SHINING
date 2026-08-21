@@ -72,6 +72,7 @@ public class DataMesh {
         }
         batchBoundVao = 0;
         batchActive = false;
+        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
         if (batchTouchedSkinDraw) {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
             batchTouchedSkinDraw = false;
@@ -420,8 +421,12 @@ public class DataMesh {
         if (this.skin) {
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.VERTEXBUFFERBINDING, this.ssbo);
             GL30.glBindVertexArray(this.displayList);
+            if (this.ebo > 0) {
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.ebo);
+            }
             GL11.glDrawElements(this.glDrawingMode, this.elementCount, GL11.GL_UNSIGNED_INT, 0);
             GL30.glBindVertexArray(0);
+            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
             GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
             this.initSkinning = true;
         }
@@ -438,9 +443,13 @@ public class DataMesh {
             bindBatchVao(this.ssboVao);
             batchTouchedSkinDraw = true;
             restampLightmapCoordsAfterVao();
+            if (this.ebo > 0) {
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.ebo);
+            }
             GL11.glDrawElements(this.glDrawingMode, this.elementCount, GL11.GL_UNSIGNED_INT, 0);
             unbindBatchVao();
             if (!batchActive) {
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
             }
         } else {
