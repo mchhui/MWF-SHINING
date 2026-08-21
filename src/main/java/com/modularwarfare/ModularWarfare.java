@@ -169,11 +169,15 @@ public class ModularWarfare {
         try {
             Class<?> protectorClass = Class.forName("moe.komi.mwprotect.cipher.ProtectZip");
             Constructor<?> constructor = protectorClass.getConstructor(File.class);
-            return (IZip)constructor.newInstance(file);
+            return (IZip) constructor.newInstance(file);
         } catch (InvocationTargetException e) {
-            LOGGER.error("Failed to construct ProtectZip", e);
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            LOGGER.error("Failed to construct ProtectZip for '{}'", file.getName(), e);
+            if (cause instanceof IOException) {
+                throw (IOException) cause;
+            }
+            throw new IOException("Failed to open protected content pack: " + file.getName(), cause);
         } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException ignored) {
-            // Pass
         }
         return new LegacyZip(file);
     }
