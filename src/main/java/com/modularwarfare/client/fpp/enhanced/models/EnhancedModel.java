@@ -50,6 +50,9 @@ public class EnhancedModel implements IMWModel {
     private boolean poseCacheValid = false;
     private boolean skinnedForCachedPose = false;
 
+    private float elmThirdIdleTime = Float.NaN;
+    private boolean elmThirdIdleReady = false;
+
     public EnhancedModel(EnhancedRenderConfig config, BaseType baseType) {
         this.config = config;
         this.baseType = baseType;
@@ -160,6 +163,42 @@ public class EnhancedModel implements IMWModel {
         poseCacheValid = false;
         skinnedForCachedPose = false;
         cachedPoseTime = Float.NaN;
+        elmThirdIdleReady = false;
+        elmThirdIdleTime = Float.NaN;
+    }
+
+    public void ensureThirdIdleCached(float time) {
+        if (model == null || !isAnimReady()) {
+            return;
+        }
+        if (!initCal || !elmThirdIdleReady || Float.compare(elmThirdIdleTime, time) != 0) {
+            initCal = model.updatePose(time);
+            if (!initCal) {
+                elmThirdIdleReady = false;
+                return;
+            }
+            model.clearThirdIdleSkinMark();
+            skinnedForCachedPose = false;
+        }
+        elmThirdIdleTime = time;
+        elmThirdIdleReady = true;
+        poseCacheValid = true;
+        cachedPoseTime = time;
+
+        if (model.isThirdIdleSkinReady(time) && skinnedForCachedPose && model.hasInitializedSkinBuffers()) {
+            return;
+        }
+        if (!isMeshReady()) {
+            skinnedForCachedPose = false;
+            return;
+        }
+        model.skinFromPose();
+        if (!model.hasInitializedSkinBuffers()) {
+            skinnedForCachedPose = false;
+            return;
+        }
+        model.markThirdIdleSkin(time);
+        skinnedForCachedPose = true;
     }
 
     public void updateAnimationBlended(float time, boolean skin, boolean basicSprint, float sprintTime,

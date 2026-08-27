@@ -116,6 +116,10 @@ public class DataMesh {
         return compiled;
     }
 
+    public boolean isSkinInitialized() {
+        return initSkinning;
+    }
+
     public void requestUpload(String name, boolean priority, Runnable onComplete) {
         if (uploadCancelled) {
             if (onComplete != null) {

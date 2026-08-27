@@ -77,6 +77,20 @@ public class CustomItemRendererEnhanced extends CustomItemRenderer{
             return (ModelEnhancedGun)m;
         }
     }
+
+    protected ModelEnhancedGun getOrCreateSimpleThirdModel(GunType gunType) {
+        if (gunType == null || gunType.animationType == WeaponAnimationType.BASIC || gunType.enhancedModel == null) {
+            return null;
+        }
+        String key = "simpleThird|" + gunType.internalName;
+        if (!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
+            ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig) gunType.enhancedModel.config, gunType);
+            thirdPersonModels.put(key, newModel);
+        }
+        EnhancedModel m = thirdPersonModels.get(key);
+        touchModel(m);
+        return (ModelEnhancedGun) m;
+    }
     
     protected ModelEnhancedGrenade getOrCreateModel(GrenadeType greanadeType, boolean isFirstPerson, UUID playerId) {
         // Added a check for the animation type

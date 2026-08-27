@@ -216,6 +216,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
     public static final HashSet<String> DEFAULT_EXCEPT = new HashSet<String>();
     /** Scratch for merging same-MV gun part draws (selector/bullets/ammo). */
     private static final HashSet<String> GUN_PART_BATCH = new HashSet<String>();
+    private static final HashMap<String, HashSet<String>> THIRD_EXCEPT_CACHE = new HashMap<String, HashSet<String>>();
     public static final List<String> defaultHideList = Arrays.asList("ammoModel", "ammoModelPre", "ammoModelPost",
             "leftArmModel", "leftArmLayerModel",
             "leftArmSlimModel",
@@ -2152,82 +2153,85 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         drawThirdGun(renderPlayer, renderType, player, demoStack, false);
     }
 
-    @SideOnly(Side.CLIENT)
-    private void applyThirdPersonGunAnimSync(ModelEnhancedGun model, EntityLivingBase holder) {
-        if (model == null || holder == null) {
-            return;
-        }
-        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
-        AnimationController controller = AnimationController.getController(holder, config);
-        if (controller.getPlayingAnimation() == AnimationType.DEFAULT
-                || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
-                || controller.getPlayingAnimation() == AnimationType.FIRE
-                || controller.getPlayingAnimation() == AnimationType.POST_FIRE) {
-            model.updateAnimation(controller.getTime(), true);
-        } else {
-            model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS), true);
-        }
+    /** 3P 定姿：不跟动画机，仅 DEFAULT/DEFAULT_EMPTY 静态 pose（HEBridge 直接调）。 */
+    public void drawThirdGunSimple(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
+            ItemStack demoStack) {
+        drawThirdGunSimple(renderPlayer, renderType, player, demoStack, false);
     }
 
-    public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
+    public void drawThirdGunSimple(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
             ItemStack demoStack, boolean sneakFlag) {
-        if (!(demoStack.getItem() instanceof ItemGun))
-            return;
-        GunType gunType = ((ItemGun) demoStack.getItem()).type;
-        if (gunType == null) {
-            return;
-        }
-        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
-            return;
-        }
-        final boolean atomicFill = AtomicShaderCompat.isGBufferFillActive();
-        final boolean atomicShadowOnly = AtomicShaderCompat.shouldDrawShadowDepthOnly();
-        ModelEnhancedGun model;
-            if (renderType == RenderType.ITEMFRAME || renderType == RenderType.ITEMLOOT) {
-                String key = renderType.serializedName;
-                if(!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
-                    ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig)gunType.enhancedModel.config, gunType);
-                    newModel.model = gunType.enhancedModel.model;
-                    thirdPersonModels.put(key, newModel);
-                }
-                model = (ModelEnhancedGun)thirdPersonModels.get(key);
-            } else {
-                model = getOrCreateModel(gunType, false, player != null ? player.getUniqueID() : null);
-            }
-        if (model == null || !model.isAnimReady() || model.model == null || model.model.geoModel == null) {
-            return;
-        }
-        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
-        EnhancedStateMachine anim = ClientRenderHooks.getEnhancedAnimMachine(player);
-        if (player != null) {
-            applyThirdPersonGunAnimSync(model, player);
-        } else {
-            model.updateAnimation((float) config.animations.get(AnimationType.DEFAULT).getStartTime(config.FPS), true);
-        }
+        drawThirdGun(renderPlayer, renderType, player, demoStack, sneakFlag, true);
+    }
 
+    public static float resolveThirdIdleTime(GunEnhancedRenderConfig config, ItemStack stack) {
+        if (config == null || config.animations == null || config.animations.isEmpty()) {
+            return 0f;
+        }
+        AnimationType type = AnimationType.DEFAULT;
+        if (stack != null && !ItemGun.hasNextShot(stack)
+                && config.animations.containsKey(AnimationType.DEFAULT_EMPTY)) {
+            type = AnimationType.DEFAULT_EMPTY;
+        }
+        if (!config.animations.containsKey(type)) {
+            type = AnimationType.DEFAULT;
+        }
+        EnhancedRenderConfig.Animation anim = config.animations.get(type);
+        if (anim == null) {
+            return 0f;
+        }
+        return (float) anim.getStartTime(config.FPS);
+    }
+
+    private static String buildThirdExceptCacheKey(GunType gunType, RenderType renderType, ItemStack demoStack) {
+        StringBuilder sb = new StringBuilder(96);
+        sb.append(gunType.internalName).append('|').append(renderType.serializedName);
+        for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
+            ItemStack itemStack = GunType.getAttachment(demoStack, attachment);
+            if (itemStack != null && itemStack.getItem() != Items.AIR && itemStack.getItem() instanceof ItemAttachment) {
+                sb.append('|').append(attachment.typeName).append('=')
+                        .append(((ItemAttachment) itemStack.getItem()).type.internalName);
+            }
+        }
+        if (demoStack.hasTagCompound()) {
+            ItemStack loadedAmmo = new ItemStack(demoStack.getTagCompound().getCompoundTag("ammo"));
+            if (loadedAmmo.getItem() instanceof ItemAmmo) {
+                sb.append("|ammo=").append(((ItemAmmo) loadedAmmo.getItem()).type.internalName);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static HashSet<String> buildThirdExceptParts(GunEnhancedRenderConfig config, RenderType renderType,
+            ItemStack demoStack) {
         HashSet<String> exceptParts = new HashSet<String>();
-        if (config.specialEffect.flashModelGroups != null) {
+        if (config.specialEffect != null && config.specialEffect.flashModelGroups != null) {
             config.specialEffect.flashModelGroups.forEach((g) -> {
                 exceptParts.add(g.name);
             });
         }
-        exceptParts.addAll(config.defaultHidePart);
-        if (renderType == RenderType.PLAYER_OFFHAND) {
-            exceptParts.addAll(config.thirdHideOffhandPart);
-            exceptParts.removeAll(config.thirdShowOffhandPart);
-        } else {
-            exceptParts.addAll(config.thirdHidePart);
-            exceptParts.removeAll(config.thirdShowPart);
+        if (config.defaultHidePart != null) {
+            exceptParts.addAll(config.defaultHidePart);
         }
-        // exceptParts.addAll(DEFAULT_EXCEPT);
-
-        boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
-        ObjModelRenderer.glowTxtureMode = true;
+        if (renderType == RenderType.PLAYER_OFFHAND) {
+            if (config.thirdHideOffhandPart != null) {
+                exceptParts.addAll(config.thirdHideOffhandPart);
+            }
+            if (config.thirdShowOffhandPart != null) {
+                exceptParts.removeAll(config.thirdShowOffhandPart);
+            }
+        } else {
+            if (config.thirdHidePart != null) {
+                exceptParts.addAll(config.thirdHidePart);
+            }
+            if (config.thirdShowPart != null) {
+                exceptParts.removeAll(config.thirdShowPart);
+            }
+        }
         for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
             ItemStack itemStack = GunType.getAttachment(demoStack, attachment);
             if (itemStack != null && itemStack.getItem() != Items.AIR) {
                 AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-                String binding = "gunModel";
                 if (config.attachmentGroup.containsKey(attachment.typeName)) {
                     if (config.attachmentGroup.get(attachment.typeName).hidePart != null) {
                         exceptParts.addAll(config.attachmentGroup.get(attachment.typeName).hidePart);
@@ -2240,12 +2244,10 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
             }
         }
-
         for (AttachmentPresetEnum attachment : AttachmentPresetEnum.values()) {
             ItemStack itemStack = GunType.getAttachment(demoStack, attachment);
             if (itemStack != null && itemStack.getItem() != Items.AIR) {
                 AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-                String binding = "gunModel";
                 if (config.attachmentGroup.containsKey(attachment.typeName)) {
                     if (config.attachmentGroup.get(attachment.typeName).showPart != null) {
                         exceptParts.removeAll(config.attachmentGroup.get(attachment.typeName).showPart);
@@ -2258,7 +2260,6 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
             }
         }
-
         if (demoStack.hasTagCompound()) {
             ItemStack loadedAmmo = new ItemStack(demoStack.getTagCompound().getCompoundTag("ammo"));
             if (loadedAmmo.getItem() instanceof ItemAmmo) {
@@ -2274,8 +2275,101 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 }
             }
         }
-
         exceptParts.addAll(RenderGunEnhanced.DEFAULT_EXCEPT);
+        return exceptParts;
+    }
+
+    /** Cached except set for third-person; do not mutate the returned set. */
+    private static HashSet<String> getCachedThirdExceptParts(GunType gunType, GunEnhancedRenderConfig config,
+            RenderType renderType, ItemStack demoStack) {
+        String key = buildThirdExceptCacheKey(gunType, renderType, demoStack);
+        HashSet<String> cached = THIRD_EXCEPT_CACHE.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        HashSet<String> built = buildThirdExceptParts(config, renderType, demoStack);
+        THIRD_EXCEPT_CACHE.put(key, built);
+        return built;
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void applyThirdPersonGunAnimSync(ModelEnhancedGun model, EntityLivingBase holder) {
+        if (model == null || holder == null) {
+            return;
+        }
+        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
+        AnimationController controller = AnimationController.getController(holder, config);
+        if (controller.getPlayingAnimation() == AnimationType.DEFAULT
+                || controller.getPlayingAnimation() == AnimationType.DEFAULT_EMPTY
+                || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
+                || controller.getPlayingAnimation() == AnimationType.FIRE
+                || controller.getPlayingAnimation() == AnimationType.POST_FIRE) {
+            model.updateAnimation(controller.getTime(), true);
+        } else {
+            model.updateAnimation(resolveThirdIdleTime(config, holder.getHeldItemMainhand()), true);
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void applyThirdIdleCached(ModelEnhancedGun model, GunEnhancedRenderConfig config,
+            ItemStack demoStack) {
+        float time = resolveThirdIdleTime(config, demoStack);
+        model.ensureThirdIdleCached(time);
+    }
+
+    public void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
+            ItemStack demoStack, boolean sneakFlag) {
+        drawThirdGun(renderPlayer, renderType, player, demoStack, sneakFlag, false);
+    }
+
+    private void drawThirdGun(RenderLivingBase renderPlayer, RenderType renderType, EntityLivingBase player,
+            ItemStack demoStack, boolean sneakFlag, boolean frozenIdle) {
+        if (!(demoStack.getItem() instanceof ItemGun))
+            return;
+        GunType gunType = ((ItemGun) demoStack.getItem()).type;
+        if (gunType == null) {
+            return;
+        }
+        if (AtomicShaderCompat.shouldSkipLegacyColorDraw()) {
+            return;
+        }
+        final boolean atomicFill = AtomicShaderCompat.isGBufferFillActive();
+        final boolean atomicShadowOnly = AtomicShaderCompat.shouldDrawShadowDepthOnly();
+        ModelEnhancedGun model;
+        if (frozenIdle) {
+            model = getOrCreateSimpleThirdModel(gunType);
+        } else if (renderType == RenderType.ITEMFRAME || renderType == RenderType.ITEMLOOT) {
+            String key = renderType.serializedName;
+            if (!thirdPersonModels.containsKey(key) || thirdPersonModels.get(key).baseType != gunType) {
+                ModelEnhancedGun newModel = new ModelEnhancedGun((GunEnhancedRenderConfig) gunType.enhancedModel.config,
+                        gunType);
+                newModel.model = gunType.enhancedModel.model;
+                thirdPersonModels.put(key, newModel);
+            }
+            model = (ModelEnhancedGun) thirdPersonModels.get(key);
+        } else {
+            model = getOrCreateModel(gunType, false, player != null ? player.getUniqueID() : null);
+        }
+        if (model == null || !model.isAnimReady() || model.model == null || model.model.geoModel == null) {
+            return;
+        }
+        GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
+        // Simple: frozen DEFAULT/DEFAULT_EMPTY pose+skin cache — never touch AnimationController / fire playback.
+        final EnhancedStateMachine anim = frozenIdle ? null
+                : ClientRenderHooks.getEnhancedAnimMachine(player);
+        if (frozenIdle) {
+            applyThirdIdleCached(model, config, demoStack);
+        } else if (player != null) {
+            applyThirdPersonGunAnimSync(model, player);
+        } else {
+            model.updateAnimation(resolveThirdIdleTime(config, demoStack), true);
+        }
+
+        HashSet<String> exceptParts = getCachedThirdExceptParts(gunType, config, renderType, demoStack);
+
+        boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
+        ObjModelRenderer.glowTxtureMode = true;
+        // Attachment hide/show already folded into exceptParts cache.
 
         float worldScale = 1;
         HashSet<String> exceptPartsRendering = exceptParts;
@@ -2601,7 +2695,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         } else {
             OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
         }
-        if (shouldRenderFlash && anim.shooting && anim.getShootingAnimationType().showFlashModel()
+        if (shouldRenderFlash && anim != null && anim.shooting && anim.getShootingAnimationType().showFlashModel()
                 && player != null && !player.isInWater()) {
             GlStateManager.pushMatrix();
             applyFlashModelRootOffset(model, config, demoStack);

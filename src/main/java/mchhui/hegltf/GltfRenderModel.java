@@ -127,6 +127,49 @@ public class GltfRenderModel {
             this.jointMatsBufferId = -1;
         }
         this.jointMatsUpload = null;
+        clearThirdIdleSkinMark();
+    }
+
+    /** Last successful frozen-idle {@link #skinFromPose} (skip re-skin when time unchanged). */
+    private float thirdIdleSkinTime = Float.NaN;
+
+    public boolean isThirdIdleSkinReady(float time) {
+        return jointMatsBufferId != -1 && Float.compare(thirdIdleSkinTime, time) == 0;
+    }
+
+    public void markThirdIdleSkin(float time) {
+        thirdIdleSkinTime = time;
+    }
+
+    public void clearThirdIdleSkinMark() {
+        thirdIdleSkinTime = Float.NaN;
+    }
+
+    /**
+     * Skin SSBO targets ready for draw: every compiled skin mesh has been skinned at least once.
+     * Returns false while meshes are still uploading ({@code !compiled}) so callers must not cache-skip.
+     */
+    public boolean hasInitializedSkinBuffers() {
+        if (geoModel == null || geoModel.nodes == null) {
+            return false;
+        }
+        if (geoModel.joints == null || geoModel.joints.isEmpty()) {
+            return true;
+        }
+        for (DataNode node : geoModel.nodes.values()) {
+            if (node == null || node.meshes == null) {
+                continue;
+            }
+            for (DataMesh mesh : node.meshes.values()) {
+                if (mesh == null || !mesh.skin) {
+                    continue;
+                }
+                if (!mesh.isCompiled() || !mesh.isSkinInitialized()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public void invalidateMeshNodes() {
@@ -269,10 +312,16 @@ public class GltfRenderModel {
             return;
         }
         uploadAllJointTransform();
+        runSkinCompute();
+    }
+
+    private void runSkinCompute() {
+        if (jointMatsBufferId == -1) {
+            return;
+        }
         ShaderGltf.useShader();
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, ShaderGltf.JOINTMATSBUFFERBINDING,
             jointMatsBufferId);
-
         GL11.glEnable(GL30.GL_RASTERIZER_DISCARD);
         try {
             for (Entry<String, DataNode> e : geoModel.rootNodes.entrySet()) {
