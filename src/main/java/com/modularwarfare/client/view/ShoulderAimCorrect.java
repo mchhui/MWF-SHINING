@@ -53,6 +53,13 @@ public final class ShoulderAimCorrect {
             camYaw = lerp(player.prevRotationYaw, player.rotationYaw, partialTicks);
             camPitch = lerp(player.prevRotationPitch, player.rotationPitch, partialTicks);
         } else {
+            AimPoseClientStore.Entry synced = AimPoseClientStore.get(player.getUniqueID());
+            if (synced != null) {
+                float lookYaw = lerp(synced.prevLookYaw, synced.lookYaw, partialTicks);
+                float lookPitch = lerp(synced.prevLookPitch, synced.lookPitch, partialTicks);
+                float bodyYaw = lerp(synced.prevBodyYaw, synced.bodyYaw, partialTicks);
+                return applyRideClamp(player, partialTicks, lookYaw, lookPitch, bodyYaw, true);
+            }
             camYaw = lerp(player.prevRotationYawHead, player.rotationYawHead, partialTicks);
             camPitch = lerp(player.prevRotationPitch, player.rotationPitch, partialTicks);
             return applyRideClamp(player, partialTicks, camYaw, camPitch, camYaw, true);

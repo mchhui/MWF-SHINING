@@ -102,6 +102,9 @@ public final class KeyInputHandler {
             EntityPlayerSP entityPlayer = Minecraft.getMinecraft().player;
             HandleKeyEvent event = new HandleKeyEvent(keyType);
             MinecraftForge.EVENT_BUS.post(event);
+            if (event.isCanceled()) {
+                return;
+            }
 
             switch (keyType) {
                 // F9 Reloads Models /// SHIFT + F9 Reloads Textures & Icons

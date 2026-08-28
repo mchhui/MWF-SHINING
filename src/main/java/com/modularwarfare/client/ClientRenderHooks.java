@@ -35,6 +35,7 @@ import com.modularwarfare.common.guns.*;
 import com.modularwarfare.common.melee.ItemMelee;
 import com.modularwarfare.common.melee.MeleeType;
 import com.modularwarfare.common.network.PacketAimingRequest;
+import com.modularwarfare.common.network.PacketAimPoseSync;
 import com.modularwarfare.common.type.BaseItem;
 import com.modularwarfare.common.type.BaseType;
 import com.modularwarfare.utility.OptifineHelper;
@@ -103,6 +104,7 @@ public class ClientRenderHooks {
     private static long aimBodyLastNs;
     private static float aimBodyFrameDt = 1f / 60f;
     private static long aimSmoothRenderStamp;
+    private boolean lastSentAimPoseActive;
 
     private static final class SmoothAimPose {
         float lookYaw;
@@ -242,6 +244,28 @@ public class ClientRenderHooks {
             player.prevRotationYawHead = state.lookYaw;
             player.rotationYawHead = state.lookYaw;
         }
+        syncLocalAimPoseToServer();
+    }
+
+    private void syncLocalAimPoseToServer() {
+        EntityPlayerSP player = mc.player;
+        if (player == null || mc.world == null) {
+            lastSentAimPoseActive = false;
+            return;
+        }
+        UUID id = player.getUniqueID();
+        if (!isThirdPersonAiming(id)) {
+            if (lastSentAimPoseActive) {
+                ModularWarfare.NETWORK.sendToServer(new PacketAimPoseSync(0f, 0f, 0f, false));
+                lastSentAimPoseActive = false;
+            }
+            return;
+        }
+        ShoulderAimCorrect.AimLook pose = ShoulderAimCorrect.resolve(player, 1f);
+        ModularWarfare.NETWORK.sendToServer(
+            new PacketAimPoseSync(pose.lookYaw, pose.lookPitch, pose.bodyYaw, true)
+        );
+        lastSentAimPoseActive = true;
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)

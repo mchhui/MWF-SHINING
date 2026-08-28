@@ -222,6 +222,8 @@ public class NetworkHandler extends MessageToMessageCodec<FMLProxyPacket, Packet
         registerPacket(PacketLaserToggleClient.class);
         registerPacket(PacketFlashlightToggle.class);
         registerPacket(PacketFlashlightToggleClient.class);
+        registerPacket(PacketAimPoseSync.class);
+        registerPacket(PacketAimPoseSyncClient.class);
         registerPacket(PacketGrenadeThrow.class);
         registerPacket(PacketGrenadeConsume.class);
 

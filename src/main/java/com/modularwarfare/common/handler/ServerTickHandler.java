@@ -29,6 +29,24 @@ public final class ServerTickHandler {
     public static ConcurrentHashMap<UUID, Integer> playerAimShootCooldown = new ConcurrentHashMap<UUID, Integer>();
     public static ConcurrentHashMap<UUID, Boolean> playerAimInstant = new ConcurrentHashMap<UUID, Boolean>();
     public static ConcurrentHashMap<UUID, DataGunReloadEnhancedTask> reloadEnhancedTask = new ConcurrentHashMap<UUID, DataGunReloadEnhancedTask>();
+    public static ConcurrentHashMap<UUID, AimPoseData> playerAimPose = new ConcurrentHashMap<UUID, AimPoseData>();
+
+    public static final class AimPoseData {
+        public float lookYaw;
+        public float lookPitch;
+        public float bodyYaw;
+    }
+
+    public static void setPlayerAimPose(UUID playerId, float lookYaw, float lookPitch, float bodyYaw) {
+        AimPoseData data = playerAimPose.computeIfAbsent(playerId, ignored -> new AimPoseData());
+        data.lookYaw = lookYaw;
+        data.lookPitch = lookPitch;
+        data.bodyYaw = bodyYaw;
+    }
+
+    public static void clearPlayerAimPose(UUID playerId) {
+        playerAimPose.remove(playerId);
+    }
 
     private static long lastBackWeaponsSync = -1;
     // 计数器，用于间隔调用清理方法
