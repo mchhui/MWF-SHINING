@@ -945,10 +945,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             blendTransform(model, item, !config.animations.containsKey(AnimationType.SPRINT), controller.getTime(),
                 controller.getSprintTime(), (float)controller.SPRINT, "sprint_righthand", applySprint, true, controller.getAimTime(), (float)controller.ADS, () -> {
                     if (isRenderHand0 && controller.ADS > 0) {
-                        String binding = "gunModel";
-                        if (config.attachment.containsKey(sightRendering.type.internalName)) {
-                            binding = config.attachment.get(sightRendering.type.internalName).binding;
-                        }
+                        String binding = GunEnhancedRenderConfig.resolveAttachmentBinding(config,
+                                AttachmentPresetEnum.Sight.typeName, sightRendering.type.internalName);
                         model.applyGlobalTransformToOther(binding, () -> {
                             renderAttachment(config, AttachmentPresetEnum.Sight.typeName,
                                 sightRendering.type.internalName, item, () -> {
@@ -1477,10 +1475,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                         }
                         
                         if (attachmentModel != null) {
-                            String binding = "gunModel";
-                            if (config.attachment.containsKey(attachmentType.internalName)) {
-                                binding = config.attachment.get(attachmentType.internalName).binding;
-                            }
+                            String binding = GunEnhancedRenderConfig.resolveAttachmentBinding(config,
+                                    attachment.typeName, attachmentType.internalName);
                             final String sightBinding = binding;
                             final String attTexDir;
                             final String attTexPath;
@@ -2606,10 +2602,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                     }
                 }
                 if (attachmentModel != null) {
-                    String binding = "gunModel";
-                    if (config.attachment.containsKey(attachmentType.internalName)) {
-                        binding = config.attachment.get(attachmentType.internalName).binding;
-                    }
+                    String binding = GunEnhancedRenderConfig.resolveAttachmentBinding(config,
+                            attachment.typeName, attachmentType.internalName);
                     model.applyGlobalTransformToOther(binding, () -> {
                         if (attachmentType.sameTextureAsGun) {
                             ClientProxy.gunEnhancedRenderer.bindTexture("guns", gunPath);
@@ -3757,15 +3751,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (attModel == null || !attModel.isGltf() || !attModel.existPart(ref.nodeName)) {
             return;
         }
-        String binding = "gunModel";
-        if (config.attachment != null && attType.internalName != null
-                && config.attachment.containsKey(attType.internalName)
-                && config.attachment.get(attType.internalName) != null
-                && config.attachment.get(attType.internalName).binding != null
-                && !config.attachment.get(attType.internalName).binding.isEmpty()) {
-            binding = config.attachment.get(attType.internalName).binding;
-        }
-        final String bindingFinal = binding;
+        final String bindingFinal = GunEnhancedRenderConfig.resolveAttachmentBinding(config,
+                ref.slot.typeName, attType.internalName);
         model.applyGlobalTransformToOther(bindingFinal, () -> {
             renderAttachment(config, ref.slot.typeName, attType.internalName, gunStack, () -> {
                 attModel.applyGlobalTransformToOther(ref.nodeName, sample);
@@ -4114,10 +4101,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         if (!attModel.isGltf() || !attModel.existPart(nodeName)) {
             return null;
         }
-        String binding = "gunModel";
-        if (config.attachment.containsKey(attType.internalName)) {
-            binding = config.attachment.get(attType.internalName).binding;
-        }
+        String binding = GunEnhancedRenderConfig.resolveAttachmentBinding(config, slot.typeName, attType.internalName);
         Matrix4f mat = new Matrix4f(gunModel.getGlobalTransform(binding));
         String handguardName = null;
         ItemStack hg = GunType.getAttachment(gunStack, AttachmentPresetEnum.Handguard);

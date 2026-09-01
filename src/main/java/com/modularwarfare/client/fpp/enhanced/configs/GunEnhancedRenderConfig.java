@@ -60,7 +60,8 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     }
     
     public static class Attachment extends EnhancedRenderConfig.Transform {
-        public String binding = "gunModel";
+        /** null = inherit from {@link AttachmentGroup#binding} (or gunModel). */
+        public String binding = null;
         public Vector3f sightAimPosOffset = new Vector3f(0F, 0F, 0F);
         public Vector3f sightAimRotOffset = new Vector3f(0F, 0F, 0F);
         public ArrayList<EnhancedRenderConfig.Transform> multiMagazineTransform;
@@ -68,7 +69,6 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
         public HashSet<String> showPart=new HashSet<String>();
         public boolean renderInsideSightModel=false;
         public float renderInsideGunOffset=5f;
-        public Vector3f attachmentGuiOffset = new Vector3f(0F, 0F, 0F);
         public Vector3f flashModelOffset = new Vector3f(0F, 0F, 0F);
         public Boolean rotateFlashModel=null;
         public float modelRecoilBackwardsFactor = 1f;
@@ -78,9 +78,49 @@ public class GunEnhancedRenderConfig  extends EnhancedRenderConfig {
     }
     
     public static class AttachmentGroup extends EnhancedRenderConfig.Transform {
+        public String binding = "gunModel";
         public HashSet<String> hidePart=new HashSet<String>();
         public HashSet<String> showPart=new HashSet<String>();
         public HashMap<String, HandguardInfluence> handguardInfluence = new HashMap<String, HandguardInfluence>();
+    }
+
+    /** Slot group binding, overridden by per-attachment binding when set. */
+    public static String resolveAttachmentBinding(GunEnhancedRenderConfig config, String slotTypeName,
+            String attachmentInternalName) {
+        String groupBinding = "gunModel";
+        if (config != null && slotTypeName != null && config.attachmentGroup != null) {
+            AttachmentGroup group = config.attachmentGroup.get(slotTypeName);
+            if (group != null && group.binding != null && !group.binding.isEmpty()) {
+                groupBinding = group.binding;
+            }
+        }
+        if (config != null && attachmentInternalName != null && config.attachment != null) {
+            Attachment att = config.attachment.get(attachmentInternalName);
+            if (att != null && att.binding != null && !att.binding.isEmpty()) {
+                return att.binding;
+            }
+        }
+        return groupBinding;
+    }
+
+    /** True when per-attachment binding is set and differs from the slot group binding. */
+    public static boolean isAttachmentBindingOverride(GunEnhancedRenderConfig config, String slotTypeName,
+            String attachmentInternalName) {
+        if (config == null || attachmentInternalName == null || config.attachment == null) {
+            return false;
+        }
+        Attachment att = config.attachment.get(attachmentInternalName);
+        if (att == null || att.binding == null || att.binding.isEmpty()) {
+            return false;
+        }
+        String groupBinding = "gunModel";
+        if (slotTypeName != null && config.attachmentGroup != null) {
+            AttachmentGroup group = config.attachmentGroup.get(slotTypeName);
+            if (group != null && group.binding != null && !group.binding.isEmpty()) {
+                groupBinding = group.binding;
+            }
+        }
+        return !att.binding.equals(groupBinding);
     }
     
     public static class HandguardInfluence extends EnhancedRenderConfig.Transform {}

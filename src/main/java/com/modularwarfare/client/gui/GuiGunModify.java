@@ -545,68 +545,56 @@ public class GuiGunModify extends GuiScreen {
 						partTranslate = array.get(0);
 					}
 				}else {
-					if (config.attachmentGroup.containsKey(attachment.typeName)) {
-						AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
-						if (ag != null) {
-							partTranslate = new Vector3f(ag.translate);
-							
-							if (handguardName != null && ag.handguardInfluence.containsKey(handguardName)) {
-								GunEnhancedRenderConfig.HandguardInfluence influence = ag.handguardInfluence.get(handguardName);
-								partTranslate.x += influence.translate.x;
-								partTranslate.y += influence.translate.y;
-								partTranslate.z += influence.translate.z;
-							}
-							
-							// 加上 mwf_gui_point 的偏移，使配件点位与已偏移的模型对齐
-							// 因为模型渲染时使用了 translate(-guiPoint)，所以这里需要加回来
-							partTranslate.x += guiPointOffset.x;
-							partTranslate.y += guiPointOffset.y;
-							partTranslate.z += guiPointOffset.z;
-						}
-					}
-					
+					AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
+					Attachment attConfig = null;
+					String attachmentInternalName = null;
 					if (itemStack != null && itemStack.getItem() != Items.AIR) {
 						AttachmentType attachmentType = ((ItemAttachment) itemStack.getItem()).type;
-						if (config.attachment.containsKey(attachmentType.internalName)) {
-							Attachment attConfig = config.attachment.get(attachmentType.internalName);
-	                        if (attConfig.binding.equals("gunModel")) {
-	                        	if (config.attachmentGroup.containsKey(attachment.typeName)) {
-	        						AttachmentGroup ag = config.attachmentGroup.get(attachment.typeName);
-	        						if (ag != null) {
-	        							partTranslate = new Vector3f(ag.translate);
-	        							
-										if (handguardName != null && ag.handguardInfluence.containsKey(handguardName)) {
-											GunEnhancedRenderConfig.HandguardInfluence influence = ag.handguardInfluence.get(handguardName);
-											partTranslate.x += influence.translate.x;
-											partTranslate.y += influence.translate.y;
-											partTranslate.z += influence.translate.z;
-										}
-										
-										partTranslate.x += guiPointOffset.x;
-										partTranslate.y += guiPointOffset.y;
-										partTranslate.z += guiPointOffset.z;
-	        						}
-	        					}
-	                        }else {
-//	                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString("test4:有配件的绑定模型不是gunModel"));
-//	                        	Minecraft.getMinecraft().player.sendMessage(new TextComponentString(config.attachment.get(attachmentType.internalName).binding));
-	                        	partTranslate.x = attConfig.attachmentGuiOffset.x;
-	                        	partTranslate.y = attConfig.attachmentGuiOffset.y;
-	                        	partTranslate.z = attConfig.attachmentGuiOffset.z;
-	                        	
-	                        	partTranslate.x += guiPointOffset.x;
-	                        	partTranslate.y += guiPointOffset.y;
-	                        	partTranslate.z += guiPointOffset.z;
-	                        }
-	                        
-	                        if (handguardName != null && attConfig.handguardInfluence.containsKey(handguardName)) {
-								GunEnhancedRenderConfig.HandguardInfluence influence = attConfig.handguardInfluence.get(handguardName);
-								partTranslate.x += influence.translate.x;
-								partTranslate.y += influence.translate.y;
-								partTranslate.z += influence.translate.z;
-							}
-	                    }
+						attachmentInternalName = attachmentType.internalName;
+						attConfig = config.attachment.get(attachmentInternalName);
 					}
+
+					boolean bindingOverride = GunEnhancedRenderConfig.isAttachmentBindingOverride(config,
+							attachment.typeName, attachmentInternalName);
+					String slotBinding = GunEnhancedRenderConfig.resolveAttachmentBinding(config,
+							attachment.typeName, attachmentInternalName);
+
+					org.joml.Vector3f bindingPos = new org.joml.Vector3f(0, 0, 0);
+					if (modelEnhanced != null && modelEnhanced.existPart(slotBinding)) {
+						modelEnhanced.getGlobalTransform(slotBinding).getTranslation(bindingPos);
+					}
+					partTranslate = new Vector3f(bindingPos.x, bindingPos.y, bindingPos.z);
+
+					if (bindingOverride && attConfig != null) {
+						partTranslate.x += attConfig.translate.x;
+						partTranslate.y += attConfig.translate.y;
+						partTranslate.z += attConfig.translate.z;
+					} else if (ag != null) {
+						partTranslate.x += ag.translate.x;
+						partTranslate.y += ag.translate.y;
+						partTranslate.z += ag.translate.z;
+					}
+
+					// handguardInfluence: group applies when not on per-attachment binding override
+					if (!bindingOverride && ag != null && handguardName != null
+							&& ag.handguardInfluence.containsKey(handguardName)) {
+						GunEnhancedRenderConfig.HandguardInfluence influence = ag.handguardInfluence.get(handguardName);
+						partTranslate.x += influence.translate.x;
+						partTranslate.y += influence.translate.y;
+						partTranslate.z += influence.translate.z;
+					}
+					if (attConfig != null && handguardName != null
+							&& attConfig.handguardInfluence.containsKey(handguardName)) {
+						GunEnhancedRenderConfig.HandguardInfluence influence = attConfig.handguardInfluence.get(handguardName);
+						partTranslate.x += influence.translate.x;
+						partTranslate.y += influence.translate.y;
+						partTranslate.z += influence.translate.z;
+					}
+
+					// 模型渲染时 translate(-guiPoint)，槽位点需加回以对齐
+					partTranslate.x += guiPointOffset.x;
+					partTranslate.y += guiPointOffset.y;
+					partTranslate.z += guiPointOffset.z;
 				}
 //				if (attachment.typeName.equals("stock")) {
 //					///////// warning magic number!!!!!!!!!114514
@@ -1168,10 +1156,8 @@ public class GuiGunModify extends GuiScreen {
 					() -> {
 						if (true) {// isRenderHand0
 							if (sightRendering != null) {
-								String binding = "gunModel";
-								if (config.attachment.containsKey(sightRendering.type.internalName)) {
-									binding = config.attachment.get(sightRendering.type.internalName).binding;
-								}
+								String binding = GunEnhancedRenderConfig.resolveAttachmentBinding(config,
+										AttachmentPresetEnum.Sight.typeName, sightRendering.type.internalName);
 
 							model.applyGlobalTransformToOther(binding, () -> {
 								rge.renderAttachment(config, AttachmentPresetEnum.Sight.typeName,
@@ -1498,10 +1484,8 @@ public class GuiGunModify extends GuiScreen {
 									}
 
 									if (attachmentModel != null) {
-										String binding = "gunModel";
-										if (config.attachment.containsKey(attachmentType.internalName)) {
-											binding = config.attachment.get(attachmentType.internalName).binding;
-										}
+										String binding = GunEnhancedRenderConfig.resolveAttachmentBinding(config,
+												attachment.typeName, attachmentType.internalName);
 										model.applyGlobalTransformToOther(binding, () -> {
 											boolean drawEdge=false;
 											for(GuiButton button:this.buttonList) {
