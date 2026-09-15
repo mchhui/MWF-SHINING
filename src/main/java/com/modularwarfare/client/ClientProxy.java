@@ -9,7 +9,6 @@ import com.modularwarfare.api.WeaponAnimations;
 import com.modularwarfare.client.commands.CommandMWClient;
 import com.modularwarfare.client.compat.MwfAtomicDrawBridge;
 import com.modularwarfare.client.compat.TextureSamplingRegistry;
-import com.modularwarfare.client.customplayer.CPEventHandler;
 import com.modularwarfare.client.export.ItemModelExport;
 import com.modularwarfare.client.fpp.basic.animations.ReloadType;
 import com.modularwarfare.client.fpp.basic.animations.anims.*;
@@ -254,7 +253,6 @@ public class ClientProxy extends CommonProxy {
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new DecalDrawer());
-        MinecraftForge.EVENT_BUS.register(new CPEventHandler());
         startPatches();
         Minecraft.getMinecraft().gameSettings.useVbo = false;
         

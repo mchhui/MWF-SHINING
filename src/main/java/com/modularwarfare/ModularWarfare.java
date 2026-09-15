@@ -7,8 +7,6 @@ import com.google.gson.stream.JsonReader;
 import com.modularwarfare.api.ItemRegisterEvent;
 import com.modularwarfare.api.hebridge.IAniPlayer;
 import com.modularwarfare.api.hebridge.IHEBlockExplosionResistance;
-import com.modularwarfare.client.customplayer.CPEventHandler;
-import com.modularwarfare.client.customplayer.CustomPlayerConfig;
 import com.modularwarfare.client.fpp.enhanced.AnimationType.AnimationTypeJsonAdapter.AnimationTypeException;
 import com.modularwarfare.client.gui.hud.GunTransformHUD;
 import com.modularwarfare.common.CommonProxy;
@@ -365,35 +363,6 @@ public class ModularWarfare {
                 /*
                  * LOAD SCRIPT END
                  */
-                /*
-                 * LOAD CUSTOM PLAYER START
-                 */
-                CPEventHandler.cpConfig.clear();
-                File cpFolder = new File(file, "/customplayer/");
-                if (cpFolder.exists()) {
-                    for (File typeFile : cpFolder.listFiles()) {
-                        System.out.println("test1:" + typeFile.getName());
-                        if (typeFile.getName().endsWith(".json")) {
-                            String text = "";
-                            try {
-                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(typeFile), StandardCharsets.UTF_8));
-                                String temp;
-                                while ((temp = bufferedReader.readLine()) != null) {
-                                    text += temp;
-                                }
-                                bufferedReader.close();
-                                CustomPlayerConfig cp = gson.fromJson(text, CustomPlayerConfig.class);
-                                CPEventHandler.cpConfig.put(cp.name, cp);
-                            } catch (IOException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-                /*
-                 * LOAD CUSTOM PLAYER END
-                 */
             } else {
                 if (zipContentsPack.containsKey(file.getName())) {
                     for (IZipEntry fileHeader : zipContentsPack.get(file.getName()).fileHeaders) {
@@ -449,31 +418,6 @@ public class ModularWarfare {
                         }
                         /*
                          * LOAD SCRIPT END
-                         */
-                        /*
-                         * LOAD CUSTOM PLAYER START
-                         */
-                        zipName = fileHeader.getFileName();
-                        if (zipName.startsWith("customplayer/") && zipName.endsWith(".json")) {
-                            String typeFile = zipName.replaceFirst("customplayer/", "").replace(".json", "");
-                            String text = "";
-                            try {
-                                InputStream inputStream = fileHeader.getInputStream();
-                                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-                                String temp;
-                                while ((temp = bufferedReader.readLine()) != null) {
-                                    text += temp;
-                                }
-                                bufferedReader.close();
-                                CustomPlayerConfig cp = gson.fromJson(text, CustomPlayerConfig.class);
-                                CPEventHandler.cpConfig.put(cp.name, cp);
-                            } catch (IOException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
-                        }
-                        /*
-                         * LOAD CUSTOM PLAYER END
                          */
                     }
                 }
