@@ -95,7 +95,8 @@ public class ObjModelRenderer {
         float y = OpenGlHelper.lastBrightnessY;
         boolean atomicFill = AtomicShaderCompat.isGBufferFillActive()
                 && !AtomicShaderCompat.isShadowDepthActive();
-        boolean atomicGlowMap = glowTxtureMode
+        boolean atomicFlat = AtomicShaderCompat.applyMeshFlatEmissiveIfActive();
+        boolean atomicGlowMap = !atomicFlat && glowTxtureMode
                 && AtomicShaderCompat.prepareGlowMapEmissive(glowType, glowPath);
         if (this.glow) {
             if (atomicFill) {
@@ -162,7 +163,7 @@ public class ObjModelRenderer {
                 GlStateManager.popMatrix();
             }
         }
-        if (atomicGlowMap || (this.glow && atomicFill)) {
+        if (!atomicFlat && (atomicGlowMap || (this.glow && atomicFill))) {
             AtomicShaderCompat.clearEmissive();
         }
         if (this.glow && !atomicFill) {
@@ -357,6 +358,7 @@ public class ObjModelRenderer {
         if (useVao) {
             GL30.glBindVertexArray(displayList);
         }
+        AtomicShaderCompat.reapplyMeshTintGlIfActive();
         if (atomicFill && vertexCount > 0) {
             attachFillLightmapClientArray(vertexCount);
         }

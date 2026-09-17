@@ -28,6 +28,12 @@ public final class AtomicShaderCompat {
     public static final String MODID = "siz_atomicshader";
 
     private static ResourceLocation currentFillAlbedo;
+    /** Colorized overlay (laser) that must survive {@code rebindFillAndGunPbr} resetSession. */
+    private static boolean meshFlatEmissive;
+    private static float meshTintR = 1f;
+    private static float meshTintG = 1f;
+    private static float meshTintB = 1f;
+    private static float meshTintA = 1f;
 
     private static final java.util.HashMap<String, Integer> GLOW_GL_ID_CACHE = new java.util.HashMap<>();
     private static boolean atomicLoadedResolved;
@@ -250,6 +256,83 @@ public final class AtomicShaderCompat {
 
     public static void clearCurrentFillAlbedo() {
         currentFillAlbedo = null;
+    }
+
+    public static ResourceLocation getCurrentFillAlbedo() {
+        return currentFillAlbedo;
+    }
+
+    /**
+     * Fullbright colored overlay during fill (laserModel). Fill rebind resets emissive,
+     * so {@link #applyMeshFlatEmissiveIfActive()} must run again after that rebind.
+     * VAO draws often ignore {@code glColor}; callers should also bind a tinted albedo.
+     */
+    public static void beginMeshFlatEmissive() {
+        beginMeshFlatEmissive(1f, 1f, 1f, 1f);
+    }
+
+    public static void beginMeshFlatEmissive(float r, float g, float b, float a) {
+        meshFlatEmissive = true;
+        meshTintR = clamp01(r);
+        meshTintG = clamp01(g);
+        meshTintB = clamp01(b);
+        meshTintA = clamp01(a);
+        setEmissiveFlat(1f);
+        applyMeshTintGl();
+    }
+
+    public static void endMeshFlatEmissive() {
+        meshFlatEmissive = false;
+        meshTintR = 1f;
+        meshTintG = 1f;
+        meshTintB = 1f;
+        meshTintA = 1f;
+        clearEmissive();
+        applyMeshTintGl();
+    }
+
+    /**
+     * Re-apply after {@code rebindFillAndGunPbr}. {@code true} means skip glow-map
+     * {@code max(albedo, glow)} which would wash a white laser albedo to white.
+     */
+    public static boolean applyMeshFlatEmissiveIfActive() {
+        if (!meshFlatEmissive || !isGBufferFillActive() || isShadowDepthActive()) {
+            return false;
+        }
+        setEmissiveFlat(1f);
+        applyMeshTintGl();
+        return true;
+    }
+
+    /** After VAO bind: generic attrib 3 ({@code gl_Color}) is not stored in most MWF VAOs. */
+    public static void reapplyMeshTintGlIfActive() {
+        if (!meshFlatEmissive) {
+            return;
+        }
+        applyMeshTintGl();
+        try {
+            GL11.glDisableClientState(GL11.GL_COLOR_ARRAY);
+            GL20.glDisableVertexAttribArray(3);
+            GL20.glVertexAttrib4f(3, meshTintR, meshTintG, meshTintB, meshTintA);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static float clamp01(float v) {
+        return v < 0f ? 0f : (v > 1f ? 1f : v);
+    }
+
+    /**
+     * Compatibility {@code gl_Color} is attrib 3. Do not disable arrays here — a previous
+     * mesh VAO may still be bound during batching. After the laser VAO bind, call
+     * {@link #reapplyMeshTintGlIfActive()}.
+     */
+    private static void applyMeshTintGl() {
+        GlStateManager.color(meshTintR, meshTintG, meshTintB, meshTintA);
+        try {
+            GL20.glVertexAttrib4f(3, meshTintR, meshTintG, meshTintB, meshTintA);
+        } catch (Throwable ignored) {
+        }
     }
 
     /** Prefer registered player skin; else default Steve/Alex. */

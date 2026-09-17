@@ -190,7 +190,8 @@ public class DataMesh {
         } else if (!GltfFeatureFlags.renderSchedulingOpt()) {
             AtomicShaderCompat.rebindFillAndGunPbr();
         }
-        boolean atomicGlow = ObjModelRenderer.glowTxtureMode
+        boolean atomicFlat = AtomicShaderCompat.applyMeshFlatEmissiveIfActive();
+        boolean atomicGlow = !atomicFlat && ObjModelRenderer.glowTxtureMode
             && AtomicShaderCompat.prepareGlowMapEmissive(ObjModelRenderer.glowType, ObjModelRenderer.glowPath);
         this.callVAO();
         if (atomicGlow) {
@@ -446,6 +447,7 @@ public class DataMesh {
             }
             bindBatchVao(this.ssboVao);
             batchTouchedSkinDraw = true;
+            AtomicShaderCompat.reapplyMeshTintGlIfActive();
             restampLightmapCoordsAfterVao();
             if (this.ebo > 0) {
                 GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, this.ebo);
@@ -458,6 +460,7 @@ public class DataMesh {
             }
         } else {
             bindBatchVao(this.displayList);
+            AtomicShaderCompat.reapplyMeshTintGlIfActive();
             restampLightmapCoordsAfterVao();
             GL11.glDrawArrays(this.glDrawingMode, 0, this.vertexCount);
             unbindBatchVao();

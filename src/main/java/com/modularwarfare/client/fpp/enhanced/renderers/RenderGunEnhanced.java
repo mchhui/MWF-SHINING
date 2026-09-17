@@ -70,6 +70,7 @@ import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderLivingBase;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -211,6 +212,11 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         return start + (end - start) * alpha;
     }
 
+    private static final ResourceLocation LASER_ALBEDO =
+            new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/white.png");
+    private static DynamicTexture laserFillAlbedoTex;
+    private static ResourceLocation laserFillAlbedoLoc;
+    private static int laserFillAlbedoPacked = Integer.MIN_VALUE;
     public static final int BULLET_MAX_RENDER = 256;
     private static float theata90 = (float) Math.toRadians(90);
     public static final HashSet<String> DEFAULT_EXCEPT = new HashSet<String>();
@@ -1897,48 +1903,65 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
 
     private void renderLaserModel(AttachmentRenderConfig.Laser laserConfig, ModelAttachment attachmentModel, float bx, float by, float worldScale, AnimationType currentAction, boolean laserEnabled) {
         GlStateManager.pushMatrix();
+        final boolean atomicFill = AtomicShaderCompat.isGBufferFillActive()
+                && !AtomicShaderCompat.isShadowDepthActive();
+        final ResourceLocation prevFillAlbedo = atomicFill ? AtomicShaderCompat.getCurrentFillAlbedo() : null;
         try {
-            GlStateManager.enableBlend();
             GlStateManager.depthMask(false);
             GlStateManager.disableLighting();
-            
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
-            
-            GlStateManager.tryBlendFuncSeparate(
-                SourceFactor.SRC_ALPHA, 
-                DestFactor.ONE,  
-                SourceFactor.ONE, 
-                DestFactor.ZERO
-            );
 
-            GlStateManager.disableLighting();
-            ObjModelRenderer.glowTxtureMode = true;
-            
-            bindTexture(new ResourceLocation(ModularWarfare.MOD_ID, "textures/skins/white.png"));
-            
-            float brightness = 1.2f; 
-            GlStateManager.color(
-                Math.min(laserConfig.laserColor[0] * brightness, 1.0f),
-                Math.min(laserConfig.laserColor[1] * brightness, 1.0f),
-                Math.min(laserConfig.laserColor[2] * brightness, 1.0f),
-                laserConfig.laserAlpha
-            );
-            
-            attachmentModel.renderPart("laserModel", worldScale);
+            float brightness = 1.2f;
+            float lr = Math.min(laserConfig.laserColor[0] * brightness, 1.0f);
+            float lg = Math.min(laserConfig.laserColor[1] * brightness, 1.0f);
+            float lb = Math.min(laserConfig.laserColor[2] * brightness, 1.0f);
+            float la = laserConfig.laserAlpha;
+
+            if (atomicFill) {
+                // Fill MRT cannot additive-blend. white.png * glColor fails on VAO fills
+                // (gl_Color attrib 3 defaults to 1,1,1,1) → pure white emissive.
+                GlStateManager.disableBlend();
+                GlStateManager.enableAlpha();
+                GlStateManager.alphaFunc(GL11.GL_GREATER, 0.1F);
+                ObjModelRenderer.glowTxtureMode = false;
+                bindLaserColorFillAlbedo(lr, lg, lb);
+                AtomicShaderCompat.beginMeshFlatEmissive(lr, lg, lb, la);
+            } else {
+                GlStateManager.enableBlend();
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240f, 240f);
+                GlStateManager.tryBlendFuncSeparate(
+                    SourceFactor.SRC_ALPHA,
+                    DestFactor.ONE,
+                    SourceFactor.ONE,
+                    DestFactor.ZERO
+                );
+                ObjModelRenderer.glowTxtureMode = true;
+                bindTexture(LASER_ALBEDO);
+            }
+
+            GlStateManager.color(lr, lg, lb, la);
+
+            attachmentModel.renderLaser(worldScale);
 
             GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
             GlStateManager.depthMask(true);
             GlStateManager.enableLighting();
-            GlStateManager.tryBlendFuncSeparate(
-                SourceFactor.SRC_ALPHA, 
-                DestFactor.ONE_MINUS_SRC_ALPHA,
-                SourceFactor.ONE, 
-                DestFactor.ZERO
-            );
+            if (!atomicFill) {
+                GlStateManager.tryBlendFuncSeparate(
+                    SourceFactor.SRC_ALPHA,
+                    DestFactor.ONE_MINUS_SRC_ALPHA,
+                    SourceFactor.ONE,
+                    DestFactor.ZERO
+                );
+                OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
+            }
             ObjModelRenderer.glowTxtureMode = false;
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, bx, by);
-            
         } finally {
+            if (atomicFill) {
+                AtomicShaderCompat.endMeshFlatEmissive();
+                if (prevFillAlbedo != null) {
+                    AtomicShaderCompat.bindFillAlbedo(prevFillAlbedo);
+                }
+            }
             GlStateManager.popMatrix();
         }
 
@@ -1956,6 +1979,25 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
                 currentAction
             );
         }
+    }
+
+    /** 1x1 albedo so fill lighting uses laser RGB even when vertex color is ignored. */
+    private static void bindLaserColorFillAlbedo(float r, float g, float b) {
+        int ir = Math.min(255, Math.max(0, (int) (r * 255f + 0.5f)));
+        int ig = Math.min(255, Math.max(0, (int) (g * 255f + 0.5f)));
+        int ib = Math.min(255, Math.max(0, (int) (b * 255f + 0.5f)));
+        int packed = (ir << 16) | (ig << 8) | ib;
+        if (laserFillAlbedoTex == null) {
+            laserFillAlbedoTex = new DynamicTexture(1, 1);
+            laserFillAlbedoLoc = Minecraft.getMinecraft().getTextureManager()
+                    .getDynamicTextureLocation("mwf_laser_fill_albedo", laserFillAlbedoTex);
+        }
+        if (packed != laserFillAlbedoPacked) {
+            laserFillAlbedoTex.getTextureData()[0] = 0xFF000000 | packed;
+            laserFillAlbedoTex.updateDynamicTexture();
+            laserFillAlbedoPacked = packed;
+        }
+        AtomicShaderCompat.bindFillAlbedo(laserFillAlbedoLoc);
     }
 
     
