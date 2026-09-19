@@ -30,6 +30,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
     private boolean hasExplosion;
     private float impactDamage;
     private boolean ignoreShooter = true;
+    private boolean collideEntities = true;
     private Set<String> ignoredEntityTypes = Collections.emptySet();
 
 
@@ -59,7 +60,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
         Vec3d start = getPositionVector();
         Vec3d velocity = new Vec3d(motionX, motionY, motionZ);
         Vec3d end = start.add(velocity);
-        RayTraceResult hit = com.modularwarfare.api.ProjectileAPI.trace(world, ignoreShooter ? shootingEntity : null, this, start, end, true, ignoredEntityTypes);
+        RayTraceResult hit = com.modularwarfare.api.ProjectileAPI.trace(world, ignoreShooter ? shootingEntity : null, this, start, end, collideEntities, ignoredEntityTypes);
         if (!world.isRemote && hit != null && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, hit)) {
             setPosition(hit.hitVec.x, hit.hitVec.y, hit.hitVec.z);
             if (hit.entityHit != null && impactDamage > 0) {
@@ -83,6 +84,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
     }
 
     public void setIgnoreShooter(boolean ignoreShooter) { this.ignoreShooter = ignoreShooter; }
+    public void setCollideEntities(boolean value) { collideEntities = value; }
     public void setIgnoredEntityTypes(Set<String> ignoredEntityTypes) {
         this.ignoredEntityTypes = ignoredEntityTypes == null ? Collections.emptySet() : new java.util.HashSet<>(ignoredEntityTypes);
     }
@@ -91,6 +93,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
     public void writeSpawnData(io.netty.buffer.ByteBuf buffer) {
         buffer.writeFloat(gravity).writeBoolean(hasSmoke).writeBoolean(hasExplosion).writeFloat(impactDamage);
         buffer.writeInt(shootingEntity == null ? -1 : shootingEntity.getEntityId());
+        buffer.writeBoolean(collideEntities);
     }
 
     @Override
@@ -98,6 +101,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
         gravity = buffer.readFloat(); hasSmoke = buffer.readBoolean();
         hasExplosion = buffer.readBoolean(); impactDamage = buffer.readFloat();
         shootingEntity = world.getEntityByID(buffer.readInt());
+        collideEntities = buffer.readBoolean();
         player = shootingEntity instanceof EntityPlayer ? (EntityPlayer) shootingEntity : null;
     }
 
@@ -105,6 +109,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
     public void writeEntityToNBT(net.minecraft.nbt.NBTTagCompound tag) {
         super.writeEntityToNBT(tag);
         tag.setString("bulletName", getBulletName());
+        tag.setBoolean("collideEntities", collideEntities);
         tag.setFloat("gravity", gravity); tag.setBoolean("smoke", hasSmoke);
         tag.setBoolean("explosion", hasExplosion); tag.setFloat("impactDamage", impactDamage);
         tag.setInteger("projectileAge", ticks);
@@ -115,6 +120,7 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
     public void readEntityFromNBT(net.minecraft.nbt.NBTTagCompound tag) {
         super.readEntityFromNBT(tag);
         setBulletType(tag.getString("bulletName"));
+        collideEntities = !tag.hasKey("collideEntities") || tag.getBoolean("collideEntities");
         gravity = tag.getFloat("gravity"); hasSmoke = tag.getBoolean("smoke");
         hasExplosion = tag.getBoolean("explosion"); impactDamage = tag.getFloat("impactDamage");
         ticks = tag.getInteger("projectileAge");

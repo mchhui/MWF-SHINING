@@ -34,7 +34,7 @@ public class InstantBulletTeslaRender extends InstantBulletRenderer {
     }
 
     public static void RenderAllTeslaTrails(float partialTicks) {
-        if(teslaTrails != null && teslaTrails.size() < 40) {
+        if(teslaTrails != null) {
             for (TeslaTrail trail : teslaTrails) {
                 trail.Render(partialTicks);
             }
