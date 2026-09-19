@@ -42,6 +42,10 @@ import com.modularwarfare.utility.RayUtil;
 
 public class MWFExplosion
 {
+    private final List<EntityLivingBase> damagedEntities = Lists.newArrayList();
+    public List<EntityLivingBase> getDamagedEntities() {
+        return java.util.Collections.unmodifiableList(damagedEntities);
+    }
     private final boolean causesFire;
     private final boolean allowBlockDrops;
     private final boolean damagesTerrain;
@@ -252,7 +256,11 @@ public class MWFExplosion
                 {
                     Vec3d entityPos = livingEntity.getPositionVector().add(0, livingEntity.getEyeHeight() / 2, 0);
                     if (explosionThroughWalls || world.rayTraceBlocks(vec3d, entityPos, false, true, false) == null) {
-                        double scale = Math.pow(1.0 - (distance / range), 2.0);
+                        // Keep the inner 30% of the blast at full strength, then use
+                        // a linear falloff to zero at the configured outer radius.
+                        double normalized = distance / range;
+                        double scale = normalized <= 0.30D ? 1.0D
+                                : Math.max(0.0D, (1.0D - normalized) / 0.70D);
                         float finalDamage = this.damage * (float)scale;
                         
                         // 如果启用了禁用盾牌，使用无法被盾牌格挡的伤害源
@@ -263,6 +271,7 @@ public class MWFExplosion
                         if (damageSource != null) {
                             boolean canDamage = DamageControlHelper.canDamageTarget(this.exploder, livingEntity, this.ignoreFriendlyTargets);
                             if (canDamage) {
+                                float before = livingEntity.getHealth() + livingEntity.getAbsorptionAmount();
                                 boolean damaged = RayUtil.attackEntityWithoutKnockback(livingEntity, damageSource, finalDamage);
                                 boolean fallbackDamaged = false;
                                 if (!damaged && finalDamage > 0.0F) {
@@ -274,6 +283,8 @@ public class MWFExplosion
                                     }
                                 }
                                 damaged = damaged || fallbackDamaged;
+                                if (damaged && livingEntity.getHealth() + livingEntity.getAbsorptionAmount() < before
+                                        && !damagedEntities.contains(livingEntity)) damagedEntities.add(livingEntity);
                                 DamageControlHelper.clearHurtResistantTime(livingEntity, damaged);
                             }
                         }

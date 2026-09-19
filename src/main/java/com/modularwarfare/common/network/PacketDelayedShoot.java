@@ -115,7 +115,8 @@ public class PacketDelayedShoot extends PacketBase {
         }
         
         public static void addRay(PacketDelayedShoot packet) {
-            activeRays.add(new RayRenderData(packet));
+            activeRays.removeIf(ray -> ray.packet.entityId == packet.entityId);
+            if (packet.delayTicks > 0) activeRays.add(new RayRenderData(packet));
         }
         
         @SubscribeEvent

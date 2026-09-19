@@ -22,6 +22,8 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 
 public class PacketGunFire extends PacketBase {
 
+    private static final java.util.Map<EntityPlayerMP, double[]> shotBudgets = new java.util.WeakHashMap<>();
+
     public String internalname;
     public float rotationPitch;
     public float rotationYaw;
@@ -91,6 +93,7 @@ public class PacketGunFire extends PacketBase {
         this.rotationPitch = data.readFloat();
         this.rotationYaw = data.readFloat();
         int clientSuggetionsSize = data.readInt();
+        if (clientSuggetionsSize < -1 || clientSuggetionsSize > 4096) throw new IllegalArgumentException("Invalid hit count");
         if (clientSuggetionsSize >= 0) {
             this.clientSuggetions = new ArrayList<>();
             for (int i = 0; i < clientSuggetionsSize; i++) {
@@ -104,6 +107,7 @@ public class PacketGunFire extends PacketBase {
                 hit.hitY = data.readDouble();
                 hit.hitZ = data.readDouble();
                 int facingIndex = data.readInt();
+                if (facingIndex < -1 || facingIndex >= EnumFacing.values().length) throw new IllegalArgumentException("Invalid hit facing");
                 if (facingIndex != -1) {
                     hit.facing = EnumFacing.values()[facingIndex];
                 }
@@ -121,6 +125,9 @@ public class PacketGunFire extends PacketBase {
                 if (entityPlayer != null) {
                     if (ModularWarfare.gunTypes.get(internalname) != null) {
                         ItemGun itemGun = ModularWarfare.gunTypes.get(internalname);
+                        if (entityPlayer.getHeldItemMainhand().getItem() != itemGun
+                                || !Float.isFinite(rotationPitch) || !Float.isFinite(rotationYaw)
+                                || rotationPitch < -90 || rotationPitch > 90 || !takeShotBudget(entityPlayer, itemGun)) return;
                         WeaponFireMode fireMode = GunType.getFireMode(entityPlayer.getHeldItemMainhand());
                         FireData fireData = FireData.buildServer(rotationPitch, rotationYaw, entityPlayer.world, entityPlayer.getHeldItemMainhand(), itemGun, fireMode, clientSuggetions);
                         FireManager.fire(entityPlayer, fireData);
@@ -130,6 +137,22 @@ public class PacketGunFire extends PacketBase {
             }
         });
 
+    }
+
+    // One tick of burst tolerance for packet batching; independent of the trusted entity/skill API.
+    private static boolean takeShotBudget(EntityPlayerMP player, ItemGun gun) {
+        double rate = gun.type.roundsPerMin / 1200.0
+                * com.modularwarfare.common.playerstate.PlayerStateManager.getPlayerState(player).roundsPerMinFactor
+                * com.modularwarfare.common.playerstate.PlayerStateManager.getPlayerState(player).devetionRoundsPerMinFactor;
+        if (!Double.isFinite(rate) || rate <= 0) return false;
+        double now = player.getServer().getTickCounter();
+        double capacity = Math.max(2, Math.ceil(rate) + 1);
+        double[] budget = shotBudgets.computeIfAbsent(player, p -> new double[] {now, capacity});
+        budget[1] = Math.min(capacity, budget[1] + Math.max(0, now - budget[0]) * rate);
+        budget[0] = now;
+        if (budget[1] < 1) return false;
+        budget[1]--;
+        return true;
     }
 
     @Override

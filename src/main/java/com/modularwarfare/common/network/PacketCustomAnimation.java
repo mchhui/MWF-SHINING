@@ -81,15 +81,12 @@ public class PacketCustomAnimation extends PacketBase {
     @Override
     @SideOnly(Side.CLIENT)
     public void handleClientSide(EntityPlayer entityPlayer) {
-        AnimationController controller = AnimationController.getController(Minecraft.getMinecraft().world.getPlayerEntityByUUID(living), null);
-        controller.CUSTOM = 0;
-        controller.customAnimation = name;
-        controller.startTime = startTime;
-        controller.endTime = endTime;
-        controller.customAnimationSpeed = speedFactor;
-        controller.customAnimationReload = allowReload;
-        controller.customAnimationFire = allowFire;
-//        System.out.println("test");
+        if (entityPlayer == null || entityPlayer.world == null) return;
+        net.minecraft.entity.EntityLivingBase holder = entityPlayer.world.getPlayerEntityByUUID(living);
+        // Retain historical frame-speed units for existing plugin callers of this legacy packet.
+        String animation = name == null || "null".equals(name) ? "" : name;
+        com.modularwarfare.api.ClientWeaponVisualAPI.playAnimation(holder, animation, startTime, endTime,
+                animation.isEmpty() ? speedFactor * 60 : speedFactor, allowReload, allowFire);
     }
 
 }

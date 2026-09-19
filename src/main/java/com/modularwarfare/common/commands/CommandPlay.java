@@ -22,28 +22,25 @@ public class CommandPlay extends CommandBase {
     }
 
     public String getUsage(ICommandSender sender) {
-        return "/mw-play player startTime endTime speedFactor allowReload allowFire";
+        return "/mw-play player <name speed allowReload allowFire | startFrame endFrame speed allowReload allowFire | stop>";
     }
 
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
+        if (args.length != 5 && args.length != 6 && args.length != 2)
+            throw new net.minecraft.command.WrongUsageException(getUsage(sender));
         EntityPlayerMP player = getPlayer(server, sender, args[0]);
-        if(args.length==6) {
-            double s = Double.valueOf(args[1]);
-            double e = Double.valueOf(args[2]);
-            float speedFactor = Float.valueOf(args[3]);
-            boolean allowReload = Boolean.valueOf(args[4]);
-            boolean allowFire = Boolean.valueOf(args[5]);
-            ModularWarfare.NETWORK.sendTo(
-                new PacketCustomAnimation(player.getUniqueID(), "", s, e, speedFactor, allowReload, allowFire), player);   
-        }
-        if(args.length==5) {
-            String name=args[1];
-            float speedFactor = Float.valueOf(args[2]);
-            boolean allowReload = Boolean.valueOf(args[3]);
-            boolean allowFire = Boolean.valueOf(args[4]);
-            ModularWarfare.NETWORK.sendTo(
-                new PacketCustomAnimation(player.getUniqueID(), ""+name, 0, 0, speedFactor, allowReload, allowFire), player);   
-        }
+        boolean accepted;
+        if (args.length == 2 && "stop".equalsIgnoreCase(args[1])) {
+            accepted = com.modularwarfare.api.WeaponVisualAPI.stopAnimation(player);
+        } else if (args.length == 6) {
+            accepted = com.modularwarfare.api.WeaponVisualAPI.playAnimation(player,
+                    parseDouble(args[1], 0), parseDouble(args[2], 0), (float) (parseDouble(args[3], 0) * 60),
+                    parseBoolean(args[4]), parseBoolean(args[5]));
+        } else if (args.length == 5) {
+            accepted = com.modularwarfare.api.WeaponVisualAPI.playAnimation(player, args[1],
+                    (float) parseDouble(args[2], 0), parseBoolean(args[3]), parseBoolean(args[4]));
+        } else throw new net.minecraft.command.WrongUsageException(getUsage(sender));
+        if (!accepted) throw new CommandException("Invalid animation parameters or held weapon is not enhanced");
     }
 
 }

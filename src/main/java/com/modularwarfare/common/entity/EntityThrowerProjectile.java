@@ -43,7 +43,13 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
     }
 
     public EntityThrowerProjectile(World par1World, EntityPlayer par2EntityPlayer, float damage, float accuracy, float velocity, String bulletName, float gravity, boolean isSmoke) {
-        super(par1World, par2EntityPlayer, damage, accuracy, velocity, bulletName, gravity, isSmoke);
+        this(par1World, par2EntityPlayer, damage, accuracy, velocity, bulletName, gravity, isSmoke,
+                par2EntityPlayer.rotationPitch, par2EntityPlayer.rotationYaw);
+    }
+
+    public EntityThrowerProjectile(World world, EntityLivingBase shooter, float damage, float accuracy,
+            float velocity, String bulletName, float gravity, boolean isSmoke, float pitch, float yaw) {
+        super(world, shooter, damage, accuracy, velocity, bulletName, pitch, yaw);
         this.gravity = gravity;
         this.hasSmoke = isSmoke;
         this.impactDamage = damage;
@@ -55,7 +61,9 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
     }
 
     public void onUpdate() {
+        Vec3d movementStart = getPositionVector();
         super.onUpdate();
+        if (isDead) return;
 
 
         if (hasHitGround) {
@@ -94,16 +102,17 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
 
         this.motionY += this.gravity;
 
-        Vec3d vec3d1 = new Vec3d(this.posX, this.posY, this.posZ);
-        Vec3d vec3d = new Vec3d(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
+        Vec3d vec3d1 = movementStart;
+        Vec3d vec3d = getPositionVector();
         RayTraceResult raytraceresult = this.world.rayTraceBlocks(vec3d1, vec3d, false, true, false);
 
-        if (hasSmoke) {
+        if (hasSmoke && !world.isRemote) {
             SAPackets.sendEffectToAllAround(new PacketSpawnParticleOnEntity("FlamethrowerTrail", this, 0, 0, 0, true), this, 512.0);
         }
 
         if (raytraceresult != null && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {
             if (raytraceresult.typeOfHit == RayTraceResult.Type.BLOCK) {
+                setPosition(raytraceresult.hitVec.x, raytraceresult.hitVec.y, raytraceresult.hitVec.z);
                 switch (raytraceresult.sideHit) {
                     case UP:
                         if (!hasHitGround) {
@@ -131,16 +140,16 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
 
         List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this, this.getEntityBoundingBox().expand(this.motionX, this.motionY, this.motionZ).grow(0.5D));
         for (Entity entity : entities) {
-            if (entity != null && entity.canBeCollidedWith() && entity != this.player) {
+            if (!world.isRemote && entity != null && entity.canBeCollidedWith() && entity != this.shootingEntity) {
                 if (entity instanceof EntityLivingBase) {
                     float damageMultiplier = hasHitGround ? 0.1f : 0.2f; // 碰撞地面后伤害降低
                     BulletType bulletType = getBulletType();
                     boolean ignoreFriendlyTargets = bulletType != null && !bulletType.shooterVulnerable;
                     if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
-                            && DamageControlHelper.canDamageTarget(this.player, entity, ignoreFriendlyTargets)) {
+                            && DamageControlHelper.canDamageTarget(this.shootingEntity, entity, ignoreFriendlyTargets)) {
                         boolean damaged = RayUtil.attackEntityWithoutKnockback(
                                 entity,
-                                DamageSource.causePlayerDamage(this.player),
+                                new net.minecraft.util.EntityDamageSourceIndirect("arrow", this, shootingEntity).setProjectile(),
                                 this.impactDamage * damageMultiplier
                         );
                         DamageControlHelper.clearHurtResistantTime(entity, damaged);
@@ -149,9 +158,6 @@ public class EntityThrowerProjectile extends EntityBullet implements IProjectile
             }
         }
 
-        this.posX += this.motionX;
-        this.posY += this.motionY;
-        this.posZ += this.motionZ;
         this.setPosition(this.posX, this.posY, this.posZ);
     }
     

@@ -937,7 +937,7 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             exceptParts.addAll(DEFAULT_EXCEPT);
         }
         
-        HashSet<String> exceptPartsRendering=exceptParts;
+        HashSet<String> exceptPartsRendering=com.modularwarfare.api.ClientWeaponVisualAPI.applyPartVisibility(player, item, exceptParts);
         
         
         //model.updateAnimation(controller.getTime(),false);
@@ -2337,7 +2337,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
         }
         GunEnhancedRenderConfig config = (GunEnhancedRenderConfig) model.config;
         AnimationController controller = AnimationController.getController(holder, config);
-        if (controller.getPlayingAnimation() == AnimationType.DEFAULT
+        if (controller.getPlayingAnimation() == AnimationType.CUSTOM
+                || controller.getPlayingAnimation() == AnimationType.DEFAULT
                 || controller.getPlayingAnimation() == AnimationType.DEFAULT_EMPTY
                 || controller.getPlayingAnimation() == AnimationType.PRE_FIRE
                 || controller.getPlayingAnimation() == AnimationType.FIRE
@@ -2403,7 +2404,8 @@ public class RenderGunEnhanced extends CustomItemRendererEnhanced {
             model.updateAnimation(resolveThirdIdleTime(config, demoStack), true);
         }
 
-        HashSet<String> exceptParts = getCachedThirdExceptParts(gunType, config, renderType, demoStack);
+        HashSet<String> exceptParts = com.modularwarfare.api.ClientWeaponVisualAPI.applyPartVisibility(player, demoStack,
+                getCachedThirdExceptParts(gunType, config, renderType, demoStack));
 
         boolean glowTxtureMode = ObjModelRenderer.glowTxtureMode;
         ObjModelRenderer.glowTxtureMode = true;

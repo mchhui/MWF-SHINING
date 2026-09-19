@@ -94,6 +94,8 @@ public class AnimationController {
     public double startTime;
     public double endTime;
     public double customAnimationSpeed=1;
+    public boolean customAnimationHold;
+    public double customLoopStart = -1, customLoopEnd = -1;
     public boolean customAnimationReload=false;
     public boolean customAnimationFire=false;
     
@@ -349,7 +351,13 @@ public class AnimationController {
                 CUSTOM+=customAnimationSpeed/a*stepTick;
             }
             if(CUSTOM>=1) {
-                CUSTOM=1;
+                if (customAnimationHold && customAnimation.isEmpty()) {
+                    if (customLoopStart >= 0 && customLoopEnd > customLoopStart) {
+                        double overflow = (CUSTOM - 1) * (endTime - startTime);
+                        startTime = customLoopStart; endTime = customLoopEnd;
+                        CUSTOM = (overflow % (endTime - startTime)) / (endTime - startTime);
+                    } else CUSTOM = Math.nextDown(1.0);
+                } else CUSTOM=1;
             }
         }
         if(player==Minecraft.getMinecraft().player) {
@@ -514,6 +522,7 @@ public class AnimationController {
             }
             double val = 0;
             if (RenderParameters.collideFrontDistance == 0 && Minecraft.getMinecraft().inGameHasFocus
+                && !com.modularwarfare.api.ClientWeaponVisualAPI.isSkillAimBlocked()
                 && (Mouse.isButtonDown(1)||AutoSwitchToFirstView.getAutoAimLock()) && !aimChargeMisc && INSPECT == 1F) {
                 val = ADS + adsSpeed * (2 - ADS);
             } else {
@@ -1245,17 +1254,18 @@ public class AnimationController {
     }
 
     public static AnimationController getController(EntityLivingBase player, EnhancedRenderConfig config) {
+        if (player == null) return null;
         if (player == Minecraft.getMinecraft().player) {
-            if (controller.player != player || (config != null && controller.getConfig() != config)) {
+            if (controller == null || controller.player != player || (config != null && controller.getConfig() != config)) {
                 controller = new AnimationController(player, config);
             }
             return controller;
         }
-        String name = player.getName();
+        String name = player.getUniqueID().toString();
         if (config == null && !otherControllers.containsKey(name)) {
             return null;
         }
-        if (!otherControllers.containsKey(name)) {
+        if (!otherControllers.containsKey(name) || otherControllers.get(name).player != player) {
             otherControllers.put(name, new AnimationController(player, config));
         }
         if (config != null && otherControllers.get(name).getConfig() != config) {

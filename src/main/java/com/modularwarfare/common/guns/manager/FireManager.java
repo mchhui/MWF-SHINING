@@ -72,6 +72,12 @@ import java.util.Collections;
 public class FireManager {
 
     public static boolean fire(EntityLivingBase shooter, FireData fireData) {
+        if (shooter == null || fireData == null || fireData.world != shooter.world
+                || fireData.gunStack == null || fireData.gunStack.isEmpty()
+                || fireData.gunStack.getItem() != fireData.itemGun || fireData.gunType == null
+                || !Float.isFinite(fireData.rotationPitch) || !Float.isFinite(fireData.rotationYaw)
+                || (fireData.spreadOverride != null && (!Float.isFinite(fireData.spreadOverride) || fireData.spreadOverride < 0))
+                || (fireData.shotOrigin != null && !com.modularwarfare.api.ProjectileAPI.finite(fireData.shotOrigin))) return false;
         WeaponFireEvent.Pre pre = new WeaponFireEvent.Pre(shooter, fireData);
         if (MinecraftForge.EVENT_BUS.post(pre)) {
             return false;
@@ -103,6 +109,10 @@ public class FireManager {
         public final boolean useHeldWeapon;
         public final List<PacketGunFire.Hit> clientSuggetions;
 
+        public Vec3d shotOrigin;
+        /** Null uses live weapon accuracy; zero is an exact ray. Same units as GunType.bulletSpread. */
+        public Float spreadOverride;
+        public Float projectileDamageOverride;
         public float baseDamage;
         public float headshotBonus;
         public double weaponRange;
@@ -117,6 +127,7 @@ public class FireManager {
             this.gunType = itemGun.type;
             this.fireMode = fireMode;
             this.useHeldWeapon = useHeldWeapon;
+            this.projectileDamageOverride = customDamage;
             this.baseDamage = Optional.ofNullable(customDamage).orElse(this.gunType.gunDamage);
             this.headshotBonus = Optional.ofNullable(customHeadshotBonus).orElse(this.gunType.gunDamageHeadshotBonus);
             this.weaponRange = this.gunType.weaponMaxRange;
@@ -133,6 +144,12 @@ public class FireManager {
 
         public static FireData buildServer(float rotationPitch, float rotationYaw, World world, ItemStack gunStack, ItemGun itemGun, WeaponFireMode fireMode, List<PacketGunFire.Hit> clientSuggetions) {
             return new FireData(rotationPitch, rotationYaw, world, gunStack, itemGun, fireMode, true, null, null, clientSuggetions);
+        }
+        public static FireData buildServer(float rotationPitch, float rotationYaw, World world, ItemStack gunStack, ItemGun itemGun,
+                                           WeaponFireMode fireMode, boolean useHeldWeapon, Float customDamage,
+                                           Float customHeadshotBonus, List<PacketGunFire.Hit> clientSuggetions) {
+            return new FireData(rotationPitch, rotationYaw, world, gunStack, itemGun, fireMode, useHeldWeapon,
+                    customDamage, customHeadshotBonus, clientSuggetions);
         }
     }
 
@@ -399,7 +416,7 @@ public class FireManager {
             } else {
                 perPelletHits = new ArrayList<>();
                 for (int i = 0; i < numBullets; i++) {
-                    List<BulletHit> rayTrace = RayUtil.standardEntityRayTrace(Side.SERVER, world, fireData.rotationPitch, fireData.rotationYaw, shooter, fireData.weaponRange, itemGun);
+                    List<BulletHit> rayTrace = RayUtil.standardEntityRayTraceForEntity(Side.SERVER, world, fireData.rotationPitch, fireData.rotationYaw, shooter, fireData.weaponRange, itemGun, false, gunStack, fireData.shotOrigin, fireData.spreadOverride);
                     if (rayTrace == null) {
                         continue;
                     }
@@ -478,26 +495,26 @@ public class FireManager {
             if (verifShot) {
                 return false;
             }
-            doGunSound(gunType, gunStack, shooter);
+            doGunSound(gunType, gunStack, shooter, fireData.shotOrigin);
             switch (gunType.weaponType) {
-                case Launcher: {
-                    // todo support not player
-                    if (shooter instanceof EntityPlayer) {
-                        ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
-                        final float accuracy = RayUtil.calculateAccuracy(itemGun, shooter);
-                        EntityExplosiveProjectile projectile = new EntityExplosiveProjectile(world, (EntityPlayer)shooter, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke, bulletItem.type.isExplosion);
-                        world.spawnEntity(projectile);
-                    }
-                    break;
-                }
+                case Launcher:
                 case Thrower: {
-                    // todo support not player
-                    if (shooter instanceof EntityPlayer) {
-                        ItemBullet bulletItem = ItemGun.getUsedBullet(gunStack, gunType);
-                        final float accuracy = RayUtil.calculateAccuracy(itemGun, shooter);
-                        EntityThrowerProjectile projectile = new EntityThrowerProjectile(world, (EntityPlayer)shooter, bulletItem.type.impactDamage, accuracy, bulletItem.type.projectileVelocity, bulletItem.type.internalName, bulletItem.type.gravity, bulletItem.type.isSmoke);
-                        world.spawnEntity(projectile);
+                    ItemBullet bullet = ItemGun.getUsedBullet(gunStack, gunType);
+                    float accuracy = fireData.useHeldWeapon ? RayUtil.calculateAccuracy(itemGun, shooter)
+                            : com.modularwarfare.api.EntityShootingAPI.calculateServerAccuracy(itemGun, shooter);
+                    float damage = fireData.projectileDamageOverride == null ? bullet.type.impactDamage : fireData.projectileDamageOverride;
+                    com.modularwarfare.common.entity.EntityBullet projectile;
+                    if (gunType.weaponType == WeaponType.Launcher) {
+                        projectile = new EntityExplosiveProjectile(world, shooter, damage, accuracy,
+                                bullet.type.projectileVelocity, bullet.type.internalName, bullet.type.gravity,
+                                bullet.type.isSmoke, bullet.type.isExplosion, fireData.rotationPitch, fireData.rotationYaw);
+                    } else {
+                        projectile = new EntityThrowerProjectile(world, shooter, damage, accuracy,
+                                bullet.type.projectileVelocity, bullet.type.internalName, bullet.type.gravity,
+                                bullet.type.isSmoke, fireData.rotationPitch, fireData.rotationYaw);
                     }
+                    if (fireData.shotOrigin != null) projectile.setPosition(fireData.shotOrigin.x, fireData.shotOrigin.y, fireData.shotOrigin.z);
+                    if (!world.spawnEntity(projectile)) return false;
                     break;
                 }
                 default: {
@@ -508,7 +525,7 @@ public class FireManager {
 
             // Burst Stuff
             int shotCount = computeShotCount(gunType, gunStack, fireMode, shooter);
-            if (fireMode == WeaponFireMode.BURST) {
+            if (useHeldWeapon && fireMode == WeaponFireMode.BURST) {
                 shotCount = shotCount - 1;
                 gunStack.getTagCompound().setInteger("shotsremaining", shotCount);
             }
@@ -780,15 +797,15 @@ public class FireManager {
             }
             if (!entityPlayer.world.isRemote) {
                 // SERVER
-                if (itemGun.type.animationType == WeaponAnimationType.BASIC) {
+                if (useHeldWeapon && itemGun.type.animationType == WeaponAnimationType.BASIC) {
                     if (ItemGun.isServerReloading(entityPlayer)) {
                         failed = true;
                     }
                 }
-                if ((!itemGun.type.allowSprintFiring && entityPlayer.isSprinting()) || !itemGun.type.hasFireMode(fireMode)) {
+                if ((useHeldWeapon && !itemGun.type.allowSprintFiring && entityPlayer.isSprinting()) || !itemGun.type.hasFireMode(fireMode)) {
                     failed = true;
                 }
-                // todo 射速检查
+                // Untrusted player packet rate is checked by PacketGunFire; trusted API owns its scheduler.
             } else {
                 // CLIENT
                 if (itemGun.type.animationType == WeaponAnimationType.BASIC) {
@@ -844,13 +861,20 @@ public class FireManager {
     }
 
     private static void doGunSound(GunType gunType, ItemStack gunStack, EntityLivingBase entity) {
+        doGunSound(gunType, gunStack, entity, null);
+    }
+
+    private static void doGunSound(GunType gunType, ItemStack gunStack, EntityLivingBase entity, Vec3d origin) {
         Consumer<WeaponSoundType> handler = (type) -> {
             if (entity.world.isRemote) {
                 if (entity instanceof EntityPlayer) {
                     gunType.playClientSound((EntityPlayer)entity, type);
                 }
             } else {
-                gunType.playSound(entity, type, gunStack, entity instanceof EntityPlayer ? (EntityPlayer)entity : null);
+                // API shots have no local predicted audio. Include the caster exactly once.
+                EntityPlayer excluded = entity instanceof EntityPlayer && !com.modularwarfare.api.EntityShootingAPI.isSkillShot()
+                        ? (EntityPlayer) entity : null;
+                gunType.playSoundAt(entity.world, origin == null ? entity.getPosition() : new BlockPos(origin), type, gunStack, excluded);
             }
         };
         // FIRE
@@ -997,15 +1021,16 @@ public class FireManager {
     private static void drawTrail(BulletHit baseHit, EntityLivingBase shooter, FireData fireData) {
         GunType gunType = fireData.gunType;
         ItemStack gunStack = fireData.gunStack;
-        Vec3d origin = shooter.getPositionEyes(1.0f);
+        boolean apiShot = com.modularwarfare.api.EntityShootingAPI.isSkillShot();
+        Vec3d origin = fireData.shotOrigin == null ? shooter.getPositionEyes(1.0f) : fireData.shotOrigin;
         Vec3d endVec = null;
         if (baseHit != null && baseHit.rayTraceResult != null && baseHit.rayTraceResult.hitVec != null) {
             endVec = baseHit.rayTraceResult.hitVec;
         }
 
         if (endVec == null) {
-            Vec3d forward = shooter.getLookVec();
-            endVec = origin.add(forward.scale(gunType.weaponMaxRange));
+            Vec3d forward = com.modularwarfare.api.ProjectileAPI.direction(fireData.rotationPitch, fireData.rotationYaw);
+            endVec = origin.add(forward.scale(fireData.weaponRange));
         }
 
         Vec3d direction = endVec.subtract(origin).normalize();
@@ -1034,17 +1059,17 @@ public class FireManager {
 
         if (!shooter.world.isRemote) {
             if (gunType.useTeslaTrails) {
-                ModularWarfare.NETWORK.sendToDimension(new PacketTeslaTrail(shooter.getEntityId(), origin.x, origin.y,
+                ModularWarfare.NETWORK.sendToDimension(new PacketTeslaTrail(apiShot ? -1 : shooter.getEntityId(), origin.x, origin.y,
                         origin.z, endVec.x, endVec.y, endVec.z, 10f, gunType.internalName), shooter.dimension);
             } else {
-                ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(shooter.getEntityId(), gunType.internalName,
-                        model, tex, glow, origin.x, origin.y, origin.z, shooter.motionX, shooter.motionZ, direction.x,
+                ModularWarfare.NETWORK.sendToDimension(new PacketGunTrail(apiShot ? -1 : shooter.getEntityId(), gunType.internalName,
+                        model, tex, glow, origin.x, origin.y, origin.z, apiShot ? 0 : shooter.motionX, apiShot ? 0 : shooter.motionZ, direction.x,
                         direction.y, direction.z, origin.distanceTo(endVec), 10), shooter.dimension);
             }
         }
     }
 
-    private static String getHitBoxName(BulletHit rayTrace) {
+    public static String getHitBoxName(BulletHit rayTrace) {
         String hitboxName = rayTrace.hitType;
         if (rayTrace instanceof OBBHit) {
             OBBHit obbHit = (OBBHit)rayTrace;

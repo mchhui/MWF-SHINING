@@ -245,7 +245,7 @@ public final class TrailOriginResolver {
 
     private static Vector3f applyThirdPersonOriginForward(int shooterEntityId, GunType gunType, Vector3f origin,
             double dirX, double dirY, double dirZ) {
-        if (isLocalFirstPersonShot(shooterEntityId, gunType)) {
+        if (shooterEntityId < 0 || isLocalFirstPersonShot(shooterEntityId, gunType)) {
             return origin;
         }
         double lenSq = dirX * dirX + dirY * dirY + dirZ * dirZ;

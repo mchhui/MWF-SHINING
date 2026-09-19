@@ -3,6 +3,7 @@ package com.modularwarfare.common.entity;
 import com.modularwarfare.common.entity.environment.EntityShell;
 
 import net.minecraft.entity.IProjectile;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.item.ItemStack;
@@ -35,6 +36,20 @@ public class EntityBullet extends EntityArrow implements IProjectile {
     public EntityBullet(World world) {
         super(world);
         setSize(0.2F, 0.2F);
+    }
+
+    public EntityBullet(World world, EntityLivingBase shooter, float damage, float accuracy,
+                        float velocity, String bulletName, float pitch, float yaw) {
+        super(world);
+        this.setBulletType(bulletName);
+        this.player = shooter instanceof EntityPlayer ? (EntityPlayer) shooter : null;
+        this.shootingEntity = shooter;
+        this.damage = damage;
+        this.velocity = velocity;
+        setSize(0.2F, 0.2F);
+        setLocationAndAngles(shooter.posX, shooter.posY + shooter.getEyeHeight(), shooter.posZ, yaw, pitch);
+        net.minecraft.util.math.Vec3d direction = com.modularwarfare.api.ProjectileAPI.direction(pitch, yaw);
+        shoot(direction.x, direction.y, direction.z, velocity, accuracy);
     }
 
     public EntityBullet(World par1World, EntityPlayer par2EntityPlayer, float damage, float accuracy, float velocity, String bulletName, float gravity, boolean isSmoke, boolean isExplosion) {

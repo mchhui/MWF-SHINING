@@ -329,11 +329,14 @@ public class BaseType {
     }
 
     public void playSound(EntityLivingBase entityPlayer, WeaponSoundType weaponSoundType, ItemStack stack, @Nullable EntityPlayer excluded) {
+        playSoundAt(entityPlayer.world, entityPlayer.getPosition(), weaponSoundType, stack, excluded);
+    }
+
+    /** Positional gun audio including the pack's near/far sound and pitch rules. */
+    public void playSoundAt(World world, BlockPos originPos, WeaponSoundType weaponSoundType, ItemStack stack, @Nullable EntityPlayer excluded) {
         if (weaponSoundType != null) {
             ArrayList<SoundEntry> entries = getWeaponSoundEntries(weaponSoundType);
             if (entries != null) {
-                BlockPos originPos = entityPlayer.getPosition();
-                World world = entityPlayer.world;
                 Random random = new Random();
                 for (SoundEntry soundEntry : entries) {
                     float soundRange = soundEntry.soundRange != null ? soundEntry.soundRange : weaponSoundType.defaultRange;
@@ -378,8 +381,6 @@ public class BaseType {
                 }
             } else {
                 if (allowDefaultSounds && weaponSoundType.defaultSound != null) {
-                    BlockPos originPos = entityPlayer.getPosition();
-                    World world = entityPlayer.world;
                     Random random = new Random();
 
                     String soundName = weaponSoundType.defaultSound;

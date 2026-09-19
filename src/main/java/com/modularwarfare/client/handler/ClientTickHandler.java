@@ -258,7 +258,8 @@ public final class ClientTickHandler {
 
                 float adsSpeedFinal = (0.10f + adsSpeed) * renderTick;
                 boolean aimChargeMisc = !anim.reloading;
-                float value = (Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && aimChargeMisc && !ClientRenderHooks.getAnimMachine(player).attachmentMode) ? RenderParameters.adsSwitch + adsSpeedFinal : RenderParameters.adsSwitch - adsSpeedFinal;
+                boolean skillAimBlocked = com.modularwarfare.api.ClientWeaponVisualAPI.isSkillAimBlocked();
+                float value = (Minecraft.getMinecraft().inGameHasFocus && Mouse.isButtonDown(1) && !skillAimBlocked && aimChargeMisc && !ClientRenderHooks.getAnimMachine(player).attachmentMode) ? RenderParameters.adsSwitch + adsSpeedFinal : RenderParameters.adsSwitch - adsSpeedFinal;
                 RenderParameters.adsSwitch = Math.max(0, Math.min(1, value));
 
 

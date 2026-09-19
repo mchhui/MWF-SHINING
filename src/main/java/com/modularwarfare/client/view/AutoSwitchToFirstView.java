@@ -25,6 +25,11 @@ public class AutoSwitchToFirstView {
 
     @SubscribeEvent
     public void onRenderTick(RenderTickEvent event) {
+        if (com.modularwarfare.api.ClientWeaponVisualAPI.isSkillAimBlocked()) {
+            aimFlag = false;
+            aimlock = false;
+            return;
+        }
         if (Minecraft.getMinecraft().player != null && ModConfig.INSTANCE.hud.autoSwitchToFirstView) {
             if(Minecraft.getMinecraft().player.getHeldItemMainhand().getItem() instanceof ItemGun) {
                 boolean isMouseDown = Mouse.isButtonDown(1);
@@ -75,7 +80,7 @@ public class AutoSwitchToFirstView {
     }
 
     public static boolean getAutoAimLock() {
-        return aimlock;
+        return !com.modularwarfare.api.ClientWeaponVisualAPI.isSkillAimBlocked() && aimlock;
     }
 
 }

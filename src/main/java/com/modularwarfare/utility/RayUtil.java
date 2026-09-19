@@ -355,14 +355,30 @@ public class RayUtil {
                     ShoulderHelper.ShoulderLook look = ShoulderHelper.shoulderSurfingLook(
                         entity, partialTicks, blockReachDistance * blockReachDistance);
                     start = start.add(look.headOffset());
-                    return entity.world.rayTraceBlocks(start, look.traceEndPos(), false, true, false);
+                    return traceBlocksToRange(entity.world, start, look.traceEndPos());
                 }
             } catch (Throwable ignored) {
             }
         }
         Vec3d look = entity.getLook(partialTicks);
         Vec3d end = start.add(look.x * blockReachDistance, look.y * blockReachDistance, look.z * blockReachDistance);
-        return entity.world.rayTraceBlocks(start, end, false, true, false);
+        return traceBlocksToRange(entity.world, start, end);
+    }
+
+    /** Segment long aim rays to avoid vanilla's 200 voxel-step traversal cap. */
+    public static RayTraceResult traceBlocksToRange(World world, Vec3d start, Vec3d end) {
+        double length = start.distanceTo(end);
+        if (!Double.isFinite(length) || length > 4096) return null;
+        int segments = Math.max(1, (int) Math.ceil(length / 64.0));
+        Vec3d step = end.subtract(start).scale(1.0 / segments);
+        Vec3d previous = start;
+        for (int i = 1; i <= segments; i++) {
+            Vec3d next = i == segments ? end : start.add(step.scale(i));
+            RayTraceResult hit = world.rayTraceBlocks(previous, next, false, true, false);
+            if (hit != null && hit.typeOfHit == RayTraceResult.Type.BLOCK) return hit;
+            previous = next;
+        }
+        return null;
     }
 
     @Nullable
@@ -372,21 +388,14 @@ public class RayUtil {
             return null;
         }
         RayTraceResult blockHit = rayTraceColliding(viewer, range, partialTicks);
-        Vec3d from = viewer.getPositionEyes(partialTicks);
-        Vec3d look = viewer.getLook(partialTicks);
-        if (ClientProxy.shoulderSurfingLoaded) {
-            try {
-                if (ShoulderInstance.getInstance().doShoulderSurfing()) {
-                    from = ShoulderHelper.shoulderSurfingLook(viewer, partialTicks, range).cameraPos();
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-        double maxDist = range;
+        Vec3d from = shoulderAimOrigin(viewer, partialTicks, range);
+        Vec3d end = shoulderAimEnd(viewer, partialTicks, range);
+        Vec3d look = end.subtract(from).normalize();
+        double maxDist = from.distanceTo(end);
         if (blockHit != null && blockHit.hitVec != null) {
             maxDist = blockHit.hitVec.distanceTo(from);
         }
-        Vec3d end = from.add(look.x * maxDist, look.y * maxDist, look.z * maxDist);
+        end = from.add(look.x * maxDist, look.y * maxDist, look.z * maxDist);
 
         RayTraceResult best = null;
         double bestDist = maxDist;
@@ -435,6 +444,37 @@ public class RayUtil {
             return best;
         }
         return blockHit;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static Vec3d shoulderAimOrigin(Entity viewer, float partialTicks, double range) {
+        if (viewer == null) return Vec3d.ZERO;
+        if (ClientProxy.shoulderSurfingLoaded) {
+            try {
+                if (ShoulderInstance.getInstance().doShoulderSurfing()) {
+                    return ShoulderHelper.shoulderSurfingLook(viewer, partialTicks, range * range).cameraPos();
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return viewer.getPositionEyes(partialTicks);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static Vec3d shoulderAimEnd(Entity viewer, float partialTicks, double range) {
+        if (viewer == null) return Vec3d.ZERO;
+        if (ClientProxy.shoulderSurfingLoaded) {
+            try {
+                if (ShoulderInstance.getInstance().doShoulderSurfing()) {
+                    // ShoulderHelper takes squared reach, just like rayTraceColliding above.
+                    return ShoulderHelper.shoulderSurfingLook(viewer, partialTicks, range * range).traceEndPos();
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        Vec3d origin = viewer.getPositionEyes(partialTicks);
+        Vec3d look = viewer.getLook(partialTicks);
+        return origin.add(look.x * range, look.y * range, look.z * range);
     }
 
     @Nullable
@@ -621,6 +661,17 @@ public class RayUtil {
      */
     @Nullable
     public static List<BulletHit> standardEntityRayTraceForEntity(Side side, World world, float rotationPitch, float rotationYaw, EntityLivingBase entity, double range, ItemGun item, boolean isPunched, ItemStack weaponStack) {
+        return standardEntityRayTraceForEntity(side, world, rotationPitch, rotationYaw, entity, range, item, isPunched, weaponStack, null);
+    }
+
+    public static List<BulletHit> standardEntityRayTraceForEntity(Side side, World world, float rotationPitch, float rotationYaw,
+            EntityLivingBase entity, double range, ItemGun item, boolean isPunched, ItemStack weaponStack, Vec3d shotOrigin) {
+        return standardEntityRayTraceForEntity(side, world, rotationPitch, rotationYaw, entity, range, item, isPunched, weaponStack, shotOrigin, null);
+    }
+
+    public static List<BulletHit> standardEntityRayTraceForEntity(Side side, World world, float rotationPitch, float rotationYaw,
+            EntityLivingBase entity, double range, ItemGun item, boolean isPunched, ItemStack weaponStack,
+            Vec3d shotOrigin, Float spreadOverride) {
         if (world == null || entity == null || item == null || item.type == null) {
             return null;
         }
@@ -633,14 +684,15 @@ public class RayUtil {
         hashset.add(entity);
 
         try {
-            float accuracy = EntityShootingAPI.calculateServerAccuracy(item, entity);
+            float accuracy = spreadOverride == null ? EntityShootingAPI.calculateServerAccuracy(item, entity) : spreadOverride;
+            if (!Float.isFinite(accuracy) || accuracy < 0) return null;
             float penetrate = item.type.gunPenetrateSize;
             float maxPenetrateBlockResistance = item.type.gunMaxPenetrateBlockResistance;
             float penetrateBlocksResistance = item.type.gunPenetrateBlocksResistance;
 
             ItemBullet usedBullet = null;
             if (weaponStack != null) {
-                usedBullet = ItemAmmo.getUsedBullet(weaponStack);
+                usedBullet = ItemGun.getUsedBullet(weaponStack, item.type);
             }
             
             if (usedBullet != null) {
@@ -656,13 +708,24 @@ public class RayUtil {
                 dir = getGunAccuracy(rotationPitch, rotationYaw, accuracy, world.rand, entity);
             }
 
-            Vec3d origin = entity.getPositionEyes(1.0f);
+            Vec3d origin = shotOrigin != null ? shotOrigin : entity.getPositionEyes(1.0f);
 
             int ping = 0;
 
 
             if (side.isServer()) {
-                return performSimpleAABBRayTrace(world, origin, dir, range, penetrate, maxPenetrateBlockResistance, penetrateBlocksResistance, hashset);
+                List<BulletHit> hits = performSimpleAABBRayTrace(world, origin, dir, range, penetrate,
+                        maxPenetrateBlockResistance, penetrateBlocksResistance, hashset);
+                if (EntityShootingAPI.isDebugShot()) {
+                    Vec3d end = origin.add(dir.scale(range));
+                    for (BulletHit hit : hits) {
+                        if (hit.rayTraceResult != null && hit.rayTraceResult.typeOfHit == RayTraceResult.Type.BLOCK) {
+                            end = hit.rayTraceResult.hitVec; break;
+                        }
+                    }
+                    MinecraftForge.EVENT_BUS.post(new EntityShootingAPI.ShotTraceEvent(entity, origin, end, hits));
+                }
+                return hits;
             } else {
             return ModularWarfare.INSTANCE.RAY_CASTING.computeDetection(world, origin, dir, range, 0.001f, penetrate,
                     maxPenetrateBlockResistance, penetrateBlocksResistance, hashset, false, ping);
@@ -683,7 +746,7 @@ public class RayUtil {
         
         Vec3d endVec = origin.add(dir.scale(range));
         
-        RayTraceResult blockResult = world.rayTraceBlocks(origin, endVec, false, true, false);
+        RayTraceResult blockResult = traceBlocksToRange(world, origin, endVec);
         if (blockResult != null && blockResult.typeOfHit == RayTraceResult.Type.BLOCK) {
             double distance = blockResult.hitVec.distanceTo(origin);
             hits.add(new BulletHit(blockResult, distance, 0.0f, 0.0f));

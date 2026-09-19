@@ -1,6 +1,8 @@
 package com.modularwarfare.common.entity;
 
-import java.util.List;
+import java.util.Set;
+import java.util.Collections;
+
 
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.BulletType;
@@ -9,24 +11,27 @@ import com.modularwarfare.common.world.MWFExplosion;
 import com.modularwarfare.utility.DamageControlHelper;
 import com.modularwarfare.utility.RayUtil;
 
-import net.minecraft.entity.Entity;
+
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.DamageSource;
+
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-import java.util.HashSet;
-import java.util.Set;
 
-public class EntityExplosiveProjectile extends EntityBullet implements IProjectile {
+
+
+public class EntityExplosiveProjectile extends EntityBullet implements IProjectile, net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData {
 
     private float gravity;
     private boolean hasSmoke;
     private boolean hasExplosion;
     private float impactDamage;
-    private final Set<Integer> impactedEntityIds = new HashSet<>();
+    private boolean ignoreShooter = true;
+    private Set<String> ignoredEntityTypes = Collections.emptySet();
+
 
     public EntityExplosiveProjectile(World world) {
         super(world);
@@ -34,67 +39,100 @@ public class EntityExplosiveProjectile extends EntityBullet implements IProjecti
     }
 
     public EntityExplosiveProjectile(World par1World, EntityPlayer par2EntityPlayer, float damage, float accuracy, float velocity, String bulletName, float gravity, boolean isSmoke, boolean isExplosion) {
-        super(par1World, par2EntityPlayer, damage, accuracy, velocity, bulletName, gravity, isSmoke, isExplosion);
+        this(par1World, par2EntityPlayer, damage, accuracy, velocity, bulletName, gravity, isSmoke, isExplosion,
+                par2EntityPlayer.rotationPitch, par2EntityPlayer.rotationYaw);
+    }
+
+    public EntityExplosiveProjectile(World world, EntityLivingBase shooter, float damage, float accuracy,
+            float velocity, String bulletName, float gravity, boolean isSmoke, boolean isExplosion, float pitch, float yaw) {
+        super(world, shooter, damage, accuracy, velocity, bulletName, pitch, yaw);
         this.gravity = gravity;
         this.hasSmoke = isSmoke;
         this.hasExplosion = isExplosion;
         this.impactDamage = damage;
     }
 
+    @Override
     public void onUpdate() {
-        super.onUpdate();
-
-        this.motionY += this.gravity;
-
-        Vec3d vec3d1 = new Vec3d(this.posX, this.posY, this.posZ);
-        Vec3d vec3d = new Vec3d(this.posX + this.motionX, this.posY + this.motionY, this.posZ + this.motionZ);
-        RayTraceResult raytraceresult = this.world.rayTraceBlocks(vec3d1, vec3d, false, true, false);
-
-        if (hasSmoke) {
-            ModularWarfare.PROXY.spawnRocketParticle(this.world, this.posX, this.posY, this.posZ);
-        }
-
-        if (raytraceresult != null && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, raytraceresult)) {
-            if (hasExplosion) {
-                explode();
-            }
-            this.setDead();
-        }
-
-        List<Entity> entities = this.world.getEntitiesWithinAABBExcludingEntity(this, this.getEntityBoundingBox().expand(this.motionX, this.motionY, this.motionZ).grow(0.5D));
-        for (Entity entity : entities) {
-            if (entity != null && entity.canBeCollidedWith()) {
-                raytraceresult = new RayTraceResult(entity);
-                if (hasExplosion) {
-                    explode();
+        super.onEntityUpdate();
+        if (++ticks > 600) { setDead(); return; }
+        Vec3d start = getPositionVector();
+        Vec3d velocity = new Vec3d(motionX, motionY, motionZ);
+        Vec3d end = start.add(velocity);
+        RayTraceResult hit = com.modularwarfare.api.ProjectileAPI.trace(world, ignoreShooter ? shootingEntity : null, this, start, end, true, ignoredEntityTypes);
+        if (!world.isRemote && hit != null && !net.minecraftforge.event.ForgeEventFactory.onProjectileImpact(this, hit)) {
+            setPosition(hit.hitVec.x, hit.hitVec.y, hit.hitVec.z);
+            if (hit.entityHit != null && impactDamage > 0) {
+                BulletType type = getBulletType();
+                if (DamageControlHelper.canDamageTarget(shootingEntity, hit.entityHit, type != null && !type.shooterVulnerable)) {
+                    boolean damaged = RayUtil.attackEntityWithoutKnockback(hit.entityHit,
+                            new net.minecraft.util.EntityDamageSourceIndirect("arrow", this, shootingEntity).setProjectile(), impactDamage);
+                    DamageControlHelper.clearHurtResistantTime(hit.entityHit, damaged);
                 }
-                BulletType bulletType = getBulletType();
-                boolean ignoreFriendlyTargets = bulletType != null && !bulletType.shooterVulnerable;
-                if (DamageControlHelper.markImpactOnce(this.impactedEntityIds, entity)
-                        && DamageControlHelper.canDamageTarget(this.player, entity, ignoreFriendlyTargets)) {
-                    boolean damaged = RayUtil.attackEntityWithoutKnockback(
-                            entity,
-                            DamageSource.causePlayerDamage(this.player),
-                            this.impactDamage
-                    );
-                    DamageControlHelper.clearHurtResistantTime(entity, damaged);
-                }
-                this.setDead();
-                return;
             }
+            if (hasExplosion) explode();
+            setDead();
+            return;
         }
+        setPosition(end.x, end.y, end.z);
+        Vec3d next = com.modularwarfare.api.ProjectileAPI.nextVelocity(world, end, velocity, gravity);
+        motionX = next.x; motionY = next.y; motionZ = next.z;
+        rotationYaw = (float) Math.toDegrees(Math.atan2(motionX, motionZ));
+        rotationPitch = (float) Math.toDegrees(Math.atan2(motionY, Math.sqrt(motionX * motionX + motionZ * motionZ)));
+        if (hasSmoke && world.isRemote) ModularWarfare.PROXY.spawnRocketParticle(world, posX, posY, posZ);
     }
 
+    public void setIgnoreShooter(boolean ignoreShooter) { this.ignoreShooter = ignoreShooter; }
+    public void setIgnoredEntityTypes(Set<String> ignoredEntityTypes) {
+        this.ignoredEntityTypes = ignoredEntityTypes == null ? Collections.emptySet() : new java.util.HashSet<>(ignoredEntityTypes);
+    }
+
+    @Override
+    public void writeSpawnData(io.netty.buffer.ByteBuf buffer) {
+        buffer.writeFloat(gravity).writeBoolean(hasSmoke).writeBoolean(hasExplosion).writeFloat(impactDamage);
+        buffer.writeInt(shootingEntity == null ? -1 : shootingEntity.getEntityId());
+    }
+
+    @Override
+    public void readSpawnData(io.netty.buffer.ByteBuf buffer) {
+        gravity = buffer.readFloat(); hasSmoke = buffer.readBoolean();
+        hasExplosion = buffer.readBoolean(); impactDamage = buffer.readFloat();
+        shootingEntity = world.getEntityByID(buffer.readInt());
+        player = shootingEntity instanceof EntityPlayer ? (EntityPlayer) shootingEntity : null;
+    }
+
+    @Override
+    public void writeEntityToNBT(net.minecraft.nbt.NBTTagCompound tag) {
+        super.writeEntityToNBT(tag);
+        tag.setString("bulletName", getBulletName());
+        tag.setFloat("gravity", gravity); tag.setBoolean("smoke", hasSmoke);
+        tag.setBoolean("explosion", hasExplosion); tag.setFloat("impactDamage", impactDamage);
+        tag.setInteger("projectileAge", ticks);
+        if (shootingEntity != null) tag.setUniqueId("shooter", shootingEntity.getUniqueID());
+    }
+
+    @Override
+    public void readEntityFromNBT(net.minecraft.nbt.NBTTagCompound tag) {
+        super.readEntityFromNBT(tag);
+        setBulletType(tag.getString("bulletName"));
+        gravity = tag.getFloat("gravity"); hasSmoke = tag.getBoolean("smoke");
+        hasExplosion = tag.getBoolean("explosion"); impactDamage = tag.getFloat("impactDamage");
+        ticks = tag.getInteger("projectileAge");
+        if (tag.hasUniqueId("shooter") && world instanceof net.minecraft.world.WorldServer)
+            shootingEntity = ((net.minecraft.world.WorldServer) world).getEntityFromUuid(tag.getUniqueId("shooter"));
+    }
     public void explode() {
         if (!this.world.isRemote) {
             if (ModularWarfare.bulletTypes.containsKey(this.getBulletName())) {
                 ItemBullet itemBullet = ModularWarfare.bulletTypes.get(this.getBulletName());
-                MWFExplosion explosion = new MWFExplosion(this.world, this.player, posX, posY, posZ,
+                MWFExplosion explosion = new MWFExplosion(this.world, this.shootingEntity, posX, posY, posZ,
                         itemBullet.type.explosionRange, itemBullet.type.explosionDamage, itemBullet.type.explosionKnockback,
                         itemBullet.type.causesFire, itemBullet.type.damageWorld, itemBullet.type.allowBlockDrops);
                 explosion.setIgnoreFriendlyTargets(!itemBullet.type.shooterVulnerable);
                 explosion.doExplosionA();
                 explosion.doExplosionB(true);
+                net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+                        new com.modularwarfare.api.ProjectileExplosionEvent(this, explosion.getDamagedEntities()));
                 
                 String modelPath = null;
                 String texturePath = null;

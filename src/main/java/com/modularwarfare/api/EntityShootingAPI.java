@@ -26,6 +26,23 @@ import com.modularwarfare.common.guns.ItemAmmo;
 import com.modularwarfare.common.guns.ItemBullet;
 
 public class EntityShootingAPI {
+    private static final ThreadLocal<Boolean> SKILL_SHOT = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> DEBUG_SHOT = new ThreadLocal<>();
+    public static boolean isDebugShot() { return Boolean.TRUE.equals(DEBUG_SHOT.get()); }
+
+    /** Exact server ray after weapon spread; observational only, including misses. */
+    public static final class ShotTraceEvent extends Event {
+        public final EntityLivingBase shooter;
+        public final Vec3d origin, end;
+        public final java.util.List<com.modularwarfare.utility.raycast.hits.BulletHit> hits;
+        public ShotTraceEvent(EntityLivingBase shooter, Vec3d origin, Vec3d end,
+                java.util.List<com.modularwarfare.utility.raycast.hits.BulletHit> hits) {
+            this.shooter = shooter; this.origin = origin; this.end = end;
+            this.hits = java.util.Collections.unmodifiableList(new java.util.ArrayList<>(hits));
+        }
+    }
+    /** True only while a skill invokes the native firing pipeline on this server thread. */
+    public static boolean isSkillShot() { return Boolean.TRUE.equals(SKILL_SHOT.get()); }
     
     static {
         MinecraftForge.EVENT_BUS.register(EntityShootingAPI.class);
@@ -33,6 +50,7 @@ public class EntityShootingAPI {
     
     // ==================== 事件类定义 ====================
     
+    @net.minecraftforge.fml.common.eventhandler.Cancelable
     public static class EntityShootEvent extends Event {
         private final UUID entityUUID;
         private final EntityLivingBase entity;
@@ -69,6 +87,7 @@ public class EntityShootingAPI {
         public String getSpecifiedMagazineName() { return specifiedMagazineName; }
     }
     
+    @net.minecraftforge.fml.common.eventhandler.Cancelable
     public static class EntityTargetShootEvent extends Event {
         private final UUID entityUUID;
         private final EntityLivingBase entity;
@@ -115,6 +134,7 @@ public class EntityShootingAPI {
         public double getMaxDistance() { return maxDistance; }
     }
     
+    @net.minecraftforge.fml.common.eventhandler.Cancelable
     public static class EntityDelayedShootEvent extends Event {
         private final UUID entityUUID;
         private final EntityLivingBase entity;
@@ -182,408 +202,6 @@ public class EntityShootingAPI {
         public boolean isCoordinateShoot() { return isCoordinateShoot; }
     }
     
-    // ==================== 内部类定义 ====================
-    
-    private static class DelayedShootTask {
-        public final EntityLivingBase entity;
-        public final EntityLivingBase target;
-        public final double targetX, targetY, targetZ;
-        public final ItemStack weaponStack;
-        public final ItemGun weapon;
-        public int shotCount;
-        public final double maxDistance;
-        public final int delayTicks;
-        public final float offsetX, offsetY, offsetZ;
-        public final boolean isCoordinateShoot;
-        public final boolean useHeldWeapon;
-        public final float customDamage;
-        public final float customHeadshotBonus;
-        public int remainingTicks;
-        public boolean rayStarted;
-        public long shootIntervalMs;
-        public long nextShootTime;
-        
-        public DelayedShootTask(EntityLivingBase entity, EntityLivingBase target, double targetX, double targetY, double targetZ,
-                              ItemStack weaponStack, ItemGun weapon, int shotCount, double maxDistance,
-                              int delayTicks, float offsetX, float offsetY, float offsetZ, boolean isCoordinateShoot, boolean useHeldWeapon, float customDamage, float customHeadshotBonus) {
-            this.entity = entity;
-            this.target = target;
-            this.targetX = targetX;
-            this.targetY = targetY;
-            this.targetZ = targetZ;
-            this.weaponStack = weaponStack;
-            this.weapon = weapon;
-            this.shotCount = shotCount;
-            this.maxDistance = maxDistance;
-            this.delayTicks = delayTicks;
-            this.offsetX = offsetX;
-            this.offsetY = offsetY;
-            this.offsetZ = offsetZ;
-            this.isCoordinateShoot = isCoordinateShoot;
-            this.useHeldWeapon = useHeldWeapon;
-            this.customDamage = customDamage;
-            this.customHeadshotBonus = customHeadshotBonus;
-            this.remainingTicks = delayTicks;
-            this.rayStarted = false;
-            this.shootIntervalMs = 0;
-            this.nextShootTime = 0;
-        }
-    }
-    
-    private static class WeaponConfig {
-        public final ItemStack weaponStack;
-        public final ItemGun weapon;
-        public final boolean useHeldWeapon;
-        public final String specifiedWeaponName;
-        public final String specifiedAmmoName;
-        public final String specifiedMagazineName;
-        
-        public WeaponConfig(ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon,
-                          String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName) {
-            this.weaponStack = weaponStack;
-            this.weapon = weapon;
-            this.useHeldWeapon = useHeldWeapon;
-            this.specifiedWeaponName = specifiedWeaponName;
-            this.specifiedAmmoName = specifiedAmmoName;
-            this.specifiedMagazineName = specifiedMagazineName;
-        }
-    }
-    
-    // ==================== 静态字段 ====================
-    
-    private static final ConcurrentHashMap<UUID, DelayedShootTask> delayedShootTasks = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, Long> entityLastShootTime = new ConcurrentHashMap<>();
-    
-    // ==================== 工具方法 ====================
-    
-    public static Vec3d getServerDefaultAccuracy(float pitch, float yaw, final float accuracy, final Random rand) {
-        final float randAccPitch = rand.nextFloat() * accuracy;
-        final float randAccYaw = rand.nextFloat() * accuracy;
-        Vec3d vec3d = new Vec3d(rand.nextBoolean() ? randAccYaw : (-randAccYaw), 
-                               rand.nextBoolean() ? randAccPitch : (-randAccPitch), 
-                               100).normalize();
-        return vec3d.rotatePitch((float)(-pitch * Math.PI / 180))
-                   .rotateYaw((float)(-yaw * Math.PI / 180));
-    }
-    
-    public static float calculateServerAccuracy(final ItemGun item, final EntityLivingBase entity) {
-        final GunType gun = item.type;
-        if (gun == null) {
-            return 1.0f;
-        }
-        
-        float acc = gun.bulletSpread;
-        
-        if (entity.posX != entity.lastTickPosX || entity.posZ != entity.lastTickPosZ) {
-            acc += gun.accuracyMoveOffset;
-        }
-        
-        if (!entity.onGround) {
-            acc += gun.accuracyHoverOffset;
-        }
-        
-        if (acc < 0) {
-            acc = 0;
-        }
-        
-        return acc;
-    }
-    
-    private static float[] calculateTargetAngles(EntityLivingBase entity, EntityLivingBase target) {
-        Vec3d entityPos = entity.getPositionEyes(1.0f);
-        Vec3d targetPos = target.getPositionEyes(1.0f);
-        
-        Vec3d direction = targetPos.subtract(entityPos).normalize();
-        
-        float yaw = (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
-        float pitch = (float) Math.toDegrees(Math.asin(-direction.y));
-        
-        return new float[]{pitch, yaw};
-    }
-    
-    private static float[] calculateCoordinateAngles(EntityLivingBase entity, double targetX, double targetY, double targetZ) {
-        Vec3d entityPos = entity.getPositionEyes(1.0f);
-        Vec3d targetPos = new Vec3d(targetX, targetY, targetZ);
-        
-        Vec3d direction = targetPos.subtract(entityPos).normalize();
-        
-        float yaw = (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
-        float pitch = (float) Math.toDegrees(Math.asin(-direction.y));
-        
-        return new float[]{pitch, yaw};
-    }
-    
-    private static boolean isEntityFacingTarget(EntityLivingBase entity, EntityLivingBase target, float tolerance) {
-        float[] targetAngles = calculateTargetAngles(entity, target);
-        float currentPitch = entity.rotationPitch;
-        float currentYaw = entity.rotationYaw;
-        
-        float pitchDiff = Math.abs(targetAngles[0] - currentPitch);
-        float yawDiff = Math.abs(targetAngles[1] - currentYaw);
-        
-        if (yawDiff > 180) {
-            yawDiff = 360 - yawDiff;
-        }
-        
-        return pitchDiff <= tolerance && yawDiff <= tolerance;
-    }
-    
-    private static boolean forceEntityFaceTargetAndWait(EntityLivingBase entity, EntityLivingBase target, int maxWaitTicks) {
-        if (entity instanceof EntityPlayer) {
-            return true;
-        }
-        
-        float[] targetAngles = calculateTargetAngles(entity, target);
-        entity.rotationPitch = targetAngles[0];
-        entity.rotationYaw = targetAngles[1];
-        entity.rotationYawHead = targetAngles[1];
-        entity.renderYawOffset = targetAngles[1];
-        
-        int waitTicks = 0;
-        while (!isEntityFacingTarget(entity, target, 5.0f) && waitTicks < maxWaitTicks) {
-            waitTicks++;
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return false;
-            }
-        }
-        
-        return isEntityFacingTarget(entity, target, 5.0f);
-    }
-    
-    private static void forceEntityFaceTarget(EntityLivingBase entity, EntityLivingBase target) {
-        if (entity instanceof EntityPlayer) {
-            return;
-        }
-        
-        float[] angles = calculateTargetAngles(entity, target);
-        entity.rotationPitch = angles[0];
-        entity.rotationYaw = angles[1];
-        entity.rotationYawHead = angles[1];
-        entity.renderYawOffset = angles[1];
-    }
-    
-    private static EntityLivingBase findTargetEntity(UUID targetUUID) {
-        for (World w : net.minecraftforge.common.DimensionManager.getWorlds()) {
-            for (Entity e : w.loadedEntityList) {
-                if (e instanceof EntityLivingBase && e.getUniqueID().equals(targetUUID)) {
-                    return (EntityLivingBase) e;
-                }
-            }
-        }
-        return null;
-    }
-    
-    private static EntityLivingBase findEntity(UUID entityUUID) {
-        for (World w : net.minecraftforge.common.DimensionManager.getWorlds()) {
-            for (Entity e : w.loadedEntityList) {
-                if (e instanceof EntityLivingBase && e.getUniqueID().equals(entityUUID)) {
-                    return (EntityLivingBase) e;
-                }
-            }
-        }
-        return null;
-    }
-    
-    private static boolean isValidEntity(EntityLivingBase entity) {
-        return entity != null && !entity.isDead && entity.getHealth() > 0;
-    }
-    
-    private static WeaponConfig createWeaponConfig(EntityLivingBase entity, boolean useHeldWeapon,
-                                                 String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName) {
-        ItemStack weaponStack = null;
-        ItemGun weapon = null;
-        
-        if (useHeldWeapon) {
-            weaponStack = entity.getHeldItemMainhand();
-            if (weaponStack.isEmpty() || !(weaponStack.getItem() instanceof ItemGun)) {
-                return null;
-            }
-            weapon = (ItemGun) weaponStack.getItem();
-        } else {
-            if (specifiedWeaponName == null || specifiedWeaponName.isEmpty()) {
-                ModularWarfare.LOGGER.warn("Weapon name not specified, must provide weapon name when useHeldWeapon is false");
-                return null;
-            }
-            
-            weapon = ModularWarfare.gunTypes.get(specifiedWeaponName);
-            if (weapon == null) {
-                ModularWarfare.LOGGER.warn("Cannot find specified weapon: {}", specifiedWeaponName);
-                return null;
-            }
-            
-            if (specifiedAmmoName == null || specifiedAmmoName.isEmpty()) {
-                ModularWarfare.LOGGER.warn("Ammo name not specified, must provide ammo name when useHeldWeapon is false");
-                return null;
-            }
-            
-            if (specifiedMagazineName == null || specifiedMagazineName.isEmpty()) {
-                ModularWarfare.LOGGER.warn("Bullet name not specified, must provide bullet name when useHeldWeapon is false");
-                return null;
-            }
-            
-            weaponStack = new ItemStack(weapon);
-            
-            if (weaponStack.getTagCompound() == null) {
-                weaponStack.setTagCompound(new net.minecraft.nbt.NBTTagCompound());
-            }
-            
-            weaponStack.getTagCompound().setString("firemode", weapon.type.fireModes[0].name().toLowerCase());
-            
-            ItemAmmo itemAmmo = ModularWarfare.ammoTypes.get(specifiedAmmoName);
-            if (itemAmmo == null) {
-                ModularWarfare.LOGGER.warn("Cannot find specified ammo: {}", specifiedAmmoName);
-                return null;
-            }
-            
-            ItemBullet itemBullet = ModularWarfare.bulletTypes.get(specifiedMagazineName);
-            if (itemBullet == null) {
-                ModularWarfare.LOGGER.warn("Cannot find specified bullet: {}", specifiedMagazineName);
-                return null;
-            }
-            
-            ItemStack ammoStack = new ItemStack(itemAmmo);
-            if (ammoStack.getTagCompound() == null) {
-                ammoStack.setTagCompound(new net.minecraft.nbt.NBTTagCompound());
-            }
-            
-            ammoStack.getTagCompound().setInteger("ammocount", itemAmmo.type.ammoCapacity);
-            
-            ItemStack bulletStack = new ItemStack(itemBullet);
-            ammoStack.getTagCompound().setTag("bullet", bulletStack.writeToNBT(new net.minecraft.nbt.NBTTagCompound()));
-            
-            weaponStack.getTagCompound().setTag("ammo", ammoStack.writeToNBT(new net.minecraft.nbt.NBTTagCompound()));
-        }
-        
-        return new WeaponConfig(weaponStack, weapon, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
-    }
-    
-    private static boolean executeSingleShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon, float customDamage, float customHeadshotBonus) {
-        if (entity == null) {
-            return false;
-        }
-        
-        if (weapon == null || weaponStack == null) {
-            return true;
-        }
-        
-        GunType gunType = weapon.type;
-        if (gunType == null) {
-            return false;
-        }
-        
-        if (useHeldWeapon) {
-            if (!ItemGun.hasNextShot(weaponStack)) {
-                return false;
-            }
-        }
-        
-        long currentTime = System.currentTimeMillis();
-        String entityKey = entity.getUniqueID().toString();
-        
-        Long lastShootTime = entityLastShootTime.get(entityKey);
-        if (lastShootTime != null) {
-            long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
-            
-            if (currentTime - lastShootTime < shootInterval) {
-                return false;
-            }
-        }
-        
-        entityLastShootTime.put(entityKey, currentTime);
-        
-        WeaponFireMode fireMode = WeaponFireMode.SEMI;
-        if (entity instanceof EntityPlayer) {
-            fireMode = GunType.getFireMode(weaponStack);
-        } else {
-            if (gunType.fireModes != null && gunType.fireModes.length > 0) {
-                fireMode = gunType.fireModes[0];
-            }
-        }
-        
-        float rotationPitch = entity.rotationPitch;
-        float rotationYaw = entity.rotationYaw;
-        
-        if (!(entity instanceof EntityPlayer)) {
-            float accuracy = calculateServerAccuracy(weapon, entity);
-            Vec3d scatteredDirection = getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, entity.world.rand);
-            
-            double x = scatteredDirection.x;
-            double y = scatteredDirection.y;
-            double z = scatteredDirection.z;
-            
-            rotationYaw = (float) Math.toDegrees(Math.atan2(-x, z));
-            
-            double horizontalDistance = Math.sqrt(x * x + z * z);
-            rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
-        }
-        
-        if (!entity.world.isRemote) {
-            FireData fireData=FireData.buildServer(rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode, useHeldWeapon, customDamage, customHeadshotBonus);
-            boolean shotSuccess = FireManager.fire(entity, fireData);
-            if (!shotSuccess) {
-                return false;
-            }
-        } else {
-            FireData fireData=FireData.buildClient(weapon, weaponStack, gunType, fireMode, entity.world);
-            FireManager.fire(entity, fireData);
-        }
-        
-        return true;
-    }
-    
-    // 任务内执行：忽略实体冷却，允许同tick内多发
-    private static boolean executeScheduledShot(EntityLivingBase entity, ItemStack weaponStack, ItemGun weapon, boolean useHeldWeapon, float customDamage, float customHeadshotBonus) {
-        if (entity == null) {
-            return false;
-        }
-        if (weapon == null || weaponStack == null) {
-            return true;
-        }
-        GunType gunType = weapon.type;
-        if (gunType == null) {
-            return false;
-        }
-        if (useHeldWeapon) {
-            if (!ItemGun.hasNextShot(weaponStack)) {
-                return false;
-            }
-        }
-        WeaponFireMode fireMode = WeaponFireMode.SEMI;
-        if (entity instanceof EntityPlayer) {
-            fireMode = GunType.getFireMode(weaponStack);
-        } else if (gunType.fireModes != null && gunType.fireModes.length > 0) {
-            fireMode = gunType.fireModes[0];
-        }
-        float rotationPitch = entity.rotationPitch;
-        float rotationYaw = entity.rotationYaw;
-        if (!(entity instanceof EntityPlayer)) {
-            float accuracy = calculateServerAccuracy(weapon, entity);
-            Vec3d scatteredDirection = getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, entity.world.rand);
-            double x = scatteredDirection.x;
-            double y = scatteredDirection.y;
-            double z = scatteredDirection.z;
-            rotationYaw = (float) Math.toDegrees(Math.atan2(-x, z));
-            double horizontalDistance = Math.sqrt(x * x + z * z);
-            rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
-        }
-        if (!entity.world.isRemote) {
-            FireData fireData=FireData.buildServer(rotationPitch, rotationYaw, entity.world, weaponStack, weapon, fireMode, useHeldWeapon, customDamage, customHeadshotBonus);
-            boolean shotSuccess =FireManager.fire(entity, fireData);
-            if (!shotSuccess) {
-                return false;
-            }
-        } else {
-            FireData fireData=FireData.buildClient(weapon, weaponStack, gunType, fireMode, entity.world);
-            FireManager.fire(entity, fireData);
-        }
-        return true;
-    }
-    
-    // ==================== 公共API方法 ====================
-    
     public static boolean shootEntity(UUID entityUUID, int shotCount, boolean useHeldWeapon, 
                                     String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName) {
         EntityLivingBase entity = findEntity(entityUUID);
@@ -594,57 +212,23 @@ public class EntityShootingAPI {
         
         return shootEntity(entity, shotCount, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f);
     }
-    
+
     public static boolean shootEntity(EntityLivingBase entity, int shotCount, boolean useHeldWeapon, 
                                     String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName) {
         return shootEntity(entity, shotCount, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f, 0.0f);
     }
-    
+
     public static boolean shootEntity(EntityLivingBase entity, int shotCount, boolean useHeldWeapon, 
                                     String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         return shootEntity(entity, shotCount, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, customDamage, 0.0f);
     }
-    
+
     public static boolean shootEntity(EntityLivingBase entity, int shotCount, boolean useHeldWeapon, 
                                     String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName, float customDamage, float customHeadshotBonus) {
-        if (!isValidEntity(entity)) {
-            return false;
-        }
-        
-        WeaponConfig weaponConfig = createWeaponConfig(entity, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
-        if (weaponConfig == null) {
-            return false;
-        }
-        
-        EntityShootEvent preEvent = new EntityShootEvent(
-            entity.getUniqueID(), entity, weaponConfig.weaponStack, weaponConfig.weapon, shotCount, 
-            useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName
-        );
-        MinecraftForge.EVENT_BUS.post(preEvent);
-        
-        if (preEvent.isCanceled()) {
-            return false;
-        }
-        
-        if (shotCount <= 1 || useHeldWeapon) {
-            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon, customDamage, customHeadshotBonus);
-        } else {
-            GunType gunType = weaponConfig.weapon.type;
-            long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
-            
-            DelayedShootTask task = new DelayedShootTask(
-                entity, null, 0, 0, 0,
-                weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-                0, 0, 0, 0, 0, true, useHeldWeapon, customDamage, customHeadshotBonus
-            );
-            task.shootIntervalMs = shootInterval;
-            task.nextShootTime = System.currentTimeMillis();
-            
-            delayedShootTasks.put(UUID.randomUUID(), task);
-            return true;
+        return submit(entity, null, null, shotCount, Double.MAX_VALUE, 0, Vec3d.ZERO,
+                useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName,
+                customDamage, customHeadshotBonus, false);
     }
-    }
-    
     public static boolean shootEntityAtTarget(UUID entityUUID, UUID targetUUID, int shotCount, double maxDistance,
                                             boolean useHeldWeapon, String specifiedWeaponName, 
                                             String specifiedAmmoName, String specifiedMagazineName) {
@@ -654,7 +238,7 @@ public class EntityShootingAPI {
             return false;
         }
         
-        EntityLivingBase target = findTargetEntity(targetUUID);
+        EntityLivingBase target = findEntity(targetUUID);
         if (target == null) {
             ModularWarfare.LOGGER.warn("Cannot find target entity with UUID: {}", targetUUID);
             return false;
@@ -663,137 +247,140 @@ public class EntityShootingAPI {
         return shootEntityAtTarget(entity, target, shotCount, maxDistance, useHeldWeapon, 
                                  specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
     }
-    
+
     public static boolean shootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                             double maxDistance, boolean useHeldWeapon, String specifiedWeaponName,
                                             String specifiedAmmoName, String specifiedMagazineName) {
         return shootEntityAtTarget(entity, target, shotCount, maxDistance, useHeldWeapon, 
                                  specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f, 0.0f);
     }
-    
+
     public static boolean shootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                             double maxDistance, boolean useHeldWeapon, String specifiedWeaponName,
                                             String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         return shootEntityAtTarget(entity, target, shotCount, maxDistance, useHeldWeapon, 
                                  specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, customDamage, 0.0f);
     }
-    
+
     public static boolean shootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                             double maxDistance, boolean useHeldWeapon, String specifiedWeaponName,
                                             String specifiedAmmoName, String specifiedMagazineName, float customDamage, float customHeadshotBonus) {
-        if (!isValidEntity(entity)) {
-            ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
-            return false;
-        }
-        
-        if (!isValidEntity(target)) {
-            ModularWarfare.LOGGER.warn("Target entity is invalid or dead");
-            return false;
-        }
-        
-        double distance = entity.getDistance(target);
-        if (distance > maxDistance) {
-            ModularWarfare.LOGGER.warn("Target distance {} exceeds max shooting distance {}", distance, maxDistance);
-            return false;
-        }
-        
-        WeaponConfig weaponConfig = createWeaponConfig(entity, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
-        if (weaponConfig == null) {
-            return false;
-        }
-        
-        EntityTargetShootEvent preEvent = new EntityTargetShootEvent(
-            entity.getUniqueID(), entity, target.getUniqueID(), target, weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-            useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, maxDistance
-        );
-        MinecraftForge.EVENT_BUS.post(preEvent);
-        
-        if (preEvent.isCanceled()) {
-            return false;
-        }
-        
-        forceEntityFaceTarget(entity, target);
-        
-        if (shotCount <= 1 || useHeldWeapon) {
-            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon, customDamage, customHeadshotBonus);
-        } else {
-            GunType gunType = weaponConfig.weapon.type;
-            long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
-            
-            DelayedShootTask task = new DelayedShootTask(
-                entity, target, target.posX, target.posY, target.posZ,
-                weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-                maxDistance, 0, 0, 0, 0, false, useHeldWeapon, customDamage, customHeadshotBonus
-            );
-            task.shootIntervalMs = shootInterval;
-            task.nextShootTime = System.currentTimeMillis();
-            
-            delayedShootTasks.put(UUID.randomUUID(), task);
-            return true;
+        if (target == null) return false;
+        return submit(entity, target, null, shotCount, maxDistance, 0, Vec3d.ZERO,
+                useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName,
+                customDamage, customHeadshotBonus, false);
     }
-    }
-    
     public static boolean shootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ, 
                                                  int shotCount, double maxDistance, boolean useHeldWeapon, 
                                                  String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName) {
         return shootEntityAtCoordinates(entity, targetX, targetY, targetZ, shotCount, maxDistance, useHeldWeapon, 
                                       specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f, 0.0f);
     }
-    
+
     public static boolean shootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ, 
                                                  int shotCount, double maxDistance, boolean useHeldWeapon, 
                                                  String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName, float customDamage) {
         return shootEntityAtCoordinates(entity, targetX, targetY, targetZ, shotCount, maxDistance, useHeldWeapon, 
                                       specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, customDamage, 0.0f);
     }
-    
+
     public static boolean shootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ, 
                                                  int shotCount, double maxDistance, boolean useHeldWeapon, 
                                                  String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName, float customDamage, float customHeadshotBonus) {
-        if (!isValidEntity(entity)) {
-            ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
-            return false;
-        }
-        
-        double distance = entity.getDistance(targetX, targetY, targetZ);
-        if (distance > maxDistance) {
-            ModularWarfare.LOGGER.warn("Target distance {} exceeds max shooting distance {}", distance, maxDistance);
-            return false;
-        }
-        
-        WeaponConfig weaponConfig = createWeaponConfig(entity, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
-        if (weaponConfig == null) {
-            return false;
-        }
-        
-        float[] angles = calculateCoordinateAngles(entity, targetX, targetY, targetZ);
-        
-        if (!(entity instanceof EntityPlayer)) {
-            entity.rotationPitch = angles[0];
-            entity.rotationYaw = angles[1];
-            entity.rotationYawHead = angles[1];
-            entity.renderYawOffset = angles[1];
-        }
-        
-        if (shotCount <= 1 || useHeldWeapon) {
-            return executeSingleShot(entity, weaponConfig.weaponStack, weaponConfig.weapon, useHeldWeapon, customDamage, customHeadshotBonus);
-        } else {
-            GunType gunType = weaponConfig.weapon.type;
-            long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
-            
-            DelayedShootTask task = new DelayedShootTask(
-                entity, null, targetX, targetY, targetZ,
-                weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-                maxDistance, 0, 0, 0, 0, true, useHeldWeapon, customDamage, customHeadshotBonus
-            );
-            task.shootIntervalMs = shootInterval;
-            task.nextShootTime = System.currentTimeMillis();
-            
-            delayedShootTasks.put(UUID.randomUUID(), task);
-            return true;
+        return submit(entity, null, new Vec3d(targetX, targetY, targetZ), shotCount, maxDistance, 0, Vec3d.ZERO,
+                useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName,
+                customDamage, customHeadshotBonus, false);
     }
+
+    /** Player-fire variant using the native client ray suggestions. */
+    public static boolean shootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ,
+                                                 int shotCount, double maxDistance, boolean useHeldWeapon,
+                                                 String specifiedWeaponName, String specifiedAmmoName, String specifiedMagazineName,
+                                                 float customDamage, float customHeadshotBonus,
+                                                 java.util.List<PacketGunFire.Hit> clientSuggestions) {
+        return submit(entity, null, new Vec3d(targetX, targetY, targetZ), shotCount, maxDistance, 0, Vec3d.ZERO,
+                useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName,
+                customDamage, customHeadshotBonus, false, clientSuggestions);
     }
-    
+
+    /** Native shots at caller-selected world points. Terrain/area selection belongs to the caller.
+     * spread uses GunType.bulletSpread units: zero = exact, -1 = snapshot current weapon accuracy.
+     * This overload applies maxDistance to both validation and the actual ray length. */
+    public static boolean shootEntityAtPoints(EntityLivingBase entity, Vec3d fixedOrigin, java.util.List<Vec3d> points,
+            double maxDistance, boolean useHeldWeapon, String weaponName, String ammoName, String bulletName,
+            float damage, float headshot, float spread, boolean debugTrace) {
+        return shootEntityAtPoints(entity, fixedOrigin, null, points, maxDistance, useHeldWeapon,
+                weaponName, ammoName, bulletName, damage, headshot, spread, debugTrace);
+    }
+
+    /** One immutable origin per target; the caller owns placement and clearance rules. */
+    public static boolean shootEntityFromPoints(EntityLivingBase entity, java.util.List<Vec3d> origins, java.util.List<Vec3d> points,
+            double maxDistance, boolean useHeldWeapon, String weaponName, String ammoName, String bulletName,
+            float damage, float headshot, float spread, boolean debugTrace) {
+        if (origins == null || points == null || origins.size() != points.size()) return false;
+        for (Vec3d origin : origins) if (origin == null || !ProjectileAPI.finite(origin)) return false;
+        return shootEntityAtPoints(entity, null, origins, points, maxDistance, useHeldWeapon,
+                weaponName, ammoName, bulletName, damage, headshot, spread, debugTrace);
+    }
+
+    private static boolean shootEntityAtPoints(EntityLivingBase entity, Vec3d fixedOrigin, java.util.List<Vec3d> origins,
+            java.util.List<Vec3d> points, double maxDistance, boolean useHeldWeapon, String weaponName, String ammoName,
+            String bulletName, float damage, float headshot, float spread, boolean debugTrace) {
+        if (!serverEntity(entity) || points == null || points.isEmpty() || points.size() > 1024
+                || !Float.isFinite(spread) || (spread < 0 && spread != -1)
+                || (fixedOrigin != null && !ProjectileAPI.finite(fixedOrigin))) return false;
+        for (Vec3d point : points) if (point == null || !ProjectileAPI.finite(point)) return false;
+        ItemStack stack = useHeldWeapon ? entity.getHeldItemMainhand() : createWeaponStack(weaponName, ammoName, bulletName);
+        if (stack.isEmpty() || !(stack.getItem() instanceof ItemGun)) return false;
+        float resolvedSpread = spread == -1 ? calculateServerAccuracy((ItemGun) stack.getItem(), entity) : spread;
+        return submitInternal(entity, null, points.get(0), points, fixedOrigin, points.size(), maxDistance, 0,
+                Vec3d.ZERO, useHeldWeapon, weaponName, ammoName, bulletName, damage, headshot, false, null,
+                debugTrace, resolvedSpread, origins);
+    }
+
+    /** Submit a direct-fire burst at several server-selected points around a center. */
+    public static boolean shootEntityAtCoordinatesSpread(EntityLivingBase entity, double centerX, double centerY, double centerZ,
+            int shotCount, double maxDistance, double spread, boolean useHeldWeapon, String weaponName,
+            String ammoName, String bulletName, float customDamage, float customHeadshotBonus) {
+        return shootEntityAtCoordinatesSpread(entity, null, centerX, centerY, centerZ, shotCount, maxDistance, spread,
+                useHeldWeapon, weaponName, ammoName, bulletName, customDamage, customHeadshotBonus);
+    }
+
+    /** Detached direct-fire burst: the muzzle origin is snapshotted when the skill is committed. */
+    public static boolean shootEntityAtCoordinatesSpread(EntityLivingBase entity, Vec3d fixedOrigin,
+            double centerX, double centerY, double centerZ, int shotCount, double maxDistance, double spread,
+            boolean useHeldWeapon, String weaponName, String ammoName, String bulletName,
+            float customDamage, float customHeadshotBonus) {
+        return shootEntityAtCoordinatesSpread(entity, fixedOrigin, centerX, centerY, centerZ, shotCount,
+                maxDistance, spread, useHeldWeapon, weaponName, ammoName, bulletName, customDamage, customHeadshotBonus, false);
+    }
+
+    /** Opt-in diagnostics are emitted per actual pellet, including scheduled shots. */
+    public static boolean shootEntityAtCoordinatesSpread(EntityLivingBase entity, Vec3d fixedOrigin,
+            double centerX, double centerY, double centerZ, int shotCount, double maxDistance, double spread,
+            boolean useHeldWeapon, String weaponName, String ammoName, String bulletName,
+            float customDamage, float customHeadshotBonus, boolean debugTrace) {
+        if (!serverEntity(entity)) return false;
+        if (!Double.isFinite(spread) || spread < 0 || spread > 64 || shotCount < 1 || shotCount > 1024) return false;
+        if (fixedOrigin != null && !ProjectileAPI.finite(fixedOrigin)) return false;
+        Vec3d center = new Vec3d(centerX, centerY, centerZ);
+        java.util.ArrayList<Vec3d> points = new java.util.ArrayList<>();
+        java.util.Random random = new java.util.Random(entity.getUniqueID().getLeastSignificantBits() ^ entity.world.getTotalWorldTime());
+        Vec3d forward = fixedOrigin == null
+                ? ProjectileAPI.direction(entity.rotationPitch, entity.rotationYaw).normalize()
+                : center.subtract(fixedOrigin).normalize();
+        if (forward.lengthSquared() < 1.0E-8D) forward = ProjectileAPI.direction(entity.rotationPitch, entity.rotationYaw).normalize();
+        Vec3d upRef = Math.abs(forward.y) < .95 ? new Vec3d(0, 1, 0) : new Vec3d(1, 0, 0);
+        Vec3d right = forward.crossProduct(upRef).normalize();
+        Vec3d up = right.crossProduct(forward).normalize();
+        for (int i = 0; i < shotCount; i++) {
+            double r = spread * Math.sqrt(random.nextDouble());
+            double a = random.nextDouble() * Math.PI * 2.0;
+            points.add(center.add(right.scale(Math.cos(a) * r)).add(up.scale(Math.sin(a) * r)));
+        }
+        return submit(entity, null, points, fixedOrigin, shotCount, maxDistance, 0, Vec3d.ZERO, useHeldWeapon,
+                weaponName, ammoName, bulletName, customDamage, customHeadshotBonus, false, null, debugTrace);
+    }
     public static boolean delayedShootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                                    double maxDistance, int delayTicks, float offsetX, float offsetY, float offsetZ,
                                                    boolean useHeldWeapon, String specifiedWeaponName, 
@@ -801,7 +388,7 @@ public class EntityShootingAPI {
         return delayedShootEntityAtTarget(entity, target, shotCount, maxDistance, delayTicks, offsetX, offsetY, offsetZ,
                                         useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 0.0f, 0.0f);
     }
-    
+
     public static boolean delayedShootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                                    double maxDistance, int delayTicks, float offsetX, float offsetY, float offsetZ,
                                                    boolean useHeldWeapon, String specifiedWeaponName, 
@@ -809,67 +396,16 @@ public class EntityShootingAPI {
         return delayedShootEntityAtTarget(entity, target, shotCount, maxDistance, delayTicks, offsetX, offsetY, offsetZ,
                                         useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, customDamage, 0.0f);
     }
-    
+
     public static boolean delayedShootEntityAtTarget(EntityLivingBase entity, EntityLivingBase target, int shotCount, 
                                                    double maxDistance, int delayTicks, float offsetX, float offsetY, float offsetZ,
                                                    boolean useHeldWeapon, String specifiedWeaponName, 
                                                    String specifiedAmmoName, String specifiedMagazineName, float customDamage, float customHeadshotBonus) {
-        if (!isValidEntity(entity)) {
-            ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
-            return false;
-        }
-        
-        if (!isValidEntity(target)) {
-            ModularWarfare.LOGGER.warn("Target entity is invalid or dead");
-            return false;
-        }
-        
-        double distance = entity.getDistance(target);
-        if (distance > maxDistance) {
-            ModularWarfare.LOGGER.warn("Target distance {} exceeds max shooting distance {}", distance, maxDistance);
-            return false;
-        }
-        
-        forceEntityFaceTarget(entity, target);
-        
-        WeaponConfig weaponConfig = createWeaponConfig(entity, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
-        if (weaponConfig == null) {
-            return false;
-        }
-        
-        EntityDelayedShootEvent preEvent = new EntityDelayedShootEvent(
-            entity.getUniqueID(), entity, target.getUniqueID(), target, 
-            target.posX, target.posY, target.posZ, weaponConfig.weaponStack, weaponConfig.weapon, shotCount,
-            useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName, 
-            maxDistance, delayTicks, offsetX, offsetY, offsetZ, false
-        );
-        MinecraftForge.EVENT_BUS.post(preEvent);
-        
-        if (preEvent.isCanceled()) {
-            return false;
-        }
-        
-        DelayedShootTask task = new DelayedShootTask(
-            entity, target, target.posX, target.posY, target.posZ,
-            weaponConfig.weaponStack, weaponConfig.weapon, shotCount, maxDistance, delayTicks,
-            offsetX, offsetY, offsetZ, false, useHeldWeapon, customDamage, customHeadshotBonus
-        );
-        delayedShootTasks.put(entity.getUniqueID(), task);
-        
-        if (!entity.world.isRemote) {
-            Vec3d targetEyePos = target.getPositionEyes(1.0f);
-            ModularWarfare.NETWORK.sendToAllAround(
-                new PacketDelayedShoot(
-                    entity.getEntityId(), target.getEntityId(), targetEyePos.x, targetEyePos.y, targetEyePos.z,
-                    offsetX, offsetY, offsetZ, delayTicks, false
-                ),
-                entity.posX, entity.posY, entity.posZ, 256.0f, entity.world.provider.getDimension()
-            );
-        }
-        
-        return true;
+        if (target == null) return false;
+        return submit(entity, target, null, shotCount, maxDistance, delayTicks, new Vec3d(offsetX, offsetY, offsetZ),
+                useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName,
+                customDamage, customHeadshotBonus, true);
     }
-    
     public static boolean delayedShootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ,
                                                         int shotCount, double maxDistance, int delayTicks, 
                                                         float offsetX, float offsetY, float offsetZ,
@@ -879,7 +415,7 @@ public class EntityShootingAPI {
                                              offsetX, offsetY, offsetZ, useHeldWeapon, specifiedWeaponName, 
                                              specifiedAmmoName, specifiedMagazineName, 0.0f, 0.0f);
     }
-    
+
     public static boolean delayedShootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ,
                                                         int shotCount, double maxDistance, int delayTicks, 
                                                         float offsetX, float offsetY, float offsetZ,
@@ -889,254 +425,329 @@ public class EntityShootingAPI {
                                              offsetX, offsetY, offsetZ, useHeldWeapon, specifiedWeaponName, 
                                              specifiedAmmoName, specifiedMagazineName, customDamage, 0.0f);
     }
-    
+
     public static boolean delayedShootEntityAtCoordinates(EntityLivingBase entity, double targetX, double targetY, double targetZ,
                                                         int shotCount, double maxDistance, int delayTicks, 
                                                         float offsetX, float offsetY, float offsetZ,
                                                         boolean useHeldWeapon, String specifiedWeaponName, 
                                                         String specifiedAmmoName, String specifiedMagazineName, float customDamage, float customHeadshotBonus) {
-        if (!isValidEntity(entity)) {
-            ModularWarfare.LOGGER.warn("Shooting entity is invalid or dead");
-            return false;
+        return submit(entity, null, new Vec3d(targetX, targetY, targetZ), shotCount, maxDistance, delayTicks, new Vec3d(offsetX, offsetY, offsetZ),
+                useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName,
+                customDamage, customHeadshotBonus, true);
+    }
+    private static final ConcurrentHashMap<UUID, ShootTask> tasks = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, Cooldown> nextShotTicks = new ConcurrentHashMap<>();
+
+    private static final class Cooldown {
+        final World world;
+        final double tick;
+        Cooldown(World world, double tick) { this.world = world; this.tick = tick; }
+    }
+    private static double deadline(EntityLivingBase entity) {
+        Cooldown cooldown = nextShotTicks.get(entity.getUniqueID());
+        return cooldown != null && cooldown.world == entity.world ? cooldown.tick : 0;
+    }
+
+    private static final class ShootTask {
+        final EntityLivingBase shooter, target;
+        final World world;
+        final Vec3d coordinates, offset, fixedOrigin;
+        final ItemStack stack;
+        final boolean held;
+        final double range;
+        final float damage, headshot;
+        final java.util.List<PacketGunFire.Hit> clientSuggestions;
+        final java.util.List<Vec3d> coordinateSequence;
+        boolean debugTrace;
+        Float spreadOverride;
+        java.util.List<Vec3d> originSequence;
+        int fired;
+        int remaining;
+        double nextTick;
+        ShootTask(EntityLivingBase shooter, EntityLivingBase target, Vec3d coordinates, Vec3d fixedOrigin, Vec3d offset,
+                  ItemStack stack, boolean held, double range, int count, int delay, float damage, float headshot,
+                  java.util.List<PacketGunFire.Hit> clientSuggestions) {
+            this(shooter, target, coordinates == null ? null : java.util.Collections.singletonList(coordinates), fixedOrigin, offset,
+                    stack, held, range, count, delay, damage, headshot, clientSuggestions);
         }
-        
-        double distance = entity.getDistance(targetX, targetY, targetZ);
-        if (distance > maxDistance) {
-            ModularWarfare.LOGGER.warn("Target distance {} exceeds max shooting distance {}", distance, maxDistance);
-            return false;
+        ShootTask(EntityLivingBase shooter, EntityLivingBase target, java.util.List<Vec3d> coordinateSequence, Vec3d fixedOrigin, Vec3d offset,
+                  ItemStack stack, boolean held, double range, int count, int delay, float damage, float headshot,
+                  java.util.List<PacketGunFire.Hit> clientSuggestions) {
+            this.shooter = shooter; this.target = target; this.world = shooter.world;
+            this.coordinateSequence = coordinateSequence == null ? null : new java.util.ArrayList<>(coordinateSequence);
+            this.coordinates = coordinateSequence == null || coordinateSequence.isEmpty() ? null : coordinateSequence.get(0);
+            this.fixedOrigin = fixedOrigin; this.offset = offset; this.stack = stack;
+            this.held = held; this.range = range; this.remaining = count; this.damage = damage; this.headshot = headshot;
+            this.clientSuggestions = clientSuggestions == null ? null : new java.util.ArrayList<>(clientSuggestions);
+            this.nextTick = world.getTotalWorldTime() + delay;
         }
-        
-        float[] angles = calculateCoordinateAngles(entity, targetX, targetY, targetZ);
-        
-        if (!(entity instanceof EntityPlayer)) {
-            entity.rotationPitch = angles[0];
-            entity.rotationYaw = angles[1];
-            entity.rotationYawHead = angles[1];
-            entity.renderYawOffset = angles[1];
+    }
+
+    /** Server main thread only. false means rejected; multi-shot true means accepted, not all shots completed. */
+    private static boolean submit(EntityLivingBase entity, EntityLivingBase target, Vec3d coordinates, int count,
+            double range, int delay, Vec3d offset, boolean held, String weaponName, String ammoName, String bulletName,
+            float damage, float headshot, boolean delayed) {
+        return submit(entity, target, coordinates, count, range, delay, offset, held, weaponName, ammoName, bulletName,
+                damage, headshot, delayed, null);
+    }
+    private static boolean submit(EntityLivingBase entity, EntityLivingBase target, Vec3d coordinates, int count,
+            double range, int delay, Vec3d offset, boolean held, String weaponName, String ammoName, String bulletName,
+            float damage, float headshot, boolean delayed, java.util.List<PacketGunFire.Hit> clientSuggestions) {
+        return submitInternal(entity, target, coordinates, null, null, count, range, delay, offset, held, weaponName,
+                ammoName, bulletName, damage, headshot, delayed, clientSuggestions, false);
+    }
+    private static boolean submit(EntityLivingBase entity, EntityLivingBase target, java.util.List<Vec3d> coordinateSequence, int count,
+            double range, int delay, Vec3d offset, boolean held, String weaponName, String ammoName, String bulletName,
+            float damage, float headshot, boolean delayed, java.util.List<PacketGunFire.Hit> clientSuggestions) {
+        Vec3d first = coordinateSequence == null || coordinateSequence.isEmpty() ? null : coordinateSequence.get(0);
+        return submitInternal(entity, target, first, coordinateSequence, null, count, range, delay, offset, held, weaponName,
+                ammoName, bulletName, damage, headshot, delayed, clientSuggestions, false);
+    }
+    private static boolean submit(EntityLivingBase entity, EntityLivingBase target, java.util.List<Vec3d> coordinateSequence,
+            Vec3d fixedOrigin, int count, double range, int delay, Vec3d offset, boolean held, String weaponName,
+            String ammoName, String bulletName, float damage, float headshot, boolean delayed,
+            java.util.List<PacketGunFire.Hit> clientSuggestions, boolean debugTrace) {
+        Vec3d first = coordinateSequence == null || coordinateSequence.isEmpty() ? null : coordinateSequence.get(0);
+        return submitInternal(entity, target, first, coordinateSequence, fixedOrigin, count, range, delay, offset, held,
+                weaponName, ammoName, bulletName, damage, headshot, delayed, clientSuggestions, debugTrace);
+    }
+    private static boolean submitInternal(EntityLivingBase entity, EntityLivingBase target, Vec3d coordinates,
+            java.util.List<Vec3d> coordinateSequence, Vec3d fixedOrigin, int count, double range, int delay, Vec3d offset, boolean held,
+            String weaponName, String ammoName, String bulletName, float damage, float headshot, boolean delayed,
+            java.util.List<PacketGunFire.Hit> clientSuggestions, boolean debugTrace) {
+        return submitInternal(entity, target, coordinates, coordinateSequence, fixedOrigin, count, range, delay, offset,
+                held, weaponName, ammoName, bulletName, damage, headshot, delayed, clientSuggestions, debugTrace, null);
+    }
+    private static boolean submitInternal(EntityLivingBase entity, EntityLivingBase target, Vec3d coordinates,
+            java.util.List<Vec3d> coordinateSequence, Vec3d fixedOrigin, int count, double range, int delay, Vec3d offset, boolean held,
+            String weaponName, String ammoName, String bulletName, float damage, float headshot, boolean delayed,
+            java.util.List<PacketGunFire.Hit> clientSuggestions, boolean debugTrace, Float spreadOverride) {
+        return submitInternal(entity, target, coordinates, coordinateSequence, fixedOrigin, count, range, delay, offset,
+                held, weaponName, ammoName, bulletName, damage, headshot, delayed, clientSuggestions, debugTrace, spreadOverride, null);
+    }
+    private static boolean submitInternal(EntityLivingBase entity, EntityLivingBase target, Vec3d coordinates,
+            java.util.List<Vec3d> coordinateSequence, Vec3d fixedOrigin, int count, double range, int delay, Vec3d offset, boolean held,
+            String weaponName, String ammoName, String bulletName, float damage, float headshot, boolean delayed,
+            java.util.List<PacketGunFire.Hit> clientSuggestions, boolean debugTrace, Float spreadOverride, java.util.List<Vec3d> origins) {
+        if (!serverEntity(entity) || count < 1 || count > 1024 || delay < 0 || delay > 72000
+                || !Double.isFinite(range) || range < 0 || !ProjectileAPI.finite(offset)
+                || !Float.isFinite(damage) || !Float.isFinite(headshot) || damage < 0 || headshot < 0
+                || (coordinates != null && !ProjectileAPI.finite(coordinates)) || tasks.containsKey(entity.getUniqueID())) return false;
+        if (deadline(entity) > entity.world.getTotalWorldTime() + delay) return false;
+        if (target != null && (!isAlive(target) || target.world != entity.world)) return false;
+        if (clientSuggestions != null && (!(entity instanceof EntityPlayer) || clientSuggestions.size() > 64)) return false;
+        ItemStack stack = held ? entity.getHeldItemMainhand() : createWeaponStack(weaponName, ammoName, bulletName);
+        if (stack.isEmpty() || !(stack.getItem() instanceof ItemGun)) return false;
+        ItemGun gun = (ItemGun) stack.getItem();
+        if (gun.type == null || gun.type.roundsPerMin <= 0 || !Float.isFinite(gun.type.roundsPerMin)) return false;
+        ShootTask task = coordinateSequence == null
+                ? new ShootTask(entity, target, coordinates, fixedOrigin, offset, stack, held, range, count, delay, damage, headshot, clientSuggestions)
+                : new ShootTask(entity, target, coordinateSequence, fixedOrigin, offset, stack, held, range, count, delay, damage, headshot, clientSuggestions);
+        task.debugTrace = debugTrace;
+        task.spreadOverride = spreadOverride;
+        task.originSequence = origins == null ? null : new java.util.ArrayList<>(origins);
+        if (origins != null) for (int i = 0; i < origins.size(); i++)
+            if (origins.get(i).distanceTo(coordinateSequence.get(i)) > range) return false;
+        if (!validTask(task)) return false;
+        Event pre;
+        if (delayed) {
+            Vec3d aim = target != null ? target.getPositionEyes(1) : coordinates;
+            pre = new EntityDelayedShootEvent(entity.getUniqueID(), entity, target == null ? null : target.getUniqueID(),
+                    target, aim.x, aim.y, aim.z, stack, gun, count, held, weaponName, ammoName, bulletName,
+                    range, delay, (float) offset.x, (float) offset.y, (float) offset.z, coordinates != null);
+        } else if (target != null) {
+            pre = new EntityTargetShootEvent(entity.getUniqueID(), entity, target.getUniqueID(), target, stack, gun,
+                    count, held, weaponName, ammoName, bulletName, range);
+        } else {
+            pre = new EntityShootEvent(entity.getUniqueID(), entity, stack, gun, count, held, weaponName, ammoName, bulletName);
         }
-        
-        WeaponConfig weaponConfig = createWeaponConfig(entity, useHeldWeapon, specifiedWeaponName, specifiedAmmoName, specifiedMagazineName);
-        if (weaponConfig == null) {
-            return false;
+        if (MinecraftForge.EVENT_BUS.post(pre)) return false;
+        if (delay == 0) {
+            if (deadline(entity) > entity.world.getTotalWorldTime()) return false;
+            if (!fire(task)) return false;
+            task.remaining--; task.fired++;
+            task.nextTick += interval(task);
+            nextShotTicks.put(entity.getUniqueID(), new Cooldown(task.world, task.nextTick));
         }
-        
-        EntityDelayedShootEvent preEvent = new EntityDelayedShootEvent(
-            entity.getUniqueID(), entity, null, null, targetX, targetY, targetZ,
-            weaponConfig.weaponStack, weaponConfig.weapon, shotCount, useHeldWeapon, specifiedWeaponName, 
-            specifiedAmmoName, specifiedMagazineName, maxDistance, delayTicks,
-            offsetX, offsetY, offsetZ, true
-        );
-        MinecraftForge.EVENT_BUS.post(preEvent);
-        
-        if (preEvent.isCanceled()) {
-            return false;
+        if (task.remaining > 0) tasks.put(entity.getUniqueID(), task);
+        if (delay > 0) {
+            Vec3d aim = target != null ? target.getPositionEyes(1) : coordinates;
+            ModularWarfare.NETWORK.sendToAllAround(new PacketDelayedShoot(entity.getEntityId(), target == null ? -1 : target.getEntityId(),
+                    aim.x, aim.y, aim.z, (float) offset.x, (float) offset.y, (float) offset.z, delay, coordinates != null),
+                    entity.posX, entity.posY, entity.posZ, 256, entity.dimension);
         }
-        
-        DelayedShootTask task = new DelayedShootTask(
-            entity, null, targetX, targetY, targetZ,
-            weaponConfig.weaponStack, weaponConfig.weapon, shotCount, maxDistance, delayTicks,
-            offsetX, offsetY, offsetZ, true, useHeldWeapon, customDamage, customHeadshotBonus
-        );
-        delayedShootTasks.put(entity.getUniqueID(), task);
-        
-        if (!entity.world.isRemote) {
-            ModularWarfare.NETWORK.sendToAllAround(
-                new PacketDelayedShoot(
-                    entity.getEntityId(), -1, targetX, targetY, targetZ,
-                    offsetX, offsetY, offsetZ, delayTicks, true
-                ),
-                entity.posX, entity.posY, entity.posZ, 256.0f, entity.world.provider.getDimension()
-            );
-        }
-        
         return true;
     }
-    
-    private static void executeDelayedShooting(DelayedShootTask task) {
-        if (task.entity == null) {
-            return;
-        }
-        
-        if (task.weapon == null || task.weaponStack == null) {
-            return;
-        }
-        
-        GunType gunType = task.weapon.type;
-        if (gunType == null) {
-            return;
-        }
-        
-        if (task.useHeldWeapon) {
-            if (!ItemGun.hasNextShot(task.weaponStack)) {
-                return;
+
+    /** Legacy argument order: weapon, magazine (ammo registry), bullet (bullet registry).
+     * Direct-bullet weapons accept null for magazine. The returned stack is independent of held equipment. */
+    public static ItemStack createWeaponStack(String weaponName, String magazineName, String bulletName) {
+        if (weaponName == null || bulletName == null) return ItemStack.EMPTY;
+        ItemGun gun = ModularWarfare.gunTypes.get(weaponName);
+        ItemBullet bullet = ModularWarfare.bulletTypes.get(bulletName);
+        if (gun == null || gun.type == null || bullet == null || gun.type.fireModes == null || gun.type.fireModes.length == 0) return ItemStack.EMPTY;
+        ItemStack stack = new ItemStack(gun);
+        net.minecraft.nbt.NBTTagCompound tag = new net.minecraft.nbt.NBTTagCompound();
+        stack.setTagCompound(tag);
+        tag.setString("firemode", gun.type.fireModes[0].name().toLowerCase(java.util.Locale.ROOT));
+        if (gun.type.acceptedAmmo != null) {
+            ItemAmmo magazine = magazineName == null ? null : ModularWarfare.ammoTypes.get(magazineName);
+            if (magazine == null || !java.util.Arrays.asList(gun.type.acceptedAmmo).contains(magazineName)
+                    || magazine.type.subAmmo == null || !java.util.Arrays.asList(magazine.type.subAmmo).contains(bulletName)) return ItemStack.EMPTY;
+            ItemStack ammoStack = new ItemStack(magazine);
+            net.minecraft.nbt.NBTTagCompound ammo = new net.minecraft.nbt.NBTTagCompound();
+            ammoStack.setTagCompound(ammo);
+            ammo.setInteger("ammocount", magazine.type.ammoCapacity);
+            if (magazine.type.magazineCount > 1) {
+                ammo.setInteger("magcount", 1);
+                for (int i = 1; i <= magazine.type.magazineCount; i++) ammo.setInteger("ammocount" + i, magazine.type.ammoCapacity);
             }
-        }
-        
-        forceEntityFaceTarget(task.entity, task.target);
-        
-        WeaponFireMode fireMode = WeaponFireMode.SEMI;
-        if (task.entity instanceof EntityPlayer) {
-            fireMode = GunType.getFireMode(task.weaponStack);
-        } else {
-            if (gunType.fireModes != null && gunType.fireModes.length > 0) {
-                fireMode = gunType.fireModes[0];
-            }
-        }
-        
-        float rotationPitch = task.entity.rotationPitch;
-        float rotationYaw = task.entity.rotationYaw;
-        
-        if (!(task.entity instanceof EntityPlayer)) {
-            float accuracy = calculateServerAccuracy(task.weapon, task.entity);
-            Vec3d scatteredDirection = getServerDefaultAccuracy(rotationPitch, rotationYaw, accuracy, task.entity.world.rand);
-            
-            double x = scatteredDirection.x;
-            double y = scatteredDirection.y;
-            double z = scatteredDirection.z;
-            
-            rotationYaw = (float) Math.toDegrees(Math.atan2(-x, z));
-            
-            double horizontalDistance = Math.sqrt(x * x + z * z);
-            rotationPitch = (float) Math.toDegrees(Math.atan2(-y, horizontalDistance));
-        }
-        if (!task.entity.world.isRemote) {
-            FireData fireData=FireData.buildServer(rotationPitch, rotationYaw, task.entity.world, task.weaponStack, task.weapon, fireMode, task.useHeldWeapon, task.customDamage, task.customHeadshotBonus);
-            boolean shotSuccess =FireManager.fire(task.entity, fireData);
-            if (!shotSuccess) {
-                return;
-            }
-        } else {
-            FireData fireData=FireData.buildClient(task.weapon, task.weaponStack, gunType, fireMode, task.entity.world);
-            FireManager.fire(task.entity, fireData);
-        }
-        
-        if (task.shotCount > 1) {
-            long shootInterval = (long) (60.0 * 1000.0 / gunType.roundsPerMin);
-            task.nextShootTime = System.currentTimeMillis() + shootInterval;
-        }
+            ammo.setTag("bullet", new ItemStack(bullet).writeToNBT(new net.minecraft.nbt.NBTTagCompound()));
+            tag.setTag("ammo", ammoStack.writeToNBT(new net.minecraft.nbt.NBTTagCompound()));
+        } else if (gun.type.acceptedBullets != null && java.util.Arrays.asList(gun.type.acceptedBullets).contains(bulletName)) {
+            tag.setTag("bullet", new ItemStack(bullet).writeToNBT(new net.minecraft.nbt.NBTTagCompound()));
+            tag.setInteger("ammocount", gun.type.internalAmmoStorage == null ? 1 : gun.type.internalAmmoStorage);
+        } else return ItemStack.EMPTY;
+        return stack;
     }
-    
+
+    private static boolean fire(ShootTask task) {
+        if (!validTask(task)) return false;
+        EntityLivingBase entity = task.shooter;
+        ItemGun gun = (ItemGun) task.stack.getItem();
+        Vec3d origin = shotOrigin(task);
+        Vec3d aim = task.target != null ? task.target.getPositionEyes(1)
+                : task.coordinateSequence == null || task.coordinateSequence.isEmpty() ? task.coordinates
+                : task.coordinateSequence.get(Math.min(task.fired, task.coordinateSequence.size() - 1));
+        float pitch = entity.rotationPitch, yaw = entity.rotationYaw;
+        if (aim != null) {
+            Vec3d direction = aim.subtract(origin).normalize();
+            yaw = (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
+            pitch = (float) Math.toDegrees(Math.asin(-direction.y));
+            if (!(entity instanceof EntityPlayer)) {
+                entity.rotationPitch = pitch; entity.rotationYaw = yaw;
+                entity.rotationYawHead = yaw; entity.renderYawOffset = yaw;
+            }
+        }
+        WeaponFireMode mode = GunType.getFireMode(task.stack);
+        if (mode == null) mode = gun.type.fireModes[0];
+        // Legacy zero means use content-pack damage. Do not send zero as a damage override.
+        FireData data = task.clientSuggestions != null
+                ? FireData.buildServer(pitch, yaw, task.world, task.stack, gun, mode, task.held,
+                        task.damage > 0 ? task.damage : null, task.headshot > 0 ? task.headshot : null, task.clientSuggestions)
+                : FireData.buildServer(pitch, yaw, task.world, task.stack, gun, mode, task.held,
+                        task.damage > 0 ? task.damage : null, task.headshot > 0 ? task.headshot : null);
+        data.shotOrigin = origin;
+        data.spreadOverride = task.spreadOverride;
+        if (task.spreadOverride != null) data.weaponRange = task.range;
+        SKILL_SHOT.set(Boolean.TRUE);
+        DEBUG_SHOT.set(task.debugTrace);
+        try { return FireManager.fire(entity, data); }
+        finally { SKILL_SHOT.remove(); DEBUG_SHOT.remove(); }
+    }
+
+    private static boolean validTask(ShootTask task) {
+        if (!isAlive(task.shooter) || task.shooter.world != task.world
+                || task.world.getEntityByID(task.shooter.getEntityId()) != task.shooter) return false;
+        if (task.held && (task.shooter.getHeldItemMainhand() != task.stack || !ItemGun.hasNextShot(task.stack))) return false;
+        if (task.target != null && (!isAlive(task.target) || task.target.world != task.world
+                || task.world.getEntityByID(task.target.getEntityId()) != task.target)) return false;
+        Vec3d aim = task.target != null ? task.target.getPositionEyes(1)
+                : task.coordinateSequence == null || task.coordinateSequence.isEmpty() ? task.coordinates
+                : task.coordinateSequence.get(Math.min(task.fired, task.coordinateSequence.size() - 1));
+        Vec3d origin = shotOrigin(task);
+        return aim == null || origin.distanceTo(aim) <= task.range;
+    }
+
+    private static Vec3d shotOrigin(ShootTask task) {
+        return (task.originSequence != null ? task.originSequence.get(Math.min(task.fired, task.originSequence.size() - 1))
+                : task.fixedOrigin == null ? task.shooter.getPositionEyes(1) : task.fixedOrigin).add(task.offset);
+    }
+
+    private static double interval(ShootTask task) {
+        return Math.max(1.0 / 16.0, 1200.0 / ((ItemGun) task.stack.getItem()).type.roundsPerMin);
+    }
+
     @SubscribeEvent
     public static void onWorldTick(TickEvent.WorldTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            long currentTime = System.currentTimeMillis();
-            long cleanupThreshold = (long) (0.5 * 60 * 1000);
-            
-            entityLastShootTime.entrySet().removeIf(entry -> {
-                return currentTime - entry.getValue() > cleanupThreshold;
-            });
-            
-            delayedShootTasks.entrySet().removeIf(entry -> {
-                DelayedShootTask task = entry.getValue();
-                
-                if (task.entity.isDead || task.entity.getHealth() <= 0) {
-                    return true;
-                }
-                
-                if (task.target != null && (task.target.isDead || task.target.getHealth() <= 0)) {
-                    return true;
-                }
-                
-                double distance;
-                if (task.target != null) {
-                    distance = task.entity.getDistance(task.target);
-                } else {
-                    distance = task.entity.getDistance(task.targetX, task.targetY, task.targetZ);
-                }
-                
-                if (distance > task.maxDistance) {
-                    return true;
-                }
-                
-                if (task.delayTicks > 0) {
-                    task.remainingTicks--;
-                    if (task.remainingTicks <= 0) {
-                        executeDelayedShooting(task);
-                        return true;
-                    }
-                    return false;
-                }
-                
-                if (task.shootIntervalMs > 0) {
-                    long currentTimeMs = System.currentTimeMillis();
-                    if (currentTimeMs >= task.nextShootTime) {
-                        int safetyCounter = 0;
-                        while (task.shotCount > 0 && currentTimeMs >= task.nextShootTime) {
-                            if (task.target != null) {
-                                forceEntityFaceTarget(task.entity, task.target);
-                            } else if (task.isCoordinateShoot) {
-                                float[] angles = calculateCoordinateAngles(task.entity, task.targetX, task.targetY, task.targetZ);
-                                if (!(task.entity instanceof EntityPlayer)) {
-                                    task.entity.rotationPitch = angles[0];
-                                    task.entity.rotationYaw = angles[1];
-                                    task.entity.rotationYawHead = angles[1];
-                                    task.entity.renderYawOffset = angles[1];
-                                }
-                            }
-                            if (executeScheduledShot(task.entity, task.weaponStack, task.weapon, task.useHeldWeapon, task.customDamage, task.customHeadshotBonus)) {
-                                task.shotCount--;
-                                task.nextShootTime += task.shootIntervalMs;
-                                safetyCounter++;
-                                if (safetyCounter > 100) { // 避免极端情况下的死循环
-                                    break;
-                                }
-                            } else {
-                                return true; // 执行失败，移除任务
-                            }
-                        }
-                        if (task.shotCount <= 0) {
-                            return true;
-                        }
-                        return false;
-                    }
-                    return false;
-                }
-                
-                return false;
-            });
-        }
-    }
-    
-    // ==================== 辅助方法 ====================
-    
-    public static boolean canEntityShoot(EntityLivingBase entity, boolean useHeldWeapon) {
-        if (!isValidEntity(entity)) {
-            return false;
-        }
-        
-        if (useHeldWeapon) {
-            ItemStack heldItem = entity.getHeldItemMainhand();
-            if (!heldItem.isEmpty() && heldItem.getItem() instanceof ItemGun) {
-                ItemGun weapon = (ItemGun) heldItem.getItem();
-                return ItemGun.hasNextShot(heldItem);
+        if (event.world.isRemote || event.phase != TickEvent.Phase.END) return;
+        double now = event.world.getTotalWorldTime();
+        nextShotTicks.entrySet().removeIf(entry -> entry.getValue().world == event.world && entry.getValue().tick <= now);
+        for (java.util.Map.Entry<UUID, ShootTask> entry : tasks.entrySet()) {
+            ShootTask task = entry.getValue();
+            if (task.world != event.world) continue;
+            if (!validTask(task)) { tasks.remove(entry.getKey(), task); continue; }
+            int budget = 16;
+            while (task.remaining > 0 && now >= task.nextTick && budget-- > 0) {
+                if (!fire(task)) { task.remaining = 0; break; }
+                task.remaining--; task.fired++;
+                task.nextTick += interval(task);
+                nextShotTicks.put(entry.getKey(), new Cooldown(task.world, task.nextTick));
             }
-            return false;
+            if (task.remaining <= 0) tasks.remove(entry.getKey(), task);
         }
-        
-        return true;
     }
-    
-    public static boolean canEntityShoot(EntityLivingBase entity) {
-        return canEntityShoot(entity, true);
+
+    @SubscribeEvent
+    public static void onWorldUnload(net.minecraftforge.event.world.WorldEvent.Unload event) {
+        if (event.getWorld().isRemote) return;
+        tasks.entrySet().removeIf(entry -> entry.getValue().world == event.getWorld());
+        // No world-independent tick deadlines may survive a server/world reload.
+        nextShotTicks.entrySet().removeIf(entry -> entry.getValue().world == event.getWorld());
     }
-    
+
+    @SubscribeEvent
+    public static void onLogout(net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent event) {
+        cancelShooting(event.player);
+        nextShotTicks.remove(event.player.getUniqueID());
+    }
+
+    public static boolean cancelShooting(EntityLivingBase entity) {
+        if (!serverEntity(entity)) return false;
+        boolean removed = tasks.remove(entity.getUniqueID()) != null;
+        if (removed) ModularWarfare.NETWORK.sendToAllAround(new PacketDelayedShoot(entity.getEntityId(), -1,
+                0, 0, 0, 0, 0, 0, 0, true), entity.posX, entity.posY, entity.posZ, 256, entity.dimension);
+        return removed;
+    }
+
+    public static boolean canEntityShoot(EntityLivingBase entity, boolean useHeldWeapon) {
+        if (!serverEntity(entity) || tasks.containsKey(entity.getUniqueID())
+                || deadline(entity) > entity.world.getTotalWorldTime()) return false;
+        ItemStack stack = entity.getHeldItemMainhand();
+        return !useHeldWeapon || (!stack.isEmpty() && stack.getItem() instanceof ItemGun && ItemGun.hasNextShot(stack));
+    }
+    public static boolean canEntityShoot(EntityLivingBase entity) { return canEntityShoot(entity, true); }
+
+    /** Remaining cooldown in nominal milliseconds (20 TPS); -1 for invalid server entity. */
     public static long getEntityShootCooldown(EntityLivingBase entity) {
-        if (!canEntityShoot(entity)) {
-            return -1;
-        }
-        
-        ItemStack heldItem = entity.getHeldItemMainhand();
-        if (heldItem.isEmpty() || !(heldItem.getItem() instanceof ItemGun)) {
-            return -1;
-        }
-        
-        ItemGun weapon = (ItemGun) heldItem.getItem();
-        GunType gunType = weapon.type;
-        
-        if (gunType == null) {
-            return -1;
-        }
-        
-        return (long) (60.0 * 1000.0 / gunType.roundsPerMin);
+        if (!serverEntity(entity)) return -1;
+        return (long) Math.ceil(Math.max(0, deadline(entity) - entity.world.getTotalWorldTime()) * 50);
     }
-} 
+
+    private static boolean isAlive(EntityLivingBase entity) { return entity != null && !entity.isDead && entity.getHealth() > 0; }
+    private static boolean serverEntity(EntityLivingBase entity) {
+        return isAlive(entity) && entity.world instanceof net.minecraft.world.WorldServer
+                && entity.getServer() != null && entity.getServer().isCallingFromMinecraftThread();
+    }
+    private static EntityLivingBase findEntity(UUID uuid) {
+        net.minecraft.server.MinecraftServer server = net.minecraftforge.fml.common.FMLCommonHandler.instance().getMinecraftServerInstance();
+        if (uuid == null || server == null || !server.isCallingFromMinecraftThread()) return null;
+        for (net.minecraft.world.WorldServer world : net.minecraftforge.common.DimensionManager.getWorlds()) {
+            Entity entity = world.getEntityFromUuid(uuid);
+            if (entity instanceof EntityLivingBase) return (EntityLivingBase) entity;
+        }
+        return null;
+    }
+    public static Vec3d getServerDefaultAccuracy(float pitch, float yaw, float accuracy, Random random) {
+        float spreadPitch = random.nextFloat() * accuracy, spreadYaw = random.nextFloat() * accuracy;
+        return new Vec3d(random.nextBoolean() ? spreadYaw : -spreadYaw, random.nextBoolean() ? spreadPitch : -spreadPitch, 100)
+                .normalize().rotatePitch((float) Math.toRadians(-pitch)).rotateYaw((float) Math.toRadians(-yaw));
+    }
+    public static float calculateServerAccuracy(ItemGun item, EntityLivingBase entity) {
+        if (item.type == null) return 1;
+        float accuracy = item.type.bulletSpread;
+        if (entity.posX != entity.lastTickPosX || entity.posZ != entity.lastTickPosZ) accuracy += item.type.accuracyMoveOffset;
+        if (!entity.onGround) accuracy += item.type.accuracyHoverOffset;
+        return Math.max(0, accuracy);
+    }
+}
