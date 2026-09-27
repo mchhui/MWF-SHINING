@@ -18,6 +18,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 final class FlashlightAtomicLightBridge {
 
     private static final String OWNER = "mwf:flashlight";
+    private static boolean frameUpdaterRegistered;
+    private static boolean frameUpdaterUnavailable;
 
     private FlashlightAtomicLightBridge() {}
 
@@ -27,6 +29,22 @@ final class FlashlightAtomicLightBridge {
 
     static boolean isLightApiReady() {
         return AtomicShaderCompat.isPipelineEnabled() && canTalkToApi();
+    }
+
+    static boolean useFrameUpdater() {
+        if (!frameUpdaterRegistered && !frameUpdaterUnavailable) {
+            try {
+                frameUpdaterRegistered = AtomicLightApi.registerFrameUpdater(OWNER, FlashlightLightSync::syncFrame);
+                frameUpdaterUnavailable = !frameUpdaterRegistered;
+            } catch (LinkageError e) {
+                frameUpdaterUnavailable = true;
+            }
+        }
+        return frameUpdaterRegistered;
+    }
+
+    static boolean isFrameUpdaterRegistered() {
+        return frameUpdaterRegistered;
     }
 
     static void remove(String id) {
@@ -50,7 +68,7 @@ final class FlashlightAtomicLightBridge {
 
     static void upsertLocalTpSpot(String id, Vec3d pos, Vec3d dir, float[] rgb,
             AttachmentRenderConfig.Flashlight cfg) {
-        upsertSpot(id, pos, dir, rgb, cfg, LightVisibility.THIRD_PERSON, LightPoolPolicy.DISTANCE);
+        upsertSpot(id, pos, dir, rgb, cfg, LightVisibility.THIRD_PERSON, LightPoolPolicy.FORCE);
     }
 
     static void upsertRemoteTpSpot(String id, Vec3d pos, Vec3d dir, float[] rgb,

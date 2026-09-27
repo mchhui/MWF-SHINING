@@ -37,6 +37,7 @@ public final class GunNodeWorld {
     private static final Set<NodeRef> TRAIL_TRACK_REFS = ConcurrentHashMap.newKeySet();
     private static final Set<NodeRef> FLASHLIGHT_TRACK_REFS = ConcurrentHashMap.newKeySet();
     private static final ConcurrentHashMap<String, NodePose> FP_WORLD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, NodePose> FP_VIEW_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, NodePose> TP_WORLD_CACHE = new ConcurrentHashMap<>();
 
     private GunNodeWorld() {}
@@ -268,6 +269,27 @@ public final class GunNodeWorld {
         return getFp(holder, resolveFlashlightOrigin(gunStack, gunType));
     }
 
+    /** Hand rendering follows world lighting. Rebase the last sampled hand pose onto the current camera. */
+    @Nullable
+    public static NodePose firstPersonFlashlightCurrentView(EntityLivingBase holder, ItemStack gunStack,
+            GunType gunType, float partialTicks) {
+        NodeRef ref = resolveFlashlightOrigin(gunStack, gunType);
+        if (holder == null || ref == null) return null;
+        NodePose local = FP_VIEW_CACHE.get(cacheKey(holder.getUniqueID(), ref));
+        if (local == null) return getFp(holder, ref);
+        Vec3d[] basis = yawSafeCameraBasis(holder, partialTicks, false);
+        Vec3d pos = holder.getPositionEyes(partialTicks).add(fromView(local.pos, basis));
+        return new NodePose(pos, fromView(local.dir, basis));
+    }
+
+    private static Vec3d fromView(Vec3d v, Vec3d[] basis) {
+        return basis[0].scale(v.x).add(basis[1].scale(v.y)).add(basis[2].scale(v.z));
+    }
+
+    private static Vec3d toView(Vec3d v, Vec3d[] basis) {
+        return new Vec3d(v.dotProduct(basis[0]), v.dotProduct(basis[1]), v.dotProduct(basis[2]));
+    }
+
     @Nullable
     public static NodePose thirdPersonFlashlight(EntityLivingBase holder, @Nullable ItemStack gunStack,
             GunType gunType) {
@@ -283,6 +305,7 @@ public final class GunNodeWorld {
         }
         String prefix = holder.getUniqueID().toString() + '|';
         FP_WORLD_CACHE.keySet().removeIf(k -> k.startsWith(prefix));
+        FP_VIEW_CACHE.keySet().removeIf(k -> k.startsWith(prefix));
     }
 
     public static void clearTpCache(EntityLivingBase holder) {
@@ -306,6 +329,11 @@ public final class GunNodeWorld {
             return;
         }
         FP_WORLD_CACHE.put(cacheKey(holder.getUniqueID(), ref), new NodePose(world, dir));
+        float partial = net.minecraft.client.Minecraft.getMinecraft().getRenderPartialTicks();
+        Vec3d[] basis = yawSafeCameraBasis(holder, partial, false);
+        FP_VIEW_CACHE.put(cacheKey(holder.getUniqueID(), ref), new NodePose(
+                toView(world.subtract(holder.getPositionEyes(partial)), basis),
+                toView(dir != null ? dir : Vec3d.ZERO, basis)));
     }
 
     public static void putTpCache(EntityLivingBase holder, @Nullable NodeRef ref, Vec3d world, @Nullable Vec3d dir) {

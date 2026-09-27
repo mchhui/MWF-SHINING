@@ -75,10 +75,21 @@ public final class FlashlightLightSync {
         if (AtomicShaderCompat.isShadowDepthActive()) {
             return;
         }
-        syncPlayer((EntityPlayer) holder);
+        if (!FlashlightAtomicLightBridge.isFrameUpdaterRegistered()) {
+            syncPlayer((EntityPlayer) holder, Minecraft.getMinecraft().getRenderPartialTicks());
+        }
     }
 
     public static void tick() {
+        if (AtomicShaderCompat.isAtomicLoaded() && FlashlightAtomicLightBridge.isLightApiReady()
+                && Minecraft.getMinecraft().world != null && Minecraft.getMinecraft().player != null
+                && FlashlightAtomicLightBridge.useFrameUpdater()) {
+            return;
+        }
+        syncFrame(Minecraft.getMinecraft().getRenderPartialTicks());
+    }
+
+    static void syncFrame(float partialTicks) {
         if (!AtomicShaderCompat.isAtomicLoaded()) {
             clearLocalOnly();
             return;
@@ -95,7 +106,7 @@ public final class FlashlightLightSync {
 
         Set<UUID> keep = new HashSet<>();
         for (EntityPlayer player : mc.world.playerEntities) {
-            if (syncPlayer(player)) {
+            if (syncPlayer(player, partialTicks)) {
                 keep.add(player.getUniqueID());
                 ACTIVE_LIGHTS.add(player.getUniqueID());
             }
@@ -110,7 +121,7 @@ public final class FlashlightLightSync {
         }
     }
 
-    private static boolean syncPlayer(EntityPlayer player) {
+    private static boolean syncPlayer(EntityPlayer player, float partial) {
         if (player == null || player.isDead) {
             return false;
         }
@@ -137,7 +148,6 @@ public final class FlashlightLightSync {
 
         AttachmentRenderConfig.Flashlight cfg = resolveCfg(flashAtt);
         GunNodeWorld.trackFlashlightOriginNode(stack, gunType);
-        float partial = mc.getRenderPartialTicks();
         boolean isLocal = mc.player.getUniqueID().equals(id);
 
         if (isLocal) {
@@ -156,7 +166,9 @@ public final class FlashlightLightSync {
         float[] rgb = resolveRgb(cfg);
 
         if (firstPersonCam) {
-            GunNodeWorld.NodePose fpPose = GunNodeWorld.firstPersonFlashlight(player, gunStack, gunType);
+            GunNodeWorld.NodePose fpPose = FlashlightAtomicLightBridge.isFrameUpdaterRegistered()
+                    ? GunNodeWorld.firstPersonFlashlightCurrentView(player, gunStack, gunType, partial)
+                    : GunNodeWorld.firstPersonFlashlight(player, gunStack, gunType);
             if (fpPose == null || fpPose.pos == null) {
                 FlashlightAtomicLightBridge.remove(fpId);
                 FlashlightAtomicLightBridge.remove(tpId);
