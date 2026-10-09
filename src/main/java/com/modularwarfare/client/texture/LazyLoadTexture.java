@@ -110,7 +110,7 @@ public class LazyLoadTexture extends AbstractTexture {
     }
 
     private static void uploadPlaceholder(int texId) {
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+        GlStateManager.bindTexture(texId);
         ByteBuffer buf = org.lwjgl.BufferUtils.createByteBuffer(4);
         buf.put((byte) 0).put((byte) 0).put((byte) 0).put((byte) 0);
         buf.flip();
@@ -131,7 +131,7 @@ public class LazyLoadTexture extends AbstractTexture {
             buf.put((byte) ((p >> 24) & 0xFF));
         }
         buf.flip();
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+        GlStateManager.bindTexture(texId);
         GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, w, h, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, 0);

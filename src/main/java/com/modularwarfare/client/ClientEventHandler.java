@@ -1,7 +1,6 @@
 package com.modularwarfare.client;
 
 import com.modularwarfare.client.fpp.basic.configs.AttachmentRenderConfig;
-import com.modularwarfare.client.fpp.basic.renderers.RenderParameters;
 import com.modularwarfare.client.model.ModelAttachment;
 import com.modularwarfare.client.trail.TrailOriginResolver;
 import com.modularwarfare.common.guns.*;
@@ -15,13 +14,14 @@ import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.api.AnimationUtils;
 import com.modularwarfare.client.fpp.enhanced.renderers.RenderGunEnhanced;
 import com.modularwarfare.client.gui.hud.FlashSystem;
-import com.modularwarfare.client.handler.ClientTickHandler;
 import com.modularwarfare.client.handler.KeyInputHandler;
 import com.modularwarfare.client.laser.LaserDotRenderer;
-import com.modularwarfare.client.model.InstantBulletRenderer;
 import com.modularwarfare.client.model.InstantBulletTeslaRender;
 import com.modularwarfare.common.backpacks.BackpackType;
 import com.modularwarfare.common.backpacks.ItemBackpack;
+import com.modularwarfare.common.grenades.ItemGrenade;
+import com.modularwarfare.common.melee.ItemMelee;
+import com.modularwarfare.utility.RayUtil;
 import com.modularwarfare.common.capability.extraslots.CapabilityExtra;
 import com.modularwarfare.common.capability.extraslots.IExtraItemHandler;
 import com.modularwarfare.common.init.ModSounds;
@@ -38,22 +38,18 @@ import com.modularwarfare.common.container.ContainerChestModified;
 import com.modularwarfare.mixin.client.accessor.IGuiChestAccessor;
 import com.modularwarfare.mixin.client.accessor.IGuiContainerAccessor;
 import net.minecraft.client.gui.inventory.GuiChest;
-import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ContainerChest;
 import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import net.minecraft.item.ItemElytra;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.client.CPacketEntityAction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.EntityViewRenderEvent.CameraSetup;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -72,6 +68,8 @@ import net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import siz.addon.modularprops.common.custom.ItemBlockCustom;
+import siz.addon.modularprops.common.custom.ItemCustom;
 
 public class ClientEventHandler {
     public static int mouseDX;
@@ -196,7 +194,20 @@ public class ClientEventHandler {
     public void cemeraSetup(CameraSetup event) {
         if (Minecraft.getMinecraft().player != null) {
             ItemStack heldItem = Minecraft.getMinecraft().player.getHeldItemMainhand();
-            
+            Item held = heldItem.getItem();
+            if (held instanceof ItemGun || held instanceof ItemMelee || held instanceof ItemGrenade
+                    || held instanceof ItemCustom || held instanceof ItemBlockCustom) {
+                Minecraft mc = Minecraft.getMinecraft();
+                Entity viewer = mc.getRenderViewEntity();
+                if (viewer != null && mc.world != null) {
+                    double range = held instanceof ItemGun ? ((ItemGun) held).type.weaponMaxRange : 64.0D;
+                    RayTraceResult hit = RayUtil.shoulderCrosshairPick(viewer, (float) event.getRenderPartialTicks(), range);
+                    if (hit != null && hit.entityHit != null) {
+                        mc.pointedEntity = hit.entityHit;
+                    }
+                }
+            }
+
             if (heldItem.getItem() instanceof ItemGun) {
                 ItemGun gun = (ItemGun)heldItem.getItem();
                 if (gun.type.enhancedModel != null) {
