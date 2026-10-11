@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Proxy;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -12,15 +13,12 @@ import java.util.List;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import com.google.common.hash.Hashing;
 import com.modularwarfare.ModularWarfare;
 import com.modularwarfare.common.guns.WeaponFireMode;
 
-import jdk.nashorn.api.scripting.ClassFilter;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.client.resources.IResourceManager;
@@ -38,20 +36,47 @@ public class ScriptHost {
     private static final String[] allowList = new String[] {
             //"java.lang.","mchhui.he.","net.minecraft."
             ArrayList.class.getName(), HashMap.class.getName(), WeaponFireMode.class.getName() };
-    private static final ClassFilter classFilter = new ClassFilter() {
-
-        @Override
-        public boolean exposeToScripts(String tar) {
-            for (String str : allowList) {
-                if (tar.startsWith(str)) {
-                    return true;
-                }
+    private static boolean isClassAllowed(String tar) {
+        for (String str : allowList) {
+            if (tar.startsWith(str)) {
+                return true;
             }
-            // TODO Auto-generated method stub
-            return false;
         }
+        return false;
+    }
 
-    };
+    private static ScriptEngine createScriptEngine() {
+        ClassLoader loader = ScriptHost.class.getClassLoader();
+        try {
+            Class<?> factoryClass;
+            try {
+                // Cleanroom supplies standalone Nashorn; Forge/Java 8 uses the legacy package.
+                factoryClass = Class.forName("org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory", true, loader);
+            } catch (ClassNotFoundException e) {
+                factoryClass = Class.forName("jdk.nashorn.api.scripting.NashornScriptEngineFactory", true, loader);
+            }
+            Class<?> filterClass = Class.forName(factoryClass.getPackage().getName() + ".ClassFilter", true, loader);
+            Object filter = Proxy.newProxyInstance(filterClass.getClassLoader(), new Class<?>[] { filterClass },
+                    (proxy, method, args) -> {
+                        switch (method.getName()) {
+                            case "exposeToScripts":
+                                return isClassAllowed((String) args[0]);
+                            case "equals":
+                                return proxy == args[0];
+                            case "hashCode":
+                                return System.identityHashCode(proxy);
+                            case "toString":
+                                return "MWF Nashorn ClassFilter";
+                            default:
+                                throw new UnsupportedOperationException(method.getName());
+                        }
+                    });
+            return (ScriptEngine) factoryClass.getMethod("getScriptEngine", filterClass)
+                    .invoke(factoryClass.getDeclaredConstructor().newInstance(), filter);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Unable to create MWF Nashorn engine (Cleanroom: org.openjdk.nashorn; Forge: jdk.nashorn)", e);
+        }
+    }
 
     public static class ScriptClient {
         public Invocable invocable;
@@ -87,9 +112,7 @@ public class ScriptHost {
     }
 
     public void initScript(ResourceLocation scriptLoc, String text) {
-        ScriptEngineManager engineManager = new ScriptEngineManager();
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ScriptEngine scriptEngine = factory.getScriptEngine(classFilter);
+        ScriptEngine scriptEngine = createScriptEngine();
         if (scriptEngine != null) {
             try {
                 scriptEngine.eval("var WeaponFireMode=Java.type('" + WeaponFireMode.class.getName() + "');");
@@ -106,9 +129,7 @@ public class ScriptHost {
     }
 
     public void initScriptFromResource(String scriptLoc) {
-        ScriptEngineManager engineManager = new ScriptEngineManager();
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ScriptEngine scriptEngine = factory.getScriptEngine(classFilter);
+        ScriptEngine scriptEngine = createScriptEngine();
         String text = "";
         if (scriptEngine != null) {
             try {
