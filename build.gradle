@@ -151,6 +151,11 @@ publishing {
 
 // Using dependency list to generate a manifest with appropriate classpath
 jar {
+    // 内嵌 JOML 自带 module-info.class（类版本 53），Forge 1.12.2 的 ASM 5.2 解析失败后
+    // JarDiscoverer 会中断整个 jar 的扫描，排在其后的 @Mod 子 mod漏检。
+    // Cleanroom 的新 ASM 不受影响，但 legacy 构建必须剔除。
+    exclude 'module-info.class'
+    exclude 'META-INF/versions/**/module-info.class'
     doFirst {
         from {
             configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
