@@ -58,6 +58,17 @@ public class DefaultRayCasting extends RayCasting {
         return registryName != null && PENETRABLE_BLOCKS.contains(registryName);
     }
 
+    /**
+     * 子弹可穿过：HE CB 的 {@code passable=true/1} 同时以 {@code isPassable} 与空碰撞箱对外暴露
+     * （见 HE 的 {@code BlockDataPackBlock}/{@code BlockCustomBlock}）。弹道不能只看
+     * {@code collisionRayTrace}——HE 为原版瞄准拆除保留了无条件命中，子弹须在此自行跳过。
+     * 要求两信号同时成立，避免误穿 {@code isPassable} 语义不同但仍有实体碰撞的方块。
+     */
+    private static boolean isBulletPassable(IBlockState state, World world, BlockPos pos) {
+        AxisAlignedBB collision = state.getCollisionBoundingBox(world, pos);
+        return (collision == null || collision == Block.NULL_AABB) && state.getBlock().isPassable(world, pos);
+    }
+
     private static float blockExplosionResistanceForRayHit(World world, Vec3d rayStart, Vec3d rayEnd,
         RayTraceResult blockHit, BlockPos blockPos, Block block) {
         if (ModularWarfare.heBlockExplosionResistance != null) {
@@ -431,7 +442,7 @@ public class DefaultRayCasting extends RayCasting {
                     return result;
                 }
 
-                if ((!ignoreBlockWithoutBoundingBox || iblockstate.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) && block.canCollideCheck(iblockstate, stopOnLiquid)) {
+                if ((!ignoreBlockWithoutBoundingBox || iblockstate.getCollisionBoundingBox(world, blockpos) != Block.NULL_AABB) && !isBulletPassable(iblockstate, world, blockpos) && block.canCollideCheck(iblockstate, stopOnLiquid)) {
                     RayTraceResult raytraceresult = iblockstate.collisionRayTrace(world, blockpos, vec31, vec32);
                     if (raytraceresult != null) {
                         result.add(raytraceresult);
@@ -551,6 +562,9 @@ public class DefaultRayCasting extends RayCasting {
                         // 检查是否是需要穿透的方块
                         String blockName1 = block1.getRegistryName().toString();
                         if (PENETRABLE_BLOCKS.contains(blockName1)) {
+                            continue;
+                        }
+                        if (isBulletPassable(iblockstate1, world, blockpos)) {
                             continue;
                         }
 
